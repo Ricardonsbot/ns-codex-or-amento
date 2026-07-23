@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Orçamento de Receita</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="index.html">
+    <div class="sidebar-brand">
+      <div class="logo-mark">NS</div>
+      <div class="brand-text">
+        <strong>NS Codex</strong>
+        <span>BU · Torres · Corporate</span>
+      </div>
+    </div>
+    </a>
+
+    <div class="sidebar-section-label">Visão geral</div>
+    <a href="index.html"><div class="nav-item" data-page="index.html"><span class="nav-icon">▦</span> Dashboard</div></a>
+
+    <div class="sidebar-section-label">Orçamento</div>
+    <div class="nav-item active" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div>
+    <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
+    <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+
+    <div class="sidebar-section-label">Fluxo</div>
+    <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+
+    <div class="sidebar-section-label">Análise</div>
+    <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+
+    <div class="sidebar-section-label">Administração</div>
+    <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
+
+    <div class="sidebar-section-label">Budget - Settings</div>
+    <a href="budget-settings.html"><div class="nav-item" data-page="budget-settings.html"><span class="nav-icon">⚙</span> Ciclos &amp; Versões</div></a>
+    <a href="login.html"><div class="nav-item" data-page="login.html"><span class="nav-icon">&#9099;</span> Sair</div></a>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">EN</div>
+        <div class="user-meta">
+          <strong>Emerson Nakamura</strong>
+          <span>NSTECH GR LTDA</span>
+        </div>
+      </div>
+      <div class="sidebar-role-badge">Aprovador</div>
+    </div>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <main class="main" data-status-scope>
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Orçamento de Receita <span class="pill receita">RECEITA</span></h1>
+        <p>PSL · Torre Comercial · Ciclo 2026</p>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge status-rascunho"><span class="badge-dot"></span>Rascunho</span>
+        <button class="btn btn-secondary" data-action="save-draft" data-action-label="Orçamento de Receita">💾 Salvar Rascunho</button>
+        <button class="btn btn-primary" data-action="submit-approval" data-action-label="Orçamento de Receita">Enviar para Aprovação →</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="proto-banner">
+        ⓘ Protótipo visual — digite em Conta para ver sugestões reais, agrupe os meses para economizar espaço, cole uma matriz do Excel ou use "Replicar Para Todos os Meses" a partir de Jan.
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>BU</label>
+          <select><option>Corporate</option><option>PSL</option><option>Embarcador</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Torre</label>
+          <select><option>Comercial</option><option>Operações</option><option>TI</option><option>G&amp;A</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Natureza</label>
+          <select><option>Todas</option><option>Venda de Produto</option><option>Prestação de Serviço</option><option>Outras Receitas</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Moeda</label>
+          <select><option>BRL</option><option>USD</option></select>
+        </div>
+      </div>
+
+      <div class="kpi-grid" style="grid-template-columns: repeat(3,1fr);">
+        <div class="kpi-card receita">
+          <div class="kpi-label">Total Receita Anual</div>
+          <div class="kpi-value">R$ 62,0 mi</div>
+          <div class="kpi-delta up">▲ 6,2% vs 2025</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Linhas Preenchidas</div>
+          <div class="kpi-value">4 contas</div>
+          <div class="kpi-delta">Última edição há 2h</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">% do Total Corporate</div>
+          <div class="kpi-value">33,7%</div>
+          <div class="kpi-delta up">▲ 1,1 p.p.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Linhas de Receita — Comercial / PSL</h2>
+            <p>Valores mensais em R$ mil. Use os ícones à direita para duplicar ou remover uma linha.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" data-add-row="tabela-receita">+ Adicionar Linha</button>
+        </div>
+        <div class="panel-body table-wrap">
+          <table id="tabela-receita" class="entry-grid">
+            <thead>
+              <tr>
+                <th colspan="2"></th>
+                <th colspan="12" class="month-group-header">
+                  <button class="month-toggle-btn" data-month-toggle="tabela-receita" title="Agrupar meses">
+                    <span class="month-toggle-icon">−</span> Meses
+                  </button>
+                </th>
+                <th colspan="2"></th>
+              </tr>
+              <tr>
+                <th>Conta</th>
+                <th>Cliente / Canal</th>
+                <th class="text-right month-col">Jan</th>
+                <th class="text-right month-col">Fev</th>
+                <th class="text-right month-col">Mar</th>
+                <th class="text-right month-col">Abr</th>
+                <th class="text-right month-col">Mai</th>
+                <th class="text-right month-col">Jun</th>
+                <th class="text-right month-col">Jul</th>
+                <th class="text-right month-col">Ago</th>
+                <th class="text-right month-col">Set</th>
+                <th class="text-right month-col">Out</th>
+                <th class="text-right month-col">Nov</th>
+                <th class="text-right month-col">Dez</th>
+                <th class="text-right">Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" value="Venda de Produto - Varejo Físico" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Rede Própria" /></td>
+                <td class="month-col"><input type="number" value="3200" /></td>
+                <td class="month-col"><input type="number" value="3100" /></td>
+                <td class="month-col"><input type="number" value="3400" /></td>
+                <td class="month-col"><input type="number" value="3500" /></td>
+                <td class="month-col"><input type="number" value="3600" /></td>
+                <td class="month-col"><input type="number" value="3700" /></td>
+                <td class="month-col"><input type="number" value="3650" /></td>
+                <td class="month-col"><input type="number" value="3800" /></td>
+                <td class="month-col"><input type="number" value="3900" /></td>
+                <td class="month-col"><input type="number" value="4000" /></td>
+                <td class="month-col"><input type="number" value="4100" /></td>
+                <td class="month-col"><input type="number" value="4500" /></td>
+                <td class="text-right total-cell">R$ 44.450</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Venda de Produto - Varejo Físico" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Venda de Produto - Varejo Físico" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Venda de Produto - Varejo Físico" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="Venda de Produto - E-commerce" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Canal Digital" /></td>
+                <td class="month-col"><input type="number" value="1400" /></td>
+                <td class="month-col"><input type="number" value="1500" /></td>
+                <td class="month-col"><input type="number" value="1650" /></td>
+                <td class="month-col"><input type="number" value="1700" /></td>
+                <td class="month-col"><input type="number" value="1750" /></td>
+                <td class="month-col"><input type="number" value="1800" /></td>
+                <td class="month-col"><input type="number" value="1850" /></td>
+                <td class="month-col"><input type="number" value="1900" /></td>
+                <td class="month-col"><input type="number" value="1950" /></td>
+                <td class="month-col"><input type="number" value="2100" /></td>
+                <td class="month-col"><input type="number" value="2300" /></td>
+                <td class="month-col"><input type="number" value="2900" /></td>
+                <td class="text-right total-cell">R$ 22.800</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Venda de Produto - E-commerce" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Venda de Produto - E-commerce" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Venda de Produto - E-commerce" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="Prestação de Serviço - Assistência" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Rede Própria" /></td>
+                <td class="month-col"><input type="number" value="180" /></td>
+                <td class="month-col"><input type="number" value="190" /></td>
+                <td class="month-col"><input type="number" value="200" /></td>
+                <td class="month-col"><input type="number" value="210" /></td>
+                <td class="month-col"><input type="number" value="215" /></td>
+                <td class="month-col"><input type="number" value="220" /></td>
+                <td class="month-col"><input type="number" value="225" /></td>
+                <td class="month-col"><input type="number" value="230" /></td>
+                <td class="month-col"><input type="number" value="235" /></td>
+                <td class="month-col"><input type="number" value="240" /></td>
+                <td class="month-col"><input type="number" value="245" /></td>
+                <td class="month-col"><input type="number" value="260" /></td>
+                <td class="text-right total-cell">R$ 2.650</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Prestação de Serviço - Assistência" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Prestação de Serviço - Assistência" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Prestação de Serviço - Assistência" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="Outras Receitas Operacionais" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Diversos" /></td>
+                <td class="month-col"><input type="number" value="60" /></td>
+                <td class="month-col"><input type="number" value="55" /></td>
+                <td class="month-col"><input type="number" value="70" /></td>
+                <td class="month-col"><input type="number" value="65" /></td>
+                <td class="month-col"><input type="number" value="62" /></td>
+                <td class="month-col"><input type="number" value="58" /></td>
+                <td class="month-col"><input type="number" value="64" /></td>
+                <td class="month-col"><input type="number" value="70" /></td>
+                <td class="month-col"><input type="number" value="68" /></td>
+                <td class="month-col"><input type="number" value="72" /></td>
+                <td class="month-col"><input type="number" value="75" /></td>
+                <td class="month-col"><input type="number" value="90" /></td>
+                <td class="text-right total-cell">R$ 809</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Outras Receitas Operacionais" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Outras Receitas Operacionais" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Outras Receitas Operacionais" title="Remover">🗑</button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="14">Total Geral</td>
+                <td class="text-right">R$ 70.709 mil</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<datalist id="contas-datalist"></datalist>
+<datalist id="centros-datalist"></datalist>
+
+<div id="toast-container"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

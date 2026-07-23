@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Layouts — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="index.html">
+    <div class="sidebar-brand">
+      <div class="logo-mark">NS</div>
+      <div class="brand-text">
+        <strong>NS Codex</strong>
+        <span>BU · Torres · Corporate</span>
+      </div>
+    </div>
+    </a>
+
+    <div class="sidebar-section-label">Visão geral</div>
+    <a href="index.html"><div class="nav-item" data-page="index.html"><span class="nav-icon">▦</span> Dashboard</div></a>
+
+    <div class="sidebar-section-label">Orçamento</div>
+    <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
+    <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
+    <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+
+    <div class="sidebar-section-label">Fluxo</div>
+    <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+
+    <div class="sidebar-section-label">Análise</div>
+    <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+
+    <div class="sidebar-section-label">Administração</div>
+    <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
+
+    <div class="sidebar-section-label">Budget - Settings</div>
+    <a href="budget-settings.html"><div class="nav-item" data-page="budget-settings.html"><span class="nav-icon">⚙</span> Ciclos &amp; Versões</div></a>
+    <a href="login.html"><div class="nav-item" data-page="login.html"><span class="nav-icon">&#9099;</span> Sair</div></a>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">EN</div>
+        <div class="user-meta">
+          <strong>Emerson Nakamura</strong>
+          <span>NSTECH GR LTDA</span>
+        </div>
+      </div>
+      <div class="sidebar-role-badge">Aprovador</div>
+    </div>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Layouts</h1>
+        <p>Cadastro de <a href="usuarios.html" style="color:inherit; text-decoration:underline;">Cadastros</a> → Campos e estrutura do P&amp;L</p>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="proto-banner">
+        ⓘ Protótipo visual — os Campos cadastrados aqui são os que alimentariam os rótulos usados no Dashboard, Relatórios e demais telas (ex.: o bridge chart).
+      </div>
+
+      <!-- Campos -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Campos</h2>
+            <p>Variáveis do sistema com nome interno e título em cada idioma</p>
+          </div>
+          <button class="btn btn-primary btn-sm" data-add-row="tabela-campos">+ Adicionar Campo</button>
+        </div>
+        <div class="panel-body table-wrap">
+          <table id="tabela-campos">
+            <thead>
+              <tr>
+                <th>Variável</th>
+                <th>Título PT</th>
+                <th>Título EN</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" value="revenue" /></td>
+                <td><input type="text" value="Receita" /></td>
+                <td><input type="text" value="Revenue" /></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="revenue" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="revenue" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="expenses" /></td>
+                <td><input type="text" value="Despesa" /></td>
+                <td><input type="text" value="Expenses" /></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="expenses" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="expenses" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="ebitda" /></td>
+                <td><input type="text" value="EBITDA" /></td>
+                <td><input type="text" value="EBITDA" /></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="ebitda" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="ebitda" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="capex" /></td>
+                <td><input type="text" value="Capex" /></td>
+                <td><input type="text" value="Capex" /></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="capex" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="capex" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="ebitda_after_capex" /></td>
+                <td><input type="text" value="EBITDA after Capex" /></td>
+                <td><input type="text" value="EBITDA after Capex" /></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="ebitda_after_capex" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="ebitda_after_capex" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="budget" /></td>
+                <td><input type="text" value="Orçado" /></td>
+                <td><input type="text" value="Budget" /></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="budget" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="budget" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="actual" /></td>
+                <td><input type="text" value="Realizado" /></td>
+                <td><input type="text" value="Actual" /></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="actual" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="actual" title="Remover">🗑</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Layout P&L -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Layout P&amp;L</h2>
+            <p>Hierarquia da estrutura de P&amp;L, montada a partir dos Campos acima</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" data-action="cadastro-item" data-action-label="Novo Layout">+ Novo Layout</button>
+        </div>
+        <div class="panel-body table-wrap">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Sinal</th>
+                <th>Campo vinculado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="report-bu-row">
+                <td>Receita</td>
+                <td><span class="pill receita">(+)</span></td>
+                <td>revenue</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar subitem em Receita">+ Subitem</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Venda de Produto</td>
+                <td><span class="pill receita">(+)</span></td>
+                <td>revenue</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Venda de Produto" title="Remover">🗑</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Prestação de Serviço</td>
+                <td><span class="pill receita">(+)</span></td>
+                <td>revenue</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Prestação de Serviço" title="Remover">🗑</button></td>
+              </tr>
+
+              <tr class="report-bu-row">
+                <td>Despesas</td>
+                <td><span class="pill despesa">(−)</span></td>
+                <td>expenses</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar subitem em Despesas">+ Subitem</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Pessoal</td>
+                <td><span class="pill despesa">(−)</span></td>
+                <td>expenses</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Pessoal" title="Remover">🗑</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Serviços de Terceiros</td>
+                <td><span class="pill despesa">(−)</span></td>
+                <td>expenses</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Serviços de Terceiros" title="Remover">🗑</button></td>
+              </tr>
+
+              <tr class="report-bu-row">
+                <td>Capex</td>
+                <td><span class="pill capex">(−)</span></td>
+                <td>capex</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar subitem em Capex">+ Subitem</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Ativo Fixo (PP&amp;E)</td>
+                <td><span class="pill capex">(−)</span></td>
+                <td>capex</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Ativo Fixo (PP&E)" title="Remover">🗑</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Layout Torres -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Layout Torres</h2>
+            <p>Hierarquia da estrutura organizacional: BU → Torre → Sub Torre → Empresa</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" data-action="cadastro-item" data-action-label="Nova BU">+ Nova BU</button>
+        </div>
+        <div class="panel-body table-wrap">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Nível</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="report-bu-row">
+                <td>PSL</td>
+                <td>BU</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Torre em PSL">+ Torre</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Torre TMS</td>
+                <td>Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Sub Torre em Torre TMS">+ Sub Torre</button></td>
+              </tr>
+              <tr class="report-subtorre-row">
+                <td>ICP Pequeno e Micro</td>
+                <td>Sub Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Empresa em ICP Pequeno e Micro">+ Empresa</button></td>
+              </tr>
+              <tr class="report-empresa-row">
+                <td>Bsoft</td>
+                <td>Empresa</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Bsoft" title="Remover">🗑</button></td>
+              </tr>
+              <tr class="report-empresa-row">
+                <td>Datamex</td>
+                <td>Empresa</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Datamex" title="Remover">🗑</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Torre Fintech</td>
+                <td>Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Sub Torre em Torre Fintech">+ Sub Torre</button></td>
+              </tr>
+              <tr class="report-subtorre-row">
+                <td>e-frete</td>
+                <td>Sub Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Empresa em e-frete">+ Empresa</button></td>
+              </tr>
+              <tr class="report-empresa-row">
+                <td>e-frete Meio Pagamento</td>
+                <td>Empresa</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="e-frete Meio Pagamento" title="Remover">🗑</button></td>
+              </tr>
+
+              <tr class="report-bu-row">
+                <td>Embarcador</td>
+                <td>BU</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Torre em Embarcador">+ Torre</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Torre VGR</td>
+                <td>Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Sub Torre em Torre VGR">+ Sub Torre</button></td>
+              </tr>
+              <tr class="report-subtorre-row">
+                <td>Núcleo VGR</td>
+                <td>Sub Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Empresa em Núcleo VGR">+ Empresa</button></td>
+              </tr>
+              <tr class="report-empresa-row">
+                <td>Opentech</td>
+                <td>Empresa</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Opentech" title="Remover">🗑</button></td>
+              </tr>
+              <tr class="report-empresa-row">
+                <td>BRK</td>
+                <td>Empresa</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="BRK" title="Remover">🗑</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Torre SW Embarcador</td>
+                <td>Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Sub Torre em Torre SW Embarcador">+ Sub Torre</button></td>
+              </tr>
+              <tr class="report-subtorre-row">
+                <td>YMS/WMS</td>
+                <td>Sub Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Empresa em YMS/WMS">+ Empresa</button></td>
+              </tr>
+              <tr class="report-empresa-row">
+                <td>GBM</td>
+                <td>Empresa</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="GBM" title="Remover">🗑</button></td>
+              </tr>
+
+              <tr class="report-bu-row">
+                <td>Corporate</td>
+                <td>BU</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="cadastro-item" data-action-label="Adicionar Torre em Corporate">+ Torre</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>G&amp;A</td>
+                <td>Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="G&A" title="Remover">🗑</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>S&amp;M</td>
+                <td>Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="S&M" title="Remover">🗑</button></td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>R&amp;D</td>
+                <td>Torre</td>
+                <td><button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="R&D" title="Remover">🗑</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

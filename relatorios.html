@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Relatórios — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="index.html">
+    <div class="sidebar-brand">
+      <div class="logo-mark">NS</div>
+      <div class="brand-text">
+        <strong>NS Codex</strong>
+        <span>BU · Torres · Corporate</span>
+      </div>
+    </div>
+    </a>
+
+    <div class="sidebar-section-label">Visão geral</div>
+    <a href="index.html"><div class="nav-item" data-page="index.html"><span class="nav-icon">▦</span> Dashboard</div></a>
+
+    <div class="sidebar-section-label">Orçamento</div>
+    <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
+    <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
+    <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+
+    <div class="sidebar-section-label">Fluxo</div>
+    <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+
+    <div class="sidebar-section-label">Análise</div>
+    <div class="nav-item active" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div>
+
+    <div class="sidebar-section-label">Administração</div>
+    <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
+
+    <div class="sidebar-section-label">Budget - Settings</div>
+    <a href="budget-settings.html"><div class="nav-item" data-page="budget-settings.html"><span class="nav-icon">⚙</span> Ciclos &amp; Versões</div></a>
+    <a href="login.html"><div class="nav-item" data-page="login.html"><span class="nav-icon">&#9099;</span> Sair</div></a>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">EN</div>
+        <div class="user-meta">
+          <strong>Emerson Nakamura</strong>
+          <span>NSTECH GR LTDA</span>
+        </div>
+      </div>
+      <div class="sidebar-role-badge">Aprovador</div>
+    </div>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Relatórios</h1>
+        <p>Comparativo Actual x Budget por Torre</p>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="proto-banner">
+        ⓘ Protótipo visual — estrutura e valores de referência baseados no fechamento real (Resultado Mai'26), apenas para ilustrar o layout.
+      </div>
+
+      <!-- Filtros -->
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>Período</label>
+          <select><option>MTD — Maio 2026</option><option>YTD — 2026</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Métrica</label>
+          <select><option>Net Revenue</option><option>Adj. EBITDA</option><option>Capex</option><option>Adj. EBITDA After Capex</option></select>
+        </div>
+        <div class="filter-field">
+          <label>BU</label>
+          <select><option>Todas as BUs</option><option>PSL</option><option>Embarcador</option><option>Corporate</option></select>
+        </div>
+        <button class="btn btn-secondary">Aplicar Filtros</button>
+      </div>
+
+      <!-- Submenu -->
+      <div class="tabs submenu" data-tabs="relatorios">
+        <button class="tab-btn active" data-tab-target="tab-geral">Geral</button>
+        <button class="tab-btn" data-tab-target="tab-torres">Torres</button>
+        <button class="tab-btn" data-tab-target="tab-pl">P&amp;L</button>
+      </div>
+
+      <div data-tab-panel-group="relatorios">
+      <div id="tab-geral" class="tab-panel active">
+
+      <!-- Bridge: Revenue → Expenses → EBITDA → Capex → EBITDA after Capex -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Resumo do Orçamento — Revenue → EBITDA after Capex</h2>
+            <p>MTD Maio/2026 · Consolidado nstech (R$ milhões)</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="bridge-chart">
+            <div class="bridge-col">
+              <div class="bridge-value">R$ 184,2 mi</div>
+              <div class="bridge-track"><div class="bridge-bar receita" style="bottom:0%; height:100%;"></div></div>
+              <div class="bridge-label"><span class="bridge-sign">(+)</span>Revenue</div>
+            </div>
+            <div class="bridge-connector">
+              <div class="bridge-value">&nbsp;</div>
+              <div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:100%;"></div></div>
+              <div class="bridge-label">&nbsp;</div>
+            </div>
+            <div class="bridge-col">
+              <div class="bridge-value">− R$ 96,7 mi</div>
+              <div class="bridge-track"><div class="bridge-bar despesa" style="bottom:47.5%; height:52.5%;"></div></div>
+              <div class="bridge-label"><span class="bridge-sign">(−)</span>Expenses</div>
+            </div>
+            <div class="bridge-connector">
+              <div class="bridge-value">&nbsp;</div>
+              <div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:47.5%;"></div></div>
+              <div class="bridge-label">&nbsp;</div>
+            </div>
+            <div class="bridge-col">
+              <div class="bridge-value">R$ 87,5 mi</div>
+              <div class="bridge-track"><div class="bridge-bar subtotal" style="bottom:0%; height:47.5%;"></div></div>
+              <div class="bridge-label">EBITDA</div>
+            </div>
+            <div class="bridge-connector">
+              <div class="bridge-value">&nbsp;</div>
+              <div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:47.5%;"></div></div>
+              <div class="bridge-label">&nbsp;</div>
+            </div>
+            <div class="bridge-col">
+              <div class="bridge-value">− R$ 22,5 mi</div>
+              <div class="bridge-track"><div class="bridge-bar capex" style="bottom:35.3%; height:12.2%;"></div></div>
+              <div class="bridge-label"><span class="bridge-sign">(−)</span>Capex</div>
+            </div>
+            <div class="bridge-connector">
+              <div class="bridge-value">&nbsp;</div>
+              <div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:35.3%;"></div></div>
+              <div class="bridge-label">&nbsp;</div>
+            </div>
+            <div class="bridge-col">
+              <div class="bridge-value">R$ 65,0 mi</div>
+              <div class="bridge-track"><div class="bridge-bar final" style="bottom:0%; height:35.3%;"></div></div>
+              <div class="bridge-label">EBITDA after Capex</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bridge detalhado por Torre -->
+      <div class="panel bridge-torres">
+        <div class="panel-header">
+          <div>
+            <h2>Net Revenue — Budget to Actual por Torre</h2>
+            <p>MTD Maio/2026 · variação (Δ) de cada Torre entre Budget e Actual (R$ milhões)</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="bridge-chart">
+            <div class="bridge-col">
+              <div class="bridge-value">R$ 113,1 mi</div>
+              <div class="bridge-track"><div class="bridge-bar anchor" style="bottom:0%; height:60.0%;"></div></div>
+              <div class="bridge-label">Budget</div>
+            </div>
+            <div class="bridge-connector"><div class="bridge-value">&nbsp;</div><div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:60.0%;"></div></div><div class="bridge-label">&nbsp;</div></div>
+            <div class="bridge-col">
+              <div class="bridge-value">+0,3</div>
+              <div class="bridge-track"><div class="bridge-bar torre-up" style="bottom:60.0%; height:3.3%;"></div></div>
+              <div class="bridge-label">Torre TMS</div>
+            </div>
+            <div class="bridge-connector"><div class="bridge-value">&nbsp;</div><div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:63.3%;"></div></div><div class="bridge-label">&nbsp;</div></div>
+            <div class="bridge-col">
+              <div class="bridge-value">+1,3</div>
+              <div class="bridge-track"><div class="bridge-bar torre-up" style="bottom:63.3%; height:12.2%;"></div></div>
+              <div class="bridge-label">Torre Fintech</div>
+            </div>
+            <div class="bridge-connector"><div class="bridge-value">&nbsp;</div><div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:75.5%;"></div></div><div class="bridge-label">&nbsp;</div></div>
+            <div class="bridge-col">
+              <div class="bridge-value">+0,0</div>
+              <div class="bridge-track"><div class="bridge-bar torre-up" style="bottom:75.5%; height:0.3%;"></div></div>
+              <div class="bridge-label">Torre Mobilidade</div>
+            </div>
+            <div class="bridge-connector"><div class="bridge-value">&nbsp;</div><div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:75.8%;"></div></div><div class="bridge-label">&nbsp;</div></div>
+            <div class="bridge-col">
+              <div class="bridge-value">−1,2</div>
+              <div class="bridge-track"><div class="bridge-bar torre-down" style="bottom:63.9%; height:11.9%;"></div></div>
+              <div class="bridge-label">Torre Buonny</div>
+            </div>
+            <div class="bridge-connector"><div class="bridge-value">&nbsp;</div><div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:63.9%;"></div></div><div class="bridge-label">&nbsp;</div></div>
+            <div class="bridge-col">
+              <div class="bridge-value">−0,0</div>
+              <div class="bridge-track"><div class="bridge-bar torre-down" style="bottom:63.8%; height:0.4%;"></div></div>
+              <div class="bridge-label">Atua Redes</div>
+            </div>
+            <div class="bridge-connector"><div class="bridge-value">&nbsp;</div><div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:63.8%;"></div></div><div class="bridge-label">&nbsp;</div></div>
+            <div class="bridge-col">
+              <div class="bridge-value">+2,6</div>
+              <div class="bridge-track"><div class="bridge-bar torre-up" style="bottom:63.8%; height:25.0%;"></div></div>
+              <div class="bridge-label">Torre VGR</div>
+            </div>
+            <div class="bridge-connector"><div class="bridge-value">&nbsp;</div><div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:88.8%;"></div></div><div class="bridge-label">&nbsp;</div></div>
+            <div class="bridge-col">
+              <div class="bridge-value">−2,5</div>
+              <div class="bridge-track"><div class="bridge-bar torre-down" style="bottom:65.1%; height:23.7%;"></div></div>
+              <div class="bridge-label">Torre SW Embarcador</div>
+            </div>
+            <div class="bridge-connector"><div class="bridge-value">&nbsp;</div><div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:65.1%;"></div></div><div class="bridge-label">&nbsp;</div></div>
+            <div class="bridge-col">
+              <div class="bridge-value">+0,3</div>
+              <div class="bridge-track"><div class="bridge-bar torre-up" style="bottom:65.1%; height:2.5%;"></div></div>
+              <div class="bridge-label">Insurance Market</div>
+            </div>
+            <div class="bridge-connector"><div class="bridge-value">&nbsp;</div><div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:67.6%;"></div></div><div class="bridge-label">&nbsp;</div></div>
+            <div class="bridge-col">
+              <div class="bridge-value">−0,1</div>
+              <div class="bridge-track"><div class="bridge-bar torre-down" style="bottom:66.3%; height:1.3%;"></div></div>
+              <div class="bridge-label">Mídia</div>
+            </div>
+            <div class="bridge-connector"><div class="bridge-value">&nbsp;</div><div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:66.3%;"></div></div><div class="bridge-label">&nbsp;</div></div>
+            <div class="bridge-col">
+              <div class="bridge-value">R$ 113,7 mi</div>
+              <div class="bridge-track"><div class="bridge-bar anchor" style="bottom:0%; height:66.3%;"></div></div>
+              <div class="bridge-label">Actual</div>
+            </div>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--color-receita);"></span> Torre acima do Budget</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--color-despesa);"></span> Torre abaixo do Budget</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--color-sidebar);"></span> Budget / Actual</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Net Revenue por Torre — MTD Maio/2026</h2>
+            <p>Actual vs Budget, consolidado por BU e Torre (R$ milhões)</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" data-action="export" data-action-label="Relatório por Torre">⭳ Exportar</button>
+        </div>
+        <div class="panel-body table-wrap">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>BU / Torre</th>
+                <th class="text-right">Actual</th>
+                <th class="text-right">Budget</th>
+                <th class="text-right">Δ</th>
+                <th class="text-right">Δ%</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="report-bu-row">
+                <td>Consolidado PSL</td>
+                <td class="text-right">R$ 51,7 mi</td>
+                <td class="text-right">R$ 51,2 mi</td>
+                <td class="text-right up">▲ R$ 0,4 mi</td>
+                <td class="text-right up">▲ 0,8%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Torre TMS</td>
+                <td class="text-right">R$ 25,7 mi</td>
+                <td class="text-right">R$ 25,3 mi</td>
+                <td class="text-right up">▲ R$ 0,3 mi</td>
+                <td class="text-right up">▲ 1,4%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Torre Fintech</td>
+                <td class="text-right">R$ 5,5 mi</td>
+                <td class="text-right">R$ 4,3 mi</td>
+                <td class="text-right up">▲ R$ 1,3 mi</td>
+                <td class="text-right up">▲ 29,7%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Torre Mobilidade</td>
+                <td class="text-right">R$ 6,2 mi</td>
+                <td class="text-right">R$ 6,2 mi</td>
+                <td class="text-right up">▲ R$ 0,0 mi</td>
+                <td class="text-right up">▲ 0,7%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Torre Buonny</td>
+                <td class="text-right">R$ 14,1 mi</td>
+                <td class="text-right">R$ 15,4 mi</td>
+                <td class="text-right down">▼ − R$ 1,2 mi</td>
+                <td class="text-right down">▼ −8,0%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Atua Redes</td>
+                <td class="text-right">R$ 0,1 mi</td>
+                <td class="text-right">R$ 0,1 mi</td>
+                <td class="text-right down">▼ − R$ 0,0 mi</td>
+                <td class="text-right down">▼ −7,1%</td>
+              </tr>
+
+              <tr class="report-bu-row">
+                <td>Consolidado Embarcador</td>
+                <td class="text-right">R$ 62,1 mi</td>
+                <td class="text-right">R$ 61,8 mi</td>
+                <td class="text-right up">▲ R$ 0,2 mi</td>
+                <td class="text-right up">▲ 0,4%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Torre VGR</td>
+                <td class="text-right">R$ 38,9 mi</td>
+                <td class="text-right">R$ 36,3 mi</td>
+                <td class="text-right up">▲ R$ 2,6 mi</td>
+                <td class="text-right up">▲ 7,2%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Torre SW Embarcador</td>
+                <td class="text-right">R$ 18,0 mi</td>
+                <td class="text-right">R$ 20,5 mi</td>
+                <td class="text-right down">▼ − R$ 2,5 mi</td>
+                <td class="text-right down">▼ −12,1%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Insurance Market</td>
+                <td class="text-right">R$ 5,0 mi</td>
+                <td class="text-right">R$ 4,8 mi</td>
+                <td class="text-right up">▲ R$ 0,3 mi</td>
+                <td class="text-right up">▲ 5,4%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>Mídia</td>
+                <td class="text-right">R$ 0,2 mi</td>
+                <td class="text-right">R$ 0,3 mi</td>
+                <td class="text-right down">▼ − R$ 0,1 mi</td>
+                <td class="text-right down">▼ −46,8%</td>
+              </tr>
+
+              <tr class="report-bu-row">
+                <td>Corporate</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">0,0%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>G&amp;A</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">0,0%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>S&amp;M</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">0,0%</td>
+              </tr>
+              <tr class="report-torre-row">
+                <td>R&amp;D</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">R$ 0,0 mi</td>
+                <td class="text-right">0,0%</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>Consolidado nstech</td>
+                <td class="text-right">R$ 113,7 mi</td>
+                <td class="text-right">R$ 113,1 mi</td>
+                <td class="text-right up">▲ R$ 0,7 mi</td>
+                <td class="text-right up">▲ 0,6%</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      </div>
+      <!-- /tab-geral -->
+
+      <div id="tab-torres" class="tab-panel">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>P&amp;L por Estrutura Organizacional</h2>
+              <p>MTD Maio/2026 · estrutura definida no Layout Torres (BU → Torre → Sub Torre → Empresa), em R$ milhões</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" data-action="export" data-action-label="P&L por Estrutura">⭳ Exportar</button>
+          </div>
+          <div class="panel-body">
+            <div class="proto-banner" style="margin-bottom:16px;">
+              ⓘ Os níveis Sub Torre e Empresa mostram exemplos ilustrativos (vindos do Layout Torres em <a href="layouts.html" style="color:var(--color-primary); font-weight:600;">Cadastros → Layouts</a>) — nem todo o detalhe do fechamento real está refletido aqui.
+            </div>
+          </div>
+          <div class="panel-body table-wrap" style="padding-top:0;">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>BU / Torre / Sub Torre / Empresa</th>
+                  <th class="text-right">(+) Revenue</th>
+                  <th class="text-right">(−) Expenses</th>
+                  <th class="text-right">EBITDA</th>
+                  <th class="text-right">(−) Capex</th>
+                  <th class="text-right">EBITDA after Capex</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="report-bu-row">
+                  <td>PSL</td>
+                  <td class="text-right">R$ 51,7 mi</td>
+                  <td class="text-right">R$ 27,1 mi</td>
+                  <td class="text-right">R$ 24,6 mi</td>
+                  <td class="text-right">R$ 5,8 mi</td>
+                  <td class="text-right">R$ 18,8 mi</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>Torre TMS</td>
+                  <td class="text-right">R$ 25,7 mi</td>
+                  <td class="text-right">R$ 13,4 mi</td>
+                  <td class="text-right">R$ 12,3 mi</td>
+                  <td class="text-right">R$ 2,9 mi</td>
+                  <td class="text-right">R$ 9,4 mi</td>
+                </tr>
+                <tr class="report-subtorre-row">
+                  <td>ICP Pequeno e Micro</td>
+                  <td class="text-right">R$ 12,4 mi</td>
+                  <td class="text-right">R$ 6,9 mi</td>
+                  <td class="text-right">R$ 5,5 mi</td>
+                  <td class="text-right">R$ 1,2 mi</td>
+                  <td class="text-right">R$ 4,3 mi</td>
+                </tr>
+                <tr class="report-empresa-row">
+                  <td>Bsoft</td>
+                  <td class="text-right">R$ 8,6 mi</td>
+                  <td class="text-right">R$ 4,8 mi</td>
+                  <td class="text-right">R$ 3,8 mi</td>
+                  <td class="text-right">R$ 0,8 mi</td>
+                  <td class="text-right">R$ 3,0 mi</td>
+                </tr>
+                <tr class="report-empresa-row">
+                  <td>Datamex</td>
+                  <td class="text-right">R$ 1,6 mi</td>
+                  <td class="text-right">R$ 0,9 mi</td>
+                  <td class="text-right">R$ 0,7 mi</td>
+                  <td class="text-right">R$ 0,1 mi</td>
+                  <td class="text-right">R$ 0,6 mi</td>
+                </tr>
+                <tr class="report-empresa-row report-empresa-outras">
+                  <td>Outras empresas</td>
+                  <td class="text-right">R$ 2,2 mi</td>
+                  <td class="text-right">R$ 1,2 mi</td>
+                  <td class="text-right">R$ 1,0 mi</td>
+                  <td class="text-right">R$ 0,3 mi</td>
+                  <td class="text-right">R$ 0,7 mi</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>Torre Fintech</td>
+                  <td class="text-right">R$ 5,5 mi</td>
+                  <td class="text-right">R$ 3,0 mi</td>
+                  <td class="text-right">R$ 2,5 mi</td>
+                  <td class="text-right">R$ 0,5 mi</td>
+                  <td class="text-right">R$ 2,0 mi</td>
+                </tr>
+                <tr class="report-subtorre-row">
+                  <td>e-frete</td>
+                  <td class="text-right">R$ 2,3 mi</td>
+                  <td class="text-right">R$ 1,2 mi</td>
+                  <td class="text-right">R$ 1,1 mi</td>
+                  <td class="text-right">R$ 0,2 mi</td>
+                  <td class="text-right">R$ 0,9 mi</td>
+                </tr>
+                <tr class="report-empresa-row">
+                  <td>e-frete Meio Pagamento</td>
+                  <td class="text-right">R$ 2,3 mi</td>
+                  <td class="text-right">R$ 1,2 mi</td>
+                  <td class="text-right">R$ 1,1 mi</td>
+                  <td class="text-right">R$ 0,2 mi</td>
+                  <td class="text-right">R$ 0,9 mi</td>
+                </tr>
+                <tr class="report-subtorre-row report-empresa-outras">
+                  <td>Outras Sub Torres</td>
+                  <td class="text-right">R$ 3,2 mi</td>
+                  <td class="text-right">R$ 1,8 mi</td>
+                  <td class="text-right">R$ 1,4 mi</td>
+                  <td class="text-right">R$ 0,3 mi</td>
+                  <td class="text-right">R$ 1,1 mi</td>
+                </tr>
+                <tr class="report-torre-row report-empresa-outras">
+                  <td>Outras Torres (Mobilidade, Buonny, Atua Redes)</td>
+                  <td class="text-right">R$ 20,5 mi</td>
+                  <td class="text-right">R$ 10,7 mi</td>
+                  <td class="text-right">R$ 9,8 mi</td>
+                  <td class="text-right">R$ 2,4 mi</td>
+                  <td class="text-right">R$ 7,4 mi</td>
+                </tr>
+
+                <tr class="report-bu-row">
+                  <td>Embarcador</td>
+                  <td class="text-right">R$ 62,1 mi</td>
+                  <td class="text-right">R$ 34,0 mi</td>
+                  <td class="text-right">R$ 28,1 mi</td>
+                  <td class="text-right">R$ 6,7 mi</td>
+                  <td class="text-right">R$ 21,4 mi</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>Torre VGR</td>
+                  <td class="text-right">R$ 38,9 mi</td>
+                  <td class="text-right">R$ 20,5 mi</td>
+                  <td class="text-right">R$ 18,4 mi</td>
+                  <td class="text-right">R$ 4,2 mi</td>
+                  <td class="text-right">R$ 14,2 mi</td>
+                </tr>
+                <tr class="report-subtorre-row">
+                  <td>Núcleo VGR</td>
+                  <td class="text-right">R$ 30,8 mi</td>
+                  <td class="text-right">R$ 16,0 mi</td>
+                  <td class="text-right">R$ 14,8 mi</td>
+                  <td class="text-right">R$ 3,3 mi</td>
+                  <td class="text-right">R$ 11,5 mi</td>
+                </tr>
+                <tr class="report-empresa-row">
+                  <td>Opentech</td>
+                  <td class="text-right">R$ 14,9 mi</td>
+                  <td class="text-right">R$ 7,8 mi</td>
+                  <td class="text-right">R$ 7,1 mi</td>
+                  <td class="text-right">R$ 1,6 mi</td>
+                  <td class="text-right">R$ 5,5 mi</td>
+                </tr>
+                <tr class="report-empresa-row">
+                  <td>BRK</td>
+                  <td class="text-right">R$ 15,9 mi</td>
+                  <td class="text-right">R$ 8,2 mi</td>
+                  <td class="text-right">R$ 7,7 mi</td>
+                  <td class="text-right">R$ 1,7 mi</td>
+                  <td class="text-right">R$ 6,0 mi</td>
+                </tr>
+                <tr class="report-torre-row report-empresa-outras">
+                  <td>Outras Torres (SW Embarcador, Insurance Market, Mídia)</td>
+                  <td class="text-right">R$ 23,2 mi</td>
+                  <td class="text-right">R$ 13,5 mi</td>
+                  <td class="text-right">R$ 9,7 mi</td>
+                  <td class="text-right">R$ 2,5 mi</td>
+                  <td class="text-right">R$ 7,2 mi</td>
+                </tr>
+
+                <tr class="report-bu-row">
+                  <td>Corporate</td>
+                  <td class="text-right">R$ 0,0 mi</td>
+                  <td class="text-right">R$ 8,5 mi</td>
+                  <td class="text-right down">− R$ 8,5 mi</td>
+                  <td class="text-right">R$ 0,3 mi</td>
+                  <td class="text-right down">− R$ 8,8 mi</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>G&amp;A</td>
+                  <td class="text-right">R$ 0,0 mi</td>
+                  <td class="text-right">R$ 4,5 mi</td>
+                  <td class="text-right down">− R$ 4,5 mi</td>
+                  <td class="text-right">R$ 0,1 mi</td>
+                  <td class="text-right down">− R$ 4,6 mi</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>S&amp;M</td>
+                  <td class="text-right">R$ 0,0 mi</td>
+                  <td class="text-right">R$ 2,8 mi</td>
+                  <td class="text-right down">− R$ 2,8 mi</td>
+                  <td class="text-right">R$ 0,1 mi</td>
+                  <td class="text-right down">− R$ 2,9 mi</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>R&amp;D</td>
+                  <td class="text-right">R$ 0,0 mi</td>
+                  <td class="text-right">R$ 1,2 mi</td>
+                  <td class="text-right down">− R$ 1,2 mi</td>
+                  <td class="text-right">R$ 0,1 mi</td>
+                  <td class="text-right down">− R$ 1,3 mi</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>Consolidado nstech</td>
+                  <td class="text-right">R$ 113,7 mi</td>
+                  <td class="text-right">R$ 69,6 mi</td>
+                  <td class="text-right">R$ 44,1 mi</td>
+                  <td class="text-right">R$ 12,8 mi</td>
+                  <td class="text-right">R$ 31,3 mi</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- /tab-torres -->
+
+      <div id="tab-pl" class="tab-panel">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Demonstrativo de Resultado (P&amp;L)</h2>
+              <p>MTD Maio/2026 · Consolidado nstech (R$ milhões)</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" data-action="export" data-action-label="Demonstrativo de Resultado">⭳ Exportar</button>
+          </div>
+          <div class="panel-body table-wrap">
+            <table class="report-table" style="max-width:560px;">
+              <thead>
+                <tr>
+                  <th>[ BRL M ]</th>
+                  <th class="text-right">Actual</th>
+                  <th class="text-right">% NR</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="pl-category-row">
+                  <td>Net Revenue</td>
+                  <td class="text-right">113,7</td>
+                  <td class="text-right">100,0%</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>(−) COGS</td>
+                  <td class="text-right down">-36,9</td>
+                  <td class="text-right down">(32,4%)</td>
+                </tr>
+                <tr class="report-bu-row">
+                  <td>= Gross Margin</td>
+                  <td class="text-right">76,9</td>
+                  <td class="text-right">67,6%</td>
+                </tr>
+
+                <tr class="pl-category-row">
+                  <td>(−) Expenses</td>
+                  <td class="text-right down">-42,8</td>
+                  <td class="text-right down">(37,6%)</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>(−) General &amp; Administrative</td>
+                  <td class="text-right down">-12,9</td>
+                  <td class="text-right down">(11,3%)</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>(−) Sales &amp; Marketing</td>
+                  <td class="text-right down">-15,1</td>
+                  <td class="text-right down">(13,3%)</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>(−) Research &amp; Development</td>
+                  <td class="text-right down">-12,1</td>
+                  <td class="text-right down">(10,6%)</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>(−) Bad Debts Provision</td>
+                  <td class="text-right down">-1,8</td>
+                  <td class="text-right down">(1,5%)</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>(+/−) Others Income &amp; Exp.</td>
+                  <td class="text-right down">-1,0</td>
+                  <td class="text-right down">(0,9%)</td>
+                </tr>
+                <tr class="report-bu-row">
+                  <td>= Adjusted EBITDA</td>
+                  <td class="text-right">34,1</td>
+                  <td class="text-right">30,0%</td>
+                </tr>
+
+                <tr class="report-torre-row">
+                  <td>(+/−) Non-recurring</td>
+                  <td class="text-right down">-0,1</td>
+                  <td class="text-right down">(0,1%)</td>
+                </tr>
+                <tr class="report-bu-row">
+                  <td>= EBITDA</td>
+                  <td class="text-right">34,0</td>
+                  <td class="text-right">29,9%</td>
+                </tr>
+
+                <tr class="report-torre-row">
+                  <td>(−) D&amp;A</td>
+                  <td class="text-right down">-8,7</td>
+                  <td class="text-right down">(7,7%)</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>(+/−) Financial Results</td>
+                  <td class="text-right down">-0,7</td>
+                  <td class="text-right down">(0,7%)</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>(−) Income Tax</td>
+                  <td class="text-right down">-5,7</td>
+                  <td class="text-right down">(5,0%)</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>(+/−) Non-recurring</td>
+                  <td class="text-right">0,0</td>
+                  <td class="text-right">—</td>
+                </tr>
+                <tr class="report-bu-row">
+                  <td>= Net Income</td>
+                  <td class="text-right">18,8</td>
+                  <td class="text-right">16,5%</td>
+                </tr>
+
+                <tr class="report-torre-row">
+                  <td>R&amp;D + Capex</td>
+                  <td class="text-right down">-24,2</td>
+                  <td class="text-right down">(21,3%)</td>
+                </tr>
+                <tr class="report-torre-row">
+                  <td>(−) Capex</td>
+                  <td class="text-right down">-12,1</td>
+                  <td class="text-right down">(10,6%)</td>
+                </tr>
+                <tr class="report-bu-row">
+                  <td>= Adjusted EBITDA After Capex</td>
+                  <td class="text-right">22,0</td>
+                  <td class="text-right">19,3%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- /tab-pl -->
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

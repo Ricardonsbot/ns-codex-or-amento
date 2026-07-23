@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Índices — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="index.html">
+    <div class="sidebar-brand">
+      <div class="logo-mark">NS</div>
+      <div class="brand-text">
+        <strong>NS Codex</strong>
+        <span>BU · Torres · Corporate</span>
+      </div>
+    </div>
+    </a>
+
+    <div class="sidebar-section-label">Visão geral</div>
+    <a href="index.html"><div class="nav-item" data-page="index.html"><span class="nav-icon">▦</span> Dashboard</div></a>
+
+    <div class="sidebar-section-label">Orçamento</div>
+    <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
+    <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
+    <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+
+    <div class="sidebar-section-label">Fluxo</div>
+    <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+
+    <div class="sidebar-section-label">Análise</div>
+    <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+
+    <div class="sidebar-section-label">Administração</div>
+    <a href="usuarios.html"><div class="nav-item active" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
+
+    <div class="sidebar-section-label">Budget - Settings</div>
+    <a href="budget-settings.html"><div class="nav-item" data-page="budget-settings.html"><span class="nav-icon">⚙</span> Ciclos &amp; Versões</div></a>
+    <a href="login.html"><div class="nav-item" data-page="login.html"><span class="nav-icon">&#9099;</span> Sair</div></a>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">EN</div>
+        <div class="user-meta">
+          <strong>Emerson Nakamura</strong>
+          <span>NSTECH GR LTDA</span>
+        </div>
+      </div>
+      <div class="sidebar-role-badge">Aprovador</div>
+    </div>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Índices <span class="pill receita" style="margin-left:4px;">Cadastro</span></h1>
+        <p>Cadastro de <a href="usuarios.html" style="color:inherit; text-decoration:underline;">Cadastros</a> → Índices de reajuste para Revenue e Expenses</p>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="proto-banner">
+        ⓘ Protótipo visual — cadastre índices (IGP-M, INPC, IPCA ou outro) e informe a % mês a mês. Essa % alimentaria o cálculo de reajuste de contratos de Receita e Despesa.
+      </div>
+
+      <!-- Índices cadastrados -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Índices Cadastrados</h2>
+            <p>Clique em uma linha para ver/editar os valores mensais abaixo</p>
+          </div>
+          <button class="btn btn-primary btn-sm" data-add-row="tabela-indices">+ Novo Índice</button>
+        </div>
+        <div class="panel-body table-wrap">
+          <table id="tabela-indices" class="entry-grid">
+            <thead>
+              <tr>
+                <th>Índice</th>
+                <th>Aplicação</th>
+                <th>Ano</th>
+                <th class="text-right">Acumulado 12m</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-drill-target="drill-igpm" class="selected">
+                <td>
+                  <select>
+                    <option selected>IGP-M</option>
+                    <option>INPC</option>
+                    <option>IPCA</option>
+                    <option>SELIC</option>
+                    <option>Outro</option>
+                  </select>
+                </td>
+                <td>
+                  <select>
+                    <option selected>Receita</option>
+                    <option>Despesa</option>
+                    <option>Ambos</option>
+                  </select>
+                </td>
+                <td>
+                  <select>
+                    <option>2025</option>
+                    <option selected>2026</option>
+                    <option>2027</option>
+                  </select>
+                </td>
+                <td class="text-right total-cell" id="acumulado-igpm">4,9%</td>
+                <td><span class="badge status-aprovado"><span class="badge-dot"></span>Ativo</span></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="IGP-M" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="IGP-M" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr data-drill-target="drill-inpc">
+                <td>
+                  <select>
+                    <option>IGP-M</option>
+                    <option selected>INPC</option>
+                    <option>IPCA</option>
+                    <option>SELIC</option>
+                    <option>Outro</option>
+                  </select>
+                </td>
+                <td>
+                  <select>
+                    <option>Receita</option>
+                    <option selected>Despesa</option>
+                    <option>Ambos</option>
+                  </select>
+                </td>
+                <td>
+                  <select>
+                    <option>2025</option>
+                    <option selected>2026</option>
+                    <option>2027</option>
+                  </select>
+                </td>
+                <td class="text-right total-cell" id="acumulado-inpc">4,2%</td>
+                <td><span class="badge status-aprovado"><span class="badge-dot"></span>Ativo</span></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="INPC" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="INPC" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr data-drill-target="drill-ipca">
+                <td>
+                  <select>
+                    <option>IGP-M</option>
+                    <option>INPC</option>
+                    <option selected>IPCA</option>
+                    <option>SELIC</option>
+                    <option>Outro</option>
+                  </select>
+                </td>
+                <td>
+                  <select>
+                    <option>Receita</option>
+                    <option>Despesa</option>
+                    <option selected>Ambos</option>
+                  </select>
+                </td>
+                <td>
+                  <select>
+                    <option>2025</option>
+                    <option selected>2026</option>
+                    <option>2027</option>
+                  </select>
+                </td>
+                <td class="text-right total-cell" id="acumulado-ipca">4,7%</td>
+                <td><span class="badge status-rascunho"><span class="badge-dot"></span>Rascunho</span></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="IPCA" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="IPCA" title="Remover">🗑</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Valores mensais do índice selecionado -->
+      <div class="panel aux-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Valores Mensais</h2>
+            <p>Índice selecionado: <strong id="aux-selected-indice">IGP-M · Receita · 2026</strong></p>
+          </div>
+        </div>
+        <div class="panel-body">
+
+          <div id="drill-igpm" class="aux-drill active">
+            <div class="table-wrap">
+              <table id="tabela-igpm" class="entry-grid">
+                <thead>
+                  <tr>
+                    <th colspan="12" class="month-group-header">
+                      <button class="month-toggle-btn" data-month-toggle="tabela-igpm" title="Agrupar meses">
+                        <span class="month-toggle-icon">−</span> Meses
+                      </button>
+                    </th>
+                    <th colspan="2"></th>
+                  </tr>
+                  <tr>
+                    <th class="text-right month-col">Jan</th>
+                    <th class="text-right month-col">Fev</th>
+                    <th class="text-right month-col">Mar</th>
+                    <th class="text-right month-col">Abr</th>
+                    <th class="text-right month-col">Mai</th>
+                    <th class="text-right month-col">Jun</th>
+                    <th class="text-right month-col">Jul</th>
+                    <th class="text-right month-col">Ago</th>
+                    <th class="text-right month-col">Set</th>
+                    <th class="text-right month-col">Out</th>
+                    <th class="text-right month-col">Nov</th>
+                    <th class="text-right month-col">Dez</th>
+                    <th class="text-right">Acumulado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="month-col"><input type="number" step="0.01" value="0.60" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.40" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.30" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.20" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.30" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.40" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.50" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.40" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.30" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.40" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.50" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.60" /></td>
+                    <td class="text-right total-cell">4,9%</td>
+                    <td><button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="IGP-M" title="Replicar Para Todos os Meses">⇥</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="drill-inpc" class="aux-drill">
+            <div class="table-wrap">
+              <table id="tabela-inpc" class="entry-grid">
+                <thead>
+                  <tr>
+                    <th colspan="12" class="month-group-header">
+                      <button class="month-toggle-btn" data-month-toggle="tabela-inpc" title="Agrupar meses">
+                        <span class="month-toggle-icon">−</span> Meses
+                      </button>
+                    </th>
+                    <th colspan="2"></th>
+                  </tr>
+                  <tr>
+                    <th class="text-right month-col">Jan</th>
+                    <th class="text-right month-col">Fev</th>
+                    <th class="text-right month-col">Mar</th>
+                    <th class="text-right month-col">Abr</th>
+                    <th class="text-right month-col">Mai</th>
+                    <th class="text-right month-col">Jun</th>
+                    <th class="text-right month-col">Jul</th>
+                    <th class="text-right month-col">Ago</th>
+                    <th class="text-right month-col">Set</th>
+                    <th class="text-right month-col">Out</th>
+                    <th class="text-right month-col">Nov</th>
+                    <th class="text-right month-col">Dez</th>
+                    <th class="text-right">Acumulado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="month-col"><input type="number" step="0.01" value="0.50" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.35" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.25" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.20" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.25" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.35" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.40" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.35" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.30" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.35" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.40" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.50" /></td>
+                    <td class="text-right total-cell">4,2%</td>
+                    <td><button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="INPC" title="Replicar Para Todos os Meses">⇥</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="drill-ipca" class="aux-drill">
+            <div class="table-wrap">
+              <table id="tabela-ipca" class="entry-grid">
+                <thead>
+                  <tr>
+                    <th colspan="12" class="month-group-header">
+                      <button class="month-toggle-btn" data-month-toggle="tabela-ipca" title="Agrupar meses">
+                        <span class="month-toggle-icon">−</span> Meses
+                      </button>
+                    </th>
+                    <th colspan="2"></th>
+                  </tr>
+                  <tr>
+                    <th class="text-right month-col">Jan</th>
+                    <th class="text-right month-col">Fev</th>
+                    <th class="text-right month-col">Mar</th>
+                    <th class="text-right month-col">Abr</th>
+                    <th class="text-right month-col">Mai</th>
+                    <th class="text-right month-col">Jun</th>
+                    <th class="text-right month-col">Jul</th>
+                    <th class="text-right month-col">Ago</th>
+                    <th class="text-right month-col">Set</th>
+                    <th class="text-right month-col">Out</th>
+                    <th class="text-right month-col">Nov</th>
+                    <th class="text-right month-col">Dez</th>
+                    <th class="text-right">Acumulado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="month-col"><input type="number" step="0.01" value="0.55" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.40" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.30" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.25" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.30" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.35" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.45" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.40" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.35" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.40" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.45" /></td>
+                    <td class="month-col"><input type="number" step="0.01" value="0.50" /></td>
+                    <td class="text-right total-cell">4,7%</td>
+                    <td><button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="IPCA" title="Replicar Para Todos os Meses">⇥</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+<script src="assets/js/app.js"></script>
+<script>
+  // Atualiza o rótulo "Índice selecionado" no painel de valores mensais conforme a linha clicada
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("#tabela-indices [data-drill-target]").forEach((row) => {
+      row.addEventListener("click", () => {
+        const selects = row.querySelectorAll("select");
+        const label = document.getElementById("aux-selected-indice");
+        if (label && selects.length >= 3) {
+          label.textContent = `${selects[0].value} · ${selects[1].value} · ${selects[2].value}`;
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

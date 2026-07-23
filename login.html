@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+<div class="login-shell">
+
+  <div class="login-brand-header">
+    <div class="logo-mark">NS</div>
+    <strong>NS Codex</strong>
+    <span>Orçamento Corporativo · BU · Torres · Corporate</span>
+  </div>
+
+  <div class="login-card">
+    <h1>Bem-vindo de volta</h1>
+    <p class="login-subtitle">Entre com sua conta corporativa para acessar o ciclo de orçamento.</p>
+
+    <div class="proto-banner" style="margin-bottom:18px;">
+      ⓘ Protótipo — o login é simulado, qualquer e-mail/senha avança para o menu.
+    </div>
+
+    <div class="login-form">
+      <div class="field-group">
+        <label for="login-email">E-mail corporativo</label>
+        <input type="text" id="login-email" placeholder="nome.sobrenome@empresa.com" value="emerson.nakamura@nstech.com.br" />
+      </div>
+
+      <div class="field-group">
+        <label for="login-senha">Senha</label>
+        <input type="text" id="login-senha" placeholder="••••••••" value="" />
+      </div>
+
+      <div class="login-form-row">
+        <label class="remember">
+          <input type="checkbox" checked style="width:auto;" />
+          Manter conectado
+        </label>
+        <a href="#" data-action="forgot-password" data-action-label="Login">Esqueci minha senha</a>
+      </div>
+
+      <button class="btn btn-primary btn-block" data-action="login" data-action-label="Login">Entrar →</button>
+
+      <div class="login-divider">ou</div>
+
+      <button class="btn btn-sso" data-action="sso-login" data-action-label="SSO Corporativo">
+        🪟 Entrar com conta Microsoft
+      </button>
+    </div>
+
+    <p class="login-footer-note">Acesso restrito a colaboradores autorizados. Em caso de dúvida, contate o time de FP&amp;A Corporate.</p>
+  </div>
+
+</div>
+
+<div id="toast-container"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
