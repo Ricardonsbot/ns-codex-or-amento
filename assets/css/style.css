@@ -734,9 +734,10 @@ tfoot td {
   padding: 10px 16px;
   font-size: 12.5px;
   margin-bottom: 18px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  /* texto corrido: com display:flex cada <strong>/<code> virava uma coluna
+     e a frase saía fora de ordem */
+  display: block;
+  line-height: 1.5;
 }
 
 @media (max-width: 1000px) {
@@ -1745,6 +1746,183 @@ tfoot td {
   background: #eef0f4 !important;
   color: var(--color-text-muted) !important;
   cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Entregas — organograma de cobrança (BU → Torre → Sub Torre → Empresa)
+   ========================================================================== */
+
+.org-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.org-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* cada nível entra um degrau e ganha uma guia vertical, como num organograma */
+.org-no.nivel-1,
+.org-no.nivel-2 {
+  margin-left: 18px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+}
+
+.org-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 30px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  position: relative;
+}
+
+.org-linha:hover {
+  background: var(--color-bg);
+}
+
+/* reaproveita o botãozinho de colapso do relatório */
+.org-toggle {
+  left: 8px;
+}
+
+.org-no.nivel-0 > .org-linha .org-nome {
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.org-nome {
+  font-weight: 600;
+}
+
+.org-meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.org-progresso {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.org-progresso-trilho {
+  width: 120px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.org-progresso-barra {
+  display: block;
+  height: 100%;
+  background: var(--color-success);
+}
+
+.org-progresso-texto {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  min-width: 42px;
+  text-align: right;
+}
+
+.org-atrasadas {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.org-filhos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.org-filhos[hidden] {
+  display: none;
+}
+
+/* folha do organograma: a empresa e as 3 entregas dela */
+.org-empresa {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-left: 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.org-empresa-id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 190px;
+}
+
+.org-responsavel {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.org-chips {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.entrega-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.entrega-chip-cat {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.org-cobrar {
+  margin-left: auto;
+}
+
+.badge.status-nao-iniciado {
+  background: transparent;
+  color: var(--color-text-muted);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.badge.status-atrasado {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  box-shadow: inset 0 0 0 1px var(--color-danger);
+}
+
+@media (max-width: 900px) {
+  .org-progresso-trilho { width: 70px; }
+  .org-empresa { align-items: flex-start; }
+  .org-cobrar { margin-left: 0; }
 }
 
 /* ==========================================================================

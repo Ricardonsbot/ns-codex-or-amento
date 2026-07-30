@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Entregas — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="index.html">
+    <div class="sidebar-brand">
+      <div class="logo-mark">NS</div>
+      <div class="brand-text">
+        <strong>NS Codex</strong>
+        <span>BU · Torres · Corporate</span>
+      </div>
+    </div>
+    </a>
+
+    <div class="sidebar-section-label">Visão geral</div>
+    <a href="index.html"><div class="nav-item" data-page="index.html"><span class="nav-icon">▦</span> Dashboard</div></a>
+
+    <div class="sidebar-section-label">Orçamento</div>
+    <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
+    <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
+    <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+
+    <div class="sidebar-section-label">Fluxo</div>
+    <div class="nav-item active" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div>
+    <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+
+    <div class="sidebar-section-label">Análise</div>
+    <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+
+    <div class="sidebar-section-label">Administração</div>
+    <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
+
+    <div class="sidebar-section-label">Budget - Settings</div>
+    <a href="budget-settings.html"><div class="nav-item" data-page="budget-settings.html"><span class="nav-icon">⚙</span> Ciclos &amp; Versões</div></a>
+    <a href="login.html"><div class="nav-item" data-page="login.html"><span class="nav-icon">&#9099;</span> Sair</div></a>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">EN</div>
+        <div class="user-meta">
+          <strong>Emerson Nakamura</strong>
+          <span>NSTECH GR LTDA</span>
+        </div>
+      </div>
+      <div class="sidebar-role-badge">Aprovador</div>
+    </div>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Entregas</h1>
+        <p>Quem deve entregar o quê no Ciclo 2026 — e quem está devendo</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" data-action="export" data-action-label="Mapa de Entregas">⭳ Exportar</button>
+        <button class="btn btn-primary btn-sm" data-cobrar-pendentes>✉ Cobrar todos os pendentes</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="proto-banner">
+        ⓘ A estrutura BU → Torre → Sub Torre → Empresa vem de <strong>Referencias/entregas.json</strong> (mesma base do organograma real).
+        Os responsáveis e os status são ilustrativos do protótipo — trocar o JSON troca o organograma inteiro.
+      </div>
+
+      <!-- Resumo da cobrança -->
+      <div class="kpi-grid" data-entregas-kpis>
+        <div class="kpi-card margem">
+          <div class="kpi-label">Entregas do ciclo</div>
+          <div class="kpi-value" data-kpi="total">—</div>
+          <div class="kpi-delta">37 empresas × 3 categorias</div>
+        </div>
+        <div class="kpi-card receita">
+          <div class="kpi-label">Concluídas</div>
+          <div class="kpi-value" data-kpi="concluidas">—</div>
+          <div class="kpi-delta up" data-kpi="concluidas-pct">—</div>
+        </div>
+        <div class="kpi-card capex">
+          <div class="kpi-label">Em andamento</div>
+          <div class="kpi-value" data-kpi="andamento">—</div>
+          <div class="kpi-delta">rascunho, enviado ou reprovado</div>
+        </div>
+        <div class="kpi-card despesa">
+          <div class="kpi-label">Atrasadas</div>
+          <div class="kpi-value" data-kpi="atrasadas">—</div>
+          <div class="kpi-delta down" data-kpi="atrasadas-hint">—</div>
+        </div>
+      </div>
+
+      <!-- Filtros de cobrança -->
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>BU</label>
+          <select data-filtro="bu"><option value="">Todas as BUs</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Responsável</label>
+          <select data-filtro="responsavel"><option value="">Todos os responsáveis</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Categoria</label>
+          <select data-filtro="categoria">
+            <option value="">Receita, Despesa e Capex</option>
+            <option value="receita">Só Receita</option>
+            <option value="despesa">Só Despesa</option>
+            <option value="capex">Só Capex</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Situação</label>
+          <select data-filtro="situacao">
+            <option value="">Todas as situações</option>
+            <option value="pendente">Só o que falta entregar</option>
+            <option value="atrasado">Só o que está atrasado</option>
+            <option value="aprovado">Só o que já foi entregue</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary" data-filtro-limpar>Limpar filtros</button>
+      </div>
+
+      <!-- Organograma de entregas -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Organograma de Entregas</h2>
+            <p>BU → Torre → Sub Torre → Empresa · abra cada nível para chegar no responsável</p>
+          </div>
+          <div class="org-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-success);"></span> Entregue</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-warning);"></span> Em andamento</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-danger);"></span> Atrasada</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="org-tree" data-org-tree>
+            <div class="empty-hint">Carregando o organograma…</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

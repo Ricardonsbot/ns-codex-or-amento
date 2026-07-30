@@ -1,0 +1,455 @@
+{
+  "ciclo": "2026",
+  "observacao": "Estrutura BU/Torre/Sub Torre/Empresa vem do organizacional.json. Responsaveis e status sao ilustrativos do prototipo.",
+  "prazos": {
+    "receita": "2026-07-15",
+    "despesa": "2026-07-24",
+    "capex": "2026-08-14"
+  },
+  "entregas": [
+    {
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "subTorre": "ICP Pequeno e Micro",
+      "empresa": "Bsoft",
+      "responsavel": "Ana Ribeiro",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "aprovado"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "subTorre": "ICP Pequeno e Micro",
+      "empresa": "Datamex",
+      "responsavel": "Ana Ribeiro",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "em-aprovacao",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "subTorre": "ICP Pequeno e Micro",
+      "empresa": "Hivecloud",
+      "responsavel": "Ana Ribeiro",
+      "status": {
+        "receita": "em-aprovacao",
+        "despesa": "rascunho",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "subTorre": "ICP Pequeno e Micro",
+      "empresa": "Otimizy",
+      "responsavel": "Ana Ribeiro",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "em-aprovacao"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "subTorre": "ICP Médio e Grande",
+      "empresa": "KMM",
+      "responsavel": "Carlos Mendes",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "em-aprovacao",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "subTorre": "ICP Médio e Grande",
+      "empresa": "Praxio - Avacorp",
+      "responsavel": "Carlos Mendes",
+      "status": {
+        "receita": "em-aprovacao",
+        "despesa": "rascunho",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "subTorre": "ICP Médio e Grande",
+      "empresa": "Praxio - Globus",
+      "responsavel": "Carlos Mendes",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "em-aprovacao"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "subTorre": "ICP Médio e Grande",
+      "empresa": "ATS - Logistica",
+      "responsavel": "Carlos Mendes",
+      "status": {
+        "receita": "rascunho",
+        "despesa": "nao-iniciado",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "subTorre": "-",
+      "empresa": "Signa",
+      "responsavel": "Julia Prado",
+      "status": {
+        "receita": "em-aprovacao",
+        "despesa": "rascunho",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "subTorre": "e-frete",
+      "empresa": "e-frete",
+      "responsavel": "Rafael Souza",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "em-aprovacao"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "subTorre": "Pedágio",
+      "empresa": "Digitalcomm",
+      "responsavel": "Marina Costa",
+      "status": {
+        "receita": "rascunho",
+        "despesa": "nao-iniciado",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "subTorre": "Pedágio",
+      "empresa": "Qualp",
+      "responsavel": "Marina Costa",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "reprovado",
+        "capex": "rascunho"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "subTorre": "-",
+      "empresa": "Gasola",
+      "responsavel": "Bruno Tavares",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "reprovado",
+        "capex": "rascunho"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre Mobilidade",
+      "subTorre": "-",
+      "empresa": "Praxio - Mobilidade",
+      "responsavel": "Patricia Lemos",
+      "status": {
+        "receita": "em-aprovacao",
+        "despesa": "em-aprovacao",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "Torre Buonny",
+      "subTorre": "-",
+      "empresa": "Buonny",
+      "responsavel": "Diego Fontana",
+      "status": {
+        "receita": "nao-iniciado",
+        "despesa": "nao-iniciado",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "-",
+      "subTorre": "-",
+      "empresa": "Atua Sistemas",
+      "responsavel": "Renata Aguiar",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "rascunho"
+      }
+    },
+    {
+      "bu": "PSL",
+      "torre": "-",
+      "subTorre": "-",
+      "empresa": "Atua Redes",
+      "responsavel": "Renata Aguiar",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "em-aprovacao",
+        "capex": "aprovado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "subTorre": "Núcleo VGR",
+      "empresa": "Opentech",
+      "responsavel": "Felipe Nunes",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "em-aprovacao",
+        "capex": "aprovado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "subTorre": "Núcleo VGR",
+      "empresa": "BRK",
+      "responsavel": "Felipe Nunes",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "aprovado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "subTorre": "Núcleo VGR",
+      "empresa": "LogRisk",
+      "responsavel": "Felipe Nunes",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "em-aprovacao",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "subTorre": "Núcleo VGR",
+      "empresa": "Onisys",
+      "responsavel": "Felipe Nunes",
+      "status": {
+        "receita": "em-aprovacao",
+        "despesa": "rascunho",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "subTorre": "Núcleo VGR",
+      "empresa": "Trafegus",
+      "responsavel": "Felipe Nunes",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "em-aprovacao"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "subTorre": "YMS/WMS",
+      "empresa": "GBM Consultoria",
+      "responsavel": "Camila Duarte",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "aprovado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "subTorre": "YMS/WMS",
+      "empresa": "GBM Logística",
+      "responsavel": "Camila Duarte",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "em-aprovacao",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "subTorre": "YMS/WMS",
+      "empresa": "Trizy",
+      "responsavel": "Camila Duarte",
+      "status": {
+        "receita": "em-aprovacao",
+        "despesa": "rascunho",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "subTorre": "YMS/WMS",
+      "empresa": "LogOne",
+      "responsavel": "Camila Duarte",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "em-aprovacao"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "subTorre": "Last Mile",
+      "empresa": "Fusion",
+      "responsavel": "Gustavo Pinheiro",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "em-aprovacao",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "subTorre": "Last Mile",
+      "empresa": "RoutEasy",
+      "responsavel": "Gustavo Pinheiro",
+      "status": {
+        "receita": "em-aprovacao",
+        "despesa": "rascunho",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "subTorre": "Last Mile",
+      "empresa": "Comprovei",
+      "responsavel": "Gustavo Pinheiro",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "em-aprovacao"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "subTorre": "-",
+      "empresa": "Multisoftware",
+      "responsavel": "Luciana Brito",
+      "status": {
+        "receita": "em-aprovacao",
+        "despesa": "rascunho",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "subTorre": "-",
+      "empresa": "Frete Rapido",
+      "responsavel": "Luciana Brito",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "em-aprovacao"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "subTorre": "-",
+      "empresa": "Runtec",
+      "responsavel": "Luciana Brito",
+      "status": {
+        "receita": "rascunho",
+        "despesa": "nao-iniciado",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Insurance Market",
+      "subTorre": "-",
+      "empresa": "IM",
+      "responsavel": "Thiago Moreira",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "aprovado",
+        "capex": "em-aprovacao"
+      }
+    },
+    {
+      "bu": "Embarcador",
+      "torre": "Mídia",
+      "subTorre": "-",
+      "empresa": "Mundo Logistica",
+      "responsavel": "Fernanda Rocha",
+      "status": {
+        "receita": "rascunho",
+        "despesa": "nao-iniciado",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "Corporate",
+      "torre": "G&A",
+      "subTorre": "-",
+      "empresa": "Nstech Corporate Holding",
+      "responsavel": "Andre Vasconcelos",
+      "status": {
+        "receita": "aprovado",
+        "despesa": "reprovado",
+        "capex": "rascunho"
+      }
+    },
+    {
+      "bu": "Corporate",
+      "torre": "S&M",
+      "subTorre": "-",
+      "empresa": "Nstech Corporate Holding",
+      "responsavel": "Priscila Amaral",
+      "status": {
+        "receita": "em-aprovacao",
+        "despesa": "em-aprovacao",
+        "capex": "nao-iniciado"
+      }
+    },
+    {
+      "bu": "Corporate",
+      "torre": "R&D",
+      "subTorre": "-",
+      "empresa": "Nstech Corporate Holding",
+      "responsavel": "Marcelo Ferraz",
+      "status": {
+        "receita": "nao-iniciado",
+        "despesa": "nao-iniciado",
+        "capex": "nao-iniciado"
+      }
+    }
+  ]
+}

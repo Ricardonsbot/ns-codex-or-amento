@@ -418,6 +418,287 @@ function initPdfExport() {
   });
 }
 
+/* ---------- Entregas: organograma de quem entrega o quê ----------
+ * Uma "entrega" = uma empresa × uma categoria (Receita, Despesa, Capex).
+ * A árvore vem de Referencias/entregas.json; os níveis marcados com "-"
+ * (sem Sub Torre, por exemplo) são pulados em vez de virarem nó vazio.
+ */
+
+const ENTREGA_CATEGORIAS = ["receita", "despesa", "capex"];
+
+const ENTREGA_ROTULO_CATEGORIA = { receita: "Receita", despesa: "Despesa", capex: "Capex" };
+
+const ENTREGA_STATUS = {
+  "aprovado": { rotulo: "Entregue", classe: "status-aprovado", concluida: true },
+  "em-aprovacao": { rotulo: "Enviado", classe: "status-em-aprovacao", concluida: false },
+  "rascunho": { rotulo: "Preenchendo", classe: "status-rascunho", concluida: false },
+  "reprovado": { rotulo: "Reprovado", classe: "status-reprovado", concluida: false },
+  "nao-iniciado": { rotulo: "Não iniciado", classe: "status-nao-iniciado", concluida: false },
+};
+
+function escaparTexto(valor) {
+  return String(valor ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function infoStatusEntrega(status) {
+  return ENTREGA_STATUS[status] || ENTREGA_STATUS["nao-iniciado"];
+}
+
+/* atrasada = prazo da categoria já passou e a entrega ainda não foi concluída */
+function entregaAtrasada(status, prazoISO) {
+  if (!prazoISO || infoStatusEntrega(status).concluida) return false;
+  return new Date(prazoISO + "T23:59:59") < new Date();
+}
+
+/* achata o JSON em uma linha por (empresa × categoria), já aplicando os filtros */
+function linhasDeEntrega(dados, filtros) {
+  const linhas = [];
+
+  dados.entregas.forEach((entrega) => {
+    if (filtros.bu && entrega.bu !== filtros.bu) return;
+    if (filtros.responsavel && entrega.responsavel !== filtros.responsavel) return;
+
+    ENTREGA_CATEGORIAS.forEach((categoria) => {
+      if (filtros.categoria && categoria !== filtros.categoria) return;
+
+      const status = entrega.status[categoria];
+      const atrasada = entregaAtrasada(status, dados.prazos[categoria]);
+      const concluida = infoStatusEntrega(status).concluida;
+
+      if (filtros.situacao === "pendente" && concluida) return;
+      if (filtros.situacao === "atrasado" && !atrasada) return;
+      if (filtros.situacao === "aprovado" && !concluida) return;
+
+      linhas.push({ entrega, categoria, status, atrasada, concluida, prazo: dados.prazos[categoria] });
+    });
+  });
+
+  return linhas;
+}
+
+function agruparEntregas(linhas) {
+  const raiz = { filhos: new Map(), empresas: new Map() };
+
+  linhas.forEach((linha) => {
+    const { bu, torre, subTorre, empresa, responsavel } = linha.entrega;
+    let no = raiz;
+
+    [bu, torre, subTorre].forEach((nome) => {
+      if (!nome || nome === "-") return; // nível não existe para esta empresa: pula
+      if (!no.filhos.has(nome)) no.filhos.set(nome, { nome, filhos: new Map(), empresas: new Map() });
+      no = no.filhos.get(nome);
+    });
+
+    if (!no.empresas.has(empresa)) no.empresas.set(empresa, { nome: empresa, responsavel, linhas: [] });
+    no.empresas.get(empresa).linhas.push(linha);
+  });
+
+  return raiz;
+}
+
+function resumoDoNo(no) {
+  const total = { entregas: 0, concluidas: 0, atrasadas: 0, responsaveis: new Set() };
+
+  no.empresas.forEach((emp) => {
+    total.responsaveis.add(emp.responsavel);
+    emp.linhas.forEach((linha) => {
+      total.entregas++;
+      if (linha.concluida) total.concluidas++;
+      if (linha.atrasada) total.atrasadas++;
+    });
+  });
+
+  no.filhos.forEach((filho) => {
+    const sub = resumoDoNo(filho);
+    total.entregas += sub.entregas;
+    total.concluidas += sub.concluidas;
+    total.atrasadas += sub.atrasadas;
+    sub.responsaveis.forEach((r) => total.responsaveis.add(r));
+  });
+
+  return total;
+}
+
+function htmlChipEntrega(linha) {
+  const info = infoStatusEntrega(linha.status);
+  const classe = linha.atrasada ? "status-atrasado" : info.classe;
+  const rotulo = linha.atrasada ? `${info.rotulo} · atrasada` : info.rotulo;
+  const prazo = linha.prazo ? new Date(linha.prazo + "T12:00:00").toLocaleDateString("pt-BR") : "";
+
+  return `<span class="entrega-chip" title="Prazo: ${prazo}">
+    <span class="entrega-chip-cat">${ENTREGA_ROTULO_CATEGORIA[linha.categoria]}</span>
+    <span class="badge ${classe}"><span class="badge-dot"></span>${rotulo}</span>
+  </span>`;
+}
+
+function htmlBarraProgresso(resumo) {
+  const pct = resumo.entregas ? Math.round((resumo.concluidas / resumo.entregas) * 100) : 0;
+  const atraso = resumo.atrasadas
+    ? `<span class="org-atrasadas">${resumo.atrasadas} atrasada${resumo.atrasadas > 1 ? "s" : ""}</span>`
+    : "";
+
+  return `<span class="org-progresso">
+    <span class="org-progresso-trilho"><span class="org-progresso-barra" style="width:${pct}%"></span></span>
+    <span class="org-progresso-texto">${resumo.concluidas}/${resumo.entregas}</span>
+    ${atraso}
+  </span>`;
+}
+
+function htmlEmpresaEntrega(empresa) {
+  const chips = empresa.linhas.map(htmlChipEntrega).join("");
+  const devendo = empresa.linhas.filter((l) => !l.concluida).length;
+  const rotuloCobranca = devendo ? `Cobrar (${devendo})` : "Em dia";
+
+  return `<div class="org-empresa">
+    <div class="org-empresa-id">
+      <strong>${escaparTexto(empresa.nome)}</strong>
+      <span class="org-responsavel">👤 ${escaparTexto(empresa.responsavel)}</span>
+    </div>
+    <div class="org-chips">${chips}</div>
+    <button class="btn btn-ghost btn-sm org-cobrar" ${devendo ? "" : "disabled"}
+      data-cobrar-responsavel="${escaparTexto(empresa.responsavel)}"
+      data-cobrar-empresa="${escaparTexto(empresa.nome)}"
+      data-cobrar-qtd="${devendo}">✉ ${rotuloCobranca}</button>
+  </div>`;
+}
+
+function htmlNoEntrega(no, nivel, caminho, recolhidos) {
+  const id = caminho.join(" › ");
+  const recolhido = recolhidos.has(id);
+  const resumo = resumoDoNo(no);
+  const pessoas = resumo.responsaveis.size;
+
+  const filhos = Array.from(no.filhos.values())
+    .map((filho) => htmlNoEntrega(filho, nivel + 1, caminho.concat(filho.nome), recolhidos))
+    .join("");
+  const empresas = Array.from(no.empresas.values()).map(htmlEmpresaEntrega).join("");
+
+  return `<div class="org-no nivel-${nivel}">
+    <div class="org-linha" data-org-toggle="${escaparTexto(id)}">
+      <button type="button" class="hier-toggle org-toggle" aria-expanded="${!recolhido}"
+        title="${recolhido ? "Expandir" : "Recolher"}">${recolhido ? "+" : "−"}</button>
+      <span class="org-nome">${escaparTexto(no.nome)}</span>
+      <span class="org-meta">${pessoas} responsáve${pessoas === 1 ? "l" : "is"}</span>
+      ${htmlBarraProgresso(resumo)}
+    </div>
+    <div class="org-filhos" ${recolhido ? "hidden" : ""}>${filhos}${empresas}</div>
+  </div>`;
+}
+
+function initEntregas() {
+  const arvore = document.querySelector("[data-org-tree]");
+  if (!arvore) return;
+
+  const filtros = { bu: "", responsavel: "", categoria: "", situacao: "" };
+  const recolhidos = new Set();
+  let dados = null;
+
+  function redesenhar() {
+    const linhas = linhasDeEntrega(dados, filtros);
+
+    if (!linhas.length) {
+      arvore.innerHTML = '<div class="empty-hint">Nenhuma entrega bate com esses filtros.</div>';
+    } else {
+      const raiz = agruparEntregas(linhas);
+      arvore.innerHTML = Array.from(raiz.filhos.values())
+        .map((no) => htmlNoEntrega(no, 0, [no.nome], recolhidos))
+        .join("");
+    }
+
+    atualizarKpis(linhas);
+  }
+
+  function atualizarKpis(linhas) {
+    const concluidas = linhas.filter((l) => l.concluida).length;
+    const atrasadas = linhas.filter((l) => l.atrasada).length;
+    const andamento = linhas.length - concluidas;
+    const pct = linhas.length ? Math.round((concluidas / linhas.length) * 100) : 0;
+
+    const escreve = (chave, valor) => {
+      const el = document.querySelector(`[data-kpi="${chave}"]`);
+      if (el) el.textContent = valor;
+    };
+
+    escreve("total", linhas.length);
+    escreve("concluidas", concluidas);
+    escreve("concluidas-pct", `${pct}% do ciclo`);
+    escreve("andamento", andamento);
+    escreve("atrasadas", atrasadas);
+    escreve("atrasadas-hint", atrasadas ? "prazo vencido, cobrar agora" : "nenhum prazo vencido");
+  }
+
+  function preencherFiltros(entregas) {
+    const opcoes = (seletor, valores) => {
+      const select = document.querySelector(`[data-filtro="${seletor}"]`);
+      if (!select) return;
+      valores.forEach((valor) => {
+        const opt = document.createElement("option");
+        opt.value = valor;
+        opt.textContent = valor;
+        select.appendChild(opt);
+      });
+    };
+
+    opcoes("bu", Array.from(new Set(entregas.map((e) => e.bu))));
+    opcoes("responsavel", Array.from(new Set(entregas.map((e) => e.responsavel))).sort());
+  }
+
+  document.querySelectorAll("[data-filtro]").forEach((select) => {
+    select.addEventListener("change", () => {
+      filtros[select.getAttribute("data-filtro")] = select.value;
+      redesenhar();
+    });
+  });
+
+  document.querySelector("[data-filtro-limpar]")?.addEventListener("click", () => {
+    Object.keys(filtros).forEach((chave) => { filtros[chave] = ""; });
+    document.querySelectorAll("[data-filtro]").forEach((select) => { select.value = ""; });
+    redesenhar();
+    showToast("Filtros limpos", "info");
+  });
+
+  arvore.addEventListener("click", (e) => {
+    const cobrar = e.target.closest("[data-cobrar-responsavel]");
+    if (cobrar && !cobrar.disabled) {
+      const qtd = cobrar.getAttribute("data-cobrar-qtd");
+      showToast(
+        `Cobrança enviada para ${cobrar.getAttribute("data-cobrar-responsavel")} — ${qtd} entrega(s) de ${cobrar.getAttribute("data-cobrar-empresa")}`,
+        "info"
+      );
+      return;
+    }
+
+    const linha = e.target.closest("[data-org-toggle]");
+    if (!linha) return;
+
+    const id = linha.getAttribute("data-org-toggle");
+    if (recolhidos.has(id)) recolhidos.delete(id);
+    else recolhidos.add(id);
+    redesenhar();
+  });
+
+  document.querySelector("[data-cobrar-pendentes]")?.addEventListener("click", () => {
+    const pendentes = linhasDeEntrega(dados, filtros).filter((l) => !l.concluida);
+    const pessoas = new Set(pendentes.map((l) => l.entrega.responsavel));
+    if (!pendentes.length) {
+      showToast("Nada pendente com os filtros atuais", "success");
+      return;
+    }
+    showToast(`Cobrança enviada para ${pessoas.size} responsável(is) — ${pendentes.length} entregas pendentes`, "info");
+  });
+
+  fetch("Referencias/entregas.json")
+    .then((r) => r.json())
+    .then((json) => {
+      dados = json;
+      preencherFiltros(json.entregas);
+      redesenhar();
+    })
+    .catch(() => {
+      arvore.innerHTML = '<div class="empty-hint">Não foi possível carregar <strong>Referencias/entregas.json</strong>.</div>';
+    });
+}
+
 /* ---------- Sidebar: marca item ativo pela página atual ---------- */
 
 function markActiveNav() {
@@ -443,5 +724,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initMonthGroup();
   initHierarchyCollapse();
   initPdfExport();
+  initEntregas();
   initReferenceAutocomplete();
 });
