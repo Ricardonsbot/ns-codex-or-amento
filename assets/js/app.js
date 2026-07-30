@@ -844,6 +844,282 @@ function initPacotes() {
     });
 }
 
+/* ---------- Aprovações: status oficial, situação e validações ----------
+ * Três coisas na mesma tela:
+ *   1. o status OFICIAL do aprovador (quem decidiu, quando e com que parecer);
+ *   2. o que falta de informação e POR QUÊ, com quem resolve e desde quando;
+ *   3. as validações nas contas — e uma falha bloqueante impede a aprovação.
+ */
+
+const APROV_STATUS = {
+  "pendente": { rotulo: "Aguardando decisão", classe: "status-em-aprovacao" },
+  "aprovado": { rotulo: "Aprovado", classe: "status-aprovado" },
+  "reprovado": { rotulo: "Reprovado", classe: "status-reprovado" },
+  "devolvido": { rotulo: "Devolvido para ajuste", classe: "status-rascunho" },
+};
+
+const APROV_RESULTADO = {
+  "ok": { rotulo: "OK", classe: "val-ok", icone: "✓" },
+  "alerta": { rotulo: "Atenção", classe: "val-alerta", icone: "!" },
+  "falha": { rotulo: "Falha", classe: "val-falha", icone: "×" },
+};
+
+const APROV_CATEGORIA = { receita: "Receita", despesa: "Despesa", capex: "Capex" };
+
+function dataBR(iso) {
+  return iso ? new Date(iso + "T12:00:00").toLocaleDateString("pt-BR") : "—";
+}
+
+function diasDesde(iso) {
+  if (!iso) return 0;
+  const ms = new Date() - new Date(iso + "T12:00:00");
+  return Math.max(0, Math.floor(ms / 86400000));
+}
+
+/* falha em regra "bloqueia" impede a aprovação — é o que dá peso à validação */
+function bloqueiosDaSubmissao(sub, regrasPorCodigo) {
+  return sub.validacoes.filter(
+    (v) => v.resultado === "falha" && regrasPorCodigo[v.regra]?.severidade === "bloqueia"
+  );
+}
+
+function initAprovacoes() {
+  const fila = document.querySelector("[data-aprov-fila]");
+  const detalhe = document.querySelector("[data-aprov-detalhe]");
+  if (!fila || !detalhe) return;
+
+  const filtros = { bu: "", categoria: "", status: "pendente", situacao: "" };
+  let dados = null;
+  let regrasPorCodigo = {};
+  let selecionado = null;
+
+  function visiveis() {
+    return dados.submissoes.filter((sub) => {
+      if (filtros.bu && sub.bu !== filtros.bu) return false;
+      if (filtros.categoria && sub.categoria !== filtros.categoria) return false;
+      if (filtros.status && sub.statusOficial !== filtros.status) return false;
+
+      const travada = bloqueiosDaSubmissao(sub, regrasPorCodigo).length > 0;
+      if (filtros.situacao === "bloqueada" && !travada) return false;
+      if (filtros.situacao === "pendencia" && !sub.pendencias.length) return false;
+      if (filtros.situacao === "limpa" && (travada || sub.pendencias.length)) return false;
+      return true;
+    });
+  }
+
+  function renderKpis() {
+    const conta = (chave, valor) => {
+      document.querySelectorAll(`[data-aprov-kpi="${chave}"]`).forEach((el) => { el.textContent = valor; });
+    };
+    const todas = dados.submissoes;
+    const pendentes = todas.filter((s) => s.statusOficial === "pendente");
+
+    conta("pendente", pendentes.length);
+    conta("bloqueadas", pendentes.filter((s) => bloqueiosDaSubmissao(s, regrasPorCodigo).length).length);
+    conta("pendencias", pendentes.filter((s) => s.pendencias.length).length);
+
+    const aprovadas = todas.filter((s) => s.statusOficial === "aprovado").length;
+    const reprovadas = todas.filter((s) => s.statusOficial === "reprovado").length;
+    conta("decididas", aprovadas + reprovadas);
+    conta("decididas-detalhe", `${aprovadas} aprovadas · ${reprovadas} reprovadas`);
+  }
+
+  function renderFila() {
+    const lista = visiveis();
+    const contagem = document.querySelector("[data-aprov-contagem]");
+    if (contagem) {
+      contagem.textContent = `${lista.length} submissão(ões) · clique para ver a situação`;
+    }
+
+    if (!lista.length) {
+      fila.innerHTML = '<div class="empty-hint">Nenhuma submissão com esses filtros.</div>';
+      return;
+    }
+
+    fila.innerHTML = lista
+      .map((sub) => {
+        const status = APROV_STATUS[sub.statusOficial];
+        const travas = bloqueiosDaSubmissao(sub, regrasPorCodigo).length;
+        const marcas = [
+          travas ? `<span class="aprov-marca trava">${travas} validação(ões) travando</span>` : "",
+          sub.pendencias.length ? `<span class="aprov-marca falta">${sub.pendencias.length} informação(ões) faltando</span>` : "",
+          !travas && !sub.pendencias.length ? '<span class="aprov-marca limpa">pronta para aprovar</span>' : "",
+        ].join("");
+
+        return `<button type="button" class="aprov-item ${selecionado === sub.id ? "selecionada" : ""}" data-aprov-id="${sub.id}">
+          <span class="aprov-item-topo">
+            <strong>${escaparTexto(sub.empresa)}</strong>
+            <span class="pill ${sub.categoria}">${APROV_CATEGORIA[sub.categoria]}</span>
+            <span class="badge ${status.classe}"><span class="badge-dot"></span>${status.rotulo}</span>
+          </span>
+          <span class="aprov-item-meta">${escaparTexto(sub.bu)} · ${escaparTexto(sub.torre)} · ${escaparTexto(sub.responsavel)} · enviado em ${dataBR(sub.enviadoEm)}</span>
+          <span class="aprov-marcas">${marcas}</span>
+        </button>`;
+      })
+      .join("");
+  }
+
+  function renderDetalhe() {
+    const sub = dados.submissoes.find((s) => s.id === selecionado);
+    if (!sub) {
+      detalhe.innerHTML = '<div class="panel-body"><div class="empty-hint">Selecione uma submissão na fila para ver a situação.</div></div>';
+      return;
+    }
+
+    const status = APROV_STATUS[sub.statusOficial];
+    const bloqueios = bloqueiosDaSubmissao(sub, regrasPorCodigo);
+
+    const decisao = sub.decisao
+      ? `<div class="aprov-decisao">
+           <div><span class="aprov-rotulo">Decidido por</span><strong>${escaparTexto(sub.decisao.por)}</strong> em ${dataBR(sub.decisao.em)}</div>
+           <div class="aprov-parecer">“${escaparTexto(sub.decisao.parecer)}”</div>
+         </div>`
+      : `<div class="aprov-decisao aguardando">
+           <span class="aprov-rotulo">Decisão</span>
+           Ainda não há status oficial. Enviado há ${diasDesde(sub.enviadoEm)} dia(s).
+         </div>`;
+
+    const pendencias = sub.pendencias.length
+      ? sub.pendencias
+          .map(
+            (p) => `<div class="aprov-pendencia">
+              <div class="aprov-pendencia-oque">${escaparTexto(p.oQueFalta)}</div>
+              <div class="aprov-pendencia-porque"><span class="aprov-rotulo">Por quê</span>${escaparTexto(p.porque)}</div>
+              <div class="aprov-pendencia-quem">Com <strong>${escaparTexto(p.quemResolve)}</strong> · parado há ${diasDesde(p.desde)} dia(s), desde ${dataBR(p.desde)}</div>
+            </div>`
+          )
+          .join("")
+      : '<div class="empty-hint">Nenhuma informação pendente — a submissão está completa.</div>';
+
+    const validacoes = sub.validacoes
+      .map((v) => {
+        const regra = regrasPorCodigo[v.regra] || {};
+        const res = APROV_RESULTADO[v.resultado];
+        return `<div class="aprov-validacao ${res.classe}">
+          <span class="aprov-val-icone">${res.icone}</span>
+          <span class="aprov-val-texto">
+            <strong>${escaparTexto(regra.nome || v.regra)}</strong>
+            <em>${escaparTexto(v.detalhe || regra.descricao || "")}</em>
+          </span>
+          <span class="aprov-val-sev">${regra.severidade === "bloqueia" ? "Bloqueia" : "Alerta"}</span>
+        </div>`;
+      })
+      .join("");
+
+    const travado = bloqueios.length > 0;
+    const motivoTrava = travado
+      ? `<div class="aprov-trava">Aprovação bloqueada: ${bloqueios.map((b) => escaparTexto(regrasPorCodigo[b.regra].nome)).join(", ")}. Corrija na tela de lançamento ou devolva para ajuste.</div>`
+      : "";
+
+    const acoes =
+      sub.statusOficial === "pendente"
+        ? `${motivoTrava}
+           <div class="aprov-acoes">
+             <button class="btn btn-success btn-sm" data-aprov-decisao="aprovado" ${travado ? "disabled" : ""}
+               title="${travado ? "Há validação bloqueante nas contas" : "Registrar aprovação oficial"}">✓ Aprovar</button>
+             <button class="btn btn-secondary btn-sm" data-aprov-decisao="devolvido">↩ Devolver para ajuste</button>
+             <button class="btn btn-danger btn-sm" data-aprov-decisao="reprovado">✕ Reprovar</button>
+           </div>`
+        : `<div class="aprov-acoes"><button class="btn btn-secondary btn-sm" data-aprov-decisao="pendente">↺ Reabrir decisão</button></div>`;
+
+    detalhe.innerHTML = `
+      <div class="panel-header">
+        <div>
+          <h2>${escaparTexto(sub.empresa)} · ${APROV_CATEGORIA[sub.categoria]}</h2>
+          <p>${escaparTexto(sub.bu)} → ${escaparTexto(sub.torre)} · responsável ${escaparTexto(sub.responsavel)} · ${sub.id}</p>
+        </div>
+        <span class="badge ${status.classe}"><span class="badge-dot"></span>${status.rotulo}</span>
+      </div>
+      <div class="panel-body">
+        <div class="aprov-bloco">
+          <h3>Status oficial do aprovador</h3>
+          ${decisao}
+          ${acoes}
+        </div>
+
+        <div class="aprov-bloco">
+          <h3>Situação — o que falta e por quê</h3>
+          ${pendencias}
+        </div>
+
+        <div class="aprov-bloco">
+          <h3>Validações nas contas</h3>
+          <div class="aprov-validacoes">${validacoes}</div>
+        </div>
+      </div>`;
+  }
+
+  function redesenhar() {
+    renderKpis();
+    renderFila();
+    renderDetalhe();
+  }
+
+  fila.addEventListener("click", (e) => {
+    const item = e.target.closest("[data-aprov-id]");
+    if (!item) return;
+    selecionado = item.getAttribute("data-aprov-id");
+    redesenhar();
+  });
+
+  detalhe.addEventListener("click", (e) => {
+    const botao = e.target.closest("[data-aprov-decisao]");
+    if (!botao || botao.disabled) return;
+
+    const sub = dados.submissoes.find((s) => s.id === selecionado);
+    if (!sub) return;
+
+    const novo = botao.getAttribute("data-aprov-decisao");
+    sub.statusOficial = novo;
+
+    if (novo === "pendente") {
+      delete sub.decisao;
+      showToast(`${sub.empresa}: decisão reaberta`, "info");
+    } else {
+      const rotulos = {
+        aprovado: "Dentro do quadro aprovado e sem validação bloqueante.",
+        reprovado: "Reprovado pelo aprovador — ver parecer com o responsável.",
+        devolvido: "Devolvido para ajuste antes de nova análise.",
+      };
+      sub.decisao = { por: "Emerson Nakamura", em: new Date().toISOString().slice(0, 10), parecer: rotulos[novo] };
+      showToast(`${sub.empresa} · ${APROV_CATEGORIA[sub.categoria]}: ${APROV_STATUS[novo].rotulo}`, novo === "reprovado" ? "warning" : "success");
+    }
+
+    redesenhar();
+  });
+
+  document.querySelectorAll("[data-aprov-filtro]").forEach((select) => {
+    select.addEventListener("change", () => {
+      filtros[select.getAttribute("data-aprov-filtro")] = select.value;
+      redesenhar();
+    });
+  });
+
+  fetch("Referencias/aprovacoes.json")
+    .then((r) => r.json())
+    .then((json) => {
+      dados = json;
+      json.regras.forEach((regra) => { regrasPorCodigo[regra.codigo] = regra; });
+
+      const selectBu = document.querySelector('[data-aprov-filtro="bu"]');
+      if (selectBu) {
+        Array.from(new Set(json.submissoes.map((s) => s.bu))).forEach((bu) => {
+          const opt = document.createElement("option");
+          opt.value = bu;
+          opt.textContent = bu;
+          selectBu.appendChild(opt);
+        });
+      }
+
+      const primeira = json.submissoes.find((s) => s.statusOficial === "pendente");
+      selecionado = primeira ? primeira.id : null;
+      redesenhar();
+    })
+    .catch(() => {
+      fila.innerHTML = '<div class="empty-hint">Não foi possível carregar <strong>Referencias/aprovacoes.json</strong>.</div>';
+    });
+}
+
 /* ---------- Sidebar: marca item ativo pela página atual ---------- */
 
 function markActiveNav() {
@@ -871,5 +1147,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initPdfExport();
   initEntregas();
   initPacotes();
+  initAprovacoes();
   initReferenceAutocomplete();
 });

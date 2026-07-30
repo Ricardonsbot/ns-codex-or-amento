@@ -1,0 +1,3376 @@
+{
+  "ciclo": "2026",
+  "observacao": "Submissoes derivadas de entregas.json: so o que o responsavel ja enviou chega ao aprovador. Pareceres, pendencias e validacoes sao ilustrativos do prototipo.",
+  "regras": [
+    {
+      "codigo": "CC",
+      "nome": "Centro de custo preenchido",
+      "descricao": "Toda conta precisa de centro de custo para consolidar por Torre.",
+      "severidade": "bloqueia"
+    },
+    {
+      "codigo": "PL",
+      "nome": "Conta mapeada na linha do P&L",
+      "descricao": "Conta sem linha de P&L não entra no consolidado.",
+      "severidade": "bloqueia"
+    },
+    {
+      "codigo": "PAC",
+      "nome": "Pacote informado",
+      "descricao": "Sem pacote não dá para separar o gasto por motivo.",
+      "severidade": "bloqueia"
+    },
+    {
+      "codigo": "DUP",
+      "nome": "Sem conta duplicada",
+      "descricao": "Mesma conta repetida no mesmo centro de custo.",
+      "severidade": "bloqueia"
+    },
+    {
+      "codigo": "MES",
+      "nome": "12 meses preenchidos",
+      "descricao": "Mês zerado costuma ser esquecimento, não previsão.",
+      "severidade": "alerta"
+    },
+    {
+      "codigo": "VAR",
+      "nome": "Variação vs ano anterior até 30%",
+      "descricao": "Salto grande sem justificativa na Obs.",
+      "severidade": "alerta"
+    }
+  ],
+  "submissoes": [
+    {
+      "id": "SUB-001",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Bsoft",
+      "categoria": "receita",
+      "responsavel": "Ana Ribeiro",
+      "enviadoEm": "2026-07-10",
+      "valor": 180,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-002",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Bsoft",
+      "categoria": "despesa",
+      "responsavel": "Ana Ribeiro",
+      "enviadoEm": "2026-07-14",
+      "valor": 317,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-003",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Bsoft",
+      "categoria": "capex",
+      "responsavel": "Ana Ribeiro",
+      "enviadoEm": "2026-07-18",
+      "valor": 454,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-004",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Datamex",
+      "categoria": "receita",
+      "responsavel": "Ana Ribeiro",
+      "enviadoEm": "2026-07-21",
+      "valor": 591,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-005",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Datamex",
+      "categoria": "despesa",
+      "responsavel": "Ana Ribeiro",
+      "enviadoEm": "2026-07-25",
+      "valor": 728,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "falha",
+          "detalhe": "Conta 3.1.002 lançada duas vezes no mesmo centro de custo"
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Receita do contrato novo",
+          "porque": "Contrato assinado, mas sem data de início confirmada",
+          "quemResolve": "Comercial",
+          "desde": "2026-07-18"
+        }
+      ]
+    },
+    {
+      "id": "SUB-006",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Hivecloud",
+      "categoria": "receita",
+      "responsavel": "Ana Ribeiro",
+      "enviadoEm": "2026-07-10",
+      "valor": 865,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-007",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Otimizy",
+      "categoria": "receita",
+      "responsavel": "Ana Ribeiro",
+      "enviadoEm": "2026-07-14",
+      "valor": 1002,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-008",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Otimizy",
+      "categoria": "despesa",
+      "responsavel": "Ana Ribeiro",
+      "enviadoEm": "2026-07-18",
+      "valor": 1139,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-009",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Otimizy",
+      "categoria": "capex",
+      "responsavel": "Ana Ribeiro",
+      "enviadoEm": "2026-07-21",
+      "valor": 1276,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "falha",
+          "detalhe": "3 contas sem centro de custo (3.1.014, 3.1.021, 3.2.007)"
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-010",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "KMM",
+      "categoria": "receita",
+      "responsavel": "Carlos Mendes",
+      "enviadoEm": "2026-07-25",
+      "valor": 1413,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-011",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "KMM",
+      "categoria": "despesa",
+      "responsavel": "Carlos Mendes",
+      "enviadoEm": "2026-07-10",
+      "valor": 1550,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "falha",
+          "detalhe": "Conta 3.1.002 lançada duas vezes no mesmo centro de custo"
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Capex de TI do 2º semestre",
+          "porque": "Fornecedor só devolve a proposta comercial em agosto",
+          "quemResolve": "Compras",
+          "desde": "2026-07-08"
+        },
+        {
+          "oQueFalta": "Reajuste dos contratos indexados",
+          "porque": "IGP-M de julho ainda não foi publicado pela FGV",
+          "quemResolve": "Controladoria",
+          "desde": "2026-07-15"
+        }
+      ]
+    },
+    {
+      "id": "SUB-012",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Praxio - Avacorp",
+      "categoria": "receita",
+      "responsavel": "Carlos Mendes",
+      "enviadoEm": "2026-07-14",
+      "valor": 1687,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-013",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Praxio - Globus",
+      "categoria": "receita",
+      "responsavel": "Carlos Mendes",
+      "enviadoEm": "2026-07-18",
+      "valor": 1824,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-014",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Praxio - Globus",
+      "categoria": "despesa",
+      "responsavel": "Carlos Mendes",
+      "enviadoEm": "2026-07-21",
+      "valor": 1961,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-015",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Praxio - Globus",
+      "categoria": "capex",
+      "responsavel": "Carlos Mendes",
+      "enviadoEm": "2026-07-25",
+      "valor": 2098,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "falha",
+          "detalhe": "3 contas sem centro de custo (3.1.014, 3.1.021, 3.2.007)"
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-016",
+      "bu": "PSL",
+      "torre": "Torre TMS",
+      "empresa": "Signa",
+      "categoria": "receita",
+      "responsavel": "Julia Prado",
+      "enviadoEm": "2026-07-10",
+      "valor": 2235,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "falha",
+          "detalhe": "2 contas fora do Layout P&L vigente"
+        },
+        {
+          "regra": "PAC",
+          "resultado": "falha",
+          "detalhe": "5 linhas sem pacote — não dá para dizer o motivo do gasto"
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Capex de TI do 2º semestre",
+          "porque": "Fornecedor só devolve a proposta comercial em agosto",
+          "quemResolve": "Compras",
+          "desde": "2026-07-08"
+        },
+        {
+          "oQueFalta": "Reajuste dos contratos indexados",
+          "porque": "IGP-M de julho ainda não foi publicado pela FGV",
+          "quemResolve": "Controladoria",
+          "desde": "2026-07-15"
+        }
+      ]
+    },
+    {
+      "id": "SUB-017",
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "empresa": "e-frete",
+      "categoria": "receita",
+      "responsavel": "Rafael Souza",
+      "enviadoEm": "2026-07-14",
+      "valor": 2372,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-018",
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "empresa": "e-frete",
+      "categoria": "despesa",
+      "responsavel": "Rafael Souza",
+      "enviadoEm": "2026-07-18",
+      "valor": 2509,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-019",
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "empresa": "e-frete",
+      "categoria": "capex",
+      "responsavel": "Rafael Souza",
+      "enviadoEm": "2026-07-21",
+      "valor": 2646,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Rateio do compartilhado Corporate",
+          "porque": "Chave de rateio 2026 ainda não fechada entre as BUs",
+          "quemResolve": "FP&A",
+          "desde": "2026-07-02"
+        }
+      ]
+    },
+    {
+      "id": "SUB-020",
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "empresa": "Qualp",
+      "categoria": "receita",
+      "responsavel": "Marina Costa",
+      "enviadoEm": "2026-07-25",
+      "valor": 2783,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-021",
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "empresa": "Qualp",
+      "categoria": "despesa",
+      "responsavel": "Marina Costa",
+      "enviadoEm": "2026-07-10",
+      "valor": 2920,
+      "statusOficial": "reprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "falha",
+          "detalhe": "3 contas sem centro de custo (3.1.014, 3.1.021, 3.2.007)"
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-26",
+        "parecer": "Receita considera contrato ainda não assinado. Retirar da base."
+      }
+    },
+    {
+      "id": "SUB-022",
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "empresa": "Gasola",
+      "categoria": "receita",
+      "responsavel": "Bruno Tavares",
+      "enviadoEm": "2026-07-14",
+      "valor": 3057,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-023",
+      "bu": "PSL",
+      "torre": "Torre Fintech",
+      "empresa": "Gasola",
+      "categoria": "despesa",
+      "responsavel": "Bruno Tavares",
+      "enviadoEm": "2026-07-18",
+      "valor": 3194,
+      "statusOficial": "reprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "falha",
+          "detalhe": "Conta 3.1.002 lançada duas vezes no mesmo centro de custo"
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Reajuste dos contratos indexados",
+          "porque": "IGP-M de julho ainda não foi publicado pela FGV",
+          "quemResolve": "Controladoria",
+          "desde": "2026-07-15"
+        }
+      ],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-26",
+        "parecer": "Capex sem justificativa por projeto. Detalhar antes de reenviar."
+      }
+    },
+    {
+      "id": "SUB-024",
+      "bu": "PSL",
+      "torre": "Torre Mobilidade",
+      "empresa": "Praxio - Mobilidade",
+      "categoria": "receita",
+      "responsavel": "Patricia Lemos",
+      "enviadoEm": "2026-07-21",
+      "valor": 3331,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-025",
+      "bu": "PSL",
+      "torre": "Torre Mobilidade",
+      "empresa": "Praxio - Mobilidade",
+      "categoria": "despesa",
+      "responsavel": "Patricia Lemos",
+      "enviadoEm": "2026-07-25",
+      "valor": 3468,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Receita do contrato novo",
+          "porque": "Contrato assinado, mas sem data de início confirmada",
+          "quemResolve": "Comercial",
+          "desde": "2026-07-18"
+        }
+      ]
+    },
+    {
+      "id": "SUB-026",
+      "bu": "PSL",
+      "torre": "-",
+      "empresa": "Atua Sistemas",
+      "categoria": "receita",
+      "responsavel": "Renata Aguiar",
+      "enviadoEm": "2026-07-10",
+      "valor": 3605,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-027",
+      "bu": "PSL",
+      "torre": "-",
+      "empresa": "Atua Sistemas",
+      "categoria": "despesa",
+      "responsavel": "Renata Aguiar",
+      "enviadoEm": "2026-07-14",
+      "valor": 3742,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-028",
+      "bu": "PSL",
+      "torre": "-",
+      "empresa": "Atua Redes",
+      "categoria": "receita",
+      "responsavel": "Renata Aguiar",
+      "enviadoEm": "2026-07-18",
+      "valor": 3879,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-029",
+      "bu": "PSL",
+      "torre": "-",
+      "empresa": "Atua Redes",
+      "categoria": "despesa",
+      "responsavel": "Renata Aguiar",
+      "enviadoEm": "2026-07-21",
+      "valor": 4016,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "falha",
+          "detalhe": "Conta 3.1.002 lançada duas vezes no mesmo centro de custo"
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Rateio do compartilhado Corporate",
+          "porque": "Chave de rateio 2026 ainda não fechada entre as BUs",
+          "quemResolve": "FP&A",
+          "desde": "2026-07-02"
+        }
+      ]
+    },
+    {
+      "id": "SUB-030",
+      "bu": "PSL",
+      "torre": "-",
+      "empresa": "Atua Redes",
+      "categoria": "capex",
+      "responsavel": "Renata Aguiar",
+      "enviadoEm": "2026-07-25",
+      "valor": 4153,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-031",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "Opentech",
+      "categoria": "receita",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-10",
+      "valor": 4290,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-032",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "Opentech",
+      "categoria": "despesa",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-14",
+      "valor": 227,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "falha",
+          "detalhe": "5 linhas sem pacote — não dá para dizer o motivo do gasto"
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Headcount de Set a Dez",
+          "porque": "Depende da aprovação do quadro pelo RH, ainda em análise",
+          "quemResolve": "RH",
+          "desde": "2026-07-12"
+        }
+      ]
+    },
+    {
+      "id": "SUB-033",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "Opentech",
+      "categoria": "capex",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-18",
+      "valor": 364,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-034",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "BRK",
+      "categoria": "receita",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-21",
+      "valor": 501,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-035",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "BRK",
+      "categoria": "despesa",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-25",
+      "valor": 638,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-036",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "BRK",
+      "categoria": "capex",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-10",
+      "valor": 775,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-037",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "LogRisk",
+      "categoria": "receita",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-14",
+      "valor": 912,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-038",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "LogRisk",
+      "categoria": "despesa",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-18",
+      "valor": 1049,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "falha",
+          "detalhe": "5 linhas sem pacote — não dá para dizer o motivo do gasto"
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Reajuste dos contratos indexados",
+          "porque": "IGP-M de julho ainda não foi publicado pela FGV",
+          "quemResolve": "Controladoria",
+          "desde": "2026-07-15"
+        }
+      ]
+    },
+    {
+      "id": "SUB-039",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "Onisys",
+      "categoria": "receita",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-21",
+      "valor": 1186,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "falha",
+          "detalhe": "3 contas sem centro de custo (3.1.014, 3.1.021, 3.2.007)"
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-040",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "Trafegus",
+      "categoria": "receita",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-25",
+      "valor": 1323,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-041",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "Trafegus",
+      "categoria": "despesa",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-10",
+      "valor": 1460,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-042",
+      "bu": "Embarcador",
+      "torre": "Torre VGR",
+      "empresa": "Trafegus",
+      "categoria": "capex",
+      "responsavel": "Felipe Nunes",
+      "enviadoEm": "2026-07-14",
+      "valor": 1597,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-043",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "GBM Consultoria",
+      "categoria": "receita",
+      "responsavel": "Camila Duarte",
+      "enviadoEm": "2026-07-18",
+      "valor": 1734,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-044",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "GBM Consultoria",
+      "categoria": "despesa",
+      "responsavel": "Camila Duarte",
+      "enviadoEm": "2026-07-21",
+      "valor": 1871,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-045",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "GBM Consultoria",
+      "categoria": "capex",
+      "responsavel": "Camila Duarte",
+      "enviadoEm": "2026-07-25",
+      "valor": 2008,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-046",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "GBM Logística",
+      "categoria": "receita",
+      "responsavel": "Camila Duarte",
+      "enviadoEm": "2026-07-10",
+      "valor": 2145,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-047",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "GBM Logística",
+      "categoria": "despesa",
+      "responsavel": "Camila Duarte",
+      "enviadoEm": "2026-07-14",
+      "valor": 2282,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "falha",
+          "detalhe": "Conta 3.1.002 lançada duas vezes no mesmo centro de custo"
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Headcount de Set a Dez",
+          "porque": "Depende da aprovação do quadro pelo RH, ainda em análise",
+          "quemResolve": "RH",
+          "desde": "2026-07-12"
+        }
+      ]
+    },
+    {
+      "id": "SUB-048",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "Trizy",
+      "categoria": "receita",
+      "responsavel": "Camila Duarte",
+      "enviadoEm": "2026-07-18",
+      "valor": 2419,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-049",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "LogOne",
+      "categoria": "receita",
+      "responsavel": "Camila Duarte",
+      "enviadoEm": "2026-07-21",
+      "valor": 2556,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-050",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "LogOne",
+      "categoria": "despesa",
+      "responsavel": "Camila Duarte",
+      "enviadoEm": "2026-07-25",
+      "valor": 2693,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-051",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "LogOne",
+      "categoria": "capex",
+      "responsavel": "Camila Duarte",
+      "enviadoEm": "2026-07-10",
+      "valor": 2830,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "falha",
+          "detalhe": "3 contas sem centro de custo (3.1.014, 3.1.021, 3.2.007)"
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-052",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "Fusion",
+      "categoria": "receita",
+      "responsavel": "Gustavo Pinheiro",
+      "enviadoEm": "2026-07-14",
+      "valor": 2967,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-053",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "Fusion",
+      "categoria": "despesa",
+      "responsavel": "Gustavo Pinheiro",
+      "enviadoEm": "2026-07-18",
+      "valor": 3104,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "falha",
+          "detalhe": "Conta 3.1.002 lançada duas vezes no mesmo centro de custo"
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Reajuste dos contratos indexados",
+          "porque": "IGP-M de julho ainda não foi publicado pela FGV",
+          "quemResolve": "Controladoria",
+          "desde": "2026-07-15"
+        }
+      ]
+    },
+    {
+      "id": "SUB-054",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "RoutEasy",
+      "categoria": "receita",
+      "responsavel": "Gustavo Pinheiro",
+      "enviadoEm": "2026-07-21",
+      "valor": 3241,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-055",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "Comprovei",
+      "categoria": "receita",
+      "responsavel": "Gustavo Pinheiro",
+      "enviadoEm": "2026-07-25",
+      "valor": 3378,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-056",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "Comprovei",
+      "categoria": "despesa",
+      "responsavel": "Gustavo Pinheiro",
+      "enviadoEm": "2026-07-10",
+      "valor": 3515,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-057",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "Comprovei",
+      "categoria": "capex",
+      "responsavel": "Gustavo Pinheiro",
+      "enviadoEm": "2026-07-14",
+      "valor": 3652,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "falha",
+          "detalhe": "3 contas sem centro de custo (3.1.014, 3.1.021, 3.2.007)"
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": []
+    },
+    {
+      "id": "SUB-058",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "Multisoftware",
+      "categoria": "receita",
+      "responsavel": "Luciana Brito",
+      "enviadoEm": "2026-07-18",
+      "valor": 3789,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "falha",
+          "detalhe": "2 contas fora do Layout P&L vigente"
+        },
+        {
+          "regra": "PAC",
+          "resultado": "falha",
+          "detalhe": "5 linhas sem pacote — não dá para dizer o motivo do gasto"
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Reajuste dos contratos indexados",
+          "porque": "IGP-M de julho ainda não foi publicado pela FGV",
+          "quemResolve": "Controladoria",
+          "desde": "2026-07-15"
+        }
+      ]
+    },
+    {
+      "id": "SUB-059",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "Frete Rapido",
+      "categoria": "receita",
+      "responsavel": "Luciana Brito",
+      "enviadoEm": "2026-07-21",
+      "valor": 3926,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-060",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "Frete Rapido",
+      "categoria": "despesa",
+      "responsavel": "Luciana Brito",
+      "enviadoEm": "2026-07-25",
+      "valor": 4063,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-061",
+      "bu": "Embarcador",
+      "torre": "Torre SW Embarcador",
+      "empresa": "Frete Rapido",
+      "categoria": "capex",
+      "responsavel": "Luciana Brito",
+      "enviadoEm": "2026-07-10",
+      "valor": 4200,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Capex de TI do 2º semestre",
+          "porque": "Fornecedor só devolve a proposta comercial em agosto",
+          "quemResolve": "Compras",
+          "desde": "2026-07-08"
+        },
+        {
+          "oQueFalta": "Reajuste dos contratos indexados",
+          "porque": "IGP-M de julho ainda não foi publicado pela FGV",
+          "quemResolve": "Controladoria",
+          "desde": "2026-07-15"
+        }
+      ]
+    },
+    {
+      "id": "SUB-062",
+      "bu": "Embarcador",
+      "torre": "Insurance Market",
+      "empresa": "IM",
+      "categoria": "receita",
+      "responsavel": "Thiago Moreira",
+      "enviadoEm": "2026-07-14",
+      "valor": 4337,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-063",
+      "bu": "Embarcador",
+      "torre": "Insurance Market",
+      "empresa": "IM",
+      "categoria": "despesa",
+      "responsavel": "Thiago Moreira",
+      "enviadoEm": "2026-07-18",
+      "valor": 274,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-064",
+      "bu": "Embarcador",
+      "torre": "Insurance Market",
+      "empresa": "IM",
+      "categoria": "capex",
+      "responsavel": "Thiago Moreira",
+      "enviadoEm": "2026-07-21",
+      "valor": 411,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "falha",
+          "detalhe": "2 contas fora do Layout P&L vigente"
+        },
+        {
+          "regra": "PAC",
+          "resultado": "falha",
+          "detalhe": "5 linhas sem pacote — não dá para dizer o motivo do gasto"
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "alerta",
+          "detalhe": "Conta 3.1.009 com +62% vs 2025, sem justificativa na Obs"
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Rateio do compartilhado Corporate",
+          "porque": "Chave de rateio 2026 ainda não fechada entre as BUs",
+          "quemResolve": "FP&A",
+          "desde": "2026-07-02"
+        }
+      ]
+    },
+    {
+      "id": "SUB-065",
+      "bu": "Corporate",
+      "torre": "G&A",
+      "empresa": "Nstech Corporate Holding",
+      "categoria": "receita",
+      "responsavel": "Andre Vasconcelos",
+      "enviadoEm": "2026-07-25",
+      "valor": 548,
+      "statusOficial": "aprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Marcelo Ferraz",
+        "em": "2026-07-27",
+        "parecer": "Dentro do quadro aprovado e sem validação pendente."
+      }
+    },
+    {
+      "id": "SUB-066",
+      "bu": "Corporate",
+      "torre": "G&A",
+      "empresa": "Nstech Corporate Holding",
+      "categoria": "despesa",
+      "responsavel": "Andre Vasconcelos",
+      "enviadoEm": "2026-07-10",
+      "valor": 685,
+      "statusOficial": "reprovado",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [],
+      "decisao": {
+        "por": "Priscila Amaral",
+        "em": "2026-07-26",
+        "parecer": "Receita considera contrato ainda não assinado. Retirar da base."
+      }
+    },
+    {
+      "id": "SUB-067",
+      "bu": "Corporate",
+      "torre": "S&M",
+      "empresa": "Nstech Corporate Holding",
+      "categoria": "receita",
+      "responsavel": "Priscila Amaral",
+      "enviadoEm": "2026-07-14",
+      "valor": 822,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Headcount de Set a Dez",
+          "porque": "Depende da aprovação do quadro pelo RH, ainda em análise",
+          "quemResolve": "RH",
+          "desde": "2026-07-12"
+        }
+      ]
+    },
+    {
+      "id": "SUB-068",
+      "bu": "Corporate",
+      "torre": "S&M",
+      "empresa": "Nstech Corporate Holding",
+      "categoria": "despesa",
+      "responsavel": "Priscila Amaral",
+      "enviadoEm": "2026-07-18",
+      "valor": 959,
+      "statusOficial": "pendente",
+      "validacoes": [
+        {
+          "regra": "CC",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PL",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "PAC",
+          "resultado": "falha",
+          "detalhe": "5 linhas sem pacote — não dá para dizer o motivo do gasto"
+        },
+        {
+          "regra": "DUP",
+          "resultado": "ok",
+          "detalhe": ""
+        },
+        {
+          "regra": "MES",
+          "resultado": "alerta",
+          "detalhe": "Nov e Dez zerados em 4 contas"
+        },
+        {
+          "regra": "VAR",
+          "resultado": "ok",
+          "detalhe": ""
+        }
+      ],
+      "pendencias": [
+        {
+          "oQueFalta": "Reajuste dos contratos indexados",
+          "porque": "IGP-M de julho ainda não foi publicado pela FGV",
+          "quemResolve": "Controladoria",
+          "desde": "2026-07-15"
+        }
+      ]
+    }
+  ]
+}

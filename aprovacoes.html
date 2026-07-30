@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Aprovações</title>
+<title>Aprovações — NS Codex</title>
 <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
@@ -60,22 +60,101 @@
     <header class="topbar">
       <div class="topbar-title">
         <h1>Aprovações</h1>
-        <p>Orçamentos submetidos pelas áreas aguardando decisão</p>
+        <p>Ciclo 2026 · o que foi enviado, o que trava e o que ainda falta</p>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge status-em-aprovacao"><span class="badge-dot"></span><span data-aprov-kpi="pendente">—</span> aguardando você</span>
       </div>
     </header>
 
     <div class="content">
+
       <div class="proto-banner">
-        🚧 Tela em construção — esta será a próxima tela detalhada do protótipo (fluxo de aprovar/reprovar com histórico).
+        ⓘ As submissões vêm de <strong>Referencias/aprovacoes.json</strong>, derivado do mesmo <a href="entregas.html" style="color:var(--color-primary); font-weight:600;">mapa de Entregas</a> — só chega aqui o que o responsável já enviou. Decisões, pendências e validações são ilustrativas do protótipo.
       </div>
 
-      <div class="panel">
-        <div class="panel-body">
-          <div class="empty-hint">
-            A tela de Aprovações ainda será desenhada em detalhe.<br />
-            Volte para o <a href="index.html" style="color:var(--color-primary); font-weight:600;">Início</a> ou peça para construirmos esta tela agora.
+      <div class="kpi-grid">
+        <div class="kpi-card margem">
+          <div class="kpi-label">Aguardando decisão</div>
+          <div class="kpi-value" data-aprov-kpi="pendente">—</div>
+          <div class="kpi-delta">status oficial ainda em aberto</div>
+        </div>
+        <div class="kpi-card despesa">
+          <div class="kpi-label">Travadas por validação</div>
+          <div class="kpi-value" data-aprov-kpi="bloqueadas">—</div>
+          <div class="kpi-delta down">não podem ser aprovadas assim</div>
+        </div>
+        <div class="kpi-card capex">
+          <div class="kpi-label">Com informação faltando</div>
+          <div class="kpi-value" data-aprov-kpi="pendencias">—</div>
+          <div class="kpi-delta">têm motivo registrado</div>
+        </div>
+        <div class="kpi-card receita">
+          <div class="kpi-label">Já decididas</div>
+          <div class="kpi-value" data-aprov-kpi="decididas">—</div>
+          <div class="kpi-delta up" data-aprov-kpi="decididas-detalhe">—</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>BU</label>
+          <select data-aprov-filtro="bu"><option value="">Todas as BUs</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Categoria</label>
+          <select data-aprov-filtro="categoria">
+            <option value="">Receita, Despesa e Capex</option>
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+            <option value="capex">Capex</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Status oficial</label>
+          <select data-aprov-filtro="status">
+            <option value="pendente">Aguardando decisão</option>
+            <option value="">Todos os status</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="reprovado">Reprovado</option>
+            <option value="devolvido">Devolvido para ajuste</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Situação</label>
+          <select data-aprov-filtro="situacao">
+            <option value="">Qualquer situação</option>
+            <option value="bloqueada">Só as travadas por validação</option>
+            <option value="pendencia">Só as com informação faltando</option>
+            <option value="limpa">Só as prontas para aprovar</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="aprov-layout">
+
+        <!-- Fila -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Fila de Aprovação</h2>
+              <p data-aprov-contagem>—</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="aprov-fila" data-aprov-fila>
+              <div class="empty-hint">Carregando as submissões…</div>
+            </div>
           </div>
         </div>
+
+        <!-- Painel de situação -->
+        <div class="panel aprov-detalhe" data-aprov-detalhe>
+          <div class="panel-body">
+            <div class="empty-hint">Selecione uma submissão na fila para ver a situação.</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </main>
