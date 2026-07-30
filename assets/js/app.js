@@ -3,6 +3,9 @@
  * Nenhuma chamada de rede/backend acontece aqui: os botões apenas simulam
  * o que a ação faria (toast de feedback, mudança de badge, linha de tabela
  * adicionada/removida na tela) para dar a sensação do fluxo real.
+ *
+ * Única exceção: a exportação do Dashboard em PDF, que imprime a própria
+ * página — sem backend e sem biblioteca, só o @media print do style.css.
  */
 
 /* ---------- Toast ---------- */
@@ -401,6 +404,20 @@ function initHierarchyCollapse() {
   });
 }
 
+/* ---------- Exportar o Dashboard em PDF ----------
+ * PDF = impressão do próprio HTML. Sem biblioteca: o papel usa o @media print
+ * do style.css, então sai igual à tela. O usuário escolhe "Salvar como PDF".
+ */
+
+function initPdfExport() {
+  document.querySelectorAll("[data-export-pdf]").forEach((el) => {
+    el.addEventListener("click", () => {
+      showToast('Abrindo a impressão — escolha "Salvar como PDF" no destino', "info");
+      setTimeout(() => window.print(), 200);
+    });
+  });
+}
+
 /* ---------- Sidebar: marca item ativo pela página atual ---------- */
 
 function markActiveNav() {
@@ -425,5 +442,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initExcelPaste();
   initMonthGroup();
   initHierarchyCollapse();
+  initPdfExport();
   initReferenceAutocomplete();
 });

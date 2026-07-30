@@ -1746,3 +1746,84 @@ tfoot td {
   color: var(--color-text-muted) !important;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   Impressão / "Salvar como PDF" — o papel sai igual à tela.
+   Só sai de cena o que não existe no papel: menu lateral, botões de ação,
+   toasts e modais. Cores, barras, badges e tabelas ficam idênticos.
+   ========================================================================== */
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  /* sem isto o navegador descarta os fundos coloridos (barras do bridge, badges, cabeçalhos) */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .sidebar,
+  .topbar-actions,
+  #toast-container,
+  .modal-overlay,
+  .filter-bar .btn,
+  [data-action="view"],
+  [data-action="export"],
+  .no-print {
+    display: none !important;
+  }
+
+  .app-shell,
+  .main {
+    display: block;
+  }
+
+  .topbar {
+    padding: 0 0 10px;
+  }
+
+  .content {
+    padding: 14px 0 0;
+  }
+
+  /* filtros deixam de ser controle e viram o contexto do relatório */
+  .filter-bar select {
+    border: none;
+    background: none;
+    padding: 0;
+    font-weight: 600;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  /* nenhum painel ou linha cortado no meio da quebra de página */
+  .panel {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none;
+  }
+
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* tabela larga: no papel não há barra de rolagem, então mostra tudo */
+  .table-wrap {
+    overflow: visible !important;
+  }
+
+  /* se a tabela virar a página, o cabeçalho se repete */
+  thead {
+    display: table-header-group;
+  }
+}
