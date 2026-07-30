@@ -340,6 +340,67 @@ function initDrillRows() {
   });
 }
 
+/* ---------- Colapsar/expandir BU e Torre nas tabelas de hierarquia ---------- */
+
+const HIER_LEVELS = ["report-bu-row", "report-torre-row", "report-subtorre-row", "report-empresa-row"];
+const HIER_TOGGLE_LEVELS = [0, 1]; // BU e Torre
+
+function hierLevel(row) {
+  return HIER_LEVELS.findIndex((cls) => row.classList.contains(cls));
+}
+
+/* Recalcula a visibilidade de todas as linhas a partir de quem está recolhido.
+   Assim uma Torre recolhida continua recolhida depois de fechar e reabrir a BU. */
+function refreshHierarchyVisibility(rows) {
+  let hiddenAbove = null; // nível da linha recolhida que está escondendo as de baixo
+
+  rows.forEach((row) => {
+    const level = hierLevel(row);
+
+    if (hiddenAbove !== null && level > hiddenAbove) {
+      row.hidden = true;
+      return;
+    }
+
+    hiddenAbove = null;
+    row.hidden = false;
+    if (row.classList.contains("hier-collapsed")) hiddenAbove = level;
+  });
+}
+
+function initHierarchyCollapse() {
+  document.querySelectorAll("[data-hierarchy-collapse]").forEach((table) => {
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+
+    rows.forEach((row, index) => {
+      const level = hierLevel(row);
+      if (!HIER_TOGGLE_LEVELS.includes(level)) return;
+
+      // sem linha de nível mais profundo logo abaixo: não há detalhe a colapsar
+      const next = rows[index + 1];
+      if (!next || hierLevel(next) <= level) return;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "hier-toggle";
+      btn.textContent = "−";
+      btn.title = "Recolher";
+      btn.setAttribute("aria-expanded", "true");
+
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const collapsed = row.classList.toggle("hier-collapsed");
+        btn.textContent = collapsed ? "+" : "−";
+        btn.title = collapsed ? "Expandir" : "Recolher";
+        btn.setAttribute("aria-expanded", String(!collapsed));
+        refreshHierarchyVisibility(rows);
+      });
+
+      row.querySelector("td:first-child")?.prepend(btn);
+    });
+  });
+}
+
 /* ---------- Sidebar: marca item ativo pela página atual ---------- */
 
 function markActiveNav() {
@@ -363,5 +424,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initDrillRows();
   initExcelPaste();
   initMonthGroup();
+  initHierarchyCollapse();
   initReferenceAutocomplete();
 });

@@ -1300,6 +1300,7 @@ tfoot td {
   padding-left: 34px;
   color: var(--color-text-muted);
   font-weight: 400;
+  position: relative;
 }
 
 .report-table td.up { color: var(--color-success); font-weight: 600; }
@@ -1409,6 +1410,47 @@ tfoot td {
 
 .report-table tbody tr.report-empresa-row.report-empresa-outras td:first-child {
   color: #9aa3b2;
+}
+
+/* ---------- Colapsar/expandir BU e Torre (botão dentro do recuo, não desloca o texto) ---------- */
+
+/* recuo só nas tabelas com colapso, para não deslocar as outras tabelas de relatório */
+[data-hierarchy-collapse] tbody tr.report-bu-row td:first-child {
+  padding-left: 20px;
+  position: relative;
+}
+
+[data-hierarchy-collapse] tbody tr.report-bu-row .hier-toggle {
+  left: 3px;
+}
+
+.hier-toggle {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.hier-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.report-table tbody tr[hidden] {
+  display: none;
 }
 
 /* ---------- Tabs (Relatórios: Torres / P&L) ---------- */
