@@ -180,7 +180,14 @@ function initAddRow() {
         else input.value = "";
       });
       tbody.appendChild(clone);
+      clone.hidden = false; // a linha modelo pode estar escondida por um filtro de pacote
+
+      // a linha nova já nasce no pacote escolhido no contexto do lançamento
+      const pacoteInput = clone.querySelector(".pacote-input");
+      if (pacoteInput) pacoteInput.value = pacoteDoContexto();
+
       rebindRow(clone);
+      document.querySelectorAll("[data-pacote-filtro]").forEach(aplicarFiltroPacote);
       showToast("Nova linha adicionada", "success");
       clone.querySelector("input")?.focus();
     });
@@ -699,6 +706,144 @@ function initEntregas() {
     });
 }
 
+/* ---------- Pacote de gasto: separa a despesa pelo MOTIVO ----------
+ * Duas linhas na mesma conta contábil podem ter motivos diferentes (uma viagem
+ * de operação x uma viagem de abertura de mercado). O pacote é essa distinção.
+ * Fonte: Referencias/pacotes.json.
+ */
+
+function totalAnualDaLinha(row) {
+  return Array.from(row.querySelectorAll("td.month-col input"))
+    .reduce((soma, input) => soma + (Number(input.value) || 0), 0);
+}
+
+function pacoteDaLinha(row) {
+  return row.querySelector(".pacote-input")?.value.trim() || "";
+}
+
+function aplicarFiltroPacote(select) {
+  const tabela = document.getElementById(select.getAttribute("data-pacote-filtro"));
+  if (!tabela) return;
+
+  const escolhido = select.value;
+  const linhas = Array.from(tabela.querySelectorAll("tbody tr"));
+  const pacotesEmUso = new Set();
+  let totalGeral = 0;
+  let totalVisivel = 0;
+  let visiveis = 0;
+
+  linhas.forEach((row) => {
+    const pacote = pacoteDaLinha(row);
+    const total = totalAnualDaLinha(row);
+    const mostra = !escolhido || pacote === escolhido;
+
+    totalGeral += total;
+    if (pacote) pacotesEmUso.add(pacote);
+
+    row.hidden = !mostra;
+    if (mostra) {
+      visiveis++;
+      totalVisivel += total;
+    }
+  });
+
+  const resumo = document.querySelector(`[data-pacote-resumo="${tabela.id}"]`);
+  if (!resumo) return;
+
+  const dinheiro = (valor) => `R$ ${valor.toLocaleString("pt-BR")} mil`;
+  const termo = resumo.getAttribute("data-pacote-termo") || "gasto da grade";
+
+  if (!escolhido) {
+    resumo.innerHTML = `<strong>${linhas.length} linhas</strong> · ${pacotesEmUso.size} pacote(s) em uso · ${dinheiro(totalGeral)} no ano`;
+    return;
+  }
+
+  const fatia = totalGeral ? Math.round((totalVisivel / totalGeral) * 100) : 0;
+  resumo.innerHTML = visiveis
+    ? `<strong>${escaparTexto(escolhido)}</strong> · ${visiveis} de ${linhas.length} linhas · ${dinheiro(totalVisivel)} no ano · <strong>${fatia}%</strong> ${termo === "gasto da grade" ? "do " + termo : "da " + termo}`
+    : `<strong>${escaparTexto(escolhido)}</strong> · nenhuma linha nesse pacote ainda`;
+}
+
+/* cada tela de lançamento vê só os pacotes que fazem sentido nela */
+function pacotesDoTipo(pacotes, tipo) {
+  if (!tipo) return pacotes;
+  return pacotes.filter((p) => !p.aplicaA || p.aplicaA.includes(tipo));
+}
+
+/* pacote escolhido no contexto vira o padrão das linhas novas */
+function pacoteDoContexto() {
+  const select = document.querySelector("[data-pacote-filtro]");
+  return select ? select.value : "";
+}
+
+function initPacotes() {
+  if (!document.querySelector("[data-pacote-filtro], [data-pacote-campo], #pacotes-datalist")) return;
+
+  fetch("Referencias/pacotes.json")
+    .then((r) => r.json())
+    .then(({ pacotes }) => {
+      window.__pacotesRef = pacotes;
+
+      const datalist = document.getElementById("pacotes-datalist");
+      if (datalist) {
+        pacotes.forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = p.nome;
+          opt.label = p.motivo;
+          datalist.appendChild(opt);
+        });
+      }
+
+      document.querySelectorAll("[data-pacote-filtro]").forEach((select) => {
+        pacotesDoTipo(pacotes, select.getAttribute("data-pacote-tipo")).forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = p.nome;
+          opt.textContent = `${p.nome} (${p.tipo})`;
+          select.appendChild(opt);
+        });
+        select.addEventListener("change", () => aplicarFiltroPacote(select));
+
+        // trocar o pacote de uma linha na mão recalcula o resumo na hora
+        document.getElementById(select.getAttribute("data-pacote-filtro"))
+          ?.addEventListener("change", (e) => {
+            if (e.target.closest(".pacote-input") || e.target.matches("td.month-col input")) {
+              aplicarFiltroPacote(select);
+            }
+          });
+
+        aplicarFiltroPacote(select);
+      });
+
+      document.querySelectorAll("[data-pacote-campo]").forEach((select) => {
+        pacotesDoTipo(pacotes, select.getAttribute("data-pacote-tipo")).forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = p.nome;
+          opt.textContent = p.nome;
+          select.appendChild(opt);
+        });
+
+        const motivo = select.closest(".panel-body, .field-group, form")?.querySelector("[data-pacote-motivo]")
+          || document.querySelector("[data-pacote-motivo]");
+        const mostrarMotivo = () => {
+          const escolhido = pacotes.find((p) => p.nome === select.value);
+          if (motivo && escolhido) motivo.textContent = `${escolhido.motivo} · ${escolhido.tipo}`;
+        };
+        select.addEventListener("change", mostrarMotivo);
+        mostrarMotivo();
+      });
+
+      document.querySelectorAll("[data-pacote-legenda]").forEach((legenda) => {
+        legenda.innerHTML = pacotesDoTipo(pacotes, legenda.getAttribute("data-pacote-tipo"))
+          .map((p) => `<span class="pacote-tag" title="${escaparTexto(p.motivo)}">${escaparTexto(p.nome)}<em>${escaparTexto(p.tipo)}</em></span>`)
+          .join("");
+      });
+    })
+    .catch(() => {
+      const resumo = document.querySelector("[data-pacote-resumo]");
+      if (resumo) resumo.textContent = "Não foi possível carregar Referencias/pacotes.json.";
+    });
+}
+
 /* ---------- Sidebar: marca item ativo pela página atual ---------- */
 
 function markActiveNav() {
@@ -725,5 +870,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initHierarchyCollapse();
   initPdfExport();
   initEntregas();
+  initPacotes();
   initReferenceAutocomplete();
 });

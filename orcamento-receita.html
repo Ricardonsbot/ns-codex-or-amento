@@ -92,7 +92,16 @@
           <label>Moeda</label>
           <select><option>BRL</option><option>USD</option></select>
         </div>
+        <div class="filter-field">
+          <label>Pacote</label>
+          <select data-pacote-filtro="tabela-receita" data-pacote-tipo="receita">
+            <option value="">Todos os pacotes</option>
+          </select>
+        </div>
       </div>
+
+      <div class="pacote-resumo" data-pacote-resumo="tabela-receita" data-pacote-termo="receita da grade"></div>
+      <div class="pacote-legenda" data-pacote-legenda data-pacote-tipo="receita"></div>
 
       <div class="kpi-grid" style="grid-template-columns: repeat(3,1fr);">
         <div class="kpi-card receita">
@@ -124,7 +133,7 @@
           <table id="tabela-receita" class="entry-grid">
             <thead>
               <tr>
-                <th colspan="2"></th>
+                <th colspan="3"></th>
                 <th colspan="12" class="month-group-header">
                   <button class="month-toggle-btn" data-month-toggle="tabela-receita" title="Agrupar meses">
                     <span class="month-toggle-icon">−</span> Meses
@@ -135,6 +144,7 @@
               <tr>
                 <th>Conta</th>
                 <th>Cliente / Canal</th>
+                <th>Pacote</th>
                 <th class="text-right month-col">Jan</th>
                 <th class="text-right month-col">Fev</th>
                 <th class="text-right month-col">Mar</th>
@@ -155,6 +165,7 @@
               <tr>
                 <td><input type="text" value="Venda de Produto - Varejo Físico" class="conta-nome-input" list="contas-datalist" /></td>
                 <td><input type="text" value="Rede Própria" /></td>
+                <td><input type="text" value="Operação Base" class="pacote-input" list="pacotes-datalist" /></td>
                 <td class="month-col"><input type="number" value="3200" /></td>
                 <td class="month-col"><input type="number" value="3100" /></td>
                 <td class="month-col"><input type="number" value="3400" /></td>
@@ -177,6 +188,7 @@
               <tr>
                 <td><input type="text" value="Venda de Produto - E-commerce" class="conta-nome-input" list="contas-datalist" /></td>
                 <td><input type="text" value="Canal Digital" /></td>
+                <td><input type="text" value="Crescimento e Expansão" class="pacote-input" list="pacotes-datalist" /></td>
                 <td class="month-col"><input type="number" value="1400" /></td>
                 <td class="month-col"><input type="number" value="1500" /></td>
                 <td class="month-col"><input type="number" value="1650" /></td>
@@ -199,6 +211,7 @@
               <tr>
                 <td><input type="text" value="Prestação de Serviço - Assistência" class="conta-nome-input" list="contas-datalist" /></td>
                 <td><input type="text" value="Rede Própria" /></td>
+                <td><input type="text" value="Novos Contratos" class="pacote-input" list="pacotes-datalist" /></td>
                 <td class="month-col"><input type="number" value="180" /></td>
                 <td class="month-col"><input type="number" value="190" /></td>
                 <td class="month-col"><input type="number" value="200" /></td>
@@ -221,6 +234,7 @@
               <tr>
                 <td><input type="text" value="Outras Receitas Operacionais" class="conta-nome-input" list="contas-datalist" /></td>
                 <td><input type="text" value="Diversos" /></td>
+                <td><input type="text" value="Operação Base" class="pacote-input" list="pacotes-datalist" /></td>
                 <td class="month-col"><input type="number" value="60" /></td>
                 <td class="month-col"><input type="number" value="55" /></td>
                 <td class="month-col"><input type="number" value="70" /></td>
@@ -258,6 +272,7 @@
 
 <datalist id="contas-datalist"></datalist>
 <datalist id="centros-datalist"></datalist>
+<datalist id="pacotes-datalist"></datalist>
 
 <div id="toast-container"></div>
 <script src="assets/js/app.js"></script>

@@ -1,0 +1,68 @@
+{
+  "observacao": "Pacotes agrupam o lançamento pelo MOTIVO, não pela natureza contábil. Duas linhas na mesma conta podem estar em pacotes diferentes (ex.: uma viagem de operação x uma viagem de abertura de mercado). O campo aplicaA define em quais telas de lançamento o pacote aparece — os que valem para receita e despesa permitem comparar os dois lados do mesmo motivo. Lista ilustrativa do protótipo.",
+  "pacotes": [
+    {
+      "codigo": "OPE",
+      "nome": "Operação Base",
+      "motivo": "Recorrente da operação que já existe hoje",
+      "tipo": "Recorrente",
+      "aplicaA": ["receita", "despesa", "capex"]
+    },
+    {
+      "codigo": "PES",
+      "nome": "Estrutura de Pessoal",
+      "motivo": "Folha, encargos e benefícios do time já existente",
+      "tipo": "Recorrente",
+      "aplicaA": ["despesa"]
+    },
+    {
+      "codigo": "TEC",
+      "nome": "Tecnologia e Licenças",
+      "motivo": "Cloud, software e licenças de terceiros",
+      "tipo": "Recorrente",
+      "aplicaA": ["despesa", "capex"]
+    },
+    {
+      "codigo": "NOV",
+      "nome": "Novos Contratos",
+      "motivo": "Receita de contratos fechados que ainda não estão na base",
+      "tipo": "Não recorrente",
+      "aplicaA": ["receita"]
+    },
+    {
+      "codigo": "CRE",
+      "nome": "Crescimento e Expansão",
+      "motivo": "Abrir mercado, praça ou uma nova frente de negócio",
+      "tipo": "Não recorrente",
+      "aplicaA": ["receita", "despesa", "capex"]
+    },
+    {
+      "codigo": "PRJ",
+      "nome": "Projetos e Iniciativas",
+      "motivo": "Iniciativa com começo, meio e fim dentro do ciclo",
+      "tipo": "Não recorrente",
+      "aplicaA": ["receita", "despesa", "capex"]
+    },
+    {
+      "codigo": "MAN",
+      "nome": "Manutenção e Reposição",
+      "motivo": "Repor ou manter o ativo que já existe, sem ganhar capacidade",
+      "tipo": "Recorrente",
+      "aplicaA": ["capex"]
+    },
+    {
+      "codigo": "MEA",
+      "nome": "M&A e Integração",
+      "motivo": "Aquisições e integração das empresas compradas",
+      "tipo": "Não recorrente",
+      "aplicaA": ["receita", "despesa", "capex"]
+    },
+    {
+      "codigo": "EXT",
+      "nome": "Extraordinário",
+      "motivo": "Evento pontual fora do plano (jurídico, indenização, sinistro)",
+      "tipo": "Não recorrente",
+      "aplicaA": ["receita", "despesa", "capex"]
+    }
+  ]
+}

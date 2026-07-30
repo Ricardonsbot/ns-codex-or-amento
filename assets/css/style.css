@@ -1749,6 +1749,62 @@ tfoot td {
 }
 
 /* ==========================================================================
+   Pacote de gasto — o motivo do gasto, no contexto do lançamento
+   ========================================================================== */
+
+.pacote-resumo {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.pacote-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pacote-tag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: help;
+}
+
+.pacote-tag em {
+  font-style: normal;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  opacity: .7;
+}
+
+.pacote-motivo {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.entry-grid .pacote-input {
+  min-width: 150px;
+}
+
+.entry-grid tbody tr[hidden] {
+  display: none;
+}
+
+/* ==========================================================================
    Entregas — organograma de cobrança (BU → Torre → Sub Torre → Empresa)
    ========================================================================== */
 

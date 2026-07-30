@@ -113,8 +113,16 @@
               <label>Ano</label>
               <select><option>2026</option><option>2027</option></select>
             </div>
+            <div class="filter-field">
+              <label>Pacote</label>
+              <select data-pacote-filtro="tabela-despesa" data-pacote-tipo="despesa">
+                <option value="">Todos os pacotes</option>
+              </select>
+            </div>
             <button class="btn btn-secondary">Aplicar</button>
           </div>
+          <div class="pacote-resumo" data-pacote-resumo="tabela-despesa"></div>
+          <div class="pacote-legenda" data-pacote-legenda data-pacote-tipo="despesa"></div>
         </div>
       </div>
 
@@ -131,7 +139,7 @@
           <table id="tabela-despesa" class="entry-grid">
             <thead>
               <tr>
-                <th colspan="7"></th>
+                <th colspan="8"></th>
                 <th colspan="12" class="month-group-header">
                   <button class="month-toggle-btn" data-month-toggle="tabela-despesa" title="Agrupar meses">
                     <span class="month-toggle-icon">−</span> Meses
@@ -144,6 +152,7 @@
                 <th>Descrição</th>
                 <th>Linha do P&amp;L</th>
                 <th>Categoria</th>
+                <th>Pacote</th>
                 <th>Centro de Custo</th>
                 <th>Fornecedor</th>
                 <th>Obs</th>
@@ -169,6 +178,7 @@
                 <td><input type="text" value="Salários e Encargos - Equipe Comercial" class="conta-nome-input" list="contas-datalist" /></td>
                 <td><input type="text" value="Despesas &gt; Pessoal" class="conta-linha-input" /></td>
                 <td><input type="text" value="Pessoal" class="conta-categoria-input" /></td>
+                <td><input type="text" value="Estrutura de Pessoal" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Comercial" list="centros-datalist" /></td>
                 <td><input type="text" value="Folha Própria (CLT)" /></td>
                 <td><input type="text" value="Inclui 13º proporcional" /></td>
@@ -196,6 +206,7 @@
                 <td><input type="text" value="Vale Refeição e Plano de Saúde" class="conta-nome-input" list="contas-datalist" /></td>
                 <td><input type="text" value="Despesas &gt; Pessoal" class="conta-linha-input" /></td>
                 <td><input type="text" value="Pessoal" class="conta-categoria-input" /></td>
+                <td><input type="text" value="Estrutura de Pessoal" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Comercial" list="centros-datalist" /></td>
                 <td><input type="text" value="Sodexo (VR/VA)" /></td>
                 <td><input type="text" value="" /></td>
@@ -223,6 +234,7 @@
                 <td><input type="text" value="Hospedagem AWS / Azure" class="conta-nome-input" list="contas-datalist" /></td>
                 <td><input type="text" value="Despesas &gt; Serviços de Terceiros" class="conta-linha-input" /></td>
                 <td><input type="text" value="Tecnologia" class="conta-categoria-input" /></td>
+                <td><input type="text" value="Tecnologia e Licenças" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="TI" list="centros-datalist" /></td>
                 <td><input type="text" value="Amazon Web Services" /></td>
                 <td><input type="text" value="Contrato anual reajustado em Jan" /></td>
@@ -250,6 +262,7 @@
                 <td><input type="text" value="Mídia paga e performance" class="conta-nome-input" list="contas-datalist" /></td>
                 <td><input type="text" value="Despesas &gt; Serviços de Terceiros" class="conta-linha-input" /></td>
                 <td><input type="text" value="Marketing" class="conta-categoria-input" /></td>
+                <td><input type="text" value="Crescimento e Expansão" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Comercial" list="centros-datalist" /></td>
                 <td><input type="text" value="Meta Ads" /></td>
                 <td><input type="text" value="" /></td>
@@ -277,6 +290,7 @@
                 <td><input type="text" value="Passagens e Hospedagem" class="conta-nome-input" list="contas-datalist" /></td>
                 <td><input type="text" value="Despesas &gt; Serviços de Terceiros" class="conta-linha-input" /></td>
                 <td><input type="text" value="Viagens" class="conta-categoria-input" /></td>
+                <td><input type="text" value="Operação Base" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Comercial" list="centros-datalist" /></td>
                 <td><input type="text" value="Decolar Corporate" /></td>
                 <td><input type="text" value="" /></td>
@@ -493,6 +507,7 @@
 
 <datalist id="contas-datalist"></datalist>
 <datalist id="centros-datalist"></datalist>
+<datalist id="pacotes-datalist"></datalist>
 
 <div id="toast-container"></div>
 <script src="assets/js/app.js"></script>
