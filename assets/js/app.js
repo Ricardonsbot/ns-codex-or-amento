@@ -4,8 +4,9 @@
  * o que a ação faria (toast de feedback, mudança de badge, linha de tabela
  * adicionada/removida na tela) para dar a sensação do fluxo real.
  *
- * Única exceção: a exportação do Dashboard em PDF, que imprime a própria
- * página — sem backend e sem biblioteca, só o @media print do style.css.
+ * Única exceção: a exportação do Dashboard, que acontece de verdade — em PDF
+ * (imprime a própria página, via @media print) e em CSV (gera e baixa o
+ * arquivo a partir do que está na tela). Ainda sem backend: tudo no navegador.
  */
 
 /* ---------- Toast ---------- */
@@ -411,16 +412,116 @@ function initHierarchyCollapse() {
   });
 }
 
-/* ---------- Exportar o Dashboard em PDF ----------
- * PDF = impressão do próprio HTML. Sem biblioteca: o papel usa o @media print
- * do style.css, então sai igual à tela. O usuário escolhe "Salvar como PDF".
+/* ---------- Exportar o Dashboard em CSV ----------
+ * Exceção ao resto do protótipo: aqui o arquivo é gerado e baixado de verdade,
+ * a partir do que está na tela. Continua sem backend — tudo acontece no navegador.
+ * Separador ";" e BOM UTF-8 para o Excel em pt-BR abrir com acento e número certos.
  */
 
+function csvCell(value) {
+  const text = String(value ?? "").trim();
+  return /[";\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/* "− R$ 96,7 mi" -> "-96,7" (número, não texto, na planilha); null se não for valor */
+function moneyToNumber(text) {
+  const match = String(text).trim().match(/^(−|-)?\s*R\$\s*([\d.]*\d(?:,\d+)?)\s*mi$/);
+  return match ? (match[1] ? "-" : "") + match[2] : null;
+}
+
+function pushTable(table, push) {
+  const headers = Array.from(table.querySelectorAll("thead th"));
+  // colunas sem título são de ação ("Ver detalhes"): não vão para a planilha
+  const cols = headers.map((th, i) => (th.textContent.trim() ? i : -1)).filter((i) => i >= 0);
+  const firstRow = table.querySelector("tbody tr");
+
+  push(...cols.map((i) => {
+    const label = headers[i].textContent.trim();
+    const sample = firstRow?.children[i]?.textContent || "";
+    return moneyToNumber(sample) !== null ? `${label} (R$ mi)` : label;
+  }));
+
+  table.querySelectorAll("tbody tr").forEach((row) => {
+    push(...cols.map((i) => {
+      const text = row.children[i]?.textContent.trim() || "";
+      return moneyToNumber(text) ?? text;
+    }));
+  });
+}
+
+function buildDashboardCsv() {
+  const lines = [];
+  const push = (...cells) => lines.push(cells.map(csvCell).join(";"));
+
+  push(document.querySelector(".topbar-title h1")?.textContent || "Dashboard");
+  push(document.querySelector(".topbar-title p")?.textContent || "");
+  push("Exportado em", new Date().toLocaleString("pt-BR"));
+  push("");
+
+  const filtros = document.querySelectorAll(".filter-bar .filter-field");
+  if (filtros.length) {
+    push("Filtros aplicados");
+    filtros.forEach((field) => {
+      push(field.querySelector("label")?.textContent, field.querySelector("select")?.value);
+    });
+    push("");
+  }
+
+  const colunas = document.querySelectorAll(".bridge-chart .bridge-col");
+  if (colunas.length) {
+    const panel = colunas[0].closest(".panel");
+    push(panel?.querySelector(".panel-header h2")?.textContent || "Resumo do Orçamento");
+    push("Indicador", "Valor (R$ mi)");
+    colunas.forEach((col) => {
+      const label = col.querySelector(".bridge-label");
+      const sinal = label?.querySelector(".bridge-sign")?.textContent.trim() || "";
+      const nome = ((sinal ? sinal + " " : "") + (label?.textContent || "").replace(sinal, "").trim()).trim();
+      const valor = col.querySelector(".bridge-value")?.textContent || "";
+      push(nome, moneyToNumber(valor) ?? valor);
+    });
+    push("");
+  }
+
+  document.querySelectorAll(".content .panel").forEach((panel) => {
+    const table = panel.querySelector("table");
+    if (!table) return;
+    push(panel.querySelector(".panel-header h2")?.textContent || "Tabela");
+    pushTable(table, push);
+    push("");
+  });
+
+  return lines.join("\r\n");
+}
+
+function downloadTextFile(filename, content, mime) {
+  const blob = new Blob(["\uFEFF" + content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* PDF = impressão do próprio HTML. Sem biblioteca: o papel usa o @media print
+   do style.css, então sai igual à tela. O usuário escolhe "Salvar como PDF". */
 function initPdfExport() {
   document.querySelectorAll("[data-export-pdf]").forEach((el) => {
     el.addEventListener("click", () => {
       showToast('Abrindo a impressão — escolha "Salvar como PDF" no destino', "info");
       setTimeout(() => window.print(), 200);
+    });
+  });
+}
+
+function initDashboardExport() {
+  document.querySelectorAll("[data-export-dashboard]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const filename = `dashboard-orcamento-${new Date().toISOString().slice(0, 10)}.csv`;
+      downloadTextFile(filename, buildDashboardCsv(), "text/csv;charset=utf-8;");
+      showToast(`Dashboard exportado: ${filename}`, "success");
     });
   });
 }
@@ -1266,6 +1367,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initExcelPaste();
   initMonthGroup();
   initHierarchyCollapse();
+  initDashboardExport();
   initPdfExport();
   initEntregas();
   initPacotes();
