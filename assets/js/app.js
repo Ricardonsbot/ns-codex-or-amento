@@ -870,10 +870,58 @@ function dataBR(iso) {
   return iso ? new Date(iso + "T12:00:00").toLocaleDateString("pt-BR") : "—";
 }
 
+function dataHoraBR(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
 function diasDesde(iso) {
   if (!iso) return 0;
   const ms = new Date() - new Date(iso + "T12:00:00");
   return Math.max(0, Math.floor(ms / 86400000));
+}
+
+/* Aceite final: ato manual e nominal do líder da área, depois da 1ª instância.
+   Não existe aprovação em massa aqui — é um de cada vez, e o registro vira log. */
+function htmlAceiteFinal(sub, declaracao) {
+  const lider = sub.liderResponsavel || { nome: "—", cargo: "" };
+
+  if (sub.aceiteFinal) {
+    const obs = sub.aceiteFinal.observacao
+      ? `<div class="aceite-obs"><span class="aprov-rotulo">Observação do líder</span>${escaparTexto(sub.aceiteFinal.observacao)}</div>`
+      : "";
+    return `<div class="aceite-registrado">
+      <div class="aceite-quem">
+        <strong>${escaparTexto(sub.aceiteFinal.por)}</strong>
+        <span>${escaparTexto(sub.aceiteFinal.cargo)}</span>
+      </div>
+      <div class="aceite-quando">Assumido em ${dataHoraBR(sub.aceiteFinal.em)}</div>
+      <div class="aceite-declaracao">“${escaparTexto(sub.aceiteFinal.declaracao)}”</div>
+      ${obs}
+    </div>`;
+  }
+
+  if (sub.statusOficial !== "aprovado") {
+    return `<div class="aceite-travado">
+      O aceite final só abre depois da aprovação de 1ª instância.
+      Status atual: <strong>${APROV_STATUS[sub.statusOficial].rotulo}</strong>.
+    </div>`;
+  }
+
+  return `<div class="aceite-form">
+    <div class="aceite-quem">
+      <strong>${escaparTexto(lider.nome)}</strong>
+      <span>${escaparTexto(lider.cargo)}</span>
+    </div>
+    <label class="aceite-check">
+      <input type="checkbox" data-aceite-declaro />
+      <span>${escaparTexto(declaracao)}</span>
+    </label>
+    <textarea data-aceite-obs rows="2" placeholder="Observação do líder (opcional) — fica registrada no log"></textarea>
+    <button class="btn btn-primary btn-sm" data-aceite-registrar disabled>✍ Registrar aceite final</button>
+    <p class="aceite-nota">Ato manual, um de cada vez — não há aprovação em massa. O registro entra no log com nome, cargo e horário, e não pode ser editado nem apagado.</p>
+  </div>`;
 }
 
 /* falha em regra "bloqueia" impede a aprovação — é o que dá peso à validação */
@@ -888,7 +936,7 @@ function initAprovacoes() {
   const detalhe = document.querySelector("[data-aprov-detalhe]");
   if (!fila || !detalhe) return;
 
-  const filtros = { bu: "", categoria: "", status: "pendente", situacao: "" };
+  const filtros = { bu: "", categoria: "", status: "pendente", situacao: "", aceite: "" };
   let dados = null;
   let regrasPorCodigo = {};
   let selecionado = null;
@@ -903,6 +951,9 @@ function initAprovacoes() {
       if (filtros.situacao === "bloqueada" && !travada) return false;
       if (filtros.situacao === "pendencia" && !sub.pendencias.length) return false;
       if (filtros.situacao === "limpa" && (travada || sub.pendencias.length)) return false;
+
+      if (filtros.aceite === "sem" && sub.aceiteFinal) return false;
+      if (filtros.aceite === "com" && !sub.aceiteFinal) return false;
       return true;
     });
   }
@@ -918,10 +969,45 @@ function initAprovacoes() {
     conta("bloqueadas", pendentes.filter((s) => bloqueiosDaSubmissao(s, regrasPorCodigo).length).length);
     conta("pendencias", pendentes.filter((s) => s.pendencias.length).length);
 
-    const aprovadas = todas.filter((s) => s.statusOficial === "aprovado").length;
+    const aprovadasLista = todas.filter((s) => s.statusOficial === "aprovado");
+    const aprovadas = aprovadasLista.length;
     const reprovadas = todas.filter((s) => s.statusOficial === "reprovado").length;
     conta("decididas", aprovadas + reprovadas);
     conta("decididas-detalhe", `${aprovadas} aprovadas · ${reprovadas} reprovadas`);
+
+    const semAceite = aprovadasLista.filter((s) => !s.aceiteFinal).length;
+    conta("sem-aceite", semAceite);
+    conta("aceite-detalhe", `${aprovadas - semAceite} de ${aprovadas} já assumidas por um líder`);
+  }
+
+  /* o log é auditoria: mostra todos os aceites, sem depender dos filtros da fila */
+  function renderLog() {
+    const corpo = document.querySelector("[data-log-tabela] tbody");
+    const resumo = document.querySelector("[data-log-resumo]");
+    if (!corpo) return;
+
+    const registros = dados.submissoes
+      .filter((s) => s.aceiteFinal)
+      .sort((a, b) => (a.aceiteFinal.em < b.aceiteFinal.em ? 1 : -1));
+
+    if (resumo) {
+      const lideres = new Set(registros.map((s) => s.aceiteFinal.por));
+      resumo.textContent = `${registros.length} aceite(s) registrado(s) por ${lideres.size} líder(es) · mostra todo o histórico, independente dos filtros acima`;
+    }
+
+    corpo.innerHTML = registros.length
+      ? registros
+          .map(
+            (s) => `<tr>
+              <td>${dataHoraBR(s.aceiteFinal.em)}</td>
+              <td><strong>${escaparTexto(s.aceiteFinal.por)}</strong><br /><span class="log-cargo">${escaparTexto(s.aceiteFinal.cargo)}</span></td>
+              <td>${escaparTexto(s.empresa)} · ${APROV_CATEGORIA[s.categoria]}</td>
+              <td>${escaparTexto(s.bu)} → ${escaparTexto(s.torre)}</td>
+              <td>${escaparTexto(s.aceiteFinal.observacao || "—")}</td>
+            </tr>`
+          )
+          .join("")
+      : '<tr><td colspan="5">Nenhum aceite final registrado ainda.</td></tr>';
   }
 
   function renderFila() {
@@ -1020,7 +1106,11 @@ function initAprovacoes() {
              <button class="btn btn-secondary btn-sm" data-aprov-decisao="devolvido">↩ Devolver para ajuste</button>
              <button class="btn btn-danger btn-sm" data-aprov-decisao="reprovado">✕ Reprovar</button>
            </div>`
-        : `<div class="aprov-acoes"><button class="btn btn-secondary btn-sm" data-aprov-decisao="pendente">↺ Reabrir decisão</button></div>`;
+        : `<div class="aprov-acoes">
+             <button class="btn btn-secondary btn-sm" data-aprov-decisao="pendente" ${sub.aceiteFinal ? "disabled" : ""}
+               title="${sub.aceiteFinal ? "Já há aceite final registrado — reabrir apagaria a responsabilidade assumida pelo líder" : "Voltar para análise"}">↺ Reabrir decisão</button>
+             ${sub.aceiteFinal ? '<span class="aprov-nota-trava">Travado pelo aceite final do líder</span>' : ""}
+           </div>`;
 
     detalhe.innerHTML = `
       <div class="panel-header">
@@ -1046,6 +1136,11 @@ function initAprovacoes() {
           <h3>Validações nas contas</h3>
           <div class="aprov-validacoes">${validacoes}</div>
         </div>
+
+        <div class="aprov-bloco">
+          <h3>Aceite final do líder</h3>
+          ${htmlAceiteFinal(sub, dados.declaracaoAceiteFinal)}
+        </div>
       </div>`;
   }
 
@@ -1053,6 +1148,7 @@ function initAprovacoes() {
     renderKpis();
     renderFila();
     renderDetalhe();
+    renderLog();
   }
 
   fila.addEventListener("click", (e) => {
@@ -1062,7 +1158,33 @@ function initAprovacoes() {
     redesenhar();
   });
 
+  /* o botão só destrava depois do líder marcar a declaração — é o que torna o ato manual */
+  detalhe.addEventListener("change", (e) => {
+    if (!e.target.matches("[data-aceite-declaro]")) return;
+    const registrar = detalhe.querySelector("[data-aceite-registrar]");
+    if (registrar) registrar.disabled = !e.target.checked;
+  });
+
   detalhe.addEventListener("click", (e) => {
+    const aceitar = e.target.closest("[data-aceite-registrar]");
+    if (aceitar && !aceitar.disabled) {
+      const sub = dados.submissoes.find((s) => s.id === selecionado);
+      const lider = sub?.liderResponsavel;
+      if (!sub || !lider) return;
+
+      sub.aceiteFinal = {
+        por: lider.nome,
+        cargo: lider.cargo,
+        em: new Date().toISOString().slice(0, 16),
+        declaracao: dados.declaracaoAceiteFinal,
+        observacao: detalhe.querySelector("[data-aceite-obs]")?.value.trim() || "",
+      };
+
+      showToast(`Aceite final registrado: ${lider.nome} assumiu ${sub.empresa} · ${APROV_CATEGORIA[sub.categoria]}`, "success");
+      redesenhar();
+      return;
+    }
+
     const botao = e.target.closest("[data-aprov-decisao]");
     if (!botao || botao.disabled) return;
 

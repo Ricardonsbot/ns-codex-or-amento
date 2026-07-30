@@ -73,7 +73,7 @@
         ⓘ As submissões vêm de <strong>Referencias/aprovacoes.json</strong>, derivado do mesmo <a href="entregas.html" style="color:var(--color-primary); font-weight:600;">mapa de Entregas</a> — só chega aqui o que o responsável já enviou. Decisões, pendências e validações são ilustrativas do protótipo.
       </div>
 
-      <div class="kpi-grid">
+      <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
         <div class="kpi-card margem">
           <div class="kpi-label">Aguardando decisão</div>
           <div class="kpi-value" data-aprov-kpi="pendente">—</div>
@@ -93,6 +93,11 @@
           <div class="kpi-label">Já decididas</div>
           <div class="kpi-value" data-aprov-kpi="decididas">—</div>
           <div class="kpi-delta up" data-aprov-kpi="decididas-detalhe">—</div>
+        </div>
+        <div class="kpi-card margem">
+          <div class="kpi-label">Aguardando aceite final</div>
+          <div class="kpi-value" data-aprov-kpi="sem-aceite">—</div>
+          <div class="kpi-delta" data-aprov-kpi="aceite-detalhe">—</div>
         </div>
       </div>
 
@@ -129,6 +134,14 @@
             <option value="limpa">Só as prontas para aprovar</option>
           </select>
         </div>
+        <div class="filter-field">
+          <label>Aceite final</label>
+          <select data-aprov-filtro="aceite">
+            <option value="">Com ou sem aceite</option>
+            <option value="sem">Aguardando o líder</option>
+            <option value="com">Já aceito pelo líder</option>
+          </select>
+        </div>
       </div>
 
       <div class="aprov-layout">
@@ -156,6 +169,32 @@
         </div>
 
       </div>
+
+      <!-- Log do aprovador final -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Log do Aprovador Final</h2>
+            <p data-log-resumo>—</p>
+          </div>
+          <span class="badge status-rascunho"><span class="badge-dot"></span>registro não editável</span>
+        </div>
+        <div class="panel-body table-wrap">
+          <table class="report-table" data-log-tabela>
+            <thead>
+              <tr>
+                <th>Quando</th>
+                <th>Quem assumiu</th>
+                <th>O que foi aceito</th>
+                <th>Área</th>
+                <th>Observação do líder</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </main>
 </div>
