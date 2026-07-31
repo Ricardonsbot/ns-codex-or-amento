@@ -2068,6 +2068,302 @@ tfoot td {
 }
 
 /* ==========================================================================
+   Cronograma do ciclo — Gantt, calendário de entregas e reminders
+   ========================================================================== */
+
+.gantt { --gantt-rotulo: 300px; }
+
+.gantt-legenda {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.gantt-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 3px;
+}
+
+.gantt-dot.concluida { background: var(--color-success); }
+.gantt-dot.andamento { background: var(--color-primary); }
+.gantt-dot.atrasada { background: var(--color-danger); }
+.gantt-dot.futura { background: #c3cad6; }
+
+.gantt-meses,
+.gantt-linha {
+  display: grid;
+  grid-template-columns: var(--gantt-rotulo) 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.gantt-meses .gantt-faixa {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gantt-meses .gantt-faixa span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  border-left: 1px solid var(--color-border);
+  padding: 0 0 6px 6px;
+}
+
+.gantt-corpo {
+  position: relative;
+  padding-top: 8px;
+}
+
+.gantt-linha { padding: 5px 0; }
+
+.gantt-rotulo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.gantt-rotulo strong { font-size: 13px; }
+
+.gantt-rotulo span {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.gantt-rotulo em {
+  font-style: normal;
+  font-size: 11px;
+  color: #9aa3b2;
+}
+
+.gantt-faixa {
+  position: relative;
+  height: 26px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+}
+
+.gantt-barra {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  min-width: 10px;
+}
+
+.gantt-barra.concluida { background: #b7e6d0; }
+.gantt-barra.andamento { background: #c7d6fb; }
+.gantt-barra.atrasada { background: #f7cccc; }
+.gantt-barra.futura { background: #dfe4ec; }
+
+.gantt-preenchido {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.gantt-barra.concluida .gantt-preenchido { background: var(--color-success); }
+.gantt-barra.andamento .gantt-preenchido { background: var(--color-primary); }
+.gantt-barra.atrasada .gantt-preenchido { background: var(--color-danger); }
+.gantt-barra.futura .gantt-preenchido { background: #aab3c2; }
+
+.gantt-texto {
+  position: relative;
+  z-index: 1;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--color-text);
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+/* camada que cobre só a área das barras, para o "hoje" cair na data certa */
+.gantt-hoje-camada {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--gantt-rotulo) + 12px);
+  right: 0;
+  pointer-events: none;
+}
+
+.gantt-hoje {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-despesa);
+  z-index: 2;
+}
+
+.gantt-hoje span {
+  position: absolute;
+  top: -4px;
+  left: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-despesa);
+  white-space: nowrap;
+}
+
+@media (max-width: 1000px) {
+  .gantt { --gantt-rotulo: 180px; }
+}
+
+/* ---------- Calendário de entregas + reminders ---------- */
+
+.ciclo-colunas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .ciclo-colunas { grid-template-columns: 1fr; }
+}
+
+.calendario {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.marco {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.marco.proximo {
+  border-color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.marco.passado { opacity: .6; }
+
+.marco-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 34px;
+  line-height: 1.1;
+}
+
+.marco-data strong { font-size: 16px; }
+
+.marco-data span {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.marco-texto {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.marco-texto strong { font-size: 13px; }
+
+.marco-texto span {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.marco-quando {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.reminder-regra {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12.5px;
+}
+
+.reminder-regra p { margin: 3px 0 0; color: var(--color-text-muted); }
+
+.reminder-quando {
+  flex-shrink: 0;
+  min-width: 118px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--color-primary);
+  background: var(--color-info-bg);
+  border-radius: 999px;
+  padding: 3px 9px;
+  text-align: center;
+}
+
+.reminder-canal {
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.reminder-titulo {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  margin: 18px 0 10px;
+}
+
+.reminder-fila {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reminder-disparo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-size: 12.5px;
+}
+
+.reminder-data {
+  font-weight: 700;
+  min-width: 78px;
+}
+
+.reminder-alvo {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
    Diluição de reajuste — valor distribuído pelos meses escolhidos
    ========================================================================== */
 

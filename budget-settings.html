@@ -72,6 +72,57 @@
         ⓘ Protótipo visual — cada Ciclo (ano) tem suas Versões, do tipo <strong>Original</strong> (a primeira) ou <strong>Revisão</strong> (as seguintes). As ações abaixo são simuladas.
       </div>
 
+      <!-- Linha do tempo do projeto de budget (Gantt) -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Linha do Tempo do Budget — Ciclo 2026</h2>
+            <p data-gantt-resumo>—</p>
+          </div>
+          <div class="gantt-legenda">
+            <span><span class="gantt-dot concluida"></span> Concluída</span>
+            <span><span class="gantt-dot andamento"></span> Em andamento</span>
+            <span><span class="gantt-dot atrasada"></span> Atrasada</span>
+            <span><span class="gantt-dot futura"></span> A começar</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="gantt" data-gantt>
+            <div class="empty-hint">Carregando o cronograma…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ciclo-colunas">
+        <!-- Calendário de entregas -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Calendário de Entregas</h2>
+              <p>Marcos do ciclo, do mais próximo para o mais distante</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="calendario" data-calendario></div>
+          </div>
+        </div>
+
+        <!-- Reminders -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Reminders</h2>
+              <p>Regras de lembrete e o que dispararia a partir de hoje</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="reminder-regras" data-reminder-regras></div>
+            <h3 class="reminder-titulo">Próximos disparos</h3>
+            <div class="reminder-fila" data-reminder-fila></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Ciclos -->
       <div class="panel">
         <div class="panel-header">

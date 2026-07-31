@@ -1,0 +1,132 @@
+{
+  "ciclo": "2026",
+  "versaoAtiva": "v3 — Forecast Rolling",
+  "observacao": "Cronograma do projeto de budget: etapas, donos e datas. As etapas de lançamento têm fonteEntregas, então o avanço delas é calculado a partir de entregas.json — não é digitado aqui. Datas e responsáveis são ilustrativos do protótipo.",
+  "etapas": [
+    {
+      "id": "E1",
+      "nome": "Abertura do ciclo e premissas macro",
+      "inicio": "2026-06-15",
+      "fim": "2026-06-30",
+      "responsavel": "Emerson Nakamura",
+      "area": "FP&A",
+      "donoDoDado": "IPCA, IGP-M e câmbio do ciclo",
+      "avanco": 100,
+      "depende": []
+    },
+    {
+      "id": "E2",
+      "nome": "Cadastros e estrutura organizacional",
+      "inicio": "2026-06-22",
+      "fim": "2026-07-05",
+      "responsavel": "Marina Costa",
+      "area": "Controladoria",
+      "donoDoDado": "Layout Torres, plano de contas e pacotes",
+      "avanco": 100,
+      "depende": ["E1"]
+    },
+    {
+      "id": "E3",
+      "nome": "Lançamento de Receita",
+      "inicio": "2026-07-01",
+      "fim": "2026-07-15",
+      "responsavel": "Responsáveis de área",
+      "area": "Áreas de negócio",
+      "donoDoDado": "Receita por empresa",
+      "fonteEntregas": "receita",
+      "depende": ["E2"]
+    },
+    {
+      "id": "E4",
+      "nome": "Lançamento de Despesa",
+      "inicio": "2026-07-01",
+      "fim": "2026-07-24",
+      "responsavel": "Responsáveis de área",
+      "area": "Áreas de negócio",
+      "donoDoDado": "Despesa por empresa e pacote",
+      "fonteEntregas": "despesa",
+      "depende": ["E2"]
+    },
+    {
+      "id": "E5",
+      "nome": "Lançamento de Capex e ativação",
+      "inicio": "2026-07-08",
+      "fim": "2026-08-14",
+      "responsavel": "Responsáveis de área",
+      "area": "Áreas de negócio",
+      "donoDoDado": "Projetos de investimento e classificação PP&E",
+      "fonteEntregas": "capex",
+      "depende": ["E2"]
+    },
+    {
+      "id": "E6",
+      "nome": "Aprovação de 1ª instância",
+      "inicio": "2026-07-16",
+      "fim": "2026-08-05",
+      "responsavel": "Aprovadores",
+      "area": "Gestores",
+      "donoDoDado": "Parecer e validações nas contas",
+      "avanco": 62,
+      "depende": ["E3", "E4"]
+    },
+    {
+      "id": "E7",
+      "nome": "Aceite final dos líderes",
+      "inicio": "2026-07-25",
+      "fim": "2026-08-12",
+      "responsavel": "Líderes de Torre",
+      "area": "Liderança",
+      "donoDoDado": "Responsabilidade formal pelo número da área",
+      "avanco": 59,
+      "depende": ["E6"]
+    },
+    {
+      "id": "E8",
+      "nome": "Consolidação e fechamento do P&L",
+      "inicio": "2026-08-10",
+      "fim": "2026-08-20",
+      "responsavel": "Emerson Nakamura",
+      "area": "FP&A",
+      "donoDoDado": "P&L consolidado e bridge do EBITDA",
+      "avanco": 0,
+      "depende": ["E7"]
+    },
+    {
+      "id": "E9",
+      "nome": "Comitê de aprovação do budget",
+      "inicio": "2026-08-21",
+      "fim": "2026-08-25",
+      "responsavel": "Comitê Executivo",
+      "area": "Board",
+      "donoDoDado": "Decisão final sobre o ciclo",
+      "avanco": 0,
+      "depende": ["E8"]
+    },
+    {
+      "id": "E10",
+      "nome": "Congelamento da versão",
+      "inicio": "2026-08-26",
+      "fim": "2026-08-28",
+      "responsavel": "Marina Costa",
+      "area": "Controladoria",
+      "donoDoDado": "Versão congelada e trava de edição",
+      "avanco": 0,
+      "depende": ["E9"]
+    }
+  ],
+  "marcos": [
+    { "data": "2026-07-15", "nome": "Corte de Receita", "detalhe": "Prazo final de lançamento da Receita", "etapa": "E3" },
+    { "data": "2026-07-24", "nome": "Corte de Despesa", "detalhe": "Prazo final de lançamento da Despesa", "etapa": "E4" },
+    { "data": "2026-08-05", "nome": "Fim da aprovação", "detalhe": "Última data para parecer dos aprovadores", "etapa": "E6" },
+    { "data": "2026-08-12", "nome": "Fim do aceite dos líderes", "detalhe": "Última data para o aceite final nominal", "etapa": "E7" },
+    { "data": "2026-08-14", "nome": "Corte de Capex", "detalhe": "Prazo final de lançamento do Capex", "etapa": "E5" },
+    { "data": "2026-08-25", "nome": "Comitê Executivo", "detalhe": "Apresentação e decisão sobre o ciclo", "etapa": "E9" },
+    { "data": "2026-08-28", "nome": "Versão congelada", "detalhe": "Budget fechado, edição travada", "etapa": "E10" }
+  ],
+  "reminders": [
+    { "diasAntes": 7, "para": "Responsáveis de área", "canal": "E-mail", "texto": "Falta uma semana para o corte — confira o que ainda está em rascunho." },
+    { "diasAntes": 2, "para": "Responsáveis de área", "canal": "E-mail + app", "texto": "Faltam 2 dias. O que não for enviado entra como não entregue." },
+    { "diasAntes": 0, "para": "Responsáveis e líderes", "canal": "E-mail + app", "texto": "Hoje é o corte. Depois disso a área aparece como atrasada no mapa de entregas." },
+    { "diasAntes": -3, "para": "Líderes de Torre", "canal": "E-mail", "texto": "Corte vencido há 3 dias com pendências na sua Torre — cobrança escalada para a liderança." }
+  ]
+}

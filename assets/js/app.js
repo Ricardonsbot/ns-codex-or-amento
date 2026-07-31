@@ -1697,6 +1697,203 @@ function initReajuste() {
   });
 }
 
+/* ---------- Cronograma do ciclo: Gantt, calendário e reminders ----------
+ * O avanço das etapas de lançamento não é digitado: sai de entregas.json,
+ * então a linha do tempo mostra a dinâmica real das entregas.
+ */
+
+const DIA_MS = 86400000;
+
+function soData(iso) {
+  return new Date(iso + "T12:00:00");
+}
+
+function diasEntre(a, b) {
+  return Math.round((soData(b) - soData(a)) / DIA_MS);
+}
+
+function hojeISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function statusEtapa(etapa, hoje) {
+  if (etapa.avanco >= 100) return { chave: "concluida", rotulo: "Concluída" };
+  if (diasEntre(etapa.fim, hoje) > 0) return { chave: "atrasada", rotulo: "Atrasada" };
+  if (diasEntre(etapa.inicio, hoje) >= 0) return { chave: "andamento", rotulo: "Em andamento" };
+  return { chave: "futura", rotulo: "A começar" };
+}
+
+function initCronograma() {
+  const gantt = document.querySelector("[data-gantt]");
+  if (!gantt) return;
+
+  const hoje = hojeISO();
+
+  Promise.all([
+    fetch("Referencias/cronograma.json").then((r) => r.json()),
+    fetch("Referencias/entregas.json").then((r) => r.json()).catch(() => null),
+  ])
+    .then(([crono, entregasDoc]) => {
+      // avanço real das etapas de lançamento, vindo do mapa de entregas
+      crono.etapas.forEach((etapa) => {
+        if (!etapa.fonteEntregas || !entregasDoc) return;
+        const total = entregasDoc.entregas.length;
+        const feitas = entregasDoc.entregas.filter(
+          (e) => e.status[etapa.fonteEntregas] === "aprovado"
+        ).length;
+        etapa.avanco = total ? Math.round((feitas / total) * 100) : 0;
+        etapa.detalheAvanco = `${feitas} de ${total} empresas`;
+      });
+
+      renderGantt(crono, hoje);
+      renderCalendario(crono, hoje);
+      renderReminders(crono, hoje);
+    })
+    .catch(() => {
+      gantt.innerHTML = '<div class="empty-hint">Não foi possível carregar <strong>Referencias/cronograma.json</strong>.</div>';
+    });
+
+  function renderGantt(crono, hoje) {
+    const inicioMin = crono.etapas.reduce((a, e) => (e.inicio < a ? e.inicio : a), crono.etapas[0].inicio);
+    const fimMax = crono.etapas.reduce((a, e) => (e.fim > a ? e.fim : a), crono.etapas[0].fim);
+    const span = diasEntre(inicioMin, fimMax) + 1;
+    const pos = (data) => (diasEntre(inicioMin, data) / span) * 100;
+
+    // cabeçalho de meses, cada um com a largura dos seus dias dentro do intervalo
+    const meses = [];
+    let cursor = soData(inicioMin);
+    cursor.setDate(1);
+    while (cursor <= soData(fimMax)) {
+      const ano = cursor.getFullYear();
+      const mes = cursor.getMonth();
+      const primeiro = new Date(ano, mes, 1);
+      const ultimo = new Date(ano, mes + 1, 0);
+      const de = primeiro < soData(inicioMin) ? soData(inicioMin) : primeiro;
+      const ate = ultimo > soData(fimMax) ? soData(fimMax) : ultimo;
+      const dias = Math.round((ate - de) / DIA_MS) + 1;
+      meses.push({ rotulo: `${MESES_CURTOS[mes]}/${String(ano).slice(2)}`, largura: (dias / span) * 100 });
+      cursor = new Date(ano, mes + 1, 1);
+    }
+
+    const concluidas = crono.etapas.filter((e) => e.avanco >= 100).length;
+    const atrasadas = crono.etapas.filter((e) => statusEtapa(e, hoje).chave === "atrasada").length;
+    const resumo = document.querySelector("[data-gantt-resumo]");
+    if (resumo) {
+      resumo.innerHTML = `${crono.etapas.length} etapas · ${concluidas} concluída(s) · <strong>${atrasadas} atrasada(s)</strong> · versão ativa ${escaparTexto(crono.versaoAtiva)}`;
+    }
+
+    const linhas = crono.etapas
+      .map((etapa) => {
+        const st = statusEtapa(etapa, hoje);
+        const esquerda = pos(etapa.inicio);
+        const largura = Math.max(1.2, ((diasEntre(etapa.inicio, etapa.fim) + 1) / span) * 100);
+        const dependeDe = etapa.depende.length ? ` · depois de ${etapa.depende.join(", ")}` : "";
+        const detalhe = etapa.detalheAvanco ? ` (${escaparTexto(etapa.detalheAvanco)})` : "";
+
+        return `<div class="gantt-linha">
+          <div class="gantt-rotulo">
+            <strong>${escaparTexto(etapa.nome)}</strong>
+            <span>${escaparTexto(etapa.responsavel)} · ${escaparTexto(etapa.area)}${dependeDe}</span>
+            <em>Dono do dado: ${escaparTexto(etapa.donoDoDado)}</em>
+          </div>
+          <div class="gantt-faixa">
+            <div class="gantt-barra ${st.chave}" style="left:${esquerda}%; width:${largura}%;"
+              title="${escaparTexto(etapa.nome)} — ${dataBR(etapa.inicio)} a ${dataBR(etapa.fim)} · ${st.rotulo} · ${etapa.avanco}%">
+              <span class="gantt-preenchido" style="width:${etapa.avanco}%"></span>
+              <span class="gantt-texto">${etapa.avanco}%${detalhe}</span>
+            </div>
+          </div>
+        </div>`;
+      })
+      .join("");
+
+    gantt.innerHTML = `
+      <div class="gantt-meses">
+        <div class="gantt-rotulo"></div>
+        <div class="gantt-faixa">${meses.map((m) => `<span style="width:${m.largura}%">${m.rotulo}</span>`).join("")}</div>
+      </div>
+      <div class="gantt-corpo">
+        ${linhas}
+        <div class="gantt-hoje-camada">
+          <div class="gantt-hoje" style="left:${pos(hoje)}%">
+            <span>hoje ${dataBR(hoje)}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderCalendario(crono, hoje) {
+    const alvo = document.querySelector("[data-calendario]");
+    if (!alvo) return;
+
+    alvo.innerHTML = crono.marcos
+      .slice()
+      .sort((a, b) => (a.data < b.data ? -1 : 1))
+      .map((m) => {
+        const dias = diasEntre(hoje, m.data);
+        const passou = dias < 0;
+        const quando = dias === 0 ? "hoje" : passou ? `há ${Math.abs(dias)} dia(s)` : `em ${dias} dia(s)`;
+        const d = soData(m.data);
+
+        return `<div class="marco ${passou ? "passado" : dias <= 7 ? "proximo" : ""}">
+          <div class="marco-data">
+            <strong>${String(d.getDate()).padStart(2, "0")}</strong>
+            <span>${MESES_CURTOS[d.getMonth()]}</span>
+          </div>
+          <div class="marco-texto">
+            <strong>${escaparTexto(m.nome)}</strong>
+            <span>${escaparTexto(m.detalhe)}</span>
+          </div>
+          <span class="marco-quando">${quando}</span>
+        </div>`;
+      })
+      .join("");
+  }
+
+  function renderReminders(crono, hoje) {
+    const regras = document.querySelector("[data-reminder-regras]");
+    const fila = document.querySelector("[data-reminder-fila]");
+    if (!regras || !fila) return;
+
+    regras.innerHTML = crono.reminders
+      .map((r) => {
+        const quando = r.diasAntes > 0 ? `${r.diasAntes} dias antes`
+          : r.diasAntes === 0 ? "no dia do corte"
+          : `${Math.abs(r.diasAntes)} dias depois do corte`;
+        return `<div class="reminder-regra">
+          <span class="reminder-quando">${quando}</span>
+          <div>
+            <strong>${escaparTexto(r.para)}</strong> <span class="reminder-canal">${escaparTexto(r.canal)}</span>
+            <p>${escaparTexto(r.texto)}</p>
+          </div>
+        </div>`;
+      })
+      .join("");
+
+    // cruza cada marco com cada regra e mostra o que ainda vai disparar
+    const disparos = [];
+    crono.marcos.forEach((m) => {
+      crono.reminders.forEach((r) => {
+        const data = new Date(soData(m.data) - r.diasAntes * DIA_MS);
+        const iso = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}-${String(data.getDate()).padStart(2, "0")}`;
+        const dias = diasEntre(hoje, iso);
+        if (dias >= 0) disparos.push({ iso, dias, marco: m.nome, para: r.para, canal: r.canal });
+      });
+    });
+
+    disparos.sort((a, b) => a.dias - b.dias);
+
+    fila.innerHTML = disparos.length
+      ? disparos.slice(0, 6).map((d) => `<div class="reminder-disparo">
+          <span class="reminder-data">${dataBR(d.iso)}</span>
+          <span>${d.dias === 0 ? "<strong>hoje</strong>" : `em ${d.dias} dia(s)`} · ${escaparTexto(d.marco)}</span>
+          <span class="reminder-alvo">${escaparTexto(d.para)} · ${escaparTexto(d.canal)}</span>
+        </div>`).join("")
+      : '<div class="empty-hint">Nenhum lembrete pendente para o restante do ciclo.</div>';
+  }
+}
+
 /* ---------- Sidebar: marca item ativo pela página atual ---------- */
 
 function markActiveNav() {
@@ -1728,5 +1925,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initAprovacoes();
   initAtivacao();
   initReajuste();
+  initCronograma();
   initReferenceAutocomplete();
 });
