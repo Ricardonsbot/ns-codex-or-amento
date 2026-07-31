@@ -180,6 +180,7 @@
                 <td class="month-col"><input type="number" value="4500" /></td>
                 <td class="text-right total-cell">R$ 44.450</td>
                 <td>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Venda de Produto - Varejo Físico" title="Diluir reajuste nos meses">%</button>
                   <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Venda de Produto - Varejo Físico" title="Replicar Para Todos os Meses">⇥</button>
                   <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Venda de Produto - Varejo Físico" title="Duplicar">⧉</button>
                   <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Venda de Produto - Varejo Físico" title="Remover">🗑</button>
@@ -203,6 +204,7 @@
                 <td class="month-col"><input type="number" value="2900" /></td>
                 <td class="text-right total-cell">R$ 22.800</td>
                 <td>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Venda de Produto - E-commerce" title="Diluir reajuste nos meses">%</button>
                   <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Venda de Produto - E-commerce" title="Replicar Para Todos os Meses">⇥</button>
                   <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Venda de Produto - E-commerce" title="Duplicar">⧉</button>
                   <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Venda de Produto - E-commerce" title="Remover">🗑</button>
@@ -226,6 +228,7 @@
                 <td class="month-col"><input type="number" value="260" /></td>
                 <td class="text-right total-cell">R$ 2.650</td>
                 <td>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Prestação de Serviço - Assistência" title="Diluir reajuste nos meses">%</button>
                   <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Prestação de Serviço - Assistência" title="Replicar Para Todos os Meses">⇥</button>
                   <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Prestação de Serviço - Assistência" title="Duplicar">⧉</button>
                   <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Prestação de Serviço - Assistência" title="Remover">🗑</button>
@@ -249,6 +252,7 @@
                 <td class="month-col"><input type="number" value="90" /></td>
                 <td class="text-right total-cell">R$ 809</td>
                 <td>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Outras Receitas Operacionais" title="Diluir reajuste nos meses">%</button>
                   <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Outras Receitas Operacionais" title="Replicar Para Todos os Meses">⇥</button>
                   <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Outras Receitas Operacionais" title="Duplicar">⧉</button>
                   <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Outras Receitas Operacionais" title="Remover">🗑</button>
@@ -273,6 +277,61 @@
 <datalist id="contas-datalist"></datalist>
 <datalist id="centros-datalist"></datalist>
 <datalist id="pacotes-datalist"></datalist>
+
+<div class="modal-overlay" id="modal-reajuste">
+  <div class="modal modal-reajuste">
+    <div class="modal-header">
+      <h3>Diluir reajuste</h3>
+      <button class="modal-close" data-modal-close title="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="reajuste-linha" data-reajuste-linha></p>
+
+      <div class="field-group">
+        <label>O que aplicar</label>
+        <select data-reajuste-tipo>
+          <option value="valor">Valor total em R$ mil — diluído nos meses escolhidos</option>
+          <option value="percentual">Percentual — sobre o que já está lançado no mês</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label data-reajuste-rotulo>Valor total do reajuste (R$ mil)</label>
+        <input type="number" data-reajuste-valor value="0" step="1" />
+      </div>
+
+      <div class="field-group" data-reajuste-distribuicao>
+        <label>Como diluir</label>
+        <select data-reajuste-modo>
+          <option value="igual">Igualmente entre os meses marcados</option>
+          <option value="proporcional">Proporcional ao já lançado em cada mês</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label>Meses</label>
+        <div class="reajuste-meses" data-reajuste-meses></div>
+        <div class="reajuste-atalhos">
+          <button type="button" class="btn btn-ghost btn-sm" data-reajuste-atalho="todos">Todos</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-reajuste-atalho="nenhum">Limpar</button>
+          <span class="reajuste-apartir">
+            A partir de
+            <select data-reajuste-apartir>
+              <option value="">—</option>
+            </select>
+            <span class="reajuste-dica">(aniversário do contrato)</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="reajuste-previa" data-reajuste-previa></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-modal-close>Cancelar</button>
+      <button class="btn btn-primary" data-reajuste-aplicar>Aplicar nos meses marcados</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast-container"></div>
 <script src="assets/js/app.js"></script>

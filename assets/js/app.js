@@ -1535,6 +1535,168 @@ function initAtivacao() {
     });
 }
 
+/* ---------- Diluição de reajuste ----------
+ * Coloca um valor (ou um %) e distribui pelos meses escolhidos. O "a partir de"
+ * cobre o caso do aniversário do contrato: o reajuste só pega dali para frente.
+ * A sobra do arredondamento vai para o último mês marcado, então a soma
+ * distribuída bate exatamente com o valor digitado.
+ */
+
+const MESES_CURTOS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+function initReajuste() {
+  const overlay = document.getElementById("modal-reajuste");
+  if (!overlay) return;
+
+  const campoValor = overlay.querySelector("[data-reajuste-valor]");
+  const campoTipo = overlay.querySelector("[data-reajuste-tipo]");
+  const campoModo = overlay.querySelector("[data-reajuste-modo]");
+  const blocoModo = overlay.querySelector("[data-reajuste-distribuicao]");
+  const caixaMeses = overlay.querySelector("[data-reajuste-meses]");
+  const selectApartir = overlay.querySelector("[data-reajuste-apartir]");
+  const previa = overlay.querySelector("[data-reajuste-previa]");
+  const rotulo = overlay.querySelector("[data-reajuste-rotulo]");
+
+  let linhaAlvo = null;
+
+  MESES_CURTOS.forEach((mes, i) => {
+    const label = document.createElement("label");
+    label.className = "reajuste-mes";
+    label.innerHTML = `<input type="checkbox" data-mes="${i}" /><span>${mes}</span>`;
+    caixaMeses.appendChild(label);
+
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = mes;
+    selectApartir.appendChild(opt);
+  });
+
+  const inputsMes = () => Array.from(linhaAlvo.querySelectorAll("td.month-col input"));
+  const marcados = () => Array.from(caixaMeses.querySelectorAll("input:checked")).map((c) => Number(c.dataset.mes));
+
+  /* devolve o quanto entra em cada mês marcado, já com a sobra ajustada */
+  function calcularDistribuicao() {
+    const meses = marcados();
+    const valor = Number(campoValor.value) || 0;
+    if (!linhaAlvo || !meses.length || !valor) return { meses, porMes: new Map(), total: 0 };
+
+    const atuais = inputsMes().map((i) => Number(i.value) || 0);
+    const porMes = new Map();
+
+    if (campoTipo.value === "percentual") {
+      meses.forEach((m) => porMes.set(m, Math.round((atuais[m] * valor) / 100)));
+    } else if (campoModo.value === "proporcional") {
+      const base = meses.reduce((s, m) => s + atuais[m], 0);
+      if (!base) {
+        meses.forEach((m) => porMes.set(m, Math.round(valor / meses.length)));
+      } else {
+        meses.forEach((m) => porMes.set(m, Math.round((valor * atuais[m]) / base)));
+      }
+    } else {
+      meses.forEach((m) => porMes.set(m, Math.round(valor / meses.length)));
+    }
+
+    // sobra do arredondamento no último mês marcado, para fechar o valor digitado
+    if (campoTipo.value !== "percentual") {
+      const somado = meses.reduce((s, m) => s + porMes.get(m), 0);
+      const ultimo = meses[meses.length - 1];
+      porMes.set(ultimo, porMes.get(ultimo) + (valor - somado));
+    }
+
+    return { meses, porMes, total: meses.reduce((s, m) => s + porMes.get(m), 0) };
+  }
+
+  function atualizarPrevia() {
+    const ehPercentual = campoTipo.value === "percentual";
+    blocoModo.hidden = ehPercentual;
+    rotulo.textContent = ehPercentual ? "Percentual do reajuste (%)" : "Valor total do reajuste (R$ mil)";
+
+    const { meses, porMes, total } = calcularDistribuicao();
+
+    if (!linhaAlvo || !meses.length || !total) {
+      previa.innerHTML = '<span class="reajuste-vazio">Escolha um valor e ao menos um mês para ver a prévia.</span>';
+      return;
+    }
+
+    const atuais = inputsMes().map((i) => Number(i.value) || 0);
+    const totalAntes = atuais.reduce((s, v) => s + v, 0);
+    const detalhe = meses
+      .map((m) => `<span class="reajuste-chip">${MESES_CURTOS[m]} <strong>+${porMes.get(m).toLocaleString("pt-BR")}</strong></span>`)
+      .join("");
+
+    previa.innerHTML = `
+      <div class="reajuste-previa-topo">
+        <span>${meses.length} mês(es) · <strong>+ R$ ${total.toLocaleString("pt-BR")} mil</strong> no ano</span>
+        <span class="reajuste-de-para">total da linha: R$ ${totalAntes.toLocaleString("pt-BR")} → <strong>R$ ${(totalAntes + total).toLocaleString("pt-BR")} mil</strong></span>
+      </div>
+      <div class="reajuste-chips">${detalhe}</div>`;
+  }
+
+  function abrir(botao) {
+    linhaAlvo = botao.closest("tr");
+    const nome = linhaAlvo.querySelector(".conta-nome-input")?.value.trim()
+      || botao.getAttribute("data-action-label") || "linha";
+    const atuais = inputsMes().map((i) => Number(i.value) || 0);
+
+    overlay.querySelector("[data-reajuste-linha]").innerHTML =
+      `<strong>${escaparTexto(nome)}</strong><br /><span class="reajuste-dica">Hoje: R$ ${atuais.reduce((s, v) => s + v, 0).toLocaleString("pt-BR")} mil no ano</span>`;
+
+    caixaMeses.querySelectorAll("input").forEach((c) => { c.checked = false; });
+    selectApartir.value = "";
+    campoValor.value = 0;
+    atualizarPrevia();
+    overlay.classList.add("open");
+  }
+
+  document.addEventListener("click", (e) => {
+    const botao = e.target.closest("[data-reajuste-abrir]");
+    if (botao) abrir(botao);
+  });
+
+  selectApartir.addEventListener("change", () => {
+    const inicio = selectApartir.value === "" ? null : Number(selectApartir.value);
+    caixaMeses.querySelectorAll("input").forEach((c) => {
+      c.checked = inicio !== null && Number(c.dataset.mes) >= inicio;
+    });
+    atualizarPrevia();
+  });
+
+  overlay.querySelectorAll("[data-reajuste-atalho]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const todos = btn.getAttribute("data-reajuste-atalho") === "todos";
+      caixaMeses.querySelectorAll("input").forEach((c) => { c.checked = todos; });
+      selectApartir.value = "";
+      atualizarPrevia();
+    });
+  });
+
+  overlay.addEventListener("change", (e) => {
+    if (e.target.matches("[data-reajuste-valor], [data-reajuste-tipo], [data-reajuste-modo], [data-mes]")) {
+      atualizarPrevia();
+    }
+  });
+  campoValor.addEventListener("input", atualizarPrevia);
+
+  overlay.querySelector("[data-reajuste-aplicar]").addEventListener("click", () => {
+    const { meses, porMes, total } = calcularDistribuicao();
+    if (!linhaAlvo || !meses.length || !total) {
+      showToast("Informe um valor e marque ao menos um mês", "warning");
+      return;
+    }
+
+    const inputs = inputsMes();
+    meses.forEach((m) => {
+      inputs[m].value = (Number(inputs[m].value) || 0) + porMes.get(m);
+    });
+
+    // avisa o resto da tela (ativação, pacote) que os valores mudaram
+    inputs[meses[0]].dispatchEvent(new Event("change", { bubbles: true }));
+
+    overlay.classList.remove("open");
+    showToast(`Reajuste de R$ ${total.toLocaleString("pt-BR")} mil diluído em ${meses.length} mês(es)`, "success");
+  });
+}
+
 /* ---------- Sidebar: marca item ativo pela página atual ---------- */
 
 function markActiveNav() {
@@ -1565,5 +1727,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initPacotes();
   initAprovacoes();
   initAtivacao();
+  initReajuste();
   initReferenceAutocomplete();
 });
