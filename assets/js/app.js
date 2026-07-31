@@ -1343,6 +1343,198 @@ function initAprovacoes() {
     });
 }
 
+/* ---------- Ativação: quanto do gasto sai de Expenses e vira ativo ----------
+ * Ativar não cria valor: o caixa é o mesmo. O que muda é o caminho no P&L —
+ * o valor ativado sai de Expenses (sobe o EBITDA) e volta diluído como
+ * depreciação/amortização, abaixo do EBITDA, ao longo da vida útil.
+ * Base: CPC 27 / IAS 16 (imobilizado) e CPC 04 / IAS 38 (intangível).
+ */
+
+function dinheiroMil(valor) {
+  return `R$ ${Math.round(valor).toLocaleString("pt-BR")} mil`;
+}
+
+function initAtivacao() {
+  const fluxo = document.querySelector("[data-ativacao-fluxo]");
+  if (!fluxo) return;
+
+  const efeito = document.querySelector("[data-ativacao-efeito]");
+  const painel = document.querySelector("[data-ativacao-painel]");
+  let ref = null;
+
+  function tipoPorNome(nome) {
+    return ref.tiposAtivo.find((t) => t.nome === nome) || ref.tiposAtivo[0];
+  }
+
+  function calcular() {
+    const linhas = Array.from(document.querySelectorAll(".entry-grid tbody tr"));
+    const resumo = {
+      total: 0, ativado: 0, opex: 0, elegivel: 0, da: 0,
+      porTipo: new Map(), alertas: [],
+    };
+
+    linhas.forEach((row) => {
+      const valor = totalAnualDaLinha(row);
+      if (!valor) return;
+
+      const tipo = tipoPorNome(row.querySelector(".ativacao-input")?.value.trim() || "");
+      const pct = Math.min(100, Math.max(0, Number(row.querySelector(".ativacao-pct")?.value) || 0));
+      const pacote = pacoteDaLinha(row);
+      const elegibilidade = ref.elegibilidadePorPacote[pacote];
+      const conta = row.querySelector(".conta-nome-input")?.value.trim() || "linha sem descrição";
+
+      resumo.total += valor;
+      if (elegibilidade && elegibilidade.grau !== "nao") resumo.elegivel += valor;
+
+      const ativa = tipo.natureza !== "Opex" && pct > 0;
+      const valorAtivado = ativa ? (valor * pct) / 100 : 0;
+
+      resumo.ativado += valorAtivado;
+      resumo.opex += valor - valorAtivado;
+
+      if (valorAtivado) {
+        const atual = resumo.porTipo.get(tipo.nome) || { tipo, valor: 0 };
+        atual.valor += valorAtivado;
+        resumo.porTipo.set(tipo.nome, atual);
+        if (tipo.vidaUtilAnos) resumo.da += valorAtivado / tipo.vidaUtilAnos;
+      }
+
+      // inconsistências que um auditor perguntaria
+      if (tipo.natureza === "Opex" && pct > 0) {
+        resumo.alertas.push(`<strong>${escaparTexto(conta)}</strong>: tem ${pct}% de ativação mas está classificada como Opex.`);
+      }
+      if (ativa && elegibilidade && elegibilidade.grau === "nao") {
+        resumo.alertas.push(`<strong>${escaparTexto(conta)}</strong>: ativa ${pct}% no pacote “${escaparTexto(pacote)}”, que não é elegível — ${escaparTexto(elegibilidade.nota)}`);
+      }
+      if (ativa && valorAtivado < ref.limiteMaterialidade.valorMil) {
+        resumo.alertas.push(`<strong>${escaparTexto(conta)}</strong>: valor ativado abaixo do limite de materialidade de R$ ${ref.limiteMaterialidade.valorMil} mil.`);
+      }
+    });
+
+    return resumo;
+  }
+
+  function render() {
+    const r = calcular();
+    const pctAtivado = r.total ? Math.round((r.ativado / r.total) * 100) : 0;
+    const pctElegivel = r.total ? Math.round((r.elegivel / r.total) * 100) : 0;
+
+    fluxo.innerHTML = `
+      <div class="ativ-barra">
+        <span class="ativ-parte opex" style="width:${100 - pctAtivado}%"></span>
+        <span class="ativ-parte ativado" style="width:${pctAtivado}%"></span>
+      </div>
+      <div class="ativ-numeros">
+        <div class="ativ-num">
+          <span class="ativ-rot">Lançado na grade</span>
+          <strong>${dinheiroMil(r.total)}</strong>
+        </div>
+        <div class="ativ-num">
+          <span class="ativ-rot">Fica em Opex</span>
+          <strong class="opex">${dinheiroMil(r.opex)}</strong>
+          <em>${100 - pctAtivado}% do lançado</em>
+        </div>
+        <div class="ativ-num">
+          <span class="ativ-rot">Ativado (sai de Expenses)</span>
+          <strong class="ativado">${dinheiroMil(r.ativado)}</strong>
+          <em>${pctAtivado}% do lançado</em>
+        </div>
+        <div class="ativ-num">
+          <span class="ativ-rot">Teto elegível pelos pacotes</span>
+          <strong>${dinheiroMil(r.elegivel)}</strong>
+          <em>${pctElegivel}% — o que a regra permitiria avaliar</em>
+        </div>
+      </div>`;
+
+    const porTipo = Array.from(r.porTipo.values())
+      .map((t) => `<li><strong>${escaparTexto(t.tipo.nome)}</strong> (${escaparTexto(t.tipo.natureza)}, ${t.tipo.vidaUtilAnos} anos) — ${dinheiroMil(t.valor)} · ${escaparTexto(t.tipo.metodo)} de ${dinheiroMil(t.valor / t.tipo.vidaUtilAnos)}/ano</li>`)
+      .join("");
+
+    const alertas = r.alertas.length
+      ? `<div class="ativ-alertas"><strong>${r.alertas.length} ponto(s) para revisar antes de fechar:</strong><ul>${r.alertas.map((a) => `<li>${a}</li>`).join("")}</ul></div>`
+      : "";
+
+    efeito.innerHTML = `
+      <h3>Efeito no P&amp;L</h3>
+      <div class="ativ-efeito-grid">
+        <div class="ativ-efeito-item up"><span>EBITDA</span><strong>+ ${dinheiroMil(r.ativado)}</strong><em>o gasto sai de Expenses</em></div>
+        <div class="ativ-efeito-item"><span>Capex</span><strong>+ ${dinheiroMil(r.ativado)}</strong><em>vira investimento no ciclo</em></div>
+        <div class="ativ-efeito-item neutro"><span>EBITDA after Capex</span><strong>sem efeito</strong><em>o caixa do ano é o mesmo</em></div>
+        <div class="ativ-efeito-item down"><span>D&amp;A a partir do próximo ano</span><strong>− ${dinheiroMil(r.da)}/ano</strong><em>abaixo do EBITDA, reduz o EBIT</em></div>
+      </div>
+      ${porTipo ? `<div class="ativ-por-tipo"><span class="aprov-rotulo">Ativos gerados</span><ul>${porTipo}</ul></div>` : ""}
+      ${alertas}`;
+
+    if (painel && !painel.hidden) renderCriterios();
+  }
+
+  function renderCriterios() {
+    const normas = ref.normas
+      .map((n) => `<div class="ativ-norma">
+          <strong>${escaparTexto(n.nome)}</strong> <span class="ativ-tag">${escaparTexto(n.norma)}</span>
+          <p><span class="ativ-sim">Ativa</span> ${escaparTexto(n.ativa)}</p>
+          <p><span class="ativ-nao">Não ativa</span> ${escaparTexto(n.naoAtiva)}</p>
+        </div>`)
+      .join("");
+
+    const criterios = ref.criteriosCPC04.map((c) => `<li>${escaparTexto(c)}</li>`).join("");
+
+    const pacotes = Object.entries(ref.elegibilidadePorPacote)
+      .map(([nome, e]) => `<li><span class="ativ-grau ${e.grau}">${e.grau === "elegivel" ? "elegível" : e.grau === "parcial" ? "parcial" : "não ativa"}</span><strong>${escaparTexto(nome)}</strong> — ${escaparTexto(e.nota)}</li>`)
+      .join("");
+
+    painel.innerHTML = `
+      ${normas}
+      <div class="ativ-norma">
+        <strong>Os seis critérios do CPC 04</strong>
+        <p>Para ativar a fase de desenvolvimento, todos precisam ser atendidos ao mesmo tempo:</p>
+        <ol>${criterios}</ol>
+      </div>
+      <div class="ativ-norma">
+        <strong>Materialidade</strong>
+        <p>${escaparTexto(ref.limiteMaterialidade.texto)}</p>
+      </div>
+      <div class="ativ-norma">
+        <strong>Elegibilidade por pacote</strong>
+        <ul class="ativ-pacotes">${pacotes}</ul>
+      </div>`;
+  }
+
+  document.querySelector("[data-ativacao-criterios]")?.addEventListener("click", () => {
+    if (!painel) return;
+    painel.hidden = !painel.hidden;
+    if (!painel.hidden) renderCriterios();
+  });
+
+  document.addEventListener("change", (e) => {
+    if (!ref) return;
+    if (e.target.closest(".ativacao-input, .ativacao-pct, .pacote-input") || e.target.matches("td.month-col input")) {
+      render();
+    }
+  });
+
+  fetch("Referencias/ativacao.json")
+    .then((r) => r.json())
+    .then((json) => {
+      ref = json;
+
+      const datalist = document.getElementById("ativacao-datalist");
+      if (datalist) {
+        json.tiposAtivo.forEach((t) => {
+          const opt = document.createElement("option");
+          opt.value = t.nome;
+          opt.label = t.natureza === "Opex" ? t.ajuda : `${t.natureza} · ${t.vidaUtilAnos} anos · ${t.ajuda}`;
+          datalist.appendChild(opt);
+        });
+      }
+
+      render();
+    })
+    .catch(() => {
+      fluxo.innerHTML = '<div class="empty-hint">Não foi possível carregar <strong>Referencias/ativacao.json</strong>.</div>';
+    });
+}
+
 /* ---------- Sidebar: marca item ativo pela página atual ---------- */
 
 function markActiveNav() {
@@ -1372,5 +1564,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initEntregas();
   initPacotes();
   initAprovacoes();
+  initAtivacao();
   initReferenceAutocomplete();
 });

@@ -126,6 +126,22 @@
         </div>
       </div>
 
+      <!-- ===== Ativação: quanto sai de Expenses ===== -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Ativação — quanto sai de Expenses</h2>
+            <p>Gasto ativado vira ativo (PP&amp;E ou Intangível) e volta ao P&amp;L como depreciação/amortização, abaixo do EBITDA</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" data-ativacao-criterios>ⓘ Critérios (CPC 27 / CPC 04)</button>
+        </div>
+        <div class="panel-body">
+          <div class="ativacao-fluxo" data-ativacao-fluxo></div>
+          <div class="ativacao-efeito" data-ativacao-efeito></div>
+          <div class="ativacao-criterios" data-ativacao-painel hidden></div>
+        </div>
+      </div>
+
       <!-- ===== Grade de lançamento ===== -->
       <div class="panel">
         <div class="panel-header">
@@ -139,7 +155,7 @@
           <table id="tabela-despesa" class="entry-grid">
             <thead>
               <tr>
-                <th colspan="8"></th>
+                <th colspan="10"></th>
                 <th colspan="12" class="month-group-header">
                   <button class="month-toggle-btn" data-month-toggle="tabela-despesa" title="Agrupar meses">
                     <span class="month-toggle-icon">−</span> Meses
@@ -153,6 +169,8 @@
                 <th>Linha do P&amp;L</th>
                 <th>Categoria</th>
                 <th>Pacote</th>
+                <th>Ativação</th>
+                <th class="text-right">% Ativ.</th>
                 <th>Centro de Custo</th>
                 <th>Fornecedor</th>
                 <th>Obs</th>
@@ -179,6 +197,8 @@
                 <td><input type="text" value="Despesas &gt; Pessoal" class="conta-linha-input" /></td>
                 <td><input type="text" value="Pessoal" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Estrutura de Pessoal" class="pacote-input" list="pacotes-datalist" /></td>
+                <td><input type="text" value="Não ativa — Opex" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td class="text-right"><input type="number" value="0" class="ativacao-pct" min="0" max="100" /></td>
                 <td><input type="text" value="Comercial" list="centros-datalist" /></td>
                 <td><input type="text" value="Folha Própria (CLT)" /></td>
                 <td><input type="text" value="Inclui 13º proporcional" /></td>
@@ -207,6 +227,8 @@
                 <td><input type="text" value="Despesas &gt; Pessoal" class="conta-linha-input" /></td>
                 <td><input type="text" value="Pessoal" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Estrutura de Pessoal" class="pacote-input" list="pacotes-datalist" /></td>
+                <td><input type="text" value="Não ativa — Opex" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td class="text-right"><input type="number" value="0" class="ativacao-pct" min="0" max="100" /></td>
                 <td><input type="text" value="Comercial" list="centros-datalist" /></td>
                 <td><input type="text" value="Sodexo (VR/VA)" /></td>
                 <td><input type="text" value="" /></td>
@@ -235,6 +257,8 @@
                 <td><input type="text" value="Despesas &gt; Serviços de Terceiros" class="conta-linha-input" /></td>
                 <td><input type="text" value="Tecnologia" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Tecnologia e Licenças" class="pacote-input" list="pacotes-datalist" /></td>
+                <td><input type="text" value="Não ativa — Opex" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td class="text-right"><input type="number" value="0" class="ativacao-pct" min="0" max="100" /></td>
                 <td><input type="text" value="TI" list="centros-datalist" /></td>
                 <td><input type="text" value="Amazon Web Services" /></td>
                 <td><input type="text" value="Contrato anual reajustado em Jan" /></td>
@@ -263,6 +287,8 @@
                 <td><input type="text" value="Despesas &gt; Serviços de Terceiros" class="conta-linha-input" /></td>
                 <td><input type="text" value="Marketing" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Crescimento e Expansão" class="pacote-input" list="pacotes-datalist" /></td>
+                <td><input type="text" value="Não ativa — Opex" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td class="text-right"><input type="number" value="0" class="ativacao-pct" min="0" max="100" /></td>
                 <td><input type="text" value="Comercial" list="centros-datalist" /></td>
                 <td><input type="text" value="Meta Ads" /></td>
                 <td><input type="text" value="" /></td>
@@ -291,6 +317,8 @@
                 <td><input type="text" value="Despesas &gt; Serviços de Terceiros" class="conta-linha-input" /></td>
                 <td><input type="text" value="Viagens" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Operação Base" class="pacote-input" list="pacotes-datalist" /></td>
+                <td><input type="text" value="Não ativa — Opex" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td class="text-right"><input type="number" value="0" class="ativacao-pct" min="0" max="100" /></td>
                 <td><input type="text" value="Comercial" list="centros-datalist" /></td>
                 <td><input type="text" value="Decolar Corporate" /></td>
                 <td><input type="text" value="" /></td>
@@ -311,6 +339,66 @@
                   <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Viagens" title="Replicar Para Todos os Meses">⇥</button>
                   <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Viagens" title="Duplicar">⧉</button>
                   <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Viagens" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="3.1.031" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Salários - Squad Novo TMS" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Despesas &gt; Pessoal" class="conta-linha-input" /></td>
+                <td><input type="text" value="Pessoal" class="conta-categoria-input" /></td>
+                <td><input type="text" value="Projetos e Iniciativas" class="pacote-input" list="pacotes-datalist" /></td>
+                <td><input type="text" value="Software desenvolvido internamente" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td class="text-right"><input type="number" value="70" class="ativacao-pct" min="0" max="100" /></td>
+                <td><input type="text" value="TI" list="centros-datalist" /></td>
+                <td><input type="text" value="Folha Própria (CLT)" /></td>
+                <td><input type="text" value="Fase de desenvolvimento, apontamento por projeto" /></td>
+                <td class="month-col"><input type="number" value="380" /></td>
+                <td class="month-col"><input type="number" value="380" /></td>
+                <td class="month-col"><input type="number" value="395" /></td>
+                <td class="month-col"><input type="number" value="395" /></td>
+                <td class="month-col"><input type="number" value="395" /></td>
+                <td class="month-col"><input type="number" value="410" /></td>
+                <td class="month-col"><input type="number" value="410" /></td>
+                <td class="month-col"><input type="number" value="410" /></td>
+                <td class="month-col"><input type="number" value="425" /></td>
+                <td class="month-col"><input type="number" value="425" /></td>
+                <td class="month-col"><input type="number" value="425" /></td>
+                <td class="month-col"><input type="number" value="440" /></td>
+                <td class="text-right total-cell">R$ 4.890</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Salários - Squad Novo TMS" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Salários - Squad Novo TMS" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Salários - Squad Novo TMS" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="3.2.014" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Notebooks e estações de trabalho" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Despesas &gt; Infra" class="conta-linha-input" /></td>
+                <td><input type="text" value="Infraestrutura" class="conta-categoria-input" /></td>
+                <td><input type="text" value="Tecnologia e Licenças" class="pacote-input" list="pacotes-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td class="text-right"><input type="number" value="100" class="ativacao-pct" min="0" max="100" /></td>
+                <td><input type="text" value="TI" list="centros-datalist" /></td>
+                <td><input type="text" value="Dell / Lenovo" /></td>
+                <td><input type="text" value="Reposição de parque + squad novo" /></td>
+                <td class="month-col"><input type="number" value="0" /></td>
+                <td class="month-col"><input type="number" value="0" /></td>
+                <td class="month-col"><input type="number" value="240" /></td>
+                <td class="month-col"><input type="number" value="0" /></td>
+                <td class="month-col"><input type="number" value="0" /></td>
+                <td class="month-col"><input type="number" value="180" /></td>
+                <td class="month-col"><input type="number" value="0" /></td>
+                <td class="month-col"><input type="number" value="0" /></td>
+                <td class="month-col"><input type="number" value="160" /></td>
+                <td class="month-col"><input type="number" value="0" /></td>
+                <td class="month-col"><input type="number" value="0" /></td>
+                <td class="month-col"><input type="number" value="120" /></td>
+                <td class="text-right total-cell">R$ 700</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Notebooks e estações de trabalho" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Notebooks e estações de trabalho" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Notebooks e estações de trabalho" title="Remover">🗑</button>
                 </td>
               </tr>
             </tbody>
@@ -508,6 +596,7 @@
 <datalist id="contas-datalist"></datalist>
 <datalist id="centros-datalist"></datalist>
 <datalist id="pacotes-datalist"></datalist>
+<datalist id="ativacao-datalist"></datalist>
 
 <div id="toast-container"></div>
 <script src="assets/js/app.js"></script>

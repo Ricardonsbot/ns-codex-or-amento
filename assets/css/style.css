@@ -2068,6 +2068,186 @@ tfoot td {
 }
 
 /* ==========================================================================
+   Ativação — quanto do gasto sai de Expenses e vira ativo
+   ========================================================================== */
+
+.ativ-barra {
+  display: flex;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-border);
+  margin-bottom: 16px;
+}
+
+.ativ-parte { display: block; height: 100%; }
+.ativ-parte.opex { background: var(--color-despesa); }
+.ativ-parte.ativado { background: var(--color-capex); }
+
+.ativ-numeros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .ativ-numeros { grid-template-columns: repeat(2, 1fr); }
+  .ativ-efeito-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+.ativ-num {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ativ-num strong { font-size: 19px; }
+.ativ-num strong.opex { color: var(--color-despesa); }
+.ativ-num strong.ativado { color: var(--color-capex); }
+
+.ativ-rot {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+}
+
+.ativ-num em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.ativacao-efeito {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.ativacao-efeito h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  margin: 0 0 12px;
+}
+
+.ativ-efeito-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.ativ-efeito-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.ativ-efeito-item span {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.ativ-efeito-item strong { font-size: 16px; }
+.ativ-efeito-item em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.ativ-efeito-item.up { border-left: 3px solid var(--color-success); }
+.ativ-efeito-item.up strong { color: var(--color-success); }
+.ativ-efeito-item.down { border-left: 3px solid var(--color-danger); }
+.ativ-efeito-item.down strong { color: var(--color-danger); }
+.ativ-efeito-item.neutro { border-left: 3px solid var(--color-text-muted); }
+
+.ativ-por-tipo {
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.ativ-por-tipo ul,
+.ativ-alertas ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.ativ-alertas {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-warning-bg);
+  border-left: 3px solid var(--color-warning);
+  font-size: 12.5px;
+}
+
+.ativacao-criterios {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.ativacao-criterios[hidden] { display: none; }
+
+.ativ-norma {
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.ativ-norma p { margin: 6px 0; }
+.ativ-norma ol,
+.ativ-norma ul { margin: 6px 0 0; padding-left: 18px; }
+
+.ativ-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-info-bg);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.ativ-sim, .ativ-nao {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  border-radius: 999px;
+  padding: 2px 7px;
+  margin-right: 6px;
+}
+
+.ativ-sim { background: var(--color-success-bg); color: var(--color-success); }
+.ativ-nao { background: var(--color-danger-bg); color: var(--color-danger); }
+
+.ativ-pacotes { list-style: none; padding-left: 0; }
+.ativ-pacotes li { margin-bottom: 5px; }
+
+.ativ-grau {
+  display: inline-block;
+  min-width: 74px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  text-align: center;
+}
+
+.ativ-grau.elegivel { background: var(--color-success-bg); color: var(--color-success); }
+.ativ-grau.parcial { background: var(--color-warning-bg); color: var(--color-warning); }
+.ativ-grau.nao { background: var(--color-danger-bg); color: var(--color-danger); }
+
+.entry-grid .ativacao-input { min-width: 170px; }
+.entry-grid .ativacao-pct { max-width: 70px; }
+
+/* ==========================================================================
    Pacote de gasto — o motivo do gasto, no contexto do lançamento
    ========================================================================== */
 

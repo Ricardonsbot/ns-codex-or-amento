@@ -1,0 +1,96 @@
+{
+  "observacao": "Ativação = reconhecer um gasto como ATIVO em vez de despesa do período. O caixa é o mesmo; o que muda é o caminho no resultado: o gasto ativado sai de Expenses (melhora o EBITDA) e volta ao P&L diluído em depreciação/amortização, abaixo do EBITDA, ao longo da vida útil. Por isso ativar não cria valor — remaneja o momento do impacto e cria D&A futura.",
+  "normas": [
+    {
+      "codigo": "CPC27",
+      "nome": "Imobilizado (PP&E)",
+      "norma": "CPC 27 / IAS 16",
+      "ativa": "Preço de aquisição, custos diretamente atribuíveis para deixar o bem no local e nas condições de funcionamento, e custos de desmontagem/remoção. Substituição de parte relevante ou inspeção principal entram no valor do ativo.",
+      "naoAtiva": "Gasto que só mantém o bem no padrão original — manutenção, reparo e conservação vão direto para o resultado."
+    },
+    {
+      "codigo": "CPC04",
+      "nome": "Intangível",
+      "norma": "CPC 04 / IAS 38",
+      "ativa": "Somente a fase de DESENVOLVIMENTO, e apenas se os seis critérios forem atendidos simultaneamente.",
+      "naoAtiva": "Fase de PESQUISA é despesa obrigatória. Marca, carteira de clientes e ágio gerados internamente nunca ativam."
+    }
+  ],
+  "criteriosCPC04": [
+    "Viabilidade técnica de concluir o ativo para uso ou venda",
+    "Intenção de concluir e de usar ou vender o ativo",
+    "Capacidade de usar ou vender o ativo",
+    "Forma como o ativo gerará benefícios econômicos futuros",
+    "Disponibilidade de recursos técnicos e financeiros para concluir",
+    "Capacidade de mensurar com confiabilidade os gastos atribuíveis"
+  ],
+  "limiteMaterialidade": {
+    "valorMil": 5,
+    "texto": "Itens abaixo de R$ 5 mil vão direto para despesa mesmo durando mais de um ano (política de materialidade do CPC 27)."
+  },
+  "tiposAtivo": [
+    {
+      "codigo": "OPEX",
+      "nome": "Não ativa — Opex",
+      "natureza": "Opex",
+      "norma": "—",
+      "vidaUtilAnos": 0,
+      "metodo": "—",
+      "ajuda": "Fica integralmente no resultado do período."
+    },
+    {
+      "codigo": "PPE-EQUIP",
+      "nome": "Equipamentos e hardware",
+      "natureza": "PP&E",
+      "norma": "CPC27",
+      "vidaUtilAnos": 5,
+      "metodo": "Depreciação",
+      "ajuda": "Notebooks, servidores, máquinas. Ativa pelo custo de aquisição mais instalação."
+    },
+    {
+      "codigo": "PPE-BENF",
+      "nome": "Benfeitorias em imóveis de terceiros",
+      "natureza": "PP&E",
+      "norma": "CPC27",
+      "vidaUtilAnos": 10,
+      "metodo": "Depreciação",
+      "ajuda": "Obra em imóvel alugado. Vida útil limitada ao prazo do contrato de locação."
+    },
+    {
+      "codigo": "INT-SW",
+      "nome": "Software desenvolvido internamente",
+      "natureza": "Intangível",
+      "norma": "CPC04",
+      "vidaUtilAnos": 5,
+      "metodo": "Amortização",
+      "ajuda": "Horas do time alocadas à fase de desenvolvimento. Exige os seis critérios e apontamento de horas por projeto."
+    },
+    {
+      "codigo": "INT-LIC",
+      "nome": "Licenças e software adquirido",
+      "natureza": "Intangível",
+      "norma": "CPC04",
+      "vidaUtilAnos": 3,
+      "metodo": "Amortização",
+      "ajuda": "Licença perpétua ou implantação de sistema. Assinatura mensal (SaaS) não ativa."
+    },
+    {
+      "codigo": "INT-IMPL",
+      "nome": "Implantação de sistema",
+      "natureza": "Intangível",
+      "norma": "CPC04",
+      "vidaUtilAnos": 5,
+      "metodo": "Amortização",
+      "ajuda": "Configuração e parametrização de ERP. Treinamento e suporte pós-implantação não ativam."
+    }
+  ],
+  "elegibilidadePorPacote": {
+    "Projetos e Iniciativas": { "grau": "elegivel", "nota": "Iniciativa com escopo e prazo definidos — costuma atender os critérios do CPC 04." },
+    "Crescimento e Expansão": { "grau": "parcial", "nota": "Ativa a estrutura nova; publicidade e marketing nunca ativam." },
+    "Tecnologia e Licenças": { "grau": "parcial", "nota": "Licença perpétua e implantação ativam; cloud e assinatura mensal são serviço." },
+    "M&A e Integração": { "grau": "parcial", "nota": "Custo de aquisição não ativa; a integração pode ativar conforme o ativo gerado." },
+    "Estrutura de Pessoal": { "grau": "parcial", "nota": "Só as horas alocadas à fase de desenvolvimento, com apontamento por projeto." },
+    "Operação Base": { "grau": "nao", "nota": "Manutenção do padrão atual é despesa do período." },
+    "Extraordinário": { "grau": "nao", "nota": "Evento pontual sem ativo associado." }
+  }
+}
