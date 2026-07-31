@@ -292,10 +292,17 @@
         <select data-reajuste-tipo>
           <option value="valor">Valor total em R$ mil — diluído nos meses escolhidos</option>
           <option value="percentual">Percentual — sobre o que já está lançado no mês</option>
+          <option value="indice">Índice do cadastro — usa a premissa macro do ciclo</option>
         </select>
       </div>
 
-      <div class="field-group">
+      <div class="field-group" data-reajuste-bloco-indice hidden>
+        <label>Índice</label>
+        <select data-reajuste-indice></select>
+        <span class="reajuste-fonte" data-reajuste-fonte></span>
+      </div>
+
+      <div class="field-group" data-reajuste-bloco-valor>
         <label data-reajuste-rotulo>Valor total do reajuste (R$ mil)</label>
         <input type="number" data-reajuste-valor value="0" step="1" />
       </div>

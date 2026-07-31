@@ -66,7 +66,21 @@
 
     <div class="content">
       <div class="proto-banner">
-        ⓘ Protótipo visual — cadastre índices (IGP-M, INPC, IPCA ou outro) e informe a % mês a mês. Essa % alimentaria o cálculo de reajuste de contratos de Receita e Despesa.
+        ⓘ As premissas abaixo vêm de <strong>Referencias/premissas.json</strong> e <strong>alimentam de verdade</strong> a diluição de reajuste nas grades de Receita e Despesa — lá o % é escolhido pelo índice, não digitado à mão. A tabela de Índices logo abaixo é a tela de edição do protótipo.
+      </div>
+
+      <!-- Premissas macro do ciclo -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Premissas Macro do Ciclo 2026</h2>
+            <p data-premissas-resumo>—</p>
+          </div>
+          <span class="badge status-aprovado"><span class="badge-dot"></span>usado nos lançamentos</span>
+        </div>
+        <div class="panel-body">
+          <div class="premissas" data-premissas></div>
+        </div>
       </div>
 
       <!-- Índices cadastrados -->

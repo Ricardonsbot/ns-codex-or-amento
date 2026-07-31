@@ -1544,6 +1544,71 @@ function initAtivacao() {
 
 const MESES_CURTOS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
+/* ---------- Premissas macro do ciclo (IPCA, IGP-M, câmbio) ----------
+ * Índice acumula COMPOSTO: (1+i1)×(1+i2)…−1. Somar as taxas do mês dá um
+ * número parecido e errado, e o erro cresce com a inflação.
+ */
+
+function acumuladoComposto(mensal) {
+  return (mensal.reduce((fator, taxa) => fator * (1 + taxa / 100), 1) - 1) * 100;
+}
+
+function initPremissas() {
+  const alvo = document.querySelector("[data-premissas]");
+  if (!alvo) return;
+
+  fetch("Referencias/premissas.json")
+    .then((r) => r.json())
+    .then((doc) => {
+      const resumo = document.querySelector("[data-premissas-resumo]");
+      if (resumo) {
+        const indices = doc.premissas.filter((p) => p.tipo === "indice").length;
+        resumo.textContent = `${indices} índices e ${doc.premissas.length - indices} câmbio · alimentam a diluição de reajuste nas grades de lançamento`;
+      }
+
+      alvo.innerHTML = doc.premissas
+        .map((p) => {
+          const ehIndice = p.tipo === "indice";
+          const fecho = ehIndice
+            ? `${acumuladoComposto(p.mensal).toFixed(2).replace(".", ",")}%`
+            : `R$ ${p.mensal[p.mensal.length - 1].toFixed(2).replace(".", ",")}`;
+          const rotuloFecho = ehIndice ? "Acumulado 12m (composto)" : "Dez/26";
+
+          const variacao = ehIndice
+            ? ""
+            : `<span class="premissa-var">${(((p.mensal[11] / p.mensal[0]) - 1) * 100).toFixed(1).replace(".", ",")}% no ano</span>`;
+
+          const celulas = p.mensal
+            .map((v, i) => `<span class="premissa-mes">
+                <em>${MESES_CURTOS[i]}</em>
+                <strong>${ehIndice ? v.toFixed(2).replace(".", ",") : v.toFixed(2).replace(".", ",")}</strong>
+              </span>`)
+            .join("");
+
+          return `<div class="premissa ${p.status === "rascunho" ? "rascunho" : ""}">
+            <div class="premissa-topo">
+              <div>
+                <strong>${escaparTexto(p.nome)}</strong>
+                <span class="premissa-tag">${escaparTexto(p.tipo === "indice" ? "Índice" : "Câmbio")}</span>
+                <span class="badge ${p.status === "ativo" ? "status-aprovado" : "status-rascunho"}"><span class="badge-dot"></span>${p.status === "ativo" ? "Ativo" : "Rascunho"}</span>
+                <p>${escaparTexto(p.descricao)} · fonte ${escaparTexto(p.fonte)} · aplica em <strong>${escaparTexto(p.aplicacao)}</strong></p>
+              </div>
+              <div class="premissa-fecho">
+                <span class="ativ-rot">${rotuloFecho}</span>
+                <strong>${fecho}</strong>
+                ${variacao}
+              </div>
+            </div>
+            <div class="premissa-serie">${celulas}</div>
+          </div>`;
+        })
+        .join("");
+    })
+    .catch(() => {
+      alvo.innerHTML = '<div class="empty-hint">Não foi possível carregar <strong>Referencias/premissas.json</strong>.</div>';
+    });
+}
+
 function initReajuste() {
   const overlay = document.getElementById("modal-reajuste");
   if (!overlay) return;
@@ -1556,8 +1621,29 @@ function initReajuste() {
   const selectApartir = overlay.querySelector("[data-reajuste-apartir]");
   const previa = overlay.querySelector("[data-reajuste-previa]");
   const rotulo = overlay.querySelector("[data-reajuste-rotulo]");
+  const blocoIndice = overlay.querySelector("[data-reajuste-bloco-indice]");
+  const blocoValor = overlay.querySelector("[data-reajuste-bloco-valor]");
+  const selectIndice = overlay.querySelector("[data-reajuste-indice]");
+  const fonteIndice = overlay.querySelector("[data-reajuste-fonte]");
 
   let linhaAlvo = null;
+  let premissas = [];
+
+  /* o % do índice é o acumulado 12m — é assim que reajuste de contrato funciona:
+     no aniversário aplica-se o acumulado do período anterior, não o do mês */
+  function premissaEscolhida() {
+    return premissas.find((p) => p.codigo === selectIndice?.value) || null;
+  }
+
+  function sincronizarIndice() {
+    const p = premissaEscolhida();
+    if (!p) return;
+    const acumulado = acumuladoComposto(p.mensal);
+    campoValor.value = acumulado.toFixed(2);
+    if (fonteIndice) {
+      fonteIndice.textContent = `${p.nome} · acumulado 12m ${acumulado.toFixed(2).replace(".", ",")}% · fonte ${p.fonte} · aplica em ${p.aplicacao}`;
+    }
+  }
 
   MESES_CURTOS.forEach((mes, i) => {
     const label = document.createElement("label");
@@ -1583,7 +1669,7 @@ function initReajuste() {
     const atuais = inputsMes().map((i) => Number(i.value) || 0);
     const porMes = new Map();
 
-    if (campoTipo.value === "percentual") {
+    if (campoTipo.value === "percentual" || campoTipo.value === "indice") {
       meses.forEach((m) => porMes.set(m, Math.round((atuais[m] * valor) / 100)));
     } else if (campoModo.value === "proporcional") {
       const base = meses.reduce((s, m) => s + atuais[m], 0);
@@ -1597,7 +1683,7 @@ function initReajuste() {
     }
 
     // sobra do arredondamento no último mês marcado, para fechar o valor digitado
-    if (campoTipo.value !== "percentual") {
+    if (campoTipo.value === "valor") {
       const somado = meses.reduce((s, m) => s + porMes.get(m), 0);
       const ultimo = meses[meses.length - 1];
       porMes.set(ultimo, porMes.get(ultimo) + (valor - somado));
@@ -1607,9 +1693,15 @@ function initReajuste() {
   }
 
   function atualizarPrevia() {
-    const ehPercentual = campoTipo.value === "percentual";
-    blocoModo.hidden = ehPercentual;
-    rotulo.textContent = ehPercentual ? "Percentual do reajuste (%)" : "Valor total do reajuste (R$ mil)";
+    const tipo = campoTipo.value;
+    const ehIndice = tipo === "indice";
+
+    blocoModo.hidden = tipo !== "valor";
+    if (blocoIndice) blocoIndice.hidden = !ehIndice;
+    if (blocoValor) blocoValor.hidden = ehIndice;
+    rotulo.textContent = tipo === "percentual" ? "Percentual do reajuste (%)" : "Valor total do reajuste (R$ mil)";
+
+    if (ehIndice) sincronizarIndice();
 
     const { meses, porMes, total } = calcularDistribuicao();
 
@@ -1624,7 +1716,13 @@ function initReajuste() {
       .map((m) => `<span class="reajuste-chip">${MESES_CURTOS[m]} <strong>+${porMes.get(m).toLocaleString("pt-BR")}</strong></span>`)
       .join("");
 
+    const p = ehIndice ? premissaEscolhida() : null;
+    const origem = p
+      ? `<div class="reajuste-origem">Aplicando <strong>${escaparTexto(p.nome)}</strong> — acumulado 12m de ${acumuladoComposto(p.mensal).toFixed(2).replace(".", ",")}%, direto do cadastro de premissas</div>`
+      : "";
+
     previa.innerHTML = `
+      ${origem}
       <div class="reajuste-previa-topo">
         <span>${meses.length} mês(es) · <strong>+ R$ ${total.toLocaleString("pt-BR")} mil</strong> no ano</span>
         <span class="reajuste-de-para">total da linha: R$ ${totalAntes.toLocaleString("pt-BR")} → <strong>R$ ${(totalAntes + total).toLocaleString("pt-BR")} mil</strong></span>
@@ -1671,11 +1769,29 @@ function initReajuste() {
   });
 
   overlay.addEventListener("change", (e) => {
-    if (e.target.matches("[data-reajuste-valor], [data-reajuste-tipo], [data-reajuste-modo], [data-mes]")) {
+    if (e.target.matches("[data-reajuste-valor], [data-reajuste-tipo], [data-reajuste-modo], [data-mes], [data-reajuste-indice]")) {
       atualizarPrevia();
     }
   });
   campoValor.addEventListener("input", atualizarPrevia);
+
+  // índices do cadastro de premissas: câmbio fica de fora, não é reajuste em %
+  fetch("Referencias/premissas.json")
+    .then((r) => r.json())
+    .then((doc) => {
+      premissas = doc.premissas.filter((p) => p.tipo === "indice");
+      if (!selectIndice) return;
+      premissas.forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.codigo;
+        opt.textContent = `${p.nome} — ${p.aplicacao}`;
+        selectIndice.appendChild(opt);
+      });
+      sincronizarIndice();
+    })
+    .catch(() => {
+      campoTipo.querySelector('[value="indice"]')?.remove();
+    });
 
   overlay.querySelector("[data-reajuste-aplicar]").addEventListener("click", () => {
     const { meses, porMes, total } = calcularDistribuicao();
@@ -1926,5 +2042,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initAtivacao();
   initReajuste();
   initCronograma();
+  initPremissas();
   initReferenceAutocomplete();
 });

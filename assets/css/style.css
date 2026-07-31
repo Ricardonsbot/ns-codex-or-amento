@@ -2068,6 +2068,114 @@ tfoot td {
 }
 
 /* ==========================================================================
+   Premissas macro do ciclo — índices e câmbio
+   ========================================================================== */
+
+.premissas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.premissa {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.premissa.rascunho { border-style: dashed; }
+
+.premissa-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.premissa-topo strong { font-size: 14px; }
+
+.premissa-topo p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.premissa-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin: 0 6px;
+  background: var(--color-info-bg);
+  color: var(--color-primary);
+}
+
+.premissa-fecho {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.premissa-fecho strong { font-size: 18px; }
+
+.premissa-var {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.premissa-serie {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+}
+
+.premissa-mes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 5px 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.premissa-mes em {
+  font-style: normal;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.premissa-mes strong { font-size: 11.5px; }
+
+@media (max-width: 900px) {
+  .premissa-serie { grid-template-columns: repeat(6, 1fr); }
+}
+
+.reajuste-fonte {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* .field-group usa display:flex, que ganha do [hidden] do navegador —
+   sem isto o atributo hidden não esconde nada */
+.field-group[hidden] { display: none; }
+
+.reajuste-origem {
+  margin-bottom: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-info-bg);
+  color: var(--color-primary-dark);
+  font-size: 12px;
+}
+
+/* ==========================================================================
    Cronograma do ciclo — Gantt, calendário de entregas e reminders
    ========================================================================== */
 
