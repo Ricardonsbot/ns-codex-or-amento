@@ -76,35 +76,6 @@
         ⓘ Protótipo visual — digite em Conta para ver sugestões reais, agrupe os meses para economizar espaço, cole uma matriz do Excel ou use "Replicar Para Todos os Meses" a partir de Jan.
       </div>
 
-      <div class="filter-bar">
-        <div class="filter-field">
-          <label>BU</label>
-          <select><option>Corporate</option><option>PSL</option><option>Embarcador</option></select>
-        </div>
-        <div class="filter-field">
-          <label>Torre</label>
-          <select><option>Comercial</option><option>Operações</option><option>TI</option><option>G&amp;A</option></select>
-        </div>
-        <div class="filter-field">
-          <label>Natureza</label>
-          <select><option>Todas</option><option>Venda de Produto</option><option>Prestação de Serviço</option><option>Outras Receitas</option></select>
-        </div>
-        <div class="filter-field">
-          <label>Moeda</label>
-          <select><option>BRL</option><option>USD</option></select>
-        </div>
-        <div class="filter-field">
-          <label>Pacote</label>
-          <select data-pacote-filtro="tabela-receita" data-pacote-tipo="receita">
-            <option value="">Todos os pacotes</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="pacote-resumo" data-pacote-resumo="tabela-receita" data-pacote-termo="receita da grade"></div>
-      <div class="pacote-legenda" data-pacote-legenda data-pacote-tipo="receita"></div>
-
-
       <div class="tabs submenu" data-tabs="receita">
         <button class="tab-btn active" data-tab-target="tab-resumo">▤ Resumo do que já foi lançado</button>
         <button class="tab-btn" data-tab-target="tab-lancar">✎ Lançar</button>
@@ -147,6 +118,35 @@
       </div><!-- /tab-resumo -->
 
       <div id="tab-lancar" class="tab-panel">
+
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>BU</label>
+          <select><option>Corporate</option><option>PSL</option><option>Embarcador</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Torre</label>
+          <select><option>Comercial</option><option>Operações</option><option>TI</option><option>G&amp;A</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Natureza</label>
+          <select><option>Todas</option><option>Venda de Produto</option><option>Prestação de Serviço</option><option>Outras Receitas</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Moeda</label>
+          <select><option>BRL</option><option>USD</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Pacote</label>
+          <select data-pacote-filtro="tabela-receita" data-pacote-tipo="receita">
+            <option value="">Todos os pacotes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pacote-resumo" data-pacote-resumo="tabela-receita" data-pacote-termo="receita da grade"></div>
+      <div class="pacote-legenda" data-pacote-legenda data-pacote-tipo="receita"></div>
+
 
         <!-- ===== Formulário guiado ===== -->
         <div class="panel">
