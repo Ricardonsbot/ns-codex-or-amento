@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notificações — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="index.html">
+    <div class="sidebar-brand">
+      <div class="logo-mark">NS</div>
+      <div class="brand-text">
+        <strong>NS Codex</strong>
+        <span>BU · Torres · Corporate</span>
+      </div>
+    </div>
+    </a>
+
+    <div class="sidebar-section-label">Visão geral</div>
+    <a href="index.html"><div class="nav-item" data-page="index.html"><span class="nav-icon">▦</span> Dashboard</div></a>
+
+    <div class="sidebar-section-label">Orçamento</div>
+    <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
+    <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
+    <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+
+    <div class="sidebar-section-label">Fluxo</div>
+    <a href="entregas.html"><div class="nav-item" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div></a>
+    <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+    <div class="nav-item active" data-page="notificacoes.html"><span class="nav-icon">✉</span> Notificações</div>
+
+    <div class="sidebar-section-label">Análise</div>
+    <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+
+    <div class="sidebar-section-label">Administração</div>
+    <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
+
+    <div class="sidebar-section-label">Budget - Settings</div>
+    <a href="budget-settings.html"><div class="nav-item" data-page="budget-settings.html"><span class="nav-icon">⚙</span> Ciclos &amp; Versões</div></a>
+    <a href="login.html"><div class="nav-item" data-page="login.html"><span class="nav-icon">&#9099;</span> Sair</div></a>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">EN</div>
+        <div class="user-meta">
+          <strong>Emerson Nakamura</strong>
+          <span>NSTECH GR LTDA</span>
+        </div>
+      </div>
+      <div class="sidebar-role-badge">Aprovador</div>
+    </div>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Notificações</h1>
+        <p>Ciclo 2026 · o que seria enviado, para quem e com que texto</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" data-action="export" data-action-label="Fila de Notificações">⭳ Exportar fila</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="proto-banner banner-atencao">
+        ⚠️ <strong>Nada é enviado de verdade.</strong> O protótipo é front-end puro, sem backend e sem serviço de e-mail — disparo real depende de servidor, o que este projeto não tem. O que está pronto aqui é a parte que o negócio precisa decidir antes: <strong>quem recebe, quando dispara e o texto exato</strong>. A fila abaixo é montada a partir dos dados reais de aprovações, entregas e do calendário do ciclo.
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card despesa">
+          <div class="kpi-label">Rejeições a comunicar</div>
+          <div class="kpi-value" data-notif-kpi="REJEICAO">—</div>
+          <div class="kpi-delta down">com motivo do aprovador</div>
+        </div>
+        <div class="kpi-card capex">
+          <div class="kpi-label">Lembretes de prazo</div>
+          <div class="kpi-value" data-notif-kpi="PRAZO">—</div>
+          <div class="kpi-delta">cortes ainda por vencer</div>
+        </div>
+        <div class="kpi-card margem">
+          <div class="kpi-label">Escalações</div>
+          <div class="kpi-value" data-notif-kpi="ESCALACAO">—</div>
+          <div class="kpi-delta">pendência após o corte</div>
+        </div>
+        <div class="kpi-card receita">
+          <div class="kpi-label">Aceites pendentes</div>
+          <div class="kpi-value" data-notif-kpi="ACEITE">—</div>
+          <div class="kpi-delta">aguardando o líder</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>Tipo</label>
+          <select data-notif-filtro="tipo">
+            <option value="">Todos os tipos</option>
+            <option value="REJEICAO">Rejeição com motivo</option>
+            <option value="PRAZO">Lembrete de prazo</option>
+            <option value="ESCALACAO">Escalação para a liderança</option>
+            <option value="ACEITE">Aceite final pendente</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Destinatário</label>
+          <select data-notif-filtro="para"><option value="">Todos</option></select>
+        </div>
+      </div>
+
+      <div class="aprov-layout">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Fila de Envio</h2>
+              <p data-notif-contagem>—</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="aprov-fila" data-notif-fila>
+              <div class="empty-hint">Montando a fila…</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" data-notif-previa>
+          <div class="panel-body">
+            <div class="empty-hint">Selecione uma notificação para ver o e-mail exato que a pessoa receberia.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Modelos</h2>
+            <p>Texto, destinatário e gatilho de cada tipo · <code>{{variável}}</code> é substituído pelos dados do registro</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="modelos" data-notif-modelos></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

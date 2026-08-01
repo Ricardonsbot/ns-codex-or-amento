@@ -2010,6 +2010,255 @@ function initCronograma() {
   }
 }
 
+/* ---------- Notificações: modelos, fila e prévia ----------
+ * Sem backend não há envio. O que existe aqui é o que precisa ser decidido
+ * antes de ligar em qualquer serviço: quem recebe, quando dispara e o texto.
+ * A fila sai dos dados reais — a rejeição carrega o motivo que o aprovador
+ * escreveu, não um texto genérico.
+ */
+
+function preencherModelo(texto, contexto) {
+  return String(texto).replace(/\{\{(\w+)\}\}/g, (_, chave) =>
+    contexto[chave] !== undefined ? contexto[chave] : `{{${chave}}}`
+  );
+}
+
+function initNotificacoes() {
+  const fila = document.querySelector("[data-notif-fila]");
+  if (!fila) return;
+
+  const previa = document.querySelector("[data-notif-previa]");
+  const filtros = { tipo: "", para: "" };
+  const CORES = { REJEICAO: "trava", ESCALACAO: "trava", PRAZO: "falta", ACEITE: "falta" };
+  let modelos = {};
+  let itens = [];
+  let selecionado = null;
+  let base = null;
+
+  function montarFila(notif, aprov, entregasDoc, crono) {
+    const hoje = hojeISO();
+    const lista = [];
+
+    // 1. rejeições — o motivo vem do parecer que o aprovador escreveu
+    aprov.submissoes
+      .filter((s) => s.statusOficial === "reprovado")
+      .forEach((s) => {
+        lista.push({
+          tipo: "REJEICAO",
+          para: s.responsavel,
+          copia: s.liderResponsavel?.nome || "—",
+          titulo: `${s.empresa} · ${APROV_CATEGORIA[s.categoria]}`,
+          detalhe: `Reprovado por ${s.decisao?.por} em ${dataBR(s.decisao?.em)}`,
+          contexto: {
+            ciclo: aprov.ciclo, empresa: s.empresa, categoria: APROV_CATEGORIA[s.categoria],
+            bu: s.bu, torre: s.torre, responsavel: s.responsavel,
+            aprovador: s.decisao?.por || "—", data: dataBR(s.decisao?.em),
+            motivo: s.decisao?.parecer || "—",
+          },
+        });
+      });
+
+    // 2. aceites pendentes do líder
+    aprov.submissoes
+      .filter((s) => s.statusOficial === "aprovado" && !s.aceiteFinal)
+      .forEach((s) => {
+        lista.push({
+          tipo: "ACEITE",
+          para: s.liderResponsavel?.nome || "—",
+          copia: "—",
+          titulo: `${s.empresa} · ${APROV_CATEGORIA[s.categoria]}`,
+          detalhe: `Aprovado, aguardando ${s.liderResponsavel?.cargo || "o líder"}`,
+          contexto: {
+            ciclo: aprov.ciclo, empresa: s.empresa, categoria: APROV_CATEGORIA[s.categoria],
+            lider: s.liderResponsavel?.nome || "—",
+            declaracao: aprov.declaracaoAceiteFinal || "",
+          },
+        });
+      });
+
+    // 3. escalação — entrega vencida, uma por empresa
+    if (entregasDoc) {
+      entregasDoc.entregas.forEach((e) => {
+        const vencidas = ENTREGA_CATEGORIAS.filter((c) => entregaAtrasada(e.status[c], entregasDoc.prazos[c]));
+        if (!vencidas.length) return;
+
+        const lider = aprov.submissoes.find((s) => s.torre === e.torre)?.liderResponsavel;
+        lista.push({
+          tipo: "ESCALACAO",
+          para: lider?.nome || "Liderança da Torre",
+          copia: "FP&A",
+          titulo: `${e.empresa} · ${vencidas.length} vencida(s)`,
+          detalhe: `${e.torre} · responsável ${e.responsavel}`,
+          contexto: {
+            ciclo: entregasDoc.ciclo, empresa: e.empresa, torre: e.torre,
+            lider: lider?.nome || "Liderança da Torre", responsavel: e.responsavel,
+            qtdPendente: vencidas.length,
+            categorias: vencidas.map((c) => ENTREGA_ROTULO_CATEGORIA[c]).join(", "),
+          },
+        });
+      });
+    }
+
+    // 4. lembretes dos cortes que ainda não venceram
+    if (crono) {
+      crono.marcos
+        .filter((m) => diasEntre(hoje, m.data) >= 0)
+        .forEach((m) => {
+          const dias = diasEntre(hoje, m.data);
+          lista.push({
+            tipo: "PRAZO",
+            para: "Responsáveis de área",
+            copia: "—",
+            titulo: m.nome,
+            detalhe: `Vence em ${dataBR(m.data)} · ${dias} dia(s)`,
+            contexto: {
+              ciclo: crono.ciclo, marco: m.nome, prazo: dataBR(m.data),
+              diasRestantes: dias, detalhe: m.detalhe, responsavel: "Responsáveis de área",
+            },
+          });
+        });
+    }
+
+    lista.forEach((item, i) => {
+      item.id = `N${i + 1}`;
+      item.contexto.assinatura = notif.assinatura;
+    });
+    return lista;
+  }
+
+  function visiveis() {
+    return itens.filter(
+      (i) => (!filtros.tipo || i.tipo === filtros.tipo) && (!filtros.para || i.para === filtros.para)
+    );
+  }
+
+  function renderKpis() {
+    Object.keys(modelos).forEach((codigo) => {
+      const el = document.querySelector(`[data-notif-kpi="${codigo}"]`);
+      if (el) el.textContent = itens.filter((i) => i.tipo === codigo).length;
+    });
+  }
+
+  function renderFila() {
+    const lista = visiveis();
+    const contagem = document.querySelector("[data-notif-contagem]");
+    if (contagem) contagem.textContent = `${lista.length} notificação(ões) na fila · clique para ver o e-mail`;
+
+    fila.innerHTML = lista.length
+      ? lista
+          .map((i) => `<button type="button" class="aprov-item ${selecionado === i.id ? "selecionada" : ""}" data-notif-id="${i.id}">
+              <span class="aprov-item-topo">
+                <strong>${escaparTexto(i.titulo)}</strong>
+                <span class="aprov-marca ${CORES[i.tipo]}">${escaparTexto(modelos[i.tipo].nome)}</span>
+              </span>
+              <span class="aprov-item-meta">${escaparTexto(i.detalhe)}</span>
+              <span class="aprov-item-meta">para <strong>${escaparTexto(i.para)}</strong>${i.copia !== "—" ? ` · cc ${escaparTexto(i.copia)}` : ""}</span>
+            </button>`)
+          .join("")
+      : '<div class="empty-hint">Nada na fila com esses filtros.</div>';
+  }
+
+  function renderPrevia() {
+    const item = itens.find((i) => i.id === selecionado);
+    if (!item) {
+      previa.innerHTML = '<div class="panel-body"><div class="empty-hint">Selecione uma notificação para ver o e-mail exato que a pessoa receberia.</div></div>';
+      return;
+    }
+
+    const modelo = modelos[item.tipo];
+    previa.innerHTML = `
+      <div class="panel-header">
+        <div>
+          <h2>Prévia do e-mail</h2>
+          <p>${escaparTexto(modelo.nome)} · canal ${escaparTexto(modelo.canal)}</p>
+        </div>
+        <button class="btn btn-primary btn-sm" data-notif-enviar>✉ Enviar agora</button>
+      </div>
+      <div class="panel-body">
+        <div class="email">
+          <div class="email-cabecalho">
+            <div><span>De</span>${escaparTexto(base.remetente)}</div>
+            <div><span>Para</span>${escaparTexto(item.para)}</div>
+            ${item.copia !== "—" ? `<div><span>Cc</span>${escaparTexto(item.copia)}</div>` : ""}
+            <div><span>Assunto</span><strong>${escaparTexto(preencherModelo(modelo.assunto, item.contexto))}</strong></div>
+          </div>
+          <pre class="email-corpo">${escaparTexto(preencherModelo(modelo.corpo, item.contexto))}</pre>
+        </div>
+      </div>`;
+  }
+
+  function redesenhar() {
+    renderKpis();
+    renderFila();
+    renderPrevia();
+  }
+
+  fila.addEventListener("click", (e) => {
+    const botao = e.target.closest("[data-notif-id]");
+    if (!botao) return;
+    selecionado = botao.getAttribute("data-notif-id");
+    redesenhar();
+  });
+
+  previa.addEventListener("click", (e) => {
+    if (!e.target.closest("[data-notif-enviar]")) return;
+    const item = itens.find((i) => i.id === selecionado);
+    showToast(`Envio simulado para ${item.para} — o protótipo não tem servidor de e-mail`, "info");
+  });
+
+  document.querySelectorAll("[data-notif-filtro]").forEach((select) => {
+    select.addEventListener("change", () => {
+      filtros[select.getAttribute("data-notif-filtro")] = select.value;
+      redesenhar();
+    });
+  });
+
+  Promise.all([
+    fetch("Referencias/notificacoes.json").then((r) => r.json()),
+    fetch("Referencias/aprovacoes.json").then((r) => r.json()),
+    fetch("Referencias/entregas.json").then((r) => r.json()).catch(() => null),
+    fetch("Referencias/cronograma.json").then((r) => r.json()).catch(() => null),
+  ])
+    .then(([notif, aprov, entregasDoc, crono]) => {
+      base = notif;
+      notif.modelos.forEach((m) => { modelos[m.codigo] = m; });
+      itens = montarFila(notif, aprov, entregasDoc, crono);
+
+      const selPara = document.querySelector('[data-notif-filtro="para"]');
+      if (selPara) {
+        Array.from(new Set(itens.map((i) => i.para))).sort().forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = p;
+          opt.textContent = p;
+          selPara.appendChild(opt);
+        });
+      }
+
+      const modelosEl = document.querySelector("[data-notif-modelos]");
+      if (modelosEl) {
+        modelosEl.innerHTML = notif.modelos
+          .map((m) => `<div class="modelo">
+              <div class="modelo-topo">
+                <strong>${escaparTexto(m.nome)}</strong>
+                <span class="modelo-tag">${escaparTexto(m.canal)}</span>
+                <span class="modelo-tag prioridade-${escaparTexto(m.prioridade)}">${escaparTexto(m.prioridade)}</span>
+              </div>
+              <p class="modelo-gatilho"><strong>Dispara quando:</strong> ${escaparTexto(m.evento)}</p>
+              <p class="modelo-gatilho"><strong>Para:</strong> ${escaparTexto(m.para)}${m.copia !== "—" ? ` · <strong>Cc:</strong> ${escaparTexto(m.copia)}` : ""}</p>
+              <div class="modelo-assunto">${escaparTexto(m.assunto)}</div>
+              <pre class="modelo-corpo">${escaparTexto(m.corpo)}</pre>
+            </div>`)
+          .join("");
+      }
+
+      selecionado = itens.length ? itens[0].id : null;
+      redesenhar();
+    })
+    .catch(() => {
+      fila.innerHTML = '<div class="empty-hint">Não foi possível carregar os dados das notificações.</div>';
+    });
+}
+
 /* ---------- Lançamento guiado ----------
  * Alternativa à planilha para quem não é do financeiro: uma pergunta por vez,
  * em português comum, e o ritmo do valor escolhido por comportamento
@@ -2300,6 +2549,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initCronograma();
   initPremissas();
   initFormLancamento();
+  initNotificacoes();
   renderResumoLancamentos();
   initReferenceAutocomplete();
 });

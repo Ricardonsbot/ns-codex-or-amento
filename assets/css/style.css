@@ -2068,6 +2068,118 @@ tfoot td {
 }
 
 /* ==========================================================================
+   Notificações — modelos, fila e prévia do e-mail
+   ========================================================================== */
+
+.banner-atencao {
+  background: var(--color-warning-bg);
+  border-color: #f2dfae;
+  color: #7a5c07;
+}
+
+.email {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.email-cabecalho {
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  padding: 12px 14px;
+  font-size: 12.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.email-cabecalho span {
+  display: inline-block;
+  min-width: 58px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+}
+
+.email-corpo {
+  margin: 0;
+  padding: 16px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.modelos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modelo {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.modelo-topo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.modelo-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.modelo-tag.prioridade-alta {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-color: transparent;
+}
+
+.modelo-gatilho {
+  margin: 3px 0;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.modelo-assunto {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-info-bg);
+  color: var(--color-primary-dark);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.modelo-corpo {
+  margin: 8px 0 0;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ==========================================================================
    Lançamento guiado — input para quem não é do financeiro
    ========================================================================== */
 
