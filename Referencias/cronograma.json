@@ -1,6 +1,8 @@
 {
   "ciclo": "2026",
   "versaoAtiva": "v3 — Forecast Rolling",
+  "versaoTipo": "Revisão",
+  "versaoDesde": "2026-06-15",
   "observacao": "Cronograma do projeto de budget: etapas, donos e datas. As etapas de lançamento têm fonteEntregas, então o avanço delas é calculado a partir de entregas.json — não é digitado aqui. Datas e responsáveis são ilustrativos do protótipo.",
   "etapas": [
     {

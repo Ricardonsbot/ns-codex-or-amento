@@ -9,6 +9,15 @@
  * arquivo a partir do que está na tela). Ainda sem backend: tudo no navegador.
  */
 
+/* ---------- Leitura dos dados de Referencias/ ----------
+ * Sem cache de propósito: a graça do protótipo é editar o JSON e ver a tela
+ * mudar. O navegador guardava a versão antiga e a alteração "não aparecia".
+ */
+
+function carregarRef(arquivo) {
+  return fetch(`Referencias/${arquivo}?v=${Date.now()}`, { cache: "no-store" }).then((r) => r.json());
+}
+
 /* ---------- Toast ---------- */
 
 function showToast(message, type = "info") {
@@ -240,8 +249,8 @@ function initReferenceAutocomplete() {
   if (!contasDatalist && !centrosDatalist) return;
 
   Promise.all([
-    fetch("Referencias/contas.json").then((r) => r.json()).catch(() => []),
-    fetch("Referencias/organizacional.json").then((r) => r.json()).catch(() => []),
+    carregarRef("contas.json").catch(() => []),
+    carregarRef("organizacional.json").catch(() => []),
   ]).then(([contas, organizacional]) => {
     window.__contasRef = contas;
 
@@ -795,8 +804,7 @@ function initEntregas() {
     showToast(`Cobrança enviada para ${pessoas.size} responsável(is) — ${pendentes.length} entregas pendentes`, "info");
   });
 
-  fetch("Referencias/entregas.json")
-    .then((r) => r.json())
+  carregarRef("entregas.json")
     .then((json) => {
       dados = json;
       preencherFiltros(json.entregas);
@@ -880,8 +888,7 @@ function pacoteDoContexto() {
 function initPacotes() {
   if (!document.querySelector("[data-pacote-filtro], [data-pacote-campo], #pacotes-datalist")) return;
 
-  fetch("Referencias/pacotes.json")
-    .then((r) => r.json())
+  carregarRef("pacotes.json")
     .then(({ pacotes }) => {
       window.__pacotesRef = pacotes;
 
@@ -1318,8 +1325,7 @@ function initAprovacoes() {
     });
   });
 
-  fetch("Referencias/aprovacoes.json")
-    .then((r) => r.json())
+  carregarRef("aprovacoes.json")
     .then((json) => {
       dados = json;
       json.regras.forEach((regra) => { regrasPorCodigo[regra.codigo] = regra; });
@@ -1513,8 +1519,7 @@ function initAtivacao() {
     }
   });
 
-  fetch("Referencias/ativacao.json")
-    .then((r) => r.json())
+  carregarRef("ativacao.json")
     .then((json) => {
       ref = json;
 
@@ -1557,8 +1562,7 @@ function initPremissas() {
   const alvo = document.querySelector("[data-premissas]");
   if (!alvo) return;
 
-  fetch("Referencias/premissas.json")
-    .then((r) => r.json())
+  carregarRef("premissas.json")
     .then((doc) => {
       const resumo = document.querySelector("[data-premissas-resumo]");
       if (resumo) {
@@ -1776,8 +1780,7 @@ function initReajuste() {
   campoValor.addEventListener("input", atualizarPrevia);
 
   // índices do cadastro de premissas: câmbio fica de fora, não é reajuste em %
-  fetch("Referencias/premissas.json")
-    .then((r) => r.json())
+  carregarRef("premissas.json")
     .then((doc) => {
       premissas = doc.premissas.filter((p) => p.tipo === "indice");
       if (!selectIndice) return;
@@ -1847,8 +1850,8 @@ function initCronograma() {
   const hoje = hojeISO();
 
   Promise.all([
-    fetch("Referencias/cronograma.json").then((r) => r.json()),
-    fetch("Referencias/entregas.json").then((r) => r.json()).catch(() => null),
+    carregarRef("cronograma.json"),
+    carregarRef("entregas.json").catch(() => null),
   ])
     .then(([crono, entregasDoc]) => {
       // avanço real das etapas de lançamento, vindo do mapa de entregas
@@ -2008,6 +2011,83 @@ function initCronograma() {
         </div>`).join("")
       : '<div class="empty-hint">Nenhum lembrete pendente para o restante do ciclo.</div>';
   }
+}
+
+/* ---------- Status do ciclo: as três perguntas do dashboard ----------
+ * Qual a versão vigente, se ainda tem pendência e quando encerra.
+ * Tudo derivado das mesmas bases das outras telas, para não haver dois
+ * números diferentes para a mesma pergunta.
+ */
+
+function initStatusCiclo() {
+  const alvo = document.querySelector("[data-status-ciclo]");
+  if (!alvo) return;
+
+  Promise.all([
+    carregarRef("cronograma.json"),
+    carregarRef("entregas.json").catch(() => null),
+    carregarRef("aprovacoes.json").catch(() => null),
+  ])
+    .then(([crono, entregasDoc, aprov]) => {
+      const hoje = hojeISO();
+
+      // ---- 1. versão vigente
+      const versao = `<a class="status-card" href="budget-settings.html">
+          <span class="status-rot">Versão vigente</span>
+          <strong class="status-valor">${escaparTexto(crono.versaoAtiva)}</strong>
+          <span class="status-linha">Ciclo ${escaparTexto(crono.ciclo)} · ${escaparTexto(crono.versaoTipo || "—")}</span>
+          <span class="status-nota">em edição desde ${dataBR(crono.versaoDesde)}</span>
+        </a>`;
+
+      // ---- 2. pendências
+      let faltando = 0, atrasadas = 0, aguardandoDecisao = 0, aguardandoAceite = 0;
+
+      if (entregasDoc) {
+        entregasDoc.entregas.forEach((e) => {
+          ENTREGA_CATEGORIAS.forEach((c) => {
+            if (!infoStatusEntrega(e.status[c]).concluida) faltando++;
+            if (entregaAtrasada(e.status[c], entregasDoc.prazos[c])) atrasadas++;
+          });
+        });
+      }
+      if (aprov) {
+        aguardandoDecisao = aprov.submissoes.filter((s) => s.statusOficial === "pendente").length;
+        aguardandoAceite = aprov.submissoes.filter((s) => s.statusOficial === "aprovado" && !s.aceiteFinal).length;
+      }
+
+      const temPendencia = faltando + aguardandoDecisao + aguardandoAceite > 0;
+      const grau = atrasadas ? "ruim" : temPendencia ? "atencao" : "bom";
+
+      const pendencias = `<div class="status-card ${grau}">
+          <span class="status-rot">Ainda tem pendência?</span>
+          <strong class="status-valor">${temPendencia ? "Sim" : "Não"}</strong>
+          <span class="status-linhas">
+            <a href="entregas.html">${faltando} entrega(s) por lançar${atrasadas ? ` · <strong>${atrasadas} atrasada(s)</strong>` : ""}</a>
+            <a href="aprovacoes.html">${aguardandoDecisao} aguardando decisão do aprovador</a>
+            <a href="aprovacoes.html">${aguardandoAceite} aguardando aceite do líder</a>
+          </span>
+        </div>`;
+
+      // ---- 3. encerramento
+      const marcos = crono.marcos.slice().sort((a, b) => (a.data < b.data ? -1 : 1));
+      const fim = marcos[marcos.length - 1];
+      const proximo = marcos.find((m) => diasEntre(hoje, m.data) >= 0);
+      const diasFim = diasEntre(hoje, fim.data);
+
+      const encerramento = `<a class="status-card ${diasFim <= 15 ? "atencao" : ""}" href="budget-settings.html">
+          <span class="status-rot">Quando encerra</span>
+          <strong class="status-valor">${dataBR(fim.data)}</strong>
+          <span class="status-linha">${escaparTexto(fim.nome)} · faltam <strong>${diasFim} dia(s)</strong></span>
+          <span class="status-nota">${proximo && proximo !== fim
+            ? `Próximo corte: ${escaparTexto(proximo.nome)}, em ${diasEntre(hoje, proximo.data)} dia(s)`
+            : "Último marco do ciclo"}</span>
+        </a>`;
+
+      alvo.innerHTML = versao + pendencias + encerramento;
+    })
+    .catch(() => {
+      alvo.innerHTML = '<div class="empty-hint">Não foi possível carregar o status do ciclo.</div>';
+    });
 }
 
 /* ---------- Notificações: modelos, fila e prévia ----------
@@ -2214,10 +2294,10 @@ function initNotificacoes() {
   });
 
   Promise.all([
-    fetch("Referencias/notificacoes.json").then((r) => r.json()),
-    fetch("Referencias/aprovacoes.json").then((r) => r.json()),
-    fetch("Referencias/entregas.json").then((r) => r.json()).catch(() => null),
-    fetch("Referencias/cronograma.json").then((r) => r.json()).catch(() => null),
+    carregarRef("notificacoes.json"),
+    carregarRef("aprovacoes.json"),
+    carregarRef("entregas.json").catch(() => null),
+    carregarRef("cronograma.json").catch(() => null),
   ])
     .then(([notif, aprov, entregasDoc, crono]) => {
       base = notif;
@@ -2480,8 +2560,7 @@ function initFormLancamento() {
     });
 
     // cartões de motivo (pacote) e opções de ativação, do mesmo cadastro da planilha
-    fetch("Referencias/pacotes.json")
-      .then((r) => r.json())
+    carregarRef("pacotes.json")
       .then(({ pacotes }) => {
         const caixa = form.querySelector("[data-cartoes-pacote]");
         pacotesDoTipo(pacotes, tipo).forEach((p) => {
@@ -2499,8 +2578,7 @@ function initFormLancamento() {
       });
 
     if (selectAtivacao) {
-      fetch("Referencias/ativacao.json")
-        .then((r) => r.json())
+      carregarRef("ativacao.json")
         .then(({ tiposAtivo }) => {
           tiposAtivo.forEach((t) => {
             const opt = document.createElement("option");
@@ -2550,6 +2628,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initPremissas();
   initFormLancamento();
   initNotificacoes();
+  initStatusCiclo();
   renderResumoLancamentos();
   initReferenceAutocomplete();
 });
