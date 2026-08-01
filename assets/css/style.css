@@ -2068,6 +2068,276 @@ tfoot td {
 }
 
 /* ==========================================================================
+   Lançamento guiado — input para quem não é do financeiro
+   ========================================================================== */
+
+.form-guiado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 760px;
+}
+
+.passo {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.passo:last-of-type { border-bottom: none; }
+
+.passo-num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.passo.avancado .passo-num {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.passo-corpo { flex: 1; min-width: 0; }
+
+.passo-corpo h3 {
+  margin: 0 0 3px;
+  font-size: 15px;
+}
+
+.passo-ajuda {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.passo-corpo > input[type="text"],
+.passo-corpo > select {
+  width: 100%;
+  max-width: 460px;
+}
+
+.passo-eco {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.passo-eco.ok { color: var(--color-success); }
+.passo-eco.alerta { color: var(--color-warning); }
+
+.cartoes-pacote {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.cartao-pacote {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cartao-pacote:hover { background: var(--color-bg); }
+
+.cartao-pacote.escolhido {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+.cartao-pacote strong { font-size: 13px; }
+
+.cartao-pacote span {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.ritmos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.ritmo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.ritmo:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+}
+
+.ritmo input { margin-bottom: 4px; }
+
+.ritmo-titulo { font-weight: 700; font-size: 13px; }
+
+.ritmo-ajuda {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.ritmo-campo { margin-bottom: 12px; }
+
+.ritmo-campo[hidden] { display: none; }
+
+.ritmo-campo > label {
+  display: block;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.meses-variaveis {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.mes-variavel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.mes-variavel input { width: 100%; }
+
+.form-fecho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.form-total { font-size: 15px; }
+.form-total strong { font-size: 19px; color: var(--color-primary); }
+
+.form-acoes { display: flex; gap: 8px; }
+
+.form-erro {
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.form-erro[hidden] { display: none; }
+
+.modo-planilha {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: 4px 0;
+  margin-bottom: 22px;
+}
+
+.modo-planilha > summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.modo-planilha[open] > summary { border-bottom: 1px solid var(--color-border); }
+
+/* ---------- Resumo do que já foi lançado ---------- */
+
+.resumo-pacotes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.resumo-pacote-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.resumo-barra {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.resumo-barra span {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+}
+
+.resumo-itens {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.resumo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.resumo-item strong { display: block; font-size: 13px; }
+
+.resumo-item span {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.resumo-valor {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .meses-variaveis { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ==========================================================================
    Premissas macro do ciclo — índices e câmbio
    ========================================================================== */
 

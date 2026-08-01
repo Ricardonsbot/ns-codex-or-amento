@@ -2010,6 +2010,262 @@ function initCronograma() {
   }
 }
 
+/* ---------- Lançamento guiado ----------
+ * Alternativa à planilha para quem não é do financeiro: uma pergunta por vez,
+ * em português comum, e o ritmo do valor escolhido por comportamento
+ * ("todo mês igual") em vez de 12 caixinhas em branco.
+ */
+
+/* Resumo em linguagem de gente: o que já foi lançado, sem parecer planilha */
+function renderResumoLancamentos() {
+  const alvo = document.querySelector("[data-resumo-lancamentos]");
+  if (!alvo) return;
+
+  const tabela = document.getElementById(alvo.getAttribute("data-resumo-lancamentos"));
+  if (!tabela) return;
+
+  const linhas = Array.from(tabela.querySelectorAll("tbody tr"));
+  const itens = linhas.map((row) => ({
+    nome: row.querySelector(".conta-nome-input")?.value.trim() || "(sem descrição)",
+    pacote: row.querySelector(".pacote-input")?.value.trim() || "sem motivo definido",
+    total: totalAnualDaLinha(row),
+  }));
+
+  const totalGeral = itens.reduce((s, i) => s + i.total, 0);
+  const porPacote = new Map();
+  itens.forEach((i) => porPacote.set(i.pacote, (porPacote.get(i.pacote) || 0) + i.total));
+
+  const resumoTopo = document.querySelector("[data-resumo-topo]");
+  if (resumoTopo) {
+    resumoTopo.innerHTML = `<strong>${itens.length} lançamento(s)</strong> · R$ ${totalGeral.toLocaleString("pt-BR")} mil no ano · ${porPacote.size} motivo(s) diferentes`;
+  }
+
+  const barras = Array.from(porPacote.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([nome, valor]) => {
+      const pct = totalGeral ? Math.round((valor / totalGeral) * 100) : 0;
+      return `<div class="resumo-pacote">
+        <div class="resumo-pacote-topo">
+          <span>${escaparTexto(nome)}</span>
+          <strong>R$ ${valor.toLocaleString("pt-BR")} mil · ${pct}%</strong>
+        </div>
+        <span class="resumo-barra"><span style="width:${pct}%"></span></span>
+      </div>`;
+    })
+    .join("");
+
+  const cartoes = itens.length
+    ? itens
+        .map((i) => `<div class="resumo-item">
+            <div>
+              <strong>${escaparTexto(i.nome)}</strong>
+              <span>${escaparTexto(i.pacote)}</span>
+            </div>
+            <span class="resumo-valor">R$ ${i.total.toLocaleString("pt-BR")} mil</span>
+          </div>`)
+        .join("")
+    : '<div class="empty-hint">Nada lançado ainda. Use a aba <strong>Lançar</strong> para começar.</div>';
+
+  alvo.innerHTML = `${barras ? `<div class="resumo-pacotes">${barras}</div>` : ""}<div class="resumo-itens">${cartoes}</div>`;
+}
+
+function colunaPorTitulo(tabela, titulo) {
+  const ths = Array.from(tabela.querySelectorAll("thead tr:last-child th"));
+  return ths.findIndex((th) => th.textContent.trim() === titulo);
+}
+
+function initFormLancamento() {
+  // atalho do resumo para a aba de lançamento
+  document.querySelectorAll("[data-ir-para-lancar]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelector('[data-tab-target="tab-lancar"]')?.click();
+      document.querySelector("[data-form-lancamento] [data-campo='descricao']")?.focus();
+    });
+  });
+
+  document.querySelectorAll("[data-form-lancamento]").forEach((form) => {
+    const tabela = document.getElementById(form.getAttribute("data-form-lancamento"));
+    if (!tabela) return;
+
+    const tipo = form.getAttribute("data-form-tipo");
+    const caixaMeses = form.querySelector("[data-form-meses]");
+    const caixaVariavel = form.querySelector("[data-form-variavel]");
+    const selectAtivacao = form.querySelector('[data-campo="ativacao"]');
+    const passoAtivacao = selectAtivacao?.closest(".passo");
+    const campoValor = form.querySelector('[data-campo="valor"]');
+    const erro = form.querySelector("[data-form-erro]");
+    let pacoteEscolhido = "";
+
+    // a grade de Receita não tem coluna de ativação: o passo some
+    if (passoAtivacao && !tabela.querySelector(".ativacao-input")) passoAtivacao.remove();
+
+    MESES_CURTOS.forEach((mes, i) => {
+      const label = document.createElement("label");
+      label.className = "reajuste-mes";
+      label.innerHTML = `<input type="checkbox" data-mes="${i}" /><span>${mes}</span>`;
+      caixaMeses.appendChild(label);
+
+      const campo = document.createElement("label");
+      campo.className = "mes-variavel";
+      campo.innerHTML = `<span>${mes}</span><input type="number" data-mes-valor="${i}" value="0" min="0" />`;
+      caixaVariavel.appendChild(campo);
+    });
+
+    function ritmo() {
+      return form.querySelector('input[name="ritmo"]:checked').value;
+    }
+
+    /* devolve os 12 meses conforme o ritmo escolhido */
+    function valoresDosMeses() {
+      const modo = ritmo();
+      const valor = Number(campoValor.value) || 0;
+
+      if (modo === "igual") return MESES_CURTOS.map(() => valor);
+
+      if (modo === "alguns") {
+        const marcados = Array.from(caixaMeses.querySelectorAll("input:checked")).map((c) => Number(c.dataset.mes));
+        return MESES_CURTOS.map((_, i) => (marcados.includes(i) ? valor : 0));
+      }
+
+      return Array.from(caixaVariavel.querySelectorAll("[data-mes-valor]")).map((i) => Number(i.value) || 0);
+    }
+
+    function atualizar() {
+      const modo = ritmo();
+      form.querySelector("[data-ritmo-valor]").hidden = modo === "variavel";
+      form.querySelector("[data-ritmo-meses]").hidden = modo !== "alguns";
+      form.querySelector("[data-ritmo-variavel]").hidden = modo !== "variavel";
+
+      const total = valoresDosMeses().reduce((s, v) => s + v, 0);
+      form.querySelector("[data-form-total]").innerHTML =
+        `Total no ano: <strong>R$ ${total.toLocaleString("pt-BR")} mil</strong>`;
+
+      // eco da conta reconhecida, para a pessoa ver que o sistema entendeu
+      const eco = form.querySelector('[data-eco="conta"]');
+      const digitado = form.querySelector('[data-campo="descricao"]').value.trim();
+      const match = (window.__contasRef || []).find((c) => c.nome === digitado);
+      if (eco) {
+        eco.textContent = match
+          ? `Reconhecido: conta ${match.conta} · ${match.linhaPL}`
+          : digitado ? "Conta não reconhecida — vai entrar como texto livre, sem classificação automática." : "";
+        eco.className = `passo-eco ${match ? "ok" : digitado ? "alerta" : ""}`;
+      }
+    }
+
+    form.addEventListener("input", atualizar);
+    form.addEventListener("change", atualizar);
+
+    form.querySelector("[data-form-limpar]").addEventListener("click", () => {
+      form.reset();
+      caixaMeses.querySelectorAll("input").forEach((c) => { c.checked = false; });
+      caixaVariavel.querySelectorAll("input").forEach((i) => { i.value = 0; });
+      form.querySelectorAll(".cartao-pacote").forEach((c) => c.classList.remove("escolhido"));
+      pacoteEscolhido = "";
+      erro.hidden = true;
+      atualizar();
+    });
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const descricao = form.querySelector('[data-campo="descricao"]').value.trim();
+      const valores = valoresDosMeses();
+      const total = valores.reduce((s, v) => s + v, 0);
+
+      const faltas = [];
+      if (!descricao) faltas.push("dizer o que é");
+      if (!pacoteEscolhido) faltas.push("escolher o motivo");
+      if (!total) faltas.push("informar um valor maior que zero");
+
+      if (faltas.length) {
+        erro.textContent = `Falta ${faltas.join(", ")}.`;
+        erro.hidden = false;
+        return;
+      }
+      erro.hidden = true;
+
+      const modelo = tabela.querySelector("tbody tr");
+      const nova = modelo.cloneNode(true);
+      nova.hidden = false;
+      nova.classList.remove("selected");
+      nova.removeAttribute("data-drill-target");
+      nova.querySelectorAll("input").forEach((i) => { i.value = i.type === "number" ? 0 : ""; });
+
+      nova.querySelector(".conta-nome-input").value = descricao;
+      const match = (window.__contasRef || []).find((c) => c.nome === descricao);
+      if (match) {
+        const set = (sel, v) => { const el = nova.querySelector(sel); if (el) el.value = v; };
+        set(".conta-codigo-input", match.conta);
+        set(".conta-linha-input", match.linhaPL);
+        set(".conta-categoria-input", match.categoria);
+      }
+
+      const pac = nova.querySelector(".pacote-input");
+      if (pac) pac.value = pacoteEscolhido;
+
+      const contexto = form.querySelector('[data-campo="contexto"]').value.trim();
+      const idx = colunaPorTitulo(tabela, form.getAttribute("data-form-coluna-contexto"));
+      if (contexto && idx >= 0) {
+        const alvo = nova.children[idx]?.querySelector("input");
+        if (alvo) alvo.value = contexto;
+      }
+
+      if (selectAtivacao && nova.querySelector(".ativacao-input")) {
+        nova.querySelector(".ativacao-input").value = selectAtivacao.value;
+        const pct = nova.querySelector(".ativacao-pct");
+        if (pct) pct.value = selectAtivacao.value.startsWith("Não ativa") ? 0 : 100;
+      }
+
+      Array.from(nova.querySelectorAll("td.month-col input")).forEach((input, i) => {
+        input.value = valores[i];
+      });
+      const totalCell = nova.querySelector(".total-cell");
+      if (totalCell) totalCell.textContent = `R$ ${total.toLocaleString("pt-BR")}`;
+
+      tabela.querySelector("tbody").appendChild(nova);
+      rebindRow(nova);
+
+      nova.querySelector("td.month-col input")?.dispatchEvent(new Event("change", { bubbles: true }));
+      showToast(`"${descricao}" adicionado — R$ ${total.toLocaleString("pt-BR")} mil no ano`, "success");
+      form.querySelector("[data-form-limpar]").click();
+      renderResumoLancamentos();
+    });
+
+    // cartões de motivo (pacote) e opções de ativação, do mesmo cadastro da planilha
+    fetch("Referencias/pacotes.json")
+      .then((r) => r.json())
+      .then(({ pacotes }) => {
+        const caixa = form.querySelector("[data-cartoes-pacote]");
+        pacotesDoTipo(pacotes, tipo).forEach((p) => {
+          const cartao = document.createElement("button");
+          cartao.type = "button";
+          cartao.className = "cartao-pacote";
+          cartao.innerHTML = `<strong>${escaparTexto(p.nome)}</strong><span>${escaparTexto(p.motivo)}</span>`;
+          cartao.addEventListener("click", () => {
+            caixa.querySelectorAll(".cartao-pacote").forEach((c) => c.classList.remove("escolhido"));
+            cartao.classList.add("escolhido");
+            pacoteEscolhido = p.nome;
+          });
+          caixa.appendChild(cartao);
+        });
+      });
+
+    if (selectAtivacao) {
+      fetch("Referencias/ativacao.json")
+        .then((r) => r.json())
+        .then(({ tiposAtivo }) => {
+          tiposAtivo.forEach((t) => {
+            const opt = document.createElement("option");
+            opt.value = t.nome;
+            opt.textContent = t.natureza === "Opex" ? "Não — é um gasto do dia a dia" : `Sim — ${t.nome}`;
+            selectAtivacao.appendChild(opt);
+          });
+        });
+    }
+
+    atualizar();
+  });
+}
+
 /* ---------- Sidebar: marca item ativo pela página atual ---------- */
 
 function markActiveNav() {
@@ -2043,5 +2299,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initReajuste();
   initCronograma();
   initPremissas();
+  initFormLancamento();
+  renderResumoLancamentos();
   initReferenceAutocomplete();
 });

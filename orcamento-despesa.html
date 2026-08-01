@@ -126,6 +126,27 @@
         </div>
       </div>
 
+
+      <div class="tabs submenu" data-tabs="despesa">
+        <button class="tab-btn active" data-tab-target="tab-resumo">▤ Resumo do que já foi lançado</button>
+        <button class="tab-btn" data-tab-target="tab-lancar">✎ Lançar</button>
+      </div>
+
+      <div data-tab-panel-group="despesa">
+      <div id="tab-resumo" class="tab-panel active">
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>O que já foi lançado</h2>
+              <p data-resumo-topo>—</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" data-ir-para-lancar>＋ Lançar gasto</button>
+          </div>
+          <div class="panel-body">
+            <div class="resumo-lancamentos" data-resumo-lancamentos="tabela-despesa"></div>
+          </div>
+        </div>
       <!-- ===== Ativação: quanto sai de Expenses ===== -->
       <div class="panel">
         <div class="panel-header">
@@ -142,6 +163,117 @@
         </div>
       </div>
 
+
+      </div><!-- /tab-resumo -->
+
+      <div id="tab-lancar" class="tab-panel">
+
+        <!-- ===== Formulário guiado ===== -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Lançar uma despesa</h2>
+              <p>Responda as perguntas abaixo. Nada aqui exige saber planilha ou plano de contas.</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <form class="form-guiado" data-form-lancamento="tabela-despesa" data-form-coluna-contexto="Centro de Custo" data-form-tipo="despesa">
+
+              <div class="passo">
+                <div class="passo-num">1</div>
+                <div class="passo-corpo">
+                  <h3>O que você vai gastar?</h3>
+                  <p class="passo-ajuda">Escreva com suas palavras. Ao digitar, aparecem sugestões — escolher uma preenche a conta contábil sozinha.</p>
+                  <input type="text" data-campo="descricao" list="contas-datalist"
+                    placeholder="Ex.: passagens do time comercial" required />
+                  <span class="passo-eco" data-eco="conta"></span>
+                </div>
+              </div>
+
+              <div class="passo">
+                <div class="passo-num">2</div>
+                <div class="passo-corpo">
+                  <h3>Por que esse gasto existe?</h3>
+                  <p class="passo-ajuda">Escolha o motivo. É isso que permite separar o que é operação do que é projeto.</p>
+                  <div class="cartoes-pacote" data-cartoes-pacote></div>
+                </div>
+              </div>
+
+              <div class="passo">
+                <div class="passo-num">3</div>
+                <div class="passo-corpo">
+                  <h3>De qual área é esse gasto?</h3>
+                  <p class="passo-ajuda">O centro de custo é a área que vai carregar essa despesa.</p>
+                  <input type="text" data-campo="contexto" list="centros-datalist" placeholder="Ex.: Comercial" />
+                </div>
+              </div>
+
+              <div class="passo">
+                <div class="passo-num">4</div>
+                <div class="passo-corpo">
+                  <h3>Quanto e quando?</h3>
+                  <p class="passo-ajuda">Escolha o jeito que combina com esse gasto. Os valores são em R$ mil.</p>
+
+                  <div class="ritmos">
+                    <label class="ritmo">
+                      <input type="radio" name="ritmo" value="igual" checked />
+                      <span class="ritmo-titulo">Todo mês igual</span>
+                      <span class="ritmo-ajuda">Mesmo valor de janeiro a dezembro</span>
+                    </label>
+                    <label class="ritmo">
+                      <input type="radio" name="ritmo" value="alguns" />
+                      <span class="ritmo-titulo">Só em alguns meses</span>
+                      <span class="ritmo-ajuda">Você escolhe em quais meses acontece</span>
+                    </label>
+                    <label class="ritmo">
+                      <input type="radio" name="ritmo" value="variavel" />
+                      <span class="ritmo-titulo">Muda mês a mês</span>
+                      <span class="ritmo-ajuda">Digita o valor de cada mês</span>
+                    </label>
+                  </div>
+
+                  <div class="ritmo-campo" data-ritmo-valor>
+                    <label>Valor por mês (R$ mil)</label>
+                    <input type="number" data-campo="valor" value="0" min="0" step="1" />
+                  </div>
+
+                  <div class="ritmo-campo" data-ritmo-meses hidden>
+                    <label>Em quais meses?</label>
+                    <div class="reajuste-meses" data-form-meses></div>
+                  </div>
+
+                  <div class="ritmo-campo" data-ritmo-variavel hidden>
+                    <label>Valor de cada mês (R$ mil)</label>
+                    <div class="meses-variaveis" data-form-variavel></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="passo avancado">
+                <div class="passo-num">?</div>
+                <div class="passo-corpo">
+                  <h3>Isso é um investimento?</h3>
+                  <p class="passo-ajuda">Na dúvida, deixe em "não". Só marque se o dinheiro compra algo que a empresa vai usar por vários anos.</p>
+                  <select data-campo="ativacao"></select>
+                </div>
+              </div>
+
+              <div class="form-fecho">
+                <div class="form-total" data-form-total>Total no ano: <strong>R$ 0 mil</strong></div>
+                <div class="form-acoes">
+                  <button type="button" class="btn btn-secondary" data-form-limpar>Limpar</button>
+                  <button type="submit" class="btn btn-primary">＋ Adicionar ao orçamento</button>
+                </div>
+              </div>
+
+              <p class="form-erro" data-form-erro hidden></p>
+            </form>
+          </div>
+        </div>
+
+        <!-- ===== Modo planilha ===== -->
+        <details class="modo-planilha">
+          <summary>Prefere planilha? Abrir a grade completa</summary>
       <!-- ===== Grade de lançamento ===== -->
       <div class="panel">
         <div class="panel-header">
@@ -596,6 +728,10 @@
         </div>
       </div>
 
+
+        </details>
+      </div><!-- /tab-lancar -->
+      </div><!-- /grupo de abas -->
     </div>
   </main>
 </div>
