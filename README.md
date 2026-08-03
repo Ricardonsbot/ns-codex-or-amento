@@ -49,17 +49,32 @@ Projeto - Estrutura/
 ├── budget-settings.html       Ciclos & Versões do orçamento
 ├── lancamento.html            Tela de contexto (BU/Torre/Empresa) antes do lançamento
 ├── visualizar-budget.html     Seleção de BU para visualização
+├── auditoria.html             Trilha de auditoria — quem mexeu em cada número
 ├── assets/
 │   ├── css/style.css          Todo o CSS do app (compartilhado entre as páginas)
 │   └── js/app.js              Todo o JS do app (ações simuladas, tabs, autocomplete etc.)
 ├── Referencias/                Dados reais de referência (plano de contas e estrutura organizacional)
 │   ├── contas.json             Usado no autocomplete de "Conta" nas grades
 │   └── organizacional.json     Usado no autocomplete de "Centro de Custo"
+├── ferramentas/                Scripts de bastidor — NÃO fazem parte do site
+│   └── gera_auditoria.py       Regera Referencias/auditoria.json
 ├── Dockerfile
 └── docker-compose.yml
 ```
 
 Não existe processo de build — é só abrir os arquivos `.html` (servidos por um servidor estático, Docker ou Python) e editar `.css`/`.js` diretamente.
+
+### A pasta `ferramentas/`
+
+Continua não havendo build step: as páginas leem apenas os JSON prontos de `Referencias/`. O que existe em `ferramentas/` são scripts rodados na mão quando um JSON precisa ser refeito.
+
+`gera_auditoria.py` monta `Referencias/auditoria.json` a partir de `Referencias/aprovacoes.json`, para que a trilha use as mesmas pessoas, datas e valores das telas de Entregas e Aprovações — se divergissem, a tela de auditoria contradiria a de aprovação numa apresentação. A semente do `random` é fixa, então rodar de novo dá exatamente o mesmo arquivo:
+
+```bash
+python ferramentas/gera_auditoria.py
+```
+
+Rode depois de mexer em `aprovacoes.json`.
 
 ## Como editar
 

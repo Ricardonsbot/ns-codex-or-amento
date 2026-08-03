@@ -1,6 +1,6 @@
 {
   "ciclo": "2026",
-  "observacao": "Trilha derivada de aprovacoes.json: as pessoas, datas e valores sao os mesmos que aparecem em Entregas e Aprovacoes. O prototipo nao tem backend, entao os eventos sao ilustrativos - o que a tela demonstra e o formato do registro.",
+  "observacao": "Trilha derivada de aprovacoes.json: as pessoas, datas e valores sao os mesmos que aparecem em Entregas e Aprovacoes. O prototipo nao tem backend, entao os eventos sao ilustrativos - o que a tela demonstra e o formato do registro. Gerado por ferramentas/gera_auditoria.py.",
   "acoes": {
     "criou": {
       "rotulo": "Criou",

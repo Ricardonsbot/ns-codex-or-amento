@@ -2956,6 +2956,44 @@ function initAuditoria() {
     });
   });
 
+  /* Deep link: as grades de Receita, Despesa e Capex mandam para cá já
+     filtrado. Roda depois de popularFiltros, senão o <select> ainda não tem
+     a opção que se quer selecionar. */
+  function aplicarUrl() {
+    const p = new URLSearchParams(location.search);
+    Object.keys(filtros).forEach((chave) => {
+      const valor = p.get(chave);
+      if (!valor) return;
+      filtros[chave] = valor;
+      const campo = document.querySelector(`[data-aud-filtro="${chave}"]`);
+      if (campo) campo.value = valor;
+    });
+    const lanc = p.get("lanc");
+    if (lanc && dados.eventos.some((e) => e.lancamento === lanc)) selecionado = lanc;
+  }
+
+  /* Exporta o que está filtrado, não a base inteira: o CSV serve para levar
+     para a reunião o recorte que a pessoa acabou de montar na tela. */
+  function exportarCsv() {
+    const lista = visiveis();
+    const linhas = [["Quando", "Quem", "Papel", "Acao", "BU", "Torre", "Empresa",
+                     "Categoria", "Lancamento", "Campo", "De", "Para", "Observacao"]
+                    .map(csvCell).join(";")];
+    lista.slice().reverse().forEach((ev) => {
+      linhas.push([ev.quando.replace("T", " "), ev.quem, ev.papel, rotulo(ev.acao),
+                   ev.bu, ev.torre, ev.empresa, ev.categoria, ev.lancamento,
+                   ev.campo || "", ev.de ?? "", ev.para ?? "", ev.observacao || ""]
+                  .map(csvCell).join(";"));
+    });
+    const nome = `auditoria-${new Date().toISOString().slice(0, 10)}.csv`;
+    downloadTextFile(nome, linhas.join("\n"), "text/csv;charset=utf-8;");
+    showToast(`${lista.length} registro(s) exportado(s): ${nome}`, "success");
+  }
+
+  document.querySelectorAll("[data-aud-export]").forEach((btn) => {
+    btn.addEventListener("click", exportarCsv);
+  });
+
   /* Delegação no tbody: as linhas são recriadas a cada filtro, então listener
      preso na <tr> sumiria no primeiro render. */
   corpo.addEventListener("click", (ev) => {
@@ -2970,6 +3008,7 @@ function initAuditoria() {
     dados = json;
     dados.eventos.sort((a, b) => a.quando.localeCompare(b.quando));
     popularFiltros();
+    aplicarUrl();
     renderKpis();
     renderTrilha();
     renderDetalhe();
