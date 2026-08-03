@@ -3573,3 +3573,129 @@ a.status-card:hover { background: var(--color-bg); }
     display: table-header-group;
   }
 }
+
+/* ==========================================================================
+   Auditoria — trilha do ciclo + histórico do lançamento
+   ========================================================================== */
+
+.aud-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  .aud-layout { grid-template-columns: 1fr; }
+}
+
+/* a trilha tem centenas de linhas: rolagem própria para os KPIs e o
+   histórico ao lado continuarem visíveis enquanto se procura o evento */
+.aud-scroll {
+  max-height: 620px;
+  overflow-y: auto;
+}
+
+.aud-tabela td { vertical-align: top; }
+.aud-tabela tbody tr { cursor: pointer; }
+.aud-tabela tbody tr:hover { background: var(--color-info-bg); }
+
+.aud-linha-ativa,
+.aud-tabela tbody tr.aud-linha-ativa:hover {
+  background: var(--color-info-bg);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.aud-quando {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.aud-quem, .aud-empresa { display: block; font-weight: 600; font-size: 12.5px; }
+.aud-papel, .aud-onde   { display: block; color: var(--color-text-muted); font-size: 11px; }
+
+.aud-col-mudou { font-size: 12.5px; white-space: nowrap; }
+.aud-de        { color: var(--color-text-muted); }
+.aud-seta      { color: var(--color-text-muted); margin: 0 2px; }
+.aud-delta-up   { color: var(--color-despesa); font-size: 11px; font-weight: 700; }
+.aud-delta-down { color: var(--color-receita); font-size: 11px; font-weight: 700; }
+
+/* Cores por ação. Excluiu é o único em fundo sólido: é o movimento que
+   precisa saltar quando alguém percorre a lista atrás do que sumiu. */
+.badge.aud-criou    { background: var(--color-info-bg);    color: var(--color-info); }
+.badge.aud-editou   { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge.aud-excluiu  { background: var(--color-despesa);    color: #fff; }
+.badge.aud-enviou   { background: #eef0f4;                 color: #4b5566; }
+.badge.aud-validou  { background: #eef0f4;                 color: #6b7280; }
+.badge.aud-aprovou  { background: var(--color-success-bg); color: var(--color-success); }
+.badge.aud-reprovou { background: var(--color-danger-bg);  color: var(--color-danger); }
+.badge.aud-devolveu { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge.aud-aceitou  { background: var(--color-capex-bg);   color: var(--color-capex); }
+
+/* ---------- Painel do histórico ---------- */
+
+.aud-detalhe-topo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.aud-detalhe-topo strong { display: block; font-size: 15px; }
+
+.aud-detalhe-label {
+  display: block;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.aud-seta-grande { color: var(--color-text-muted); font-size: 18px; }
+
+.aud-detalhe-id {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.aud-tl-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.aud-tl-topo strong  { font-size: 13px; }
+.aud-tl-quando       { font-size: 11px; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.aud-tl-quem         { font-size: 12px; margin-top: 1px; }
+.aud-tl-mudou        { font-size: 12.5px; margin-top: 5px; }
+
+.aud-tl-obs {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  border-left: 2px solid var(--color-border);
+  padding-left: 10px;
+  line-height: 1.5;
+}
+
+/* Cor do ponto por ação. Precisa de 3 classes para empatar com
+   `.timeline-item.done .timeline-dot` — e vence por vir depois no arquivo. */
+.timeline-item .timeline-dot.aud-criou    { background: var(--color-info-bg);    color: var(--color-info); }
+.timeline-item .timeline-dot.aud-editou   { background: var(--color-warning-bg); color: var(--color-warning); }
+.timeline-item .timeline-dot.aud-excluiu  { background: var(--color-despesa);    color: #fff; }
+.timeline-item .timeline-dot.aud-enviou   { background: #eef0f4;                 color: #4b5566; }
+.timeline-item .timeline-dot.aud-validou  { background: #eef0f4;                 color: #6b7280; }
+.timeline-item .timeline-dot.aud-aprovou  { background: var(--color-success-bg); color: var(--color-success); }
+.timeline-item .timeline-dot.aud-reprovou { background: var(--color-danger-bg);  color: var(--color-danger); }
+.timeline-item .timeline-dot.aud-devolveu { background: var(--color-warning-bg); color: var(--color-warning); }
+.timeline-item .timeline-dot.aud-aceitou  { background: var(--color-capex-bg);   color: var(--color-capex); }

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Auditoria — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="index.html">
+    <div class="sidebar-brand">
+      <div class="logo-mark">NS</div>
+      <div class="brand-text">
+        <strong>NS Codex</strong>
+        <span>BU · Torres · Corporate</span>
+      </div>
+    </div>
+    </a>
+
+    <div class="sidebar-section-label">Visão geral</div>
+    <a href="index.html"><div class="nav-item" data-page="index.html"><span class="nav-icon">▦</span> Dashboard</div></a>
+
+    <div class="sidebar-section-label">Orçamento</div>
+    <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
+    <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
+    <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+
+    <div class="sidebar-section-label">Fluxo</div>
+    <a href="entregas.html"><div class="nav-item" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div></a>
+    <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+    <a href="notificacoes.html"><div class="nav-item" data-page="notificacoes.html"><span class="nav-icon">✉</span> Notificações</div></a>
+    <div class="nav-item active" data-page="auditoria.html"><span class="nav-icon">⧉</span> Auditoria</div>
+
+    <div class="sidebar-section-label">Análise</div>
+    <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+
+    <div class="sidebar-section-label">Administração</div>
+    <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
+
+    <div class="sidebar-section-label">Budget - Settings</div>
+    <a href="budget-settings.html"><div class="nav-item" data-page="budget-settings.html"><span class="nav-icon">⚙</span> Ciclos &amp; Versões</div></a>
+    <a href="login.html"><div class="nav-item" data-page="login.html"><span class="nav-icon">&#9099;</span> Sair</div></a>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">EN</div>
+        <div class="user-meta">
+          <strong>Emerson Nakamura</strong>
+          <span>NSTECH GR LTDA</span>
+        </div>
+      </div>
+      <div class="sidebar-role-badge">Aprovador</div>
+    </div>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Auditoria</h1>
+        <p>Ciclo 2026 · quem mexeu em cada número, quando e o que mudou</p>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge status-em-aprovacao"><span class="badge-dot"></span><span data-aud-kpi="total">—</span> registros no ciclo</span>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="proto-banner">
+        ⓘ A trilha vem de <strong>Referencias/auditoria.json</strong>, derivada do mesmo <a href="aprovacoes.html" style="color:var(--color-primary); font-weight:600;">quadro de Aprovações</a> — as pessoas, datas e valores são os mesmos que aparecem em Entregas e Aprovações. O protótipo não tem backend: os eventos são ilustrativos, o que a tela demonstra é o <strong>formato do registro</strong> e o que dá para cobrar com ele.
+      </div>
+
+      <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
+        <div class="kpi-card receita">
+          <div class="kpi-label">Lançamentos com trilha</div>
+          <div class="kpi-value" data-aud-kpi="lancamentos">—</div>
+          <div class="kpi-delta">nenhum número sem dono</div>
+        </div>
+        <div class="kpi-card margem">
+          <div class="kpi-label">Alterações de valor</div>
+          <div class="kpi-value" data-aud-kpi="edicoes">—</div>
+          <div class="kpi-delta" data-aud-kpi="edicoes-detalhe">—</div>
+        </div>
+        <div class="kpi-card despesa">
+          <div class="kpi-label">Exclusões</div>
+          <div class="kpi-value" data-aud-kpi="exclusoes">—</div>
+          <div class="kpi-delta down">saíram do ciclo com motivo</div>
+        </div>
+        <div class="kpi-card capex">
+          <div class="kpi-label">Pessoas que mexeram</div>
+          <div class="kpi-value" data-aud-kpi="pessoas">—</div>
+          <div class="kpi-delta" data-aud-kpi="pessoas-detalhe">—</div>
+        </div>
+        <div class="kpi-card receita">
+          <div class="kpi-label">Assumidos por um líder</div>
+          <div class="kpi-value" data-aud-kpi="aceites">—</div>
+          <div class="kpi-delta up">com declaração de responsabilidade</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>BU</label>
+          <select data-aud-filtro="bu"><option value="">Todas as BUs</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Torre</label>
+          <select data-aud-filtro="torre"><option value="">Todas as torres</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Quem</label>
+          <select data-aud-filtro="quem"><option value="">Qualquer pessoa</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Ação</label>
+          <select data-aud-filtro="acao"><option value="">Todas as ações</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Categoria</label>
+          <select data-aud-filtro="categoria">
+            <option value="">Receita, Despesa e Capex</option>
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+            <option value="capex">Capex</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>De</label>
+          <input type="date" data-aud-filtro="de" />
+        </div>
+        <div class="filter-field">
+          <label>Até</label>
+          <input type="date" data-aud-filtro="ate" />
+        </div>
+        <div class="filter-field">
+          <label>Busca livre</label>
+          <input type="search" data-aud-filtro="busca" placeholder="Empresa, motivo, pessoa…" />
+        </div>
+      </div>
+
+      <div class="aud-layout">
+
+        <!-- ===== Trilha ===== -->
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Trilha do ciclo</h2>
+            <p data-aud-resumo>—</p>
+          </div>
+          <div class="panel-body">
+            <div class="table-wrap aud-scroll">
+              <table class="report-table aud-tabela">
+                <thead>
+                  <tr>
+                    <th>Quando</th>
+                    <th>Quem</th>
+                    <th>Fez o quê</th>
+                    <th>Onde</th>
+                    <th class="aud-col-mudou">O que mudou</th>
+                  </tr>
+                </thead>
+                <tbody data-aud-corpo></tbody>
+              </table>
+            </div>
+            <p class="empty-hint" data-aud-vazio hidden>Nenhum registro para esse filtro.</p>
+          </div>
+        </section>
+
+        <!-- ===== Histórico do lançamento ===== -->
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Histórico do lançamento</h2>
+            <p data-aud-detalhe-sub>Clique numa linha da trilha para abrir a vida inteira daquele número.</p>
+          </div>
+          <div class="panel-body" data-aud-detalhe>
+            <p class="empty-hint">Nenhum lançamento selecionado.</p>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>

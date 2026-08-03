@@ -2731,6 +2731,251 @@ function markActiveNav() {
   });
 }
 
+/* ==========================================================================
+   Auditoria — quem mexeu em cada número, quando e o que mudou
+   ==========================================================================
+   A trilha vem de Referencias/auditoria.json, derivada de aprovacoes.json:
+   mesmas pessoas, mesmas datas, mesmos valores. Duas leituras na mesma tela —
+   a lista do ciclo inteiro e a vida de um lançamento só.
+*/
+
+/* Classe de cor e símbolo da bolinha da linha do tempo.
+   Os símbolos são explícitos porque a inicial do rótulo não serve:
+   Editou, Excluiu e Enviou dariam todos "E". */
+const AUD_ACOES = {
+  criou:    { classe: "aud-criou",    simbolo: "+" },
+  editou:   { classe: "aud-editou",   simbolo: "✎" },
+  excluiu:  { classe: "aud-excluiu",  simbolo: "−" },
+  enviou:   { classe: "aud-enviou",   simbolo: "↑" },
+  validou:  { classe: "aud-validou",  simbolo: "⚙" },
+  aprovou:  { classe: "aud-aprovou",  simbolo: "✓" },
+  reprovou: { classe: "aud-reprovou", simbolo: "✕" },
+  devolveu: { classe: "aud-devolveu", simbolo: "↩" },
+  aceitou:  { classe: "aud-aceitou",  simbolo: "★" },
+};
+
+function audFormatarQuando(iso, comAno = false) {
+  if (!iso) return "—";
+  const [data, hora] = String(iso).split("T");
+  const [a, m, d] = data.split("-");
+  return `${d}/${m}${comAno ? "/" + a : ""}${hora ? " " + hora : ""}`;
+}
+
+/* Valores das grades são em R$ mil — manter a unidade explícita evita
+   alguém ler 180 como cento e oitenta reais numa reunião. */
+function audFormatarValor(v) {
+  if (v === null || v === undefined) return "—";
+  return `R$ ${Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mil`;
+}
+
+function audDescreverMudanca(ev) {
+  if (ev.acao === "validou") return escaparTexto(ev.observacao || "—");
+  if (ev.campo === "valor") {
+    const de = audFormatarValor(ev.de);
+    const para = audFormatarValor(ev.para);
+    let delta = "";
+    if (ev.de !== null && ev.de !== undefined && ev.para !== null && ev.para !== undefined && ev.de !== 0) {
+      const pct = ((ev.para - ev.de) / Math.abs(ev.de)) * 100;
+      const cls = pct >= 0 ? "aud-delta-up" : "aud-delta-down";
+      delta = ` <span class="${cls}">${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%</span>`;
+    }
+    return `<span class="aud-de">${de}</span> <span class="aud-seta">→</span> <strong>${para}</strong>${delta}`;
+  }
+  if (ev.campo === "statusOficial") {
+    return `<span class="aud-de">${escaparTexto(ev.de)}</span> <span class="aud-seta">→</span> <strong>${escaparTexto(ev.para)}</strong>`;
+  }
+  if (ev.acao === "aceitou") return "<strong>assumiu a responsabilidade</strong>";
+  return "—";
+}
+
+function initAuditoria() {
+  const corpo = document.querySelector("[data-aud-corpo]");
+  const painel = document.querySelector("[data-aud-detalhe]");
+  if (!corpo || !painel) return;
+
+  const filtros = { bu: "", torre: "", quem: "", acao: "", categoria: "", de: "", ate: "", busca: "" };
+  let dados = null;
+  let selecionado = null;
+
+  const rotulo = (acao) => (dados.acoes[acao] || {}).rotulo || acao;
+
+  function visiveis() {
+    const busca = filtros.busca.trim().toLowerCase();
+    return dados.eventos.filter((ev) => {
+      if (filtros.bu && ev.bu !== filtros.bu) return false;
+      if (filtros.torre && ev.torre !== filtros.torre) return false;
+      if (filtros.quem && ev.quem !== filtros.quem) return false;
+      if (filtros.acao && ev.acao !== filtros.acao) return false;
+      if (filtros.categoria && ev.categoria !== filtros.categoria) return false;
+      if (filtros.de && ev.quando.slice(0, 10) < filtros.de) return false;
+      if (filtros.ate && ev.quando.slice(0, 10) > filtros.ate) return false;
+      if (busca) {
+        const alvo = `${ev.empresa} ${ev.quem} ${ev.papel} ${ev.observacao || ""} ${ev.torre} ${ev.lancamento}`.toLowerCase();
+        if (!alvo.includes(busca)) return false;
+      }
+      return true;
+    });
+  }
+
+  /* KPIs olham o ciclo inteiro, não o filtro: são o retrato do ciclo. */
+  function renderKpis() {
+    const poe = (chave, valor) => {
+      document.querySelectorAll(`[data-aud-kpi="${chave}"]`).forEach((el) => { el.textContent = valor; });
+    };
+    const evs = dados.eventos;
+    const edicoes = evs.filter((e) => e.acao === "editou");
+    const pessoas = [...new Set(evs.filter((e) => e.quem !== "Sistema").map((e) => e.quem))];
+
+    poe("total", evs.length);
+    poe("lancamentos", new Set(evs.map((e) => e.lancamento)).size);
+    poe("edicoes", edicoes.length);
+    poe("edicoes-detalhe", `em ${new Set(edicoes.map((e) => e.lancamento)).size} lançamentos`);
+    poe("exclusoes", evs.filter((e) => e.acao === "excluiu").length);
+    poe("pessoas", pessoas.length);
+    poe("pessoas-detalhe", `${evs.filter((e) => e.quem === "Sistema").length} validações automáticas`);
+    poe("aceites", evs.filter((e) => e.acao === "aceitou").length);
+  }
+
+  function renderTrilha() {
+    const lista = visiveis();
+    const vazio = document.querySelector("[data-aud-vazio]");
+    const resumo = document.querySelector("[data-aud-resumo]");
+
+    if (resumo) {
+      const total = dados.eventos.length;
+      resumo.textContent = lista.length === total
+        ? `${total} registros · ${audFormatarQuando(dados.eventos[0].quando, true)} até ${audFormatarQuando(dados.eventos[total - 1].quando, true)}`
+        : `${lista.length} de ${total} registros`;
+    }
+    if (vazio) vazio.hidden = lista.length > 0;
+
+    /* mais recente primeiro: a pergunta na reunião é sempre "o que mudou agora" */
+    corpo.innerHTML = lista.slice().reverse().map((ev) => `
+      <tr data-aud-lanc="${escaparTexto(ev.lancamento)}"
+          class="${selecionado === ev.lancamento ? "aud-linha-ativa" : ""}">
+        <td class="aud-quando">${audFormatarQuando(ev.quando)}</td>
+        <td>
+          <span class="aud-quem">${escaparTexto(ev.quem)}</span>
+          <span class="aud-papel">${escaparTexto(ev.papel)}</span>
+        </td>
+        <td><span class="badge ${(AUD_ACOES[ev.acao] || {}).classe || ""}">${escaparTexto(rotulo(ev.acao))}</span></td>
+        <td>
+          <span class="aud-empresa">${escaparTexto(ev.empresa)}</span>
+          <span class="aud-onde">${escaparTexto(ev.torre)} · ${escaparTexto(ev.categoria)}</span>
+        </td>
+        <td class="aud-col-mudou">${audDescreverMudanca(ev)}</td>
+      </tr>`).join("");
+  }
+
+  function renderDetalhe() {
+    const sub = document.querySelector("[data-aud-detalhe-sub]");
+    if (!selecionado) {
+      painel.innerHTML = '<p class="empty-hint">Nenhum lançamento selecionado.</p>';
+      if (sub) sub.textContent = "Clique numa linha da trilha para abrir a vida inteira daquele número.";
+      return;
+    }
+
+    const hist = dados.eventos.filter((e) => e.lancamento === selecionado);
+    if (!hist.length) return;
+    const primeiro = hist[0];
+    if (sub) sub.textContent = `${primeiro.empresa} · ${primeiro.torre} · ${primeiro.categoria} — ${hist.length} registros`;
+
+    /* último valor conhecido: o que a linha vale depois de todo o vaivém */
+    const comValor = hist.filter((e) => e.campo === "valor" && e.para !== null && e.para !== undefined);
+    const atual = comValor.length ? comValor[comValor.length - 1].para : null;
+    const inicial = comValor.length ? comValor[0].para : null;
+    const excluido = hist.some((e) => e.acao === "excluiu");
+
+    const topo = `
+      <div class="aud-detalhe-topo">
+        <div>
+          <span class="aud-detalhe-label">Valor de origem</span>
+          <strong>${audFormatarValor(inicial)}</strong>
+        </div>
+        <span class="aud-seta-grande">→</span>
+        <div>
+          <span class="aud-detalhe-label">${excluido ? "Situação" : "Valor atual"}</span>
+          <strong>${excluido ? "excluído do ciclo" : audFormatarValor(atual)}</strong>
+        </div>
+        <div class="aud-detalhe-id">${escaparTexto(selecionado)}</div>
+      </div>`;
+
+    const linha = hist.map((ev) => {
+      const estado = ["aprovou", "aceitou"].includes(ev.acao) ? "done"
+                   : ["reprovou", "excluiu"].includes(ev.acao) ? "rejected" : "";
+      return `
+        <div class="timeline-item ${estado}">
+          <div class="timeline-dot ${(AUD_ACOES[ev.acao] || {}).classe || ""}">${(AUD_ACOES[ev.acao] || {}).simbolo || "•"}</div>
+          <div class="timeline-content">
+            <div class="aud-tl-topo">
+              <strong>${escaparTexto(rotulo(ev.acao))}</strong>
+              <span class="aud-tl-quando">${audFormatarQuando(ev.quando, true)}</span>
+            </div>
+            <div class="aud-tl-quem">${escaparTexto(ev.quem)} <span class="aud-papel">${escaparTexto(ev.papel)}</span></div>
+            <div class="aud-tl-mudou">${audDescreverMudanca(ev)}</div>
+            ${ev.observacao && ev.acao !== "validou"
+              ? `<p class="aud-tl-obs">${escaparTexto(ev.observacao)}</p>` : ""}
+          </div>
+        </div>`;
+    }).join("");
+
+    painel.innerHTML = topo + `<div class="timeline">${linha}</div>`;
+  }
+
+  function popularFiltros() {
+    const preencher = (chave, valores) => {
+      const sel = document.querySelector(`[data-aud-filtro="${chave}"]`);
+      if (!sel) return;
+      valores.forEach((v) => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        sel.appendChild(opt);
+      });
+    };
+    const unicos = (campo) => [...new Set(dados.eventos.map((e) => e[campo]))].sort();
+    preencher("bu", unicos("bu"));
+    preencher("torre", unicos("torre"));
+    preencher("quem", unicos("quem"));
+
+    const selAcao = document.querySelector('[data-aud-filtro="acao"]');
+    if (selAcao) {
+      Object.entries(dados.acoes).forEach(([chave, info]) => {
+        const opt = document.createElement("option");
+        opt.value = chave;
+        opt.textContent = info.rotulo;
+        selAcao.appendChild(opt);
+      });
+    }
+  }
+
+  document.querySelectorAll("[data-aud-filtro]").forEach((campo) => {
+    campo.addEventListener(campo.tagName === "SELECT" ? "change" : "input", () => {
+      filtros[campo.dataset.audFiltro] = campo.value;
+      renderTrilha();
+    });
+  });
+
+  /* Delegação no tbody: as linhas são recriadas a cada filtro, então listener
+     preso na <tr> sumiria no primeiro render. */
+  corpo.addEventListener("click", (ev) => {
+    const tr = ev.target.closest("[data-aud-lanc]");
+    if (!tr) return;
+    selecionado = tr.dataset.audLanc;
+    renderTrilha();
+    renderDetalhe();
+  });
+
+  carregarRef("auditoria.json").then((json) => {
+    dados = json;
+    dados.eventos.sort((a, b) => a.quando.localeCompare(b.quando));
+    popularFiltros();
+    renderKpis();
+    renderTrilha();
+    renderDetalhe();
+  });
+}
+
 /* ---------- Init ---------- */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2755,6 +3000,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initPremissas();
   initFormLancamento();
   initNotificacoes();
+  initAuditoria();
   initStatusCiclo();
   renderResumoLancamentos();
   initReferenceAutocomplete();
