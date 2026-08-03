@@ -2354,11 +2354,30 @@ function renderResumoLancamentos() {
   if (!tabela) return;
 
   const linhas = Array.from(tabela.querySelectorAll("tbody tr"));
-  const itens = linhas.map((row) => ({
-    nome: row.querySelector(".conta-nome-input")?.value.trim() || "(sem descrição)",
-    pacote: row.querySelector(".pacote-input")?.value.trim() || "sem motivo definido",
-    total: totalAnualDaLinha(row),
-  }));
+
+  // cada grade nomeia e agrupa por colunas diferentes: Despesa por conta e
+  // pacote, Receita por produto e tipo de receita
+  // sem o atributo tem que ficar -1: procurar título vazio acha a coluna de
+  // ações, que também tem <th> sem texto
+  const coluna = (attr) => {
+    const titulo = alvo.getAttribute(attr);
+    return titulo ? colunaPorTitulo(tabela, titulo) : -1;
+  };
+  const colNome = coluna("data-resumo-nome");
+  const colGrupo = coluna("data-resumo-grupo");
+  const colDetalhe = coluna("data-resumo-detalhe");
+  const celula = (row, i) => (i >= 0 ? row.children[i]?.querySelector("input")?.value.trim() || "" : "");
+
+  const itens = linhas.map((row) => {
+    const nome = colNome >= 0
+      ? [celula(row, colDetalhe), celula(row, colNome)].filter(Boolean).join(" · ")
+      : row.querySelector(".conta-nome-input")?.value.trim() || "(sem descrição)";
+    const pacote = colGrupo >= 0
+      ? celula(row, colGrupo) || "sem classificação"
+      : row.querySelector(".pacote-input")?.value.trim() || "sem motivo definido";
+
+    return { nome: nome || "(sem descrição)", pacote, total: totalAnualDaLinha(row) };
+  });
 
   const totalGeral = itens.reduce((s, i) => s + i.total, 0);
   const porPacote = new Map();
@@ -2366,7 +2385,8 @@ function renderResumoLancamentos() {
 
   const resumoTopo = document.querySelector("[data-resumo-topo]");
   if (resumoTopo) {
-    resumoTopo.innerHTML = `<strong>${itens.length} lançamento(s)</strong> · R$ ${totalGeral.toLocaleString("pt-BR")} mil no ano · ${porPacote.size} motivo(s) diferentes`;
+    const termo = alvo.getAttribute("data-resumo-termo-grupo") || "motivo(s) diferentes";
+    resumoTopo.innerHTML = `<strong>${itens.length} lançamento(s)</strong> · R$ ${totalGeral.toLocaleString("pt-BR")} mil no ano · ${porPacote.size} ${termo}`;
   }
 
   const barras = Array.from(porPacote.entries())
@@ -2471,7 +2491,7 @@ function initFormLancamento() {
 
       // eco da conta reconhecida, para a pessoa ver que o sistema entendeu
       const eco = form.querySelector('[data-eco="conta"]');
-      const digitado = form.querySelector('[data-campo="descricao"]').value.trim();
+      const digitado = form.querySelector('[data-campo="descricao"]')?.value.trim() || "";
       const match = (window.__contasRef || []).find((c) => c.nome === digitado);
       if (eco) {
         eco.textContent = match
@@ -2496,13 +2516,20 @@ function initFormLancamento() {
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const descricao = form.querySelector('[data-campo="descricao"]').value.trim();
+      const campoDescricao = form.querySelector('[data-campo="descricao"]');
+      const descricao = campoDescricao ? campoDescricao.value.trim() : "";
       const valores = valoresDosMeses();
       const total = valores.reduce((s, v) => s + v, 0);
 
       const faltas = [];
-      if (!descricao) faltas.push("dizer o que é");
-      if (!pacoteEscolhido) faltas.push("escolher o motivo");
+      if (campoDescricao && !descricao) faltas.push("dizer o que é");
+      if (form.querySelector("[data-cartoes-pacote]") && !pacoteEscolhido) faltas.push("escolher o motivo");
+
+      // campos obrigatórios da estrutura (Receita: Torre, Empresa, Produto, Tipo)
+      form.querySelectorAll("[data-campo][data-coluna][required]").forEach((campo) => {
+        if (!campo.value) faltas.push(`escolher ${campo.getAttribute("data-coluna").toLowerCase()}`);
+      });
+
       if (!total) faltas.push("informar um valor maior que zero");
 
       if (faltas.length) {
@@ -2519,7 +2546,8 @@ function initFormLancamento() {
       nova.removeAttribute("data-drill-target");
       nova.querySelectorAll("input").forEach((i) => { i.value = i.type === "number" ? 0 : ""; });
 
-      nova.querySelector(".conta-nome-input").value = descricao;
+      const campoConta = nova.querySelector(".conta-nome-input");
+      if (campoConta) campoConta.value = descricao;
       const match = (window.__contasRef || []).find((c) => c.nome === descricao);
       if (match) {
         const set = (sel, v) => { const el = nova.querySelector(sel); if (el) el.value = v; };
@@ -2531,12 +2559,22 @@ function initFormLancamento() {
       const pac = nova.querySelector(".pacote-input");
       if (pac) pac.value = pacoteEscolhido;
 
-      const contexto = form.querySelector('[data-campo="contexto"]').value.trim();
-      const idx = colunaPorTitulo(tabela, form.getAttribute("data-form-coluna-contexto"));
-      if (contexto && idx >= 0) {
-        const alvo = nova.children[idx]?.querySelector("input");
-        if (alvo) alvo.value = contexto;
+      const contextoEl = form.querySelector('[data-campo="contexto"]');
+      if (contextoEl) {
+        const idx = colunaPorTitulo(tabela, form.getAttribute("data-form-coluna-contexto"));
+        if (contextoEl.value.trim() && idx >= 0) {
+          const alvo = nova.children[idx]?.querySelector("input");
+          if (alvo) alvo.value = contextoEl.value.trim();
+        }
       }
+
+      // campos que declaram a coluna que preenchem (estrutura da Receita)
+      form.querySelectorAll("[data-campo][data-coluna]").forEach((campo) => {
+        const idx = colunaPorTitulo(tabela, campo.getAttribute("data-coluna"));
+        if (idx < 0) return;
+        const alvo = nova.children[idx]?.querySelector("input");
+        if (alvo) alvo.value = campo.value || "—";
+      });
 
       if (selectAtivacao && nova.querySelector(".ativacao-input")) {
         nova.querySelector(".ativacao-input").value = selectAtivacao.value;
@@ -2554,10 +2592,59 @@ function initFormLancamento() {
       rebindRow(nova);
 
       nova.querySelector("td.month-col input")?.dispatchEvent(new Event("change", { bubbles: true }));
-      showToast(`"${descricao}" adicionado — R$ ${total.toLocaleString("pt-BR")} mil no ano`, "success");
+
+      const rotulo = descricao || Array.from(form.querySelectorAll("[data-campo][data-coluna][required]"))
+        .map((c) => c.value).filter(Boolean).slice(-2).join(" · ") || "Lançamento";
+      showToast(`"${rotulo}" adicionado — R$ ${total.toLocaleString("pt-BR")} mil no ano`, "success");
       form.querySelector("[data-form-limpar]").click();
       renderResumoLancamentos();
     });
+
+    /* Receita: Torre → Empresa → Produto → Sub-produto encadeados, para a
+       pessoa não escolher combinação que não existe */
+    const selTorre = form.querySelector('[data-campo="torre"]');
+    if (selTorre) {
+      const selEmpresa = form.querySelector('[data-campo="empresa"]');
+      const selProduto = form.querySelector('[data-campo="produto"]');
+      const selSub = form.querySelector('[data-campo="subproduto"]');
+      const selTipo = form.querySelector('[data-campo="tiporeceita"]');
+
+      const encher = (select, valores, vazio) => {
+        select.innerHTML = "";
+        if (vazio) select.appendChild(new Option(vazio, ""));
+        valores.forEach((v) => select.appendChild(new Option(v, v)));
+        select.disabled = valores.length === 0;
+      };
+
+      Promise.all([carregarRef("organizacional.json"), carregarRef("produtos.json")])
+        .then(([org, cat]) => {
+          const torres = Array.from(new Set(org.filter((o) => o.torre !== "-").map((o) => o.torre)));
+          encher(selTorre, torres, "Escolha a Torre");
+          encher(selEmpresa, [], "Escolha a Torre primeiro");
+          encher(selProduto, [], "Escolha a Torre primeiro");
+          encher(selSub, ["—"], null);
+          encher(selTipo, cat.tiposReceita, "Escolha o tipo");
+
+          selTorre.addEventListener("change", () => {
+            const empresas = Array.from(new Set(
+              org.filter((o) => o.torre === selTorre.value).map((o) => o.empresa)
+            ));
+            encher(selEmpresa, empresas, empresas.length ? "Escolha a empresa" : "Sem empresa nesta Torre");
+
+            const produtos = cat.produtos.filter((p) => p.torres.includes(selTorre.value)).map((p) => p.nome);
+            encher(selProduto, produtos, produtos.length ? "Escolha o produto" : "Sem produto nesta Torre");
+            encher(selSub, ["—"], null);
+            atualizar();
+          });
+
+          selProduto.addEventListener("change", () => {
+            const p = cat.produtos.find((x) => x.nome === selProduto.value);
+            const subs = p && p.subProdutos.length ? ["—"].concat(p.subProdutos) : ["—"];
+            encher(selSub, subs, null);
+            atualizar();
+          });
+        });
+    }
 
     // cartões de motivo (pacote) e opções de ativação, do mesmo cadastro da planilha
     carregarRef("pacotes.json")

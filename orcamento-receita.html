@@ -93,7 +93,7 @@
             <button class="btn btn-secondary btn-sm" data-ir-para-lancar>＋ Lançar receita</button>
           </div>
           <div class="panel-body">
-            <div class="resumo-lancamentos" data-resumo-lancamentos="tabela-receita"></div>
+            <div class="resumo-lancamentos" data-resumo-lancamentos="tabela-receita" data-resumo-detalhe="Empresa" data-resumo-nome="Produto" data-resumo-grupo="Tipo Receita" data-resumo-termo-grupo="tipo(s) de receita"></div>
           </div>
         </div>
       <div class="kpi-grid" style="grid-template-columns: repeat(3,1fr);">
@@ -136,16 +136,7 @@
           <label>Moeda</label>
           <select><option>BRL</option><option>USD</option></select>
         </div>
-        <div class="filter-field">
-          <label>Pacote</label>
-          <select data-pacote-filtro="tabela-receita" data-pacote-tipo="receita">
-            <option value="">Todos os pacotes</option>
-          </select>
-        </div>
       </div>
-
-      <div class="pacote-resumo" data-pacote-resumo="tabela-receita" data-pacote-termo="receita da grade"></div>
-      <div class="pacote-legenda" data-pacote-legenda data-pacote-tipo="receita"></div>
 
 
         <!-- ===== Formulário guiado ===== -->
@@ -157,34 +148,50 @@
             </div>
           </div>
           <div class="panel-body">
-            <form class="form-guiado" data-form-lancamento="tabela-receita" data-form-coluna-contexto="Cliente / Canal" data-form-tipo="receita">
+            <form class="form-guiado" data-form-lancamento="tabela-receita" data-form-tipo="receita">
 
               <div class="passo">
                 <div class="passo-num">1</div>
                 <div class="passo-corpo">
-                  <h3>De onde vem essa receita?</h3>
-                  <p class="passo-ajuda">Escreva com suas palavras. Ao digitar, aparecem sugestões do plano de contas.</p>
-                  <input type="text" data-campo="descricao" list="contas-datalist"
-                    placeholder="Ex.: venda de licenças para o varejo" required />
-                  <span class="passo-eco" data-eco="conta"></span>
+                  <h3>De qual Torre e Empresa é essa receita?</h3>
+                  <p class="passo-ajuda">Escolha a Torre e a lista de empresas já chega filtrada.</p>
+                  <div class="campos-lado">
+                    <label>
+                      <span>Torre</span>
+                      <select data-campo="torre" data-coluna="Torre" required></select>
+                    </label>
+                    <label>
+                      <span>Empresa</span>
+                      <select data-campo="empresa" data-coluna="Empresa" required></select>
+                    </label>
+                  </div>
                 </div>
               </div>
 
               <div class="passo">
                 <div class="passo-num">2</div>
                 <div class="passo-corpo">
-                  <h3>Por que essa receita existe?</h3>
-                  <p class="passo-ajuda">Escolha o motivo. É isso que permite separar o que é operação do que é projeto.</p>
-                  <div class="cartoes-pacote" data-cartoes-pacote></div>
+                  <h3>Qual produto gera essa receita?</h3>
+                  <p class="passo-ajuda">Só aparecem os produtos da Torre escolhida. Sub-produto fica como "—" quando o produto não tem divisão.</p>
+                  <div class="campos-lado">
+                    <label>
+                      <span>Produto</span>
+                      <select data-campo="produto" data-coluna="Produto" required></select>
+                    </label>
+                    <label>
+                      <span>Sub-produto</span>
+                      <select data-campo="subproduto" data-coluna="Sub-produto"></select>
+                    </label>
+                  </div>
                 </div>
               </div>
 
               <div class="passo">
                 <div class="passo-num">3</div>
                 <div class="passo-corpo">
-                  <h3>Qual cliente ou canal?</h3>
-                  <p class="passo-ajuda">Quem paga, ou por qual canal essa receita entra.</p>
-                  <input type="text" data-campo="contexto" list="centros-datalist" placeholder="Ex.: Rede Própria" />
+                  <h3>Que tipo de receita é essa?</h3>
+                  <p class="passo-ajuda">Recorrente é a que se repete todo mês por contrato. As demais são pontuais.</p>
+                  <select data-campo="tiporeceita" data-coluna="Tipo Receita" required></select>
                 </div>
               </div>
 
@@ -264,134 +271,222 @@
         </div>
         <div class="panel-body table-wrap">
           <table id="tabela-receita" class="entry-grid">
-            <thead>
+              <thead>
+                <tr>
+                  <th colspan="5"></th>
+                  <th colspan="12" class="month-group-header">
+                    <button class="month-toggle-btn" data-month-toggle="tabela-receita" title="Agrupar meses">
+                      <span class="month-toggle-icon">−</span> Meses
+                    </button>
+                  </th>
+                  <th colspan="2"></th>
+                </tr>
+                <tr>
+                  <th>Torre</th>
+                  <th>Empresa</th>
+                  <th>Produto</th>
+                  <th>Sub-produto</th>
+                  <th>Tipo Receita</th>
+                  <th class="text-right month-col">Jan</th>
+                  <th class="text-right month-col">Fev</th>
+                  <th class="text-right month-col">Mar</th>
+                  <th class="text-right month-col">Abr</th>
+                  <th class="text-right month-col">Mai</th>
+                  <th class="text-right month-col">Jun</th>
+                  <th class="text-right month-col">Jul</th>
+                  <th class="text-right month-col">Ago</th>
+                  <th class="text-right month-col">Set</th>
+                  <th class="text-right month-col">Out</th>
+                  <th class="text-right month-col">Nov</th>
+                  <th class="text-right month-col">Dez</th>
+                  <th class="text-right">Total</th>
+                  <th></th>
+                </tr>
+              </thead>
+<tbody>
               <tr>
-                <th colspan="3"></th>
-                <th colspan="12" class="month-group-header">
-                  <button class="month-toggle-btn" data-month-toggle="tabela-receita" title="Agrupar meses">
-                    <span class="month-toggle-icon">−</span> Meses
-                  </button>
-                </th>
-                <th colspan="2"></th>
+                <td><input type="text" value="Torre VGR" list="torres-datalist" /></td>
+                <td><input type="text" value="BRK" list="empresas-datalist" /></td>
+                <td><input type="text" value="Monitoramento" list="produtos-datalist" /></td>
+                <td><input type="text" value="—" list="subprodutos-datalist" /></td>
+                <td><input type="text" value="Receita Recorrente" list="tiposreceita-datalist" /></td>
+                <td class="month-col"><input type="number" value="8180" /></td>
+                <td class="month-col"><input type="number" value="8210" /></td>
+                <td class="month-col"><input type="number" value="8260" /></td>
+                <td class="month-col"><input type="number" value="8300" /></td>
+                <td class="month-col"><input type="number" value="8340" /></td>
+                <td class="month-col"><input type="number" value="8390" /></td>
+                <td class="month-col"><input type="number" value="8430" /></td>
+                <td class="month-col"><input type="number" value="8470" /></td>
+                <td class="month-col"><input type="number" value="8520" /></td>
+                <td class="month-col"><input type="number" value="8560" /></td>
+                <td class="month-col"><input type="number" value="8610" /></td>
+                <td class="month-col"><input type="number" value="8650" /></td>
+                <td class="text-right total-cell">R$ 100.920</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="BRK · Monitoramento" title="Diluir reajuste nos meses">%</button>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="BRK · Monitoramento" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="BRK · Monitoramento" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="BRK · Monitoramento" title="Remover">🗑</button>
+                </td>
               </tr>
               <tr>
-                <th>Conta</th>
-                <th>Cliente / Canal</th>
-                <th>Pacote</th>
-                <th class="text-right month-col">Jan</th>
-                <th class="text-right month-col">Fev</th>
-                <th class="text-right month-col">Mar</th>
-                <th class="text-right month-col">Abr</th>
-                <th class="text-right month-col">Mai</th>
-                <th class="text-right month-col">Jun</th>
-                <th class="text-right month-col">Jul</th>
-                <th class="text-right month-col">Ago</th>
-                <th class="text-right month-col">Set</th>
-                <th class="text-right month-col">Out</th>
-                <th class="text-right month-col">Nov</th>
-                <th class="text-right month-col">Dez</th>
-                <th class="text-right">Total</th>
-                <th></th>
+                <td><input type="text" value="Torre VGR" list="torres-datalist" /></td>
+                <td><input type="text" value="Opentech" list="empresas-datalist" /></td>
+                <td><input type="text" value="Monitoramento" list="produtos-datalist" /></td>
+                <td><input type="text" value="—" list="subprodutos-datalist" /></td>
+                <td><input type="text" value="Receita Recorrente" list="tiposreceita-datalist" /></td>
+                <td class="month-col"><input type="number" value="7167" /></td>
+                <td class="month-col"><input type="number" value="7190" /></td>
+                <td class="month-col"><input type="number" value="7230" /></td>
+                <td class="month-col"><input type="number" value="7260" /></td>
+                <td class="month-col"><input type="number" value="7300" /></td>
+                <td class="month-col"><input type="number" value="7340" /></td>
+                <td class="month-col"><input type="number" value="7370" /></td>
+                <td class="month-col"><input type="number" value="7410" /></td>
+                <td class="month-col"><input type="number" value="7450" /></td>
+                <td class="month-col"><input type="number" value="7480" /></td>
+                <td class="month-col"><input type="number" value="7520" /></td>
+                <td class="month-col"><input type="number" value="7560" /></td>
+                <td class="text-right total-cell">R$ 88.277</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Opentech · Monitoramento" title="Diluir reajuste nos meses">%</button>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Opentech · Monitoramento" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Opentech · Monitoramento" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Opentech · Monitoramento" title="Remover">🗑</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
               <tr>
-                <td><input type="text" value="Venda de Produto - Varejo Físico" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Rede Própria" /></td>
-                <td><input type="text" value="Operação Base" class="pacote-input" list="pacotes-datalist" /></td>
-                <td class="month-col"><input type="number" value="3200" /></td>
-                <td class="month-col"><input type="number" value="3100" /></td>
-                <td class="month-col"><input type="number" value="3400" /></td>
+                <td><input type="text" value="Torre VGR" list="torres-datalist" /></td>
+                <td><input type="text" value="LogRisk" list="empresas-datalist" /></td>
+                <td><input type="text" value="Monitoramento" list="produtos-datalist" /></td>
+                <td><input type="text" value="—" list="subprodutos-datalist" /></td>
+                <td><input type="text" value="Receita Recorrente" list="tiposreceita-datalist" /></td>
+                <td class="month-col"><input type="number" value="4598" /></td>
+                <td class="month-col"><input type="number" value="4620" /></td>
+                <td class="month-col"><input type="number" value="4650" /></td>
+                <td class="month-col"><input type="number" value="4670" /></td>
+                <td class="month-col"><input type="number" value="4700" /></td>
+                <td class="month-col"><input type="number" value="4730" /></td>
+                <td class="month-col"><input type="number" value="4750" /></td>
+                <td class="month-col"><input type="number" value="4780" /></td>
+                <td class="month-col"><input type="number" value="4810" /></td>
+                <td class="month-col"><input type="number" value="4830" /></td>
+                <td class="month-col"><input type="number" value="4860" /></td>
+                <td class="month-col"><input type="number" value="4890" /></td>
+                <td class="text-right total-cell">R$ 56.888</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="LogRisk · Monitoramento" title="Diluir reajuste nos meses">%</button>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="LogRisk · Monitoramento" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="LogRisk · Monitoramento" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="LogRisk · Monitoramento" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="Torre SW Embarcador" list="torres-datalist" /></td>
+                <td><input type="text" value="Multisoftware" list="empresas-datalist" /></td>
+                <td><input type="text" value="TMS Embarcador" list="produtos-datalist" /></td>
+                <td><input type="text" value="—" list="subprodutos-datalist" /></td>
+                <td><input type="text" value="Receita Recorrente" list="tiposreceita-datalist" /></td>
+                <td class="month-col"><input type="number" value="4249" /></td>
+                <td class="month-col"><input type="number" value="4270" /></td>
+                <td class="month-col"><input type="number" value="4300" /></td>
+                <td class="month-col"><input type="number" value="4320" /></td>
+                <td class="month-col"><input type="number" value="4350" /></td>
+                <td class="month-col"><input type="number" value="4380" /></td>
+                <td class="month-col"><input type="number" value="4400" /></td>
+                <td class="month-col"><input type="number" value="4430" /></td>
+                <td class="month-col"><input type="number" value="4460" /></td>
+                <td class="month-col"><input type="number" value="4480" /></td>
+                <td class="month-col"><input type="number" value="4510" /></td>
+                <td class="month-col"><input type="number" value="4540" /></td>
+                <td class="text-right total-cell">R$ 52.689</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Multisoftware · TMS Embarcador" title="Diluir reajuste nos meses">%</button>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Multisoftware · TMS Embarcador" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Multisoftware · TMS Embarcador" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Multisoftware · TMS Embarcador" title="Remover">🗑</button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="Torre VGR" list="torres-datalist" /></td>
+                <td><input type="text" value="Opentech" list="empresas-datalist" /></td>
+                <td><input type="text" value="Background Check" list="produtos-datalist" /></td>
+                <td><input type="text" value="—" list="subprodutos-datalist" /></td>
+                <td><input type="text" value="Receita Recorrente" list="tiposreceita-datalist" /></td>
+                <td class="month-col"><input type="number" value="3442" /></td>
+                <td class="month-col"><input type="number" value="3460" /></td>
+                <td class="month-col"><input type="number" value="3480" /></td>
                 <td class="month-col"><input type="number" value="3500" /></td>
+                <td class="month-col"><input type="number" value="3520" /></td>
+                <td class="month-col"><input type="number" value="3540" /></td>
+                <td class="month-col"><input type="number" value="3560" /></td>
+                <td class="month-col"><input type="number" value="3580" /></td>
                 <td class="month-col"><input type="number" value="3600" /></td>
-                <td class="month-col"><input type="number" value="3700" /></td>
-                <td class="month-col"><input type="number" value="3650" /></td>
-                <td class="month-col"><input type="number" value="3800" /></td>
-                <td class="month-col"><input type="number" value="3900" /></td>
-                <td class="month-col"><input type="number" value="4000" /></td>
-                <td class="month-col"><input type="number" value="4100" /></td>
-                <td class="month-col"><input type="number" value="4500" /></td>
-                <td class="text-right total-cell">R$ 44.450</td>
+                <td class="month-col"><input type="number" value="3620" /></td>
+                <td class="month-col"><input type="number" value="3640" /></td>
+                <td class="month-col"><input type="number" value="3660" /></td>
+                <td class="text-right total-cell">R$ 42.602</td>
                 <td>
-                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Venda de Produto - Varejo Físico" title="Diluir reajuste nos meses">%</button>
-                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Venda de Produto - Varejo Físico" title="Replicar Para Todos os Meses">⇥</button>
-                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Venda de Produto - Varejo Físico" title="Duplicar">⧉</button>
-                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Venda de Produto - Varejo Físico" title="Remover">🗑</button>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Opentech · Background Check" title="Diluir reajuste nos meses">%</button>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Opentech · Background Check" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Opentech · Background Check" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Opentech · Background Check" title="Remover">🗑</button>
                 </td>
               </tr>
               <tr>
-                <td><input type="text" value="Venda de Produto - E-commerce" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Canal Digital" /></td>
-                <td><input type="text" value="Crescimento e Expansão" class="pacote-input" list="pacotes-datalist" /></td>
-                <td class="month-col"><input type="number" value="1400" /></td>
-                <td class="month-col"><input type="number" value="1500" /></td>
-                <td class="month-col"><input type="number" value="1650" /></td>
-                <td class="month-col"><input type="number" value="1700" /></td>
-                <td class="month-col"><input type="number" value="1750" /></td>
-                <td class="month-col"><input type="number" value="1800" /></td>
-                <td class="month-col"><input type="number" value="1850" /></td>
-                <td class="month-col"><input type="number" value="1900" /></td>
-                <td class="month-col"><input type="number" value="1950" /></td>
-                <td class="month-col"><input type="number" value="2100" /></td>
-                <td class="month-col"><input type="number" value="2300" /></td>
-                <td class="month-col"><input type="number" value="2900" /></td>
-                <td class="text-right total-cell">R$ 22.800</td>
+                <td><input type="text" value="Torre VGR" list="torres-datalist" /></td>
+                <td><input type="text" value="BRK" list="empresas-datalist" /></td>
+                <td><input type="text" value="Background Check" list="produtos-datalist" /></td>
+                <td><input type="text" value="—" list="subprodutos-datalist" /></td>
+                <td><input type="text" value="Receita Recorrente" list="tiposreceita-datalist" /></td>
+                <td class="month-col"><input type="number" value="3219" /></td>
+                <td class="month-col"><input type="number" value="3240" /></td>
+                <td class="month-col"><input type="number" value="3260" /></td>
+                <td class="month-col"><input type="number" value="3280" /></td>
+                <td class="month-col"><input type="number" value="3300" /></td>
+                <td class="month-col"><input type="number" value="3320" /></td>
+                <td class="month-col"><input type="number" value="3340" /></td>
+                <td class="month-col"><input type="number" value="3360" /></td>
+                <td class="month-col"><input type="number" value="3380" /></td>
+                <td class="month-col"><input type="number" value="3400" /></td>
+                <td class="month-col"><input type="number" value="3420" /></td>
+                <td class="month-col"><input type="number" value="3440" /></td>
+                <td class="text-right total-cell">R$ 39.959</td>
                 <td>
-                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Venda de Produto - E-commerce" title="Diluir reajuste nos meses">%</button>
-                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Venda de Produto - E-commerce" title="Replicar Para Todos os Meses">⇥</button>
-                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Venda de Produto - E-commerce" title="Duplicar">⧉</button>
-                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Venda de Produto - E-commerce" title="Remover">🗑</button>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="BRK · Background Check" title="Diluir reajuste nos meses">%</button>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="BRK · Background Check" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="BRK · Background Check" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="BRK · Background Check" title="Remover">🗑</button>
                 </td>
               </tr>
               <tr>
-                <td><input type="text" value="Prestação de Serviço - Assistência" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Rede Própria" /></td>
-                <td><input type="text" value="Novos Contratos" class="pacote-input" list="pacotes-datalist" /></td>
-                <td class="month-col"><input type="number" value="180" /></td>
-                <td class="month-col"><input type="number" value="190" /></td>
-                <td class="month-col"><input type="number" value="200" /></td>
-                <td class="month-col"><input type="number" value="210" /></td>
-                <td class="month-col"><input type="number" value="215" /></td>
-                <td class="month-col"><input type="number" value="220" /></td>
-                <td class="month-col"><input type="number" value="225" /></td>
-                <td class="month-col"><input type="number" value="230" /></td>
-                <td class="month-col"><input type="number" value="235" /></td>
-                <td class="month-col"><input type="number" value="240" /></td>
-                <td class="month-col"><input type="number" value="245" /></td>
-                <td class="month-col"><input type="number" value="260" /></td>
-                <td class="text-right total-cell">R$ 2.650</td>
+                <td><input type="text" value="Torre VGR" list="torres-datalist" /></td>
+                <td><input type="text" value="Opentech" list="empresas-datalist" /></td>
+                <td><input type="text" value="Torre Logística" list="produtos-datalist" /></td>
+                <td><input type="text" value="—" list="subprodutos-datalist" /></td>
+                <td><input type="text" value="Receita Recorrente" list="tiposreceita-datalist" /></td>
+                <td class="month-col"><input type="number" value="3138" /></td>
+                <td class="month-col"><input type="number" value="3150" /></td>
+                <td class="month-col"><input type="number" value="3170" /></td>
+                <td class="month-col"><input type="number" value="3190" /></td>
+                <td class="month-col"><input type="number" value="3210" /></td>
+                <td class="month-col"><input type="number" value="3230" /></td>
+                <td class="month-col"><input type="number" value="3250" /></td>
+                <td class="month-col"><input type="number" value="3270" /></td>
+                <td class="month-col"><input type="number" value="3290" /></td>
+                <td class="month-col"><input type="number" value="3310" /></td>
+                <td class="month-col"><input type="number" value="3330" /></td>
+                <td class="month-col"><input type="number" value="3350" /></td>
+                <td class="text-right total-cell">R$ 38.888</td>
                 <td>
-                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Prestação de Serviço - Assistência" title="Diluir reajuste nos meses">%</button>
-                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Prestação de Serviço - Assistência" title="Replicar Para Todos os Meses">⇥</button>
-                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Prestação de Serviço - Assistência" title="Duplicar">⧉</button>
-                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Prestação de Serviço - Assistência" title="Remover">🗑</button>
+                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Opentech · Torre Logística" title="Diluir reajuste nos meses">%</button>
+                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Opentech · Torre Logística" title="Replicar Para Todos os Meses">⇥</button>
+                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Opentech · Torre Logística" title="Duplicar">⧉</button>
+                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Opentech · Torre Logística" title="Remover">🗑</button>
                 </td>
               </tr>
-              <tr>
-                <td><input type="text" value="Outras Receitas Operacionais" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Diversos" /></td>
-                <td><input type="text" value="Operação Base" class="pacote-input" list="pacotes-datalist" /></td>
-                <td class="month-col"><input type="number" value="60" /></td>
-                <td class="month-col"><input type="number" value="55" /></td>
-                <td class="month-col"><input type="number" value="70" /></td>
-                <td class="month-col"><input type="number" value="65" /></td>
-                <td class="month-col"><input type="number" value="62" /></td>
-                <td class="month-col"><input type="number" value="58" /></td>
-                <td class="month-col"><input type="number" value="64" /></td>
-                <td class="month-col"><input type="number" value="70" /></td>
-                <td class="month-col"><input type="number" value="68" /></td>
-                <td class="month-col"><input type="number" value="72" /></td>
-                <td class="month-col"><input type="number" value="75" /></td>
-                <td class="month-col"><input type="number" value="90" /></td>
-                <td class="text-right total-cell">R$ 809</td>
-                <td>
-                  <button class="btn btn-ghost btn-sm" data-reajuste-abrir data-action-label="Outras Receitas Operacionais" title="Diluir reajuste nos meses">%</button>
-                  <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Outras Receitas Operacionais" title="Replicar Para Todos os Meses">⇥</button>
-                  <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Outras Receitas Operacionais" title="Duplicar">⧉</button>
-                  <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Outras Receitas Operacionais" title="Remover">🗑</button>
-                </td>
-              </tr>
-            </tbody>
+</tbody>
             <tfoot>
               <tr>
                 <td colspan="14">Total Geral</td>
@@ -413,7 +508,11 @@
 
 <datalist id="contas-datalist"></datalist>
 <datalist id="centros-datalist"></datalist>
-<datalist id="pacotes-datalist"></datalist>
+<datalist id="torres-datalist"></datalist>
+<datalist id="empresas-datalist"></datalist>
+<datalist id="produtos-datalist"></datalist>
+<datalist id="subprodutos-datalist"></datalist>
+<datalist id="tiposreceita-datalist"></datalist>
 
 <div class="modal-overlay" id="modal-reajuste">
   <div class="modal modal-reajuste">

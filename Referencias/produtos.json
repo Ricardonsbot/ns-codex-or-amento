@@ -1,0 +1,23 @@
+{
+  "observacao": "Estrutura de input da Receita: Torre → Empresa → Produto → Sub-produto → Tipo de Receita. Torre e Empresa vêm de organizacional.json; aqui ficam o catálogo de produtos e os tipos de receita. Produto se liga à Torre, então a lista já chega filtrada no lançamento.",
+  "tiposReceita": [
+    "Receita Recorrente",
+    "Receita Não Recorrente",
+    "Serviços e Implantação",
+    "Licenciamento"
+  ],
+  "produtos": [
+    { "nome": "Monitoramento", "torres": ["Torre VGR"], "subProdutos": ["Rastreamento", "Gerenciamento de Risco"] },
+    { "nome": "Background Check", "torres": ["Torre VGR"], "subProdutos": [] },
+    { "nome": "Torre Logística", "torres": ["Torre VGR"], "subProdutos": [] },
+    { "nome": "TMS Embarcador", "torres": ["Torre SW Embarcador"], "subProdutos": ["Last Mile", "YMS/WMS"] },
+    { "nome": "Roteirização", "torres": ["Torre SW Embarcador"], "subProdutos": [] },
+    { "nome": "TMS Transportador", "torres": ["Torre TMS"], "subProdutos": ["ICP Pequeno e Micro", "ICP Médio e Grande"] },
+    { "nome": "Gestão de Frota", "torres": ["Torre TMS", "Torre Mobilidade"], "subProdutos": [] },
+    { "nome": "Pagamento de Frete", "torres": ["Torre Fintech"], "subProdutos": ["e-frete", "Vale-pedágio"] },
+    { "nome": "Pedágio", "torres": ["Torre Fintech"], "subProdutos": [] },
+    { "nome": "Gerenciamento de Risco", "torres": ["Torre Buonny"], "subProdutos": [] },
+    { "nome": "Seguros", "torres": ["Insurance Market"], "subProdutos": [] },
+    { "nome": "Mídia e Conteúdo", "torres": ["Mídia"], "subProdutos": [] }
+  ]
+}

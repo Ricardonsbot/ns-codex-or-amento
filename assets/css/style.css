@@ -2323,6 +2323,25 @@ a.status-card:hover { background: var(--color-bg); }
 .passo-eco.ok { color: var(--color-success); }
 .passo-eco.alerta { color: var(--color-warning); }
 
+.campos-lado {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.campos-lado label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campos-lado label span {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+}
+
 .cartoes-pacote {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
