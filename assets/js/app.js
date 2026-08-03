@@ -2445,6 +2445,14 @@ function initFormLancamento() {
     const erro = form.querySelector("[data-form-erro]");
     let pacoteEscolhido = "";
 
+    // padrão: um valor, num mês só. O Phasing abre a distribuição no ano.
+    const caixaPontual = form.querySelector("[data-modo-pontual]");
+    const painelPhasing = form.querySelector("[data-modo-phasing]");
+    const btnPhasing = form.querySelector("[data-phasing-toggle]");
+    const campoPontual = form.querySelector('[data-campo="valor-pontual"]');
+    const selectMes = form.querySelector('[data-campo="mes-pontual"]');
+    let phasing = false;
+
     // a grade de Receita não tem coluna de ativação: o passo some
     if (passoAtivacao && !tabela.querySelector(".ativacao-input")) passoAtivacao.remove();
 
@@ -2458,6 +2466,8 @@ function initFormLancamento() {
       campo.className = "mes-variavel";
       campo.innerHTML = `<span>${mes}</span><input type="number" data-mes-valor="${i}" value="0" min="0" />`;
       caixaVariavel.appendChild(campo);
+
+      selectMes.appendChild(new Option(mes, String(i)));
     });
 
     function ritmo() {
@@ -2466,6 +2476,13 @@ function initFormLancamento() {
 
     /* devolve os 12 meses conforme o ritmo escolhido */
     function valoresDosMeses() {
+      // sem phasing o lançamento cai inteiro no mês escolhido
+      if (!phasing) {
+        const mes = Number(selectMes.value) || 0;
+        const unico = Number(campoPontual.value) || 0;
+        return MESES_CURTOS.map((_, i) => (i === mes ? unico : 0));
+      }
+
       const modo = ritmo();
       const valor = Number(campoValor.value) || 0;
 
@@ -2480,6 +2497,9 @@ function initFormLancamento() {
     }
 
     function atualizar() {
+      caixaPontual.hidden = phasing;
+      painelPhasing.hidden = !phasing;
+
       const modo = ritmo();
       form.querySelector("[data-ritmo-valor]").hidden = modo === "variavel";
       form.querySelector("[data-ritmo-meses]").hidden = modo !== "alguns";
@@ -2504,8 +2524,28 @@ function initFormLancamento() {
     form.addEventListener("input", atualizar);
     form.addEventListener("change", atualizar);
 
+    function trocarPhasing(ligado) {
+      phasing = ligado;
+      btnPhasing.setAttribute("aria-pressed", String(ligado));
+      btnPhasing.classList.toggle("btn-primary", ligado);
+      btnPhasing.classList.toggle("btn-secondary", !ligado);
+      btnPhasing.closest(".phasing-topo").classList.toggle("ligado", ligado);
+      form.querySelector("[data-phasing-estado]").textContent = ligado
+        ? "Distribuído ao longo do ano"
+        : "Valor único, em um mês";
+      atualizar();
+    }
+
+    btnPhasing.addEventListener("click", () => {
+      // leva o valor já digitado para o outro layout, para não redigitar
+      if (!phasing && !Number(campoValor.value)) campoValor.value = campoPontual.value;
+      if (phasing && !Number(campoPontual.value)) campoPontual.value = campoValor.value;
+      trocarPhasing(!phasing);
+    });
+
     form.querySelector("[data-form-limpar]").addEventListener("click", () => {
       form.reset();
+      trocarPhasing(false);
       caixaMeses.querySelectorAll("input").forEach((c) => { c.checked = false; });
       caixaVariavel.querySelectorAll("input").forEach((i) => { i.value = 0; });
       form.querySelectorAll(".cartao-pacote").forEach((c) => c.classList.remove("escolhido"));

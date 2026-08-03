@@ -2376,6 +2376,42 @@ a.status-card:hover { background: var(--color-bg); }
   color: var(--color-text-muted);
 }
 
+/* ---------- Phasing: valor num mês só x distribuído no ano ---------- */
+
+.phasing-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.phasing-topo.ligado {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+}
+
+.phasing-estado {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.phasing-topo.ligado .phasing-estado {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.pontual-campos { margin-bottom: 12px; }
+
+/* .campos-lado usa display:grid e o painel é bloco: os dois ganham do
+   [hidden] do navegador — sem isto o atributo não esconde nada */
+.pontual-campos[hidden],
+.phasing-painel[hidden] { display: none; }
+
 .ritmos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

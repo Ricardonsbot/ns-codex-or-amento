@@ -213,39 +213,57 @@
                 <div class="passo-num">4</div>
                 <div class="passo-corpo">
                   <h3>Quanto e quando?</h3>
-                  <p class="passo-ajuda">Escolha o jeito que combina com esse gasto. Os valores são em R$ mil.</p>
+                  <p class="passo-ajuda">O padrão é um valor em um único mês. Se esse gasto se repete ao longo do ano, ligue o <strong>Phasing</strong> e distribua. Valores em R$ mil.</p>
 
-                  <div class="ritmos">
-                    <label class="ritmo">
-                      <input type="radio" name="ritmo" value="igual" checked />
-                      <span class="ritmo-titulo">Todo mês igual</span>
-                      <span class="ritmo-ajuda">Mesmo valor de janeiro a dezembro</span>
+                  <div class="phasing-topo">
+                    <span class="phasing-estado" data-phasing-estado>Valor único, em um mês</span>
+                    <button type="button" class="btn btn-secondary btn-sm" data-phasing-toggle aria-pressed="false">⇄ Phasing</button>
+                  </div>
+
+                  <div class="campos-lado pontual-campos" data-modo-pontual>
+                    <label>
+                      <span>Valor (R$ mil)</span>
+                      <input type="number" data-campo="valor-pontual" value="0" min="0" step="1" />
                     </label>
-                    <label class="ritmo">
-                      <input type="radio" name="ritmo" value="alguns" />
-                      <span class="ritmo-titulo">Só em alguns meses</span>
-                      <span class="ritmo-ajuda">Você escolhe em quais meses acontece</span>
-                    </label>
-                    <label class="ritmo">
-                      <input type="radio" name="ritmo" value="variavel" />
-                      <span class="ritmo-titulo">Muda mês a mês</span>
-                      <span class="ritmo-ajuda">Digita o valor de cada mês</span>
+                    <label>
+                      <span>Em qual mês?</span>
+                      <select data-campo="mes-pontual"></select>
                     </label>
                   </div>
 
-                  <div class="ritmo-campo" data-ritmo-valor>
-                    <label>Valor por mês (R$ mil)</label>
-                    <input type="number" data-campo="valor" value="0" min="0" step="1" />
-                  </div>
+                  <div class="phasing-painel" data-modo-phasing hidden>
+                    <div class="ritmos">
+                      <label class="ritmo">
+                        <input type="radio" name="ritmo" value="igual" checked />
+                        <span class="ritmo-titulo">Todo mês igual</span>
+                        <span class="ritmo-ajuda">Mesmo valor de janeiro a dezembro</span>
+                      </label>
+                      <label class="ritmo">
+                        <input type="radio" name="ritmo" value="alguns" />
+                        <span class="ritmo-titulo">Só em alguns meses</span>
+                        <span class="ritmo-ajuda">Você escolhe em quais meses acontece</span>
+                      </label>
+                      <label class="ritmo">
+                        <input type="radio" name="ritmo" value="variavel" />
+                        <span class="ritmo-titulo">Muda mês a mês</span>
+                        <span class="ritmo-ajuda">Digita o valor de cada mês</span>
+                      </label>
+                    </div>
 
-                  <div class="ritmo-campo" data-ritmo-meses hidden>
-                    <label>Em quais meses?</label>
-                    <div class="reajuste-meses" data-form-meses></div>
-                  </div>
+                    <div class="ritmo-campo" data-ritmo-valor>
+                      <label>Valor por mês (R$ mil)</label>
+                      <input type="number" data-campo="valor" value="0" min="0" step="1" />
+                    </div>
 
-                  <div class="ritmo-campo" data-ritmo-variavel hidden>
-                    <label>Valor de cada mês (R$ mil)</label>
-                    <div class="meses-variaveis" data-form-variavel></div>
+                    <div class="ritmo-campo" data-ritmo-meses hidden>
+                      <label>Em quais meses?</label>
+                      <div class="reajuste-meses" data-form-meses></div>
+                    </div>
+
+                    <div class="ritmo-campo" data-ritmo-variavel hidden>
+                      <label>Valor de cada mês (R$ mil)</label>
+                      <div class="meses-variaveis" data-form-variavel></div>
+                    </div>
                   </div>
                 </div>
               </div>
