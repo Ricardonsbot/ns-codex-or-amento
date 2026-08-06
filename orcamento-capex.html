@@ -73,6 +73,19 @@
     </header>
 
     <div class="content">
+      <!-- ===== Barra fixa: versão em edição + prazo desta tela =====
+           Preenchida por initVersaoBarra a partir de cronograma.json. -->
+      <div class="version-status-bar" data-versao-barra="capex">
+        <div class="version-status-item">
+          <span class="version-status-label">Versão em edição</span>
+          <span class="version-status-value" data-versao-atual>—</span>
+        </div>
+        <div class="version-status-item version-status-deadline">
+          <span class="version-status-label">Prazo para lançar Capex</span>
+          <span class="version-status-value" data-versao-prazo>—</span>
+        </div>
+      </div>
+
       <div class="proto-banner">
         🚧 Tela em construção — trará uma tabela de projetos (valor previsto, data, status, justificativa). O contexto do lançamento abaixo já está definido: o Pacote escolhido aqui vai classificar cada projeto por motivo quando a grade existir.
       </div>

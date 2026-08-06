@@ -2703,6 +2703,10 @@ function initFormLancamento() {
     carregarRef("pacotes.json")
       .then(({ pacotes }) => {
         const caixa = form.querySelector("[data-cartoes-pacote]");
+        // Receita não tem cartões de pacote desde ba03567 — ela é classificada
+        // por Tipo de Receita. Sem esta saída, o forEach abaixo estourava em
+        // caixa.appendChild e derrubava o resto do init do formulário.
+        if (!caixa) return;
         pacotesDoTipo(pacotes, tipo).forEach((p) => {
           const cartao = document.createElement("button");
           cartao.type = "button";
@@ -3689,6 +3693,58 @@ function initImportacao() {
   });
 }
 
+/* ==========================================================================
+   Barra "versão em edição" — Receita, Despesa e Capex
+   ==========================================================================
+   Lê cronograma.json em vez de repetir o texto em cada página. Com três
+   cópias em HTML fixo, virar o ciclo exigiria lembrar de editar três
+   arquivos — e o que depende de lembrar, diverge.
+
+   O prazo mostrado é o da CATEGORIA da tela, não um só para todas: o
+   cronograma tem um corte por categoria, e quem está lançando despesa
+   precisa ver o prazo da despesa, não o da receita.
+*/
+
+const VERSAO_MARCO = {
+  receita: "Corte de Receita",
+  despesa: "Corte de Despesa",
+  capex:   "Corte de Capex",
+};
+
+function initVersaoBarra() {
+  const barra = document.querySelector("[data-versao-barra]");
+  if (!barra) return;
+  const categoria = barra.dataset.versaoBarra;
+
+  carregarRef("cronograma.json").then((crono) => {
+    const atual = barra.querySelector("[data-versao-atual]");
+    if (atual) {
+      atual.innerHTML =
+        `Ciclo ${escaparTexto(crono.ciclo)} · ${escaparTexto(crono.versaoAtiva)} ` +
+        `<span class="pill tipo-revisao">${escaparTexto(crono.versaoTipo || "—")}</span>`;
+    }
+
+    const prazoEl = barra.querySelector("[data-versao-prazo]");
+    const marco = (crono.marcos || []).find((m) => m.nome === VERSAO_MARCO[categoria]);
+    if (!prazoEl || !marco) return;
+
+    const dias = Math.round(
+      (new Date(marco.data + "T12:00:00") - new Date(hojeISO() + "T12:00:00")) / 86400000
+    );
+    const bloco = prazoEl.closest(".version-status-deadline");
+    const plural = (n) => `${n} ${n === 1 ? "dia" : "dias"}`;
+
+    if (dias < 0) {
+      prazoEl.innerHTML = `${dataBR(marco.data)} <span class="text-muted">— encerrado há ${plural(Math.abs(dias))}</span>`;
+      if (bloco) bloco.classList.add("warn");
+    } else {
+      prazoEl.innerHTML = `${dataBR(marco.data)} <span class="text-muted">(${dias === 0 ? "hoje" : plural(dias)})</span>`;
+      // uma semana ou menos já merece destaque
+      if (bloco) bloco.classList.toggle("warn", dias <= 7);
+    }
+  });
+}
+
 /* ---------- Init ---------- */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -3715,6 +3771,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initNotificacoes();
   initAuditoria();
   initImportacao();
+  initVersaoBarra();
   initStatusCiclo();
   renderResumoLancamentos();
   initReferenceAutocomplete();
