@@ -3842,3 +3842,156 @@ a.status-card:hover { background: var(--color-bg); }
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   Correções — fila do que voltou e formulário de reenvio
+   ========================================================================== */
+
+.cor-fila { display: flex; flex-direction: column; gap: 10px; }
+
+.cor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cor-card:hover { border-color: var(--color-primary); }
+.cor-card.escolhido { background: var(--color-info-bg); border-color: var(--color-primary); }
+.cor-card.corrigido { border-left-color: var(--color-success); }
+
+.cor-card-topo  { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cor-card-topo strong { font-size: 13.5px; }
+.cor-card-meio  { font-size: 12px; color: var(--color-text-muted); }
+.cor-card-baixo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; }
+.cor-trava      { color: var(--color-danger); font-weight: 600; }
+.cor-pronto     { color: var(--color-success); font-weight: 600; }
+
+/* ---------- painel de correção ---------- */
+
+.cor-motivo {
+  background: var(--color-warning-bg);
+  border: 1px solid #ecd9a0;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+.cor-motivo-rot {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--color-warning);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.cor-motivo p { margin: 0; font-size: 13px; line-height: 1.55; }
+
+.cor-bloco { margin-bottom: 18px; }
+.cor-bloco-rot {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.cor-obrigatorio {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-danger);
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.cor-validacoes, .cor-pendencias { margin: 0; padding: 0; list-style: none; }
+.cor-validacoes li, .cor-pendencias li {
+  padding: 8px 0 8px 12px;
+  border-left: 2px solid var(--color-border);
+  font-size: 12.5px;
+  margin-bottom: 6px;
+}
+.cor-validacoes li.trava  { border-left-color: var(--color-danger); }
+.cor-validacoes li.alerta { border-left-color: var(--color-warning); }
+.cor-validacoes li strong, .cor-pendencias li strong { display: block; }
+.cor-pendencias li span { display: block; color: var(--color-text-muted); font-size: 12px; }
+.cor-quem { font-style: italic; }
+
+.cor-tag-trava, .cor-tag-alerta {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  margin-top: 3px;
+}
+.cor-tag-trava  { background: var(--color-danger-bg);  color: var(--color-danger); }
+.cor-tag-alerta { background: var(--color-warning-bg); color: var(--color-warning); }
+.cor-detalhe-val { display: block; color: var(--color-text-muted); font-size: 12px; margin-top: 2px; }
+
+/* ---------- antes / depois ---------- */
+
+.cor-antes-depois {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+.cor-ad-rot { display: block; font-size: 10.5px; text-transform: uppercase;
+              letter-spacing: .4px; color: var(--color-text-muted); margin-bottom: 3px; }
+.cor-antes-depois strong { font-size: 15px; }
+.cor-ad-seta { color: var(--color-text-muted); font-size: 18px; }
+.cor-input-valor {
+  width: 130px;
+  padding: 6px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+.cor-ad-delta { margin-left: auto; font-size: 13px; font-weight: 600; }
+.cor-delta-sobe  { color: var(--color-despesa); }
+.cor-delta-desce { color: var(--color-receita); }
+.cor-delta-igual { color: var(--color-text-muted); font-weight: 400; }
+
+.cor-justificativa {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  resize: vertical;
+}
+.cor-justificativa:focus { outline: none; border-color: var(--color-primary); }
+.cor-ajuda { margin: 6px 0 0; font-size: 11.5px; color: var(--color-text-muted); }
+
+.cor-confirma {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: 12.5px;
+  line-height: 1.5;
+  background: var(--color-danger-bg);
+  border-radius: var(--radius-md);
+  padding: 11px 13px;
+  margin-bottom: 18px;
+  cursor: pointer;
+}
+.cor-confirma input { margin-top: 2px; flex-shrink: 0; }
+
+.cor-acoes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cor-aviso { font-size: 12px; color: var(--color-text-muted); }

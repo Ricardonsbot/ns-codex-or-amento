@@ -562,6 +562,9 @@ const ENTREGA_STATUS = {
   "aprovado": { rotulo: "Entregue", classe: "status-aprovado", concluida: true },
   "em-aprovacao": { rotulo: "Enviado", classe: "status-em-aprovacao", concluida: false },
   "rascunho": { rotulo: "Preenchendo", classe: "status-rascunho", concluida: false },
+  // devolvido é diferente de reprovado: a bola voltou para o responsável e
+  // ainda conta como entrega pendente, não como recusa definitiva
+  "devolvido": { rotulo: "Devolvido", classe: "status-rascunho", concluida: false },
   "reprovado": { rotulo: "Reprovado", classe: "status-reprovado", concluida: false },
   "nao-iniciado": { rotulo: "Não iniciado", classe: "status-nao-iniciado", concluida: false },
 };
@@ -3745,6 +3748,268 @@ function initVersaoBarra() {
   });
 }
 
+/* ==========================================================================
+   Correções — o que o aprovador devolveu volta para quem lançou
+   ==========================================================================
+   Fecha o ciclo que antes terminava no vazio: o aprovador devolvia e o dado
+   ficava sem destino, porque a grade de lançamento não sabia que aquela
+   entrega tinha voltado.
+
+   Só entra aqui o que foi DEVOLVIDO ou REPROVADO. O que está aguardando
+   decisão fica travado de propósito — dado enviado não se edita pelas costas
+   de quem está analisando.
+*/
+
+function corFormatarMil(v) {
+  if (v === null || v === undefined) return "—";
+  return `R$ ${Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mil`;
+}
+
+function initCorrecoes() {
+  const fila = document.querySelector("[data-cor-fila]");
+  const painel = document.querySelector("[data-cor-detalhe]");
+  if (!fila || !painel) return;
+
+  const filtros = { responsavel: "", categoria: "", situacao: "" };
+  let dados = null, regrasPorCodigo = {}, selecionado = null;
+  // correções feitas nesta sessão: o protótipo não grava, mas a tela precisa
+  // mostrar o efeito de ter corrigido
+  const corrigidas = new Map();
+
+  const devolvidas = () =>
+    dados.submissoes.filter((s) => ["devolvido", "reprovado"].includes(s.statusOficial));
+
+  function visiveis() {
+    return devolvidas().filter((s) => {
+      if (filtros.responsavel && s.responsavel !== filtros.responsavel) return false;
+      if (filtros.categoria && s.categoria !== filtros.categoria) return false;
+      if (filtros.situacao && s.statusOficial !== filtros.situacao) return false;
+      return true;
+    });
+  }
+
+  const bloqueiosDe = (sub) => bloqueiosDaSubmissao(sub, regrasPorCodigo);
+
+  function renderKpis() {
+    const poe = (k, v) => document.querySelectorAll(`[data-cor-kpi="${k}"]`)
+                            .forEach((el) => { el.textContent = v; });
+    const lista = devolvidas();
+    const devolv = lista.filter((s) => s.statusOficial === "devolvido").length;
+
+    poe("fila", lista.length);
+    poe("fila-detalhe", `${devolv} devolvidas · ${lista.length - devolv} reprovadas`);
+    poe("valor", corFormatarMil(lista.reduce((t, s) => t + (s.valor || 0), 0)));
+    poe("bloqueadas", lista.filter((s) => bloqueiosDe(s).length).length);
+    poe("corrigidas", corrigidas.size);
+  }
+
+  function renderFila() {
+    const lista = visiveis();
+    const vazio = document.querySelector("[data-cor-vazio]");
+    const resumo = document.querySelector("[data-cor-resumo]");
+    if (resumo) {
+      const total = devolvidas().length;
+      resumo.textContent = lista.length === total
+        ? `${total} item(ns) esperando correção`
+        : `${lista.length} de ${total} itens`;
+    }
+    if (vazio) vazio.hidden = lista.length > 0;
+
+    fila.innerHTML = lista.map((s) => {
+      const info = APROV_STATUS[s.statusOficial] || {};
+      const travas = bloqueiosDe(s).length;
+      const feito = corrigidas.get(s.id);
+      return `
+        <button class="cor-card ${selecionado === s.id ? "escolhido" : ""} ${feito ? "corrigido" : ""}"
+                data-cor-item="${escaparTexto(s.id)}">
+          <div class="cor-card-topo">
+            <strong>${escaparTexto(s.empresa)}</strong>
+            <span class="badge ${info.classe || ""}">${escaparTexto(info.rotulo || s.statusOficial)}</span>
+          </div>
+          <div class="cor-card-meio">${escaparTexto(s.torre)} · ${escaparTexto(s.categoria)}</div>
+          <div class="cor-card-baixo">
+            <span>${corFormatarMil(s.valor)}</span>
+            ${travas ? `<span class="cor-trava">${travas} validação(ões) travando</span>` : ""}
+            ${feito ? `<span class="cor-pronto">✓ corrigido, pronto para reenviar</span>` : ""}
+          </div>
+        </button>`;
+    }).join("");
+  }
+
+  function renderDetalhe() {
+    const sub = document.querySelector("[data-cor-detalhe-sub]");
+    const s = dados.submissoes.find((x) => x.id === selecionado);
+    if (!s) {
+      painel.innerHTML = '<p class="empty-hint">Nenhum item selecionado.</p>';
+      if (sub) sub.textContent = "Escolha um item da fila ao lado.";
+      return;
+    }
+    if (sub) sub.textContent = `${s.empresa} · ${s.torre} · ${s.categoria} — ${s.id}`;
+
+    const dec = s.decisao || {};
+    const travas = bloqueiosDe(s);
+    const feito = corrigidas.get(s.id);
+    const valorAtual = feito ? feito.valor : s.valor;
+
+    const falhas = (s.validacoes || []).filter((v) => v.resultado !== "ok");
+
+    painel.innerHTML = `
+      <div class="cor-motivo">
+        <span class="cor-motivo-rot">Por que voltou — ${escaparTexto(dec.por || "aprovador")}, ${dataBR(dec.em)}</span>
+        <p>${escaparTexto(dec.parecer || "Sem parecer registrado.")}</p>
+      </div>
+
+      ${falhas.length ? `
+        <div class="cor-bloco">
+          <span class="cor-bloco-rot">O que o sistema apontou</span>
+          <ul class="cor-validacoes">
+            ${falhas.map((v) => {
+              const r = regrasPorCodigo[v.regra] || {};
+              const trava = r.severidade === "bloqueia";
+              return `<li class="${trava ? "trava" : "alerta"}">
+                        <strong>${escaparTexto(r.nome || v.regra)}</strong>
+                        ${trava ? '<span class="cor-tag-trava">trava o reenvio</span>' : '<span class="cor-tag-alerta">alerta</span>'}
+                        ${v.detalhe ? `<span class="cor-detalhe-val">${escaparTexto(v.detalhe)}</span>` : ""}
+                      </li>`;
+            }).join("")}
+          </ul>
+        </div>` : ""}
+
+      ${(s.pendencias || []).length ? `
+        <div class="cor-bloco">
+          <span class="cor-bloco-rot">Informação que ainda falta</span>
+          <ul class="cor-pendencias">
+            ${s.pendencias.map((p) => `
+              <li><strong>${escaparTexto(p.oQueFalta)}</strong>
+                  <span>${escaparTexto(p.porque)}</span>
+                  <span class="cor-quem">com ${escaparTexto(p.quemResolve)} desde ${dataBR(p.desde)}</span></li>`).join("")}
+          </ul>
+        </div>` : ""}
+
+      <div class="cor-bloco">
+        <span class="cor-bloco-rot">Corrigir o valor</span>
+        <div class="cor-antes-depois">
+          <div>
+            <span class="cor-ad-rot">Foi enviado</span>
+            <strong>${corFormatarMil(s.valor)}</strong>
+          </div>
+          <span class="cor-ad-seta">→</span>
+          <div>
+            <span class="cor-ad-rot">Passa a ser</span>
+            <input type="number" step="0.1" class="cor-input-valor"
+                   data-cor-valor value="${valorAtual}" />
+          </div>
+          <div class="cor-ad-delta" data-cor-delta>—</div>
+        </div>
+      </div>
+
+      <div class="cor-bloco">
+        <span class="cor-bloco-rot">O que você mudou <span class="cor-obrigatorio">obrigatório</span></span>
+        <textarea class="cor-justificativa" data-cor-justificativa rows="3"
+          placeholder="Ex: consolidei as duas linhas duplicadas na conta 4.7.03 e ajustei o rateio do CC.">${feito ? escaparTexto(feito.justificativa) : ""}</textarea>
+        <p class="cor-ajuda">Vai junto no reenvio e fica na trilha de auditoria com o seu nome.</p>
+      </div>
+
+      ${travas.length ? `
+        <label class="cor-confirma">
+          <input type="checkbox" data-cor-confirma ${feito ? "checked" : ""} />
+          <span>Confirmo que corrigi as ${travas.length} validação(ões) que travavam: ${
+            travas.map((b) => escaparTexto((regrasPorCodigo[b.regra] || {}).nome || b.regra)).join(", ")}.</span>
+        </label>` : ""}
+
+      <div class="cor-acoes">
+        <button class="btn btn-primary" data-cor-reenviar disabled>↑ Reenviar para aprovação</button>
+        <span class="cor-aviso" data-cor-aviso>Explique o que mudou para liberar o reenvio.</span>
+      </div>`;
+
+    ligarFormulario(s, travas);
+  }
+
+  /* Reenvio só libera com justificativa escrita e, havendo trava, com a
+     confirmação marcada. É a mesma exigência que o aceite final faz do líder:
+     assumir o que está mandando. */
+  function ligarFormulario(s, travas) {
+    const campoValor = painel.querySelector("[data-cor-valor]");
+    const campoJust  = painel.querySelector("[data-cor-justificativa]");
+    const confirma   = painel.querySelector("[data-cor-confirma]");
+    const botao      = painel.querySelector("[data-cor-reenviar]");
+    const aviso      = painel.querySelector("[data-cor-aviso]");
+    const delta      = painel.querySelector("[data-cor-delta]");
+
+    function atualizar() {
+      const novo = Number(campoValor.value);
+      const dif = novo - s.valor;
+      if (!Number.isFinite(novo)) {
+        delta.textContent = "—";
+      } else if (dif === 0) {
+        delta.innerHTML = '<span class="cor-delta-igual">sem mudança de valor</span>';
+      } else {
+        const pct = s.valor ? (dif / Math.abs(s.valor)) * 100 : 0;
+        delta.innerHTML = `<span class="${dif > 0 ? "cor-delta-sobe" : "cor-delta-desce"}">
+            ${dif > 0 ? "+" : ""}${corFormatarMil(dif)} · ${dif > 0 ? "+" : ""}${pct.toFixed(1)}%</span>`;
+      }
+
+      const temJust = campoJust.value.trim().length >= 10;
+      const okTrava = !travas.length || (confirma && confirma.checked);
+      botao.disabled = !(temJust && okTrava);
+      aviso.textContent = !temJust
+        ? "Explique o que mudou para liberar o reenvio."
+        : !okTrava ? "Confirme que corrigiu as validações que travam."
+        : "Pronto para reenviar.";
+    }
+
+    campoValor.addEventListener("input", atualizar);
+    campoJust.addEventListener("input", atualizar);
+    if (confirma) confirma.addEventListener("change", atualizar);
+
+    botao.addEventListener("click", () => {
+      corrigidas.set(s.id, {
+        valor: Number(campoValor.value),
+        justificativa: campoJust.value.trim(),
+      });
+      showToast(`${s.empresa} · ${s.categoria} reenviado para aprovação — protótipo não grava.`, "success");
+      renderKpis();
+      renderFila();
+      renderDetalhe();
+    });
+
+    atualizar();
+  }
+
+  /* Delegação: os cartões da fila são recriados a cada filtro. */
+  fila.addEventListener("click", (ev) => {
+    const card = ev.target.closest("[data-cor-item]");
+    if (!card) return;
+    selecionado = card.dataset.corItem;
+    renderFila();
+    renderDetalhe();
+  });
+
+  document.querySelectorAll("[data-cor-filtro]").forEach((campo) => {
+    campo.addEventListener("change", () => {
+      filtros[campo.dataset.corFiltro] = campo.value;
+      renderFila();
+    });
+  });
+
+  carregarRef("aprovacoes.json").then((json) => {
+    dados = json;
+    regrasPorCodigo = Object.fromEntries(json.regras.map((r) => [r.codigo, r]));
+
+    const sel = document.querySelector('[data-cor-filtro="responsavel"]');
+    if (sel) {
+      [...new Set(devolvidas().map((s) => s.responsavel))].sort().forEach((nome) => {
+        const opt = document.createElement("option");
+        opt.value = nome; opt.textContent = nome;
+        sel.appendChild(opt);
+      });
+    }
+    renderKpis();
+    renderFila();
+    renderDetalhe();
+  });
+}
+
 /* ---------- Init ---------- */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -3771,6 +4036,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initNotificacoes();
   initAuditoria();
   initImportacao();
+  initCorrecoes();
   initVersaoBarra();
   initStatusCiclo();
   renderResumoLancamentos();

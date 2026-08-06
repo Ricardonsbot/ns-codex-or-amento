@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Entregas — NS Codex</title>
+<title>Correções — NS Codex</title>
 <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
@@ -31,9 +31,9 @@
     <a href="importar.html"><div class="nav-item" data-page="importar.html"><span class="nav-icon">⇧</span> Importar planilha</div></a>
 
     <div class="sidebar-section-label">Fluxo</div>
-    <div class="nav-item active" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div>
+    <a href="entregas.html"><div class="nav-item" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div></a>
     <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
-    <a href="correcoes.html"><div class="nav-item" data-page="correcoes.html"><span class="nav-icon">↩</span> Correções</div></a>
+    <div class="nav-item active" data-page="correcoes.html"><span class="nav-icon">↩</span> Correções</div>
     <a href="notificacoes.html"><div class="nav-item" data-page="notificacoes.html"><span class="nav-icon">✉</span> Notificações</div></a>
     <a href="auditoria.html"><div class="nav-item" data-page="auditoria.html"><span class="nav-icon">⧉</span> Auditoria</div></a>
 
@@ -63,95 +63,106 @@
   <main class="main">
     <header class="topbar">
       <div class="topbar-title">
-        <h1>Entregas</h1>
-        <p>Quem deve entregar o quê no Ciclo 2026 — e quem está devendo</p>
+        <h1>Correções</h1>
+        <p>O que o aprovador devolveu — corrija e reenvie</p>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-secondary btn-sm" data-action="export" data-action-label="Mapa de Entregas">⭳ Exportar</button>
-        <button class="btn btn-primary btn-sm" data-cobrar-pendentes>✉ Cobrar todos os pendentes</button>
+        <span class="badge status-rascunho"><span class="badge-dot"></span><span data-cor-kpi="fila">—</span> aguardando você</span>
       </div>
     </header>
 
     <div class="content">
 
-      <div class="proto-banner">
-        ⓘ A estrutura BU → Torre → Sub Torre → Empresa vem de <strong>Referencias/entregas.json</strong> (mesma base do organograma real).
-        Os responsáveis e os status são ilustrativos do protótipo — trocar o JSON troca o organograma inteiro.
+      <!-- ===== Barra fixa: versão em edição + prazo ===== -->
+      <div class="version-status-bar" data-versao-barra="despesa">
+        <div class="version-status-item">
+          <span class="version-status-label">Versão em edição</span>
+          <span class="version-status-value" data-versao-atual>—</span>
+        </div>
+        <div class="version-status-item version-status-deadline">
+          <span class="version-status-label">Prazo para lançar Despesa</span>
+          <span class="version-status-value" data-versao-prazo>—</span>
+        </div>
       </div>
 
-      <!-- Resumo da cobrança -->
-      <div class="kpi-grid" data-entregas-kpis>
-        <div class="kpi-card margem">
-          <div class="kpi-label">Entregas do ciclo</div>
-          <div class="kpi-value" data-kpi="total">—</div>
-          <div class="kpi-delta">37 empresas × 3 categorias</div>
+      <div class="proto-banner">
+        ⓘ A fila vem de <strong>Referencias/aprovacoes.json</strong> — só entra aqui o que o aprovador <a href="aprovacoes.html" style="color:var(--color-primary); font-weight:600;">devolveu ou reprovou</a>. O que foi enviado e ainda aguarda decisão fica travado: <strong>dado enviado não se edita pelas costas do aprovador</strong>. O protótipo não grava; o reenvio mostra o que aconteceria.
+      </div>
+
+      <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="kpi-card despesa">
+          <div class="kpi-label">Voltaram para ajuste</div>
+          <div class="kpi-value" data-cor-kpi="fila">—</div>
+          <div class="kpi-delta down" data-cor-kpi="fila-detalhe">—</div>
         </div>
-        <div class="kpi-card receita">
-          <div class="kpi-label">Concluídas</div>
-          <div class="kpi-value" data-kpi="concluidas">—</div>
-          <div class="kpi-delta up" data-kpi="concluidas-pct">—</div>
+        <div class="kpi-card margem">
+          <div class="kpi-label">Valor em jogo</div>
+          <div class="kpi-value" data-cor-kpi="valor">—</div>
+          <div class="kpi-delta">soma do que precisa voltar</div>
         </div>
         <div class="kpi-card capex">
-          <div class="kpi-label">Em andamento</div>
-          <div class="kpi-value" data-kpi="andamento">—</div>
-          <div class="kpi-delta">rascunho, enviado ou reprovado</div>
+          <div class="kpi-label">Travadas por validação</div>
+          <div class="kpi-value" data-cor-kpi="bloqueadas">—</div>
+          <div class="kpi-delta">não reenviam sem corrigir</div>
         </div>
-        <div class="kpi-card despesa">
-          <div class="kpi-label">Atrasadas</div>
-          <div class="kpi-value" data-kpi="atrasadas">—</div>
-          <div class="kpi-delta down" data-kpi="atrasadas-hint">—</div>
+        <div class="kpi-card receita">
+          <div class="kpi-label">Já corrigidas agora</div>
+          <div class="kpi-value" data-cor-kpi="corrigidas">—</div>
+          <div class="kpi-delta up">prontas para reenviar</div>
         </div>
       </div>
 
-      <!-- Filtros de cobrança -->
       <div class="filter-bar">
         <div class="filter-field">
-          <label>BU</label>
-          <select data-filtro="bu"><option value="">Todas as BUs</option></select>
-        </div>
-        <div class="filter-field">
           <label>Responsável</label>
-          <select data-filtro="responsavel"><option value="">Todos os responsáveis</option></select>
+          <select data-cor-filtro="responsavel"><option value="">Todos</option></select>
         </div>
         <div class="filter-field">
           <label>Categoria</label>
-          <select data-filtro="categoria">
+          <select data-cor-filtro="categoria">
             <option value="">Receita, Despesa e Capex</option>
-            <option value="receita">Só Receita</option>
-            <option value="despesa">Só Despesa</option>
-            <option value="capex">Só Capex</option>
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+            <option value="capex">Capex</option>
           </select>
         </div>
         <div class="filter-field">
           <label>Situação</label>
-          <select data-filtro="situacao">
-            <option value="">Todas as situações</option>
-            <option value="pendente">Só o que falta entregar</option>
-            <option value="atrasado">Só o que está atrasado</option>
-            <option value="aprovado">Só o que já foi entregue</option>
+          <select data-cor-filtro="situacao">
+            <option value="">Devolvidas e reprovadas</option>
+            <option value="devolvido">Só devolvidas</option>
+            <option value="reprovado">Só reprovadas</option>
           </select>
         </div>
-        <button class="btn btn-secondary" data-filtro-limpar>Limpar filtros</button>
       </div>
 
-      <!-- Organograma de entregas -->
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Organograma de Entregas</h2>
-            <p>BU → Torre → Sub Torre → Empresa · abra cada nível para chegar no responsável</p>
+      <div class="aprov-layout">
+
+        <!-- ===== Fila ===== -->
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Voltaram para você</h2>
+            <p data-cor-resumo>—</p>
           </div>
-          <div class="org-legend">
-            <span class="legend-item"><span class="legend-dot" style="background:var(--color-success);"></span> Entregue</span>
-            <span class="legend-item"><span class="legend-dot" style="background:var(--color-warning);"></span> Em andamento</span>
-            <span class="legend-item"><span class="legend-dot" style="background:var(--color-danger);"></span> Atrasada</span>
+          <div class="panel-body">
+            <div class="cor-fila" data-cor-fila></div>
+            <p class="empty-hint" data-cor-vazio hidden>Nada devolvido nesse filtro.</p>
           </div>
-        </div>
-        <div class="panel-body">
-          <div class="org-tree" data-org-tree>
-            <div class="empty-hint">Carregando o organograma…</div>
+        </section>
+
+        <!-- ===== Correção ===== -->
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Corrigir e reenviar</h2>
+              <p data-cor-detalhe-sub>Escolha um item da fila ao lado.</p>
+            </div>
           </div>
-        </div>
+          <div class="panel-body" data-cor-detalhe>
+            <p class="empty-hint">Nenhum item selecionado.</p>
+          </div>
+        </section>
+
       </div>
 
     </div>
@@ -159,6 +170,7 @@
 </div>
 
 <div id="toast-container"></div>
+
 <script src="assets/js/app.js"></script>
 </body>
 </html>

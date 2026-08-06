@@ -283,7 +283,7 @@
       "responsavel": "Ana Ribeiro",
       "enviadoEm": "2026-07-25",
       "valor": 728,
-      "statusOficial": "pendente",
+      "statusOficial": "devolvido",
       "validacoes": [
         {
           "regra": "CC",
@@ -328,7 +328,11 @@
         "nome": "Marcelo Ferraz",
         "cargo": "Líder da Torre TMS"
       },
-      "aceiteFinal": null
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-22",
+        "parecer": "Duas linhas na mesma conta e centro de custo. Consolide ou separe por pacote antes de reenviar."
+      }
     },
     {
       "id": "SUB-006",
@@ -611,7 +615,7 @@
       "responsavel": "Carlos Mendes",
       "enviadoEm": "2026-07-10",
       "valor": 1550,
-      "statusOficial": "pendente",
+      "statusOficial": "devolvido",
       "validacoes": [
         {
           "regra": "CC",
@@ -662,7 +666,11 @@
         "nome": "Marcelo Ferraz",
         "cargo": "Líder da Torre TMS"
       },
-      "aceiteFinal": null
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-23",
+        "parecer": "Conta duplicada no mesmo CC e duas pendências abertas desde 18/07. Resolva as duas e reenvie."
+      }
     },
     {
       "id": "SUB-012",
@@ -885,7 +893,7 @@
       "responsavel": "Julia Prado",
       "enviadoEm": "2026-07-10",
       "valor": 2235,
-      "statusOficial": "pendente",
+      "statusOficial": "devolvido",
       "validacoes": [
         {
           "regra": "CC",
@@ -936,7 +944,11 @@
         "nome": "Marcelo Ferraz",
         "cargo": "Líder da Torre TMS"
       },
-      "aceiteFinal": null
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-21",
+        "parecer": "Conta sem linha de P&L e sem pacote: do jeito que está não entra no consolidado."
+      }
     },
     {
       "id": "SUB-017",
@@ -1637,7 +1649,7 @@
       "responsavel": "Renata Aguiar",
       "enviadoEm": "2026-07-21",
       "valor": 4016,
-      "statusOficial": "pendente",
+      "statusOficial": "devolvido",
       "validacoes": [
         {
           "regra": "CC",
@@ -1682,7 +1694,11 @@
         "nome": "Emerson Nakamura",
         "cargo": "Líder Corporate"
       },
-      "aceiteFinal": null
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-24",
+        "parecer": "Mesma conta repetida. Além disso o histórico não explica o salto vs. o ano anterior."
+      }
     },
     {
       "id": "SUB-030",
@@ -1807,7 +1823,7 @@
       "responsavel": "Felipe Nunes",
       "enviadoEm": "2026-07-14",
       "valor": 227,
-      "statusOficial": "pendente",
+      "statusOficial": "devolvido",
       "validacoes": [
         {
           "regra": "CC",
@@ -1852,7 +1868,11 @@
         "nome": "Gustavo Pinheiro",
         "cargo": "Líder da Torre VGR"
       },
-      "aceiteFinal": null
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-23",
+        "parecer": "Pacote não informado. Sem ele não dá para separar o gasto por motivo no comitê."
+      }
     },
     {
       "id": "SUB-033",
@@ -2151,7 +2171,7 @@
       "responsavel": "Felipe Nunes",
       "enviadoEm": "2026-07-18",
       "valor": 1049,
-      "statusOficial": "pendente",
+      "statusOficial": "devolvido",
       "validacoes": [
         {
           "regra": "CC",
@@ -2196,7 +2216,11 @@
         "nome": "Gustavo Pinheiro",
         "cargo": "Líder da Torre VGR"
       },
-      "aceiteFinal": null
+      "decisao": {
+        "por": "Emerson Nakamura",
+        "em": "2026-07-25",
+        "parecer": "Pacote ausente e mês de dezembro zerado — confirme se é previsão ou esquecimento."
+      }
     },
     {
       "id": "SUB-039",

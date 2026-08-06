@@ -27,7 +27,7 @@
       "responsavel": "Ana Ribeiro",
       "status": {
         "receita": "aprovado",
-        "despesa": "em-aprovacao",
+        "despesa": "devolvido",
         "capex": "nao-iniciado"
       }
     },
@@ -63,7 +63,7 @@
       "responsavel": "Carlos Mendes",
       "status": {
         "receita": "aprovado",
-        "despesa": "em-aprovacao",
+        "despesa": "devolvido",
         "capex": "nao-iniciado"
       }
     },
@@ -110,7 +110,7 @@
       "empresa": "Signa",
       "responsavel": "Julia Prado",
       "status": {
-        "receita": "em-aprovacao",
+        "receita": "devolvido",
         "despesa": "rascunho",
         "capex": "nao-iniciado"
       }
@@ -207,7 +207,7 @@
       "responsavel": "Renata Aguiar",
       "status": {
         "receita": "aprovado",
-        "despesa": "em-aprovacao",
+        "despesa": "devolvido",
         "capex": "aprovado"
       }
     },
@@ -219,7 +219,7 @@
       "responsavel": "Felipe Nunes",
       "status": {
         "receita": "aprovado",
-        "despesa": "em-aprovacao",
+        "despesa": "devolvido",
         "capex": "aprovado"
       }
     },
@@ -243,7 +243,7 @@
       "responsavel": "Felipe Nunes",
       "status": {
         "receita": "aprovado",
-        "despesa": "em-aprovacao",
+        "despesa": "devolvido",
         "capex": "nao-iniciado"
       }
     },
