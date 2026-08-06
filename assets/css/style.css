@@ -3798,3 +3798,47 @@ a.status-card:hover { background: var(--color-bg); }
 .imp-linha-ok     td:first-child { box-shadow: inset 3px 0 0 var(--color-success); }
 
 .imp-baixar { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+/* ==========================================================================
+   Impressão das telas com rolagem própria
+   ==========================================================================
+   Auditoria e Importação limitam a altura da tabela para os KPIs e o painel
+   ao lado continuarem visíveis. No papel isso cortaria a lista na primeira
+   tela — a rolagem precisa ser solta na impressão.
+*/
+@media print {
+  .aud-scroll,
+  .imp-scroll {
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* as duas colunas viram uma: no papel não há por que competir por largura */
+  .aud-layout {
+    display: block;
+  }
+
+  .aud-layout .panel {
+    margin-bottom: 16px;
+  }
+
+  /* linha da trilha não pode ser partida no meio pela quebra de página */
+  .aud-tabela tr,
+  .imp-tabela tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* o cabeçalho se repete no alto de cada página */
+  .aud-tabela thead,
+  .imp-tabela thead {
+    display: table-header-group;
+  }
+
+  /* a área de soltar arquivo é controle, não conteúdo */
+  .imp-drop,
+  .imp-baixar,
+  .imp-tipos {
+    display: none !important;
+  }
+}
