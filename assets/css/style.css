@@ -3699,3 +3699,102 @@ a.status-card:hover { background: var(--color-bg); }
 .timeline-item .timeline-dot.aud-reprovou { background: var(--color-danger-bg);  color: var(--color-danger); }
 .timeline-item .timeline-dot.aud-devolveu { background: var(--color-warning-bg); color: var(--color-warning); }
 .timeline-item .timeline-dot.aud-aceitou  { background: var(--color-capex-bg);   color: var(--color-capex); }
+
+/* ==========================================================================
+   Importar planilha
+   ========================================================================== */
+
+.imp-tipos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 900px) { .imp-tipos { grid-template-columns: 1fr; } }
+
+.imp-tipo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 16px;
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .12s, background .12s;
+}
+
+.imp-tipo:hover { border-color: var(--color-primary); }
+
+.imp-tipo.active {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+}
+
+.imp-tipo-icone { font-size: 18px; color: var(--color-primary); }
+.imp-tipo strong { font-size: 14px; color: var(--color-text); }
+.imp-tipo span:last-child { font-size: 12px; color: var(--color-text-muted); }
+
+.imp-ajuda { margin: 0 0 14px; font-size: 13px; color: var(--color-text-muted); }
+.imp-colunas td { vertical-align: top; }
+.imp-aceita { font-size: 12px; color: var(--color-text-muted); }
+
+/* ---------- área de soltar o arquivo ---------- */
+
+.imp-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 34px 20px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color .12s, background .12s;
+}
+
+.imp-drop:hover,
+.imp-drop.arrastando {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+}
+
+.imp-drop-icone { font-size: 26px; color: var(--color-primary); }
+.imp-drop strong { font-size: 14px; }
+.imp-drop-dica  { font-size: 12px; color: var(--color-text-muted); }
+
+.imp-arquivo-nome {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+/* ---------- resultado da conferência ---------- */
+
+.imp-scroll { max-height: 520px; overflow-y: auto; }
+
+.imp-tabela td { vertical-align: top; }
+.imp-num { font-variant-numeric: tabular-nums; color: var(--color-text-muted); white-space: nowrap; }
+.imp-resumo { display: block; font-size: 12.5px; }
+.imp-total  { display: block; font-size: 11px; color: var(--color-text-muted); }
+
+.imp-motivos { font-size: 12px; }
+.imp-erro, .imp-alerta {
+  display: block;
+  padding: 2px 0 2px 12px;
+  position: relative;
+  line-height: 1.45;
+}
+.imp-erro   { color: var(--color-danger); }
+.imp-alerta { color: var(--color-warning); }
+.imp-erro::before   { content: "✕"; position: absolute; left: 0; font-size: 10px; }
+.imp-alerta::before { content: "!"; position: absolute; left: 3px; font-weight: 700; }
+
+/* faixa lateral em vez de fundo colorido: a tabela ja tem muita informacao */
+.imp-linha-erro   td:first-child { box-shadow: inset 3px 0 0 var(--color-danger); }
+.imp-linha-alerta td:first-child { box-shadow: inset 3px 0 0 var(--color-warning); }
+.imp-linha-ok     td:first-child { box-shadow: inset 3px 0 0 var(--color-success); }
+
+.imp-baixar { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }

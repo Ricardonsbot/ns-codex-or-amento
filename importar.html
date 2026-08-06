@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Importar planilha — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="index.html">
+    <div class="sidebar-brand">
+      <div class="logo-mark">NS</div>
+      <div class="brand-text">
+        <strong>NS Codex</strong>
+        <span>BU · Torres · Corporate</span>
+      </div>
+    </div>
+    </a>
+
+    <div class="sidebar-section-label">Visão geral</div>
+    <a href="index.html"><div class="nav-item" data-page="index.html"><span class="nav-icon">▦</span> Dashboard</div></a>
+
+    <div class="sidebar-section-label">Orçamento</div>
+    <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
+    <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
+    <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+    <div class="nav-item active" data-page="importar.html"><span class="nav-icon">⇧</span> Importar planilha</div>
+
+    <div class="sidebar-section-label">Fluxo</div>
+    <a href="entregas.html"><div class="nav-item" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div></a>
+    <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+    <a href="notificacoes.html"><div class="nav-item" data-page="notificacoes.html"><span class="nav-icon">✉</span> Notificações</div></a>
+    <a href="auditoria.html"><div class="nav-item" data-page="auditoria.html"><span class="nav-icon">⧉</span> Auditoria</div></a>
+
+    <div class="sidebar-section-label">Análise</div>
+    <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+
+    <div class="sidebar-section-label">Administração</div>
+    <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
+
+    <div class="sidebar-section-label">Budget - Settings</div>
+    <a href="budget-settings.html"><div class="nav-item" data-page="budget-settings.html"><span class="nav-icon">⚙</span> Ciclos &amp; Versões</div></a>
+    <a href="login.html"><div class="nav-item" data-page="login.html"><span class="nav-icon">&#9099;</span> Sair</div></a>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">EN</div>
+        <div class="user-meta">
+          <strong>Emerson Nakamura</strong>
+          <span>NSTECH GR LTDA</span>
+        </div>
+      </div>
+      <div class="sidebar-role-badge">Aprovador</div>
+    </div>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Importar planilha</h1>
+        <p>Baixe o modelo, preencha no Excel e suba de volta — o sistema confere antes de aceitar</p>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="proto-banner">
+        ⓘ O arquivo é conferido <strong>no seu navegador</strong>: nada sai da sua máquina e nada é gravado, porque o protótipo não tem backend. A leitura e as validações são reais — o que está simulado é só o passo final de salvar. Aceita <strong>.xlsx</strong> e <strong>.csv</strong>, e a conferência é a mesma nos dois.
+      </div>
+
+      <!-- ===== Passo 1 ===== -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>1. O que você vai lançar?</h2>
+            <p>Cada tipo tem um modelo diferente, porque as informações que importam são outras</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="imp-tipos">
+            <button class="imp-tipo active" data-imp-tipo="receita">
+              <span class="imp-tipo-icone">▲</span>
+              <strong>Receita</strong>
+              <span>Torre, Produto e Tipo de Receita</span>
+            </button>
+            <button class="imp-tipo" data-imp-tipo="despesa">
+              <span class="imp-tipo-icone">▼</span>
+              <strong>Despesa</strong>
+              <span>Conta, Pacote, Centro de Custo e Ativação</span>
+            </button>
+            <button class="imp-tipo" data-imp-tipo="capex">
+              <span class="imp-tipo-icone">◆</span>
+              <strong>Capex</strong>
+              <span>Conta, Pacote e Projeto</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Passo 2 ===== -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>2. Baixe o modelo e preencha</h2>
+            <p data-imp-passo2>—</p>
+          </div>
+          <div class="imp-baixar">
+            <button class="btn btn-primary" data-imp-baixar="xlsx">⬇ Baixar modelo de <span data-imp-rotulo>Receita</span> (.xlsx)</button>
+            <button class="btn btn-secondary" data-imp-baixar="csv">.csv</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <p class="imp-ajuda">O modelo já vem com duas linhas de exemplo preenchidas com dados reais do cadastro. Apague-as e ponha as suas. Estas são as colunas:</p>
+          <div class="table-wrap">
+            <table class="report-table imp-colunas">
+              <thead>
+                <tr><th>Coluna</th><th>Obrigatória</th><th>O que aceita</th></tr>
+              </thead>
+              <tbody data-imp-colunas></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Passo 3 ===== -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>3. Suba o arquivo preenchido</h2>
+            <p>Conferimos linha por linha e mostramos o que está impedindo antes de qualquer coisa entrar</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <label class="imp-drop" data-imp-drop>
+            <input type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-imp-arquivo hidden />
+            <span class="imp-drop-icone">⇧</span>
+            <strong>Escolher arquivo</strong>
+            <span class="imp-drop-dica">ou arraste para cá — aceita .xlsx e .csv</span>
+          </label>
+          <p class="imp-arquivo-nome" data-imp-nome hidden></p>
+        </div>
+      </div>
+
+      <!-- ===== Resultado ===== -->
+      <div class="panel" data-imp-resultado hidden>
+        <div class="panel-header">
+          <div>
+            <h2>Conferência</h2>
+            <p data-imp-resumo>—</p>
+          </div>
+          <button class="btn btn-success" data-imp-confirmar>✓ Importar as linhas válidas</button>
+        </div>
+        <div class="panel-body">
+          <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 18px;">
+            <div class="kpi-card">
+              <div class="kpi-label">Linhas lidas</div>
+              <div class="kpi-value" data-imp-kpi="lidas">—</div>
+            </div>
+            <div class="kpi-card receita">
+              <div class="kpi-label">Prontas para entrar</div>
+              <div class="kpi-value" data-imp-kpi="ok">—</div>
+            </div>
+            <div class="kpi-card despesa">
+              <div class="kpi-label">Travadas</div>
+              <div class="kpi-value" data-imp-kpi="erros">—</div>
+              <div class="kpi-delta down">precisam de correção</div>
+            </div>
+            <div class="kpi-card margem">
+              <div class="kpi-label">Com alerta</div>
+              <div class="kpi-value" data-imp-kpi="alertas">—</div>
+              <div class="kpi-delta">entram, mas confira</div>
+            </div>
+          </div>
+
+          <div class="filter-bar" style="margin-bottom:14px;">
+            <div class="filter-field">
+              <label>Mostrar</label>
+              <select data-imp-filtro>
+                <option value="problema">Só as linhas com problema</option>
+                <option value="">Todas as linhas</option>
+                <option value="erro">Só as travadas</option>
+                <option value="alerta">Só as com alerta</option>
+                <option value="ok">Só as prontas</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrap imp-scroll">
+            <table class="report-table imp-tabela">
+              <thead>
+                <tr><th>Linha</th><th>Situação</th><th>Conteúdo</th><th>O que impede</th></tr>
+              </thead>
+              <tbody data-imp-linhas></tbody>
+            </table>
+          </div>
+          <p class="empty-hint" data-imp-vazio hidden>Nenhuma linha nesse filtro.</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>

@@ -502,6 +502,19 @@ function buildDashboardCsv() {
   return lines.join("\r\n");
 }
 
+/* Mesmo download do downloadTextFile, mas para conte\u00FAdo bin\u00E1rio j\u00E1 pronto
+   (o .xlsx \u00E9 um Blob de ZIP, n\u00E3o d\u00E1 para prefixar BOM nem tratar como texto). */
+function downloadBlobFile(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function downloadTextFile(filename, content, mime) {
   const blob = new Blob(["\uFEFF" + content], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -3015,6 +3028,667 @@ function initAuditoria() {
   });
 }
 
+/* ==========================================================================
+   Importar planilha — modelo para baixar, arquivo preenchido para subir
+   ==========================================================================
+   Item 13 do roadmap. O arquivo é lido no navegador: nada sobe para servidor
+   nenhum, porque não existe servidor. A leitura e as validações são de
+   verdade; o que é simulado é só o passo de gravar.
+
+   Formato CSV e não .xlsx de propósito: o protótipo não usa biblioteca
+   externa, e ler .xlsx exigiria implementar leitor de ZIP e parser de XML
+   à mão. O Excel abre e salva CSV nativamente.
+*/
+
+/* ==========================================================================
+   .xlsx à mão — sem biblioteca, como manda a arquitetura do projeto
+   ==========================================================================
+   Um .xlsx é um ZIP de arquivos XML. Para LER basta achar duas peças dentro
+   do ZIP (a planilha e a tabela de textos) e descompactar; o navegador já traz
+   DecompressionStream e DOMParser. Para ESCREVER, monta-se o ZIP com os
+   arquivos "stored" (sem compressão) — assim não é preciso um compressor,
+   só o CRC32 de cada peça. O Excel abre normalmente.
+*/
+
+/* ---------- ZIP: leitura ---------- */
+
+function zipEntradas(buffer) {
+  const dv = new DataView(buffer);
+  const u8 = new Uint8Array(buffer);
+
+  // O fim do diretório central fica no rodapé; o comentário final tem tamanho
+  // variável, então varre-se de trás para frente atrás da assinatura.
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= 0 && i > u8.length - 65558; i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error("Arquivo .xlsx inválido: não achei o índice do ZIP.");
+
+  const total = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const entradas = [];
+
+  for (let n = 0; n < total; n++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const metodo    = dv.getUint16(p + 10, true);
+    const compSize  = dv.getUint32(p + 20, true);
+    const nomeLen   = dv.getUint16(p + 28, true);
+    const extraLen  = dv.getUint16(p + 30, true);
+    const comentLen = dv.getUint16(p + 32, true);
+    const localOff  = dv.getUint32(p + 42, true);
+    const nome = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nomeLen));
+
+    // O extra do cabeçalho local costuma ter tamanho diferente do que está no
+    // diretório central — precisa ser lido de lá, senão o offset sai torto.
+    const lNomeLen  = dv.getUint16(localOff + 26, true);
+    const lExtraLen = dv.getUint16(localOff + 28, true);
+    const inicio = localOff + 30 + lNomeLen + lExtraLen;
+
+    entradas.push({ nome, metodo, dados: u8.subarray(inicio, inicio + compSize) });
+    p += 46 + nomeLen + extraLen + comentLen;
+  }
+  return entradas;
+}
+
+async function zipTexto(entrada) {
+  if (!entrada) return "";
+  if (entrada.metodo === 0) return new TextDecoder().decode(entrada.dados);
+  if (entrada.metodo !== 8) throw new Error("Compressão do .xlsx não suportada.");
+  if (typeof DecompressionStream === "undefined") {
+    throw new Error("Este navegador não sabe descompactar .xlsx. Use o modelo em CSV.");
+  }
+  const fluxo = new Blob([entrada.dados]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Response(fluxo).text();
+}
+
+/* ---------- ZIP: escrita (tudo "stored", sem compressão) ---------- */
+
+const ZIP_CRC_TABELA = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[i] = c >>> 0;
+  }
+  return t;
+})();
+
+function zipCrc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = ZIP_CRC_TABELA[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function zipMontar(arquivos) {
+  const cod = new TextEncoder();
+  const partes = [], central = [];
+  let offset = 0;
+
+  const escreve = (n, bytes) => {
+    const b = new Uint8Array(n);
+    const dv = new DataView(b.buffer);
+    if (n === 2) dv.setUint16(0, bytes, true); else dv.setUint32(0, bytes, true);
+    return b;
+  };
+
+  arquivos.forEach(({ nome, texto }) => {
+    const dados = cod.encode(texto);
+    const nomeB = cod.encode(nome);
+    const crc = zipCrc32(dados);
+
+    const local = [
+      escreve(4, 0x04034b50), escreve(2, 20), escreve(2, 0), escreve(2, 0),
+      escreve(2, 0), escreve(2, 0),                    // hora e data zeradas
+      escreve(4, crc), escreve(4, dados.length), escreve(4, dados.length),
+      escreve(2, nomeB.length), escreve(2, 0), nomeB, dados,
+    ];
+    const tamLocal = local.reduce((s, x) => s + x.length, 0);
+    partes.push(...local);
+
+    central.push(
+      escreve(4, 0x02014b50), escreve(2, 20), escreve(2, 20), escreve(2, 0),
+      escreve(2, 0), escreve(2, 0), escreve(2, 0),
+      escreve(4, crc), escreve(4, dados.length), escreve(4, dados.length),
+      escreve(2, nomeB.length), escreve(2, 0), escreve(2, 0), escreve(2, 0),
+      escreve(2, 0), escreve(4, 0), escreve(4, offset), nomeB,
+    );
+    offset += tamLocal;
+  });
+
+  const tamCentral = central.reduce((s, x) => s + x.length, 0);
+  const fim = [
+    escreve(4, 0x06054b50), escreve(2, 0), escreve(2, 0),
+    escreve(2, arquivos.length), escreve(2, arquivos.length),
+    escreve(4, tamCentral), escreve(4, offset), escreve(2, 0),
+  ];
+  return new Blob([...partes, ...central, ...fim], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+}
+
+/* ---------- planilha ---------- */
+
+function xlsxEscapar(s) {
+  return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+/* "AB" -> 27. Célula vazia é omitida do XML, então a referência é o único
+   jeito de saber em qual coluna o valor cai. */
+function xlsxColunaDeRef(ref) {
+  const letras = String(ref).match(/^[A-Z]+/i);
+  if (!letras) return 0;
+  let n = 0;
+  for (const ch of letras[0].toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64);
+  return n - 1;
+}
+
+function xlsxLetraDeColuna(i) {
+  let s = "", n = i + 1;
+  while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+  return s;
+}
+
+/* Lê a primeira planilha e devolve linhas de texto, no mesmo formato do CSV. */
+async function xlsxLer(buffer) {
+  const entradas = zipEntradas(buffer);
+  const acha = (nome) => entradas.find((e) => e.nome === nome);
+
+  const compartilhados = [];
+  const ssXml = await zipTexto(acha("xl/sharedStrings.xml"));
+  if (ssXml) {
+    const doc = new DOMParser().parseFromString(ssXml, "application/xml");
+    doc.querySelectorAll("si").forEach((si) => {
+      // <si> pode ter vários <t> quando o texto tem formatação no meio
+      compartilhados.push([...si.querySelectorAll("t")].map((t) => t.textContent).join(""));
+    });
+  }
+
+  const planilha = entradas.find((e) => /^xl\/worksheets\/sheet\d+\.xml$/.test(e.nome));
+  if (!planilha) throw new Error("Arquivo .xlsx sem planilha legível.");
+  const doc = new DOMParser().parseFromString(await zipTexto(planilha), "application/xml");
+
+  const linhas = [];
+  doc.querySelectorAll("sheetData > row").forEach((row) => {
+    const celulas = [];
+    row.querySelectorAll("c").forEach((c) => {
+      const tipo = c.getAttribute("t");
+      let valor = "";
+      if (tipo === "s") {
+        const i = Number(c.querySelector("v")?.textContent);
+        valor = compartilhados[i] ?? "";
+      } else if (tipo === "inlineStr") {
+        valor = [...c.querySelectorAll("is t")].map((t) => t.textContent).join("");
+      } else {
+        valor = c.querySelector("v")?.textContent ?? "";
+      }
+      celulas[xlsxColunaDeRef(c.getAttribute("r") || "")] = valor;
+    });
+    for (let i = 0; i < celulas.length; i++) if (celulas[i] === undefined) celulas[i] = "";
+    linhas.push(celulas);
+  });
+  return linhas.filter((l) => l.some((c) => String(c).trim() !== ""));
+}
+
+/* Gera um .xlsx mínimo: uma aba, texto em linha (dispensa sharedStrings). */
+function xlsxGerar(matriz, nomeAba = "Modelo") {
+  const linhas = matriz.map((linha, r) => {
+    const celulas = linha.map((valor, c) => {
+      const ref = `${xlsxLetraDeColuna(c)}${r + 1}`;
+      const txt = String(valor ?? "");
+      const ehNumero = txt !== "" && /^-?\d+(\.\d+)?$/.test(txt);
+      return ehNumero
+        ? `<c r="${ref}"><v>${txt}</v></c>`
+        : `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xlsxEscapar(txt)}</t></is></c>`;
+    }).join("");
+    return `<row r="${r + 1}">${celulas}</row>`;
+  }).join("");
+
+  const ns = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  const rns = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  return zipMontar([
+    { nome: "[Content_Types].xml", texto:
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>` },
+    { nome: "_rels/.rels", texto:
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${rns}/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+    { nome: "xl/workbook.xml", texto:
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="${ns}" xmlns:r="${rns}"><sheets><sheet name="${xlsxEscapar(nomeAba)}" sheetId="1" r:id="rId1"/></sheets></workbook>` },
+    { nome: "xl/_rels/workbook.xml.rels", texto:
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${rns}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>` },
+    { nome: "xl/worksheets/sheet1.xml", texto:
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="${ns}"><sheetData>${linhas}</sheetData></worksheet>` },
+  ]);
+}
+
+const IMP_MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+                   "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+/* Não se pede o que dá para deduzir: Linha do P&L e Categoria saem da Conta,
+   então não viram coluna do modelo. */
+const IMP_SPEC = {
+  receita: {
+    rotulo: "Receita",
+    colunas: [
+      { nome: "Torre",        obrigatoria: true,  aceita: "torre" },
+      { nome: "Empresa",      obrigatoria: true,  aceita: "empresa" },
+      { nome: "Produto",      obrigatoria: true,  aceita: "produto" },
+      { nome: "Sub-produto",  obrigatoria: false, aceita: "subproduto" },
+      { nome: "Tipo Receita", obrigatoria: true,  aceita: "tipoReceita" },
+    ],
+    chave: ["Torre", "Empresa", "Produto", "Sub-produto", "Tipo Receita"],
+  },
+  despesa: {
+    rotulo: "Despesa",
+    colunas: [
+      { nome: "Conta",           obrigatoria: true,  aceita: "conta" },
+      { nome: "Empresa",         obrigatoria: true,  aceita: "empresa" },
+      { nome: "Centro de Custo", obrigatoria: true,  aceita: "texto" },
+      { nome: "Pacote",          obrigatoria: true,  aceita: "pacote" },
+      { nome: "Ativação",        obrigatoria: false, aceita: "texto" },
+      { nome: "% Ativação",      obrigatoria: false, aceita: "percentual" },
+      { nome: "Fornecedor",      obrigatoria: false, aceita: "texto" },
+      { nome: "Obs",             obrigatoria: false, aceita: "texto" },
+    ],
+    chave: ["Conta", "Empresa", "Centro de Custo"],
+  },
+  capex: {
+    rotulo: "Capex",
+    colunas: [
+      { nome: "Conta",           obrigatoria: true,  aceita: "conta" },
+      { nome: "Empresa",         obrigatoria: true,  aceita: "empresa" },
+      { nome: "Centro de Custo", obrigatoria: true,  aceita: "texto" },
+      { nome: "Pacote",          obrigatoria: true,  aceita: "pacote" },
+      { nome: "Projeto",         obrigatoria: true,  aceita: "texto" },
+      { nome: "Justificativa",   obrigatoria: false, aceita: "texto" },
+    ],
+    chave: ["Conta", "Empresa", "Centro de Custo", "Projeto"],
+  },
+};
+
+/* Leitor de CSV que aguenta campo entre aspas com ; e " dentro, BOM e CRLF.
+   Split simples por ";" quebraria em "Obs" com ponto e vírgula no meio. */
+function impLerCsv(texto) {
+  const t = texto.replace(/^﻿/, "");
+  const linhas = [];
+  let campo = "", linha = [], aspas = false;
+
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (aspas) {
+      if (c === '"') {
+        if (t[i + 1] === '"') { campo += '"'; i++; }
+        else aspas = false;
+      } else campo += c;
+      continue;
+    }
+    if (c === '"') { aspas = true; continue; }
+    if (c === ";") { linha.push(campo); campo = ""; continue; }
+    if (c === "\n" || c === "\r") {
+      if (c === "\r" && t[i + 1] === "\n") i++;
+      linha.push(campo); linhas.push(linha); campo = ""; linha = [];
+      continue;
+    }
+    campo += c;
+  }
+  if (campo !== "" || linha.length) { linha.push(campo); linhas.push(linha); }
+  return linhas.filter((l) => l.some((c) => String(c).trim() !== ""));
+}
+
+/* Aceita "1.234,50" e "1234.50": quem preenche no Excel pt-BR manda o
+   primeiro, quem exporta de sistema manda o segundo. */
+function impNumero(valor) {
+  const s = String(valor ?? "").trim();
+  if (!s) return null;
+  const limpo = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s;
+  const n = Number(limpo);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function initImportacao() {
+  const areaTipos = document.querySelector("[data-imp-tipo]");
+  const inputArquivo = document.querySelector("[data-imp-arquivo]");
+  if (!areaTipos || !inputArquivo) return;
+
+  let tipo = "receita";
+  let ref = null;              // dados de cadastro
+  let analise = null;          // resultado da última conferência
+  let filtro = "problema";
+
+  /* ---------- cadastro ---------- */
+
+  function empresas()  { return [...new Set(ref.org.map((o) => o.empresa))].sort(); }
+  function torres()    { return [...new Set(ref.org.map((o) => o.torre))].filter((t) => t !== "-").sort(); }
+  function pacotesDo(t){ return ref.pacotes.pacotes.filter((p) => p.aplicaA.includes(t)); }
+
+  function descreveAceita(col) {
+    switch (col.aceita) {
+      case "empresa":     return `uma das ${empresas().length} empresas do cadastro`;
+      case "torre":       return `uma das ${torres().length} torres`;
+      case "produto":     return `produto do catálogo, compatível com a Torre (${ref.produtos.produtos.length} disponíveis)`;
+      case "subproduto":  return "sub-produto do produto escolhido — deixe vazio se ele não tem divisão";
+      case "tipoReceita": return ref.produtos.tiposReceita.join(" · ");
+      case "conta":       return `código do plano de contas (${ref.contas.length} disponíveis)`;
+      case "pacote":      return pacotesDo(tipo).map((p) => p.nome).join(" · ");
+      case "percentual":  return "número de 0 a 100";
+      default:            return "texto livre";
+    }
+  }
+
+  /* ---------- modelo para baixar ---------- */
+
+  function linhasExemplo() {
+    const spec = IMP_SPEC[tipo];
+    const org = ref.org.filter((o) => o.torre !== "-");
+    const pac = pacotesDo(tipo)[0];
+    const exemplos = [];
+
+    for (let i = 0; i < 2; i++) {
+      const o = org[i % org.length];
+      const linha = {};
+      if (tipo === "receita") {
+        const prod = ref.produtos.produtos.find((p) => p.torres.includes(o.torre)) || ref.produtos.produtos[0];
+        Object.assign(linha, {
+          "Torre": o.torre, "Empresa": o.empresa, "Produto": prod.nome,
+          "Sub-produto": prod.subProdutos[0] || "",
+          "Tipo Receita": ref.produtos.tiposReceita[i % ref.produtos.tiposReceita.length],
+        });
+      } else {
+        const c = ref.contas[i * 3 % ref.contas.length];
+        Object.assign(linha, {
+          "Conta": c.conta, "Empresa": o.empresa,
+          "Centro de Custo": o.torre, "Pacote": pac ? pac.nome : "",
+        });
+        if (tipo === "despesa") {
+          Object.assign(linha, { "Ativação": "Não ativa — Opex", "% Ativação": "0",
+                                 "Fornecedor": "", "Obs": "" });
+        } else {
+          Object.assign(linha, { "Projeto": `Projeto exemplo ${i + 1}`, "Justificativa": "" });
+        }
+      }
+      IMP_MESES.forEach((m, j) => { linha[m] = String(100 + i * 50 + j * 5); });
+      exemplos.push(linha);
+    }
+    return exemplos;
+  }
+
+  function baixarModelo(formato) {
+    const spec = IMP_SPEC[tipo];
+    const cabecalho = [...spec.colunas.map((c) => c.nome), ...IMP_MESES];
+    const matriz = [cabecalho, ...linhasExemplo().map((ex) => cabecalho.map((c) => ex[c] ?? ""))];
+    const base = `modelo-${tipo}-${new Date().toISOString().slice(0, 10)}`;
+
+    if (formato === "csv") {
+      const texto = matriz.map((l) => l.map(csvCell).join(";")).join("\r\n");
+      downloadTextFile(`${base}.csv`, texto, "text/csv;charset=utf-8;");
+    } else {
+      downloadBlobFile(`${base}.xlsx`, xlsxGerar(matriz, spec.rotulo));
+    }
+    showToast(`Modelo de ${spec.rotulo} baixado: ${base}.${formato}`, "success");
+  }
+
+  /* ---------- conferência ---------- */
+
+  /* Recebe a grade já lida — .csv e .xlsx chegam aqui no mesmo formato,
+     então a validação é uma só e não pode divergir entre os dois. */
+  function conferir(grade) {
+    const spec = IMP_SPEC[tipo];
+    if (!grade.length) return { fatal: "O arquivo está vazio." };
+
+    const cabecalho = grade[0].map((c) => c.trim());
+    const esperadas = [...spec.colunas.map((c) => c.nome), ...IMP_MESES];
+    const faltando = esperadas.filter((e) => !cabecalho.includes(e));
+    if (faltando.length) {
+      return { fatal: `O arquivo não parece ser o modelo de ${spec.rotulo}. Faltam as colunas: ${faltando.join(", ")}.` };
+    }
+
+    const col = (linha, nome) => (linha[cabecalho.indexOf(nome)] ?? "").trim();
+    const setEmpresas = new Set(empresas());
+    const setTorres   = new Set(torres());
+    const setTipos    = new Set(ref.produtos.tiposReceita);
+    const setPacotes  = new Set(pacotesDo(tipo).map((p) => p.nome));
+    const contaPorCodigo = new Map(ref.contas.map((c) => [String(c.conta).trim(), c]));
+    const produtoPorNome = new Map(ref.produtos.produtos.map((p) => [p.nome, p]));
+
+    const vistas = new Map();
+    const linhas = [];
+
+    grade.slice(1).forEach((bruta, i) => {
+      const erros = [], alertas = [];
+      const valor = (n) => col(bruta, n);
+
+      spec.colunas.forEach((c) => {
+        if (c.obrigatoria && !valor(c.nome)) erros.push(`${c.nome} está vazio`);
+      });
+
+      if (valor("Empresa") && !setEmpresas.has(valor("Empresa"))) {
+        erros.push(`Empresa "${valor("Empresa")}" não existe no cadastro`);
+      }
+
+      if (tipo === "receita") {
+        if (valor("Torre") && !setTorres.has(valor("Torre"))) {
+          erros.push(`Torre "${valor("Torre")}" não existe`);
+        }
+        const prod = produtoPorNome.get(valor("Produto"));
+        if (valor("Produto") && !prod) {
+          erros.push(`Produto "${valor("Produto")}" não está no catálogo`);
+        } else if (prod && valor("Torre") && !prod.torres.includes(valor("Torre"))) {
+          erros.push(`Produto "${prod.nome}" não pertence à ${valor("Torre")}`);
+        }
+        if (prod) {
+          const sub = valor("Sub-produto");
+          if (sub && !prod.subProdutos.includes(sub)) {
+            erros.push(`Sub-produto "${sub}" não é de "${prod.nome}"`);
+          } else if (!sub && prod.subProdutos.length) {
+            alertas.push(`"${prod.nome}" tem sub-produto e o campo ficou vazio`);
+          }
+        }
+        if (valor("Tipo Receita") && !setTipos.has(valor("Tipo Receita"))) {
+          erros.push(`Tipo Receita "${valor("Tipo Receita")}" não é um dos quatro aceitos`);
+        }
+      } else {
+        const c = contaPorCodigo.get(valor("Conta"));
+        if (valor("Conta") && !c) {
+          erros.push(`Conta "${valor("Conta")}" não existe no plano de contas`);
+        } else if (c && !c.linhaPL) {
+          erros.push(`Conta ${c.conta} não tem linha de P&L — não entra no consolidado`);  // regra PL
+        }
+        if (valor("Pacote") && !setPacotes.has(valor("Pacote"))) {
+          erros.push(`Pacote "${valor("Pacote")}" não se aplica a ${spec.rotulo}`);        // regra PAC
+        }
+        if (tipo === "despesa" && valor("% Ativação")) {
+          const p = impNumero(valor("% Ativação"));
+          if (Number.isNaN(p) || p < 0 || p > 100) erros.push("% Ativação precisa ser um número de 0 a 100");
+        }
+      }
+
+      // meses
+      let zerados = 0, somaLinha = 0;
+      IMP_MESES.forEach((m) => {
+        const n = impNumero(valor(m));
+        if (n === null) { zerados++; return; }
+        if (Number.isNaN(n)) { erros.push(`${m} não é um número ("${valor(m)}")`); return; }
+        if (n === 0) zerados++;
+        somaLinha += n;
+      });
+      if (zerados === 12) erros.push("Os 12 meses estão vazios ou zerados");
+      else if (zerados) alertas.push(`${zerados} mês(es) sem valor — costuma ser esquecimento`);  // regra MES
+
+      // duplicidade dentro do próprio arquivo — regra DUP
+      const chave = spec.chave.map((k) => valor(k)).join(" | ");
+      if (vistas.has(chave)) erros.push(`Repete a linha ${vistas.get(chave)} (mesma ${spec.chave.join(" + ")})`);
+      else vistas.set(chave, i + 2);
+
+      linhas.push({
+        numero: i + 2,           // +2: cabeçalho é a linha 1 do arquivo
+        resumo: spec.chave.map((k) => valor(k)).filter(Boolean).join(" · "),
+        total: somaLinha,
+        erros, alertas,
+        situacao: erros.length ? "erro" : alertas.length ? "alerta" : "ok",
+      });
+    });
+
+    return { linhas };
+  }
+
+  /* ---------- tela ---------- */
+
+  function renderColunas() {
+    const corpo = document.querySelector("[data-imp-colunas]");
+    const spec = IMP_SPEC[tipo];
+    corpo.innerHTML = spec.colunas.map((c) => `
+      <tr>
+        <td><strong>${escaparTexto(c.nome)}</strong></td>
+        <td>${c.obrigatoria ? '<span class="badge status-reprovado">Sim</span>'
+                            : '<span class="badge status-rascunho">Opcional</span>'}</td>
+        <td class="imp-aceita">${escaparTexto(descreveAceita(c))}</td>
+      </tr>`).join("") + `
+      <tr>
+        <td><strong>Jan … Dez</strong></td>
+        <td><span class="badge status-reprovado">Sim</span></td>
+        <td class="imp-aceita">um número por mês, em R$ mil — aceita 1.234,50 ou 1234.50</td>
+      </tr>`;
+    document.querySelectorAll("[data-imp-rotulo]").forEach((el) => { el.textContent = spec.rotulo; });
+    const p2 = document.querySelector("[data-imp-passo2]");
+    if (p2) p2.textContent = `${spec.colunas.length + 12} colunas: ${spec.colunas.length} de contexto e os 12 meses`;
+  }
+
+  function renderResultado() {
+    const painel = document.querySelector("[data-imp-resultado]");
+    const corpo = document.querySelector("[data-imp-linhas]");
+    const vazio = document.querySelector("[data-imp-vazio]");
+    if (!analise || analise.fatal) { painel.hidden = true; return; }
+    painel.hidden = false;
+
+    const todas = analise.linhas;
+    const conta = (s) => todas.filter((l) => l.situacao === s).length;
+    const poe = (k, v) => document.querySelectorAll(`[data-imp-kpi="${k}"]`)
+                                  .forEach((el) => { el.textContent = v; });
+    poe("lidas", todas.length);
+    poe("ok", conta("ok"));
+    poe("erros", conta("erro"));
+    poe("alertas", conta("alerta"));
+
+    const resumo = document.querySelector("[data-imp-resumo]");
+    if (resumo) {
+      resumo.textContent = conta("erro")
+        ? `${conta("erro")} linha(s) travada(s) — corrija no Excel e suba de novo`
+        : `Tudo certo: ${todas.length} linha(s) prontas para entrar`;
+    }
+    const btn = document.querySelector("[data-imp-confirmar]");
+    if (btn) btn.disabled = conta("ok") + conta("alerta") === 0;
+
+    const lista = todas.filter((l) => {
+      if (filtro === "") return true;
+      if (filtro === "problema") return l.situacao !== "ok";
+      return l.situacao === filtro;
+    });
+    if (vazio) vazio.hidden = lista.length > 0;
+
+    const selo = { ok: ["status-aprovado", "Pronta"], alerta: ["status-em-aprovacao", "Alerta"],
+                   erro: ["status-reprovado", "Travada"] };
+    corpo.innerHTML = lista.map((l) => `
+      <tr class="imp-linha-${l.situacao}">
+        <td class="imp-num">${l.numero}</td>
+        <td><span class="badge ${selo[l.situacao][0]}">${selo[l.situacao][1]}</span></td>
+        <td>
+          <span class="imp-resumo">${escaparTexto(l.resumo || "(linha sem identificação)")}</span>
+          <span class="imp-total">total ${l.total.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mil</span>
+        </td>
+        <td class="imp-motivos">
+          ${l.erros.map((e) => `<span class="imp-erro">${escaparTexto(e)}</span>`).join("")}
+          ${l.alertas.map((a) => `<span class="imp-alerta">${escaparTexto(a)}</span>`).join("")}
+          ${!l.erros.length && !l.alertas.length ? "—" : ""}
+        </td>
+      </tr>`).join("");
+  }
+
+  function processar(arquivo) {
+    const nome = document.querySelector("[data-imp-nome]");
+    const ehXlsx = /\.xlsx$/i.test(arquivo.name);
+    const leitor = new FileReader();
+    leitor.onload = async () => {
+      try {
+        const grade = ehXlsx ? await xlsxLer(leitor.result) : impLerCsv(String(leitor.result));
+        analise = conferir(grade);
+      } catch (erro) {
+        analise = { fatal: erro.message || "Não consegui ler esse arquivo." };
+      }
+      if (nome) { nome.hidden = false; nome.textContent = `📄 ${arquivo.name}`; }
+      if (analise.fatal) {
+        document.querySelector("[data-imp-resultado]").hidden = true;
+        showToast(analise.fatal, "error");
+        return;
+      }
+      filtro = "problema";
+      const selFiltro = document.querySelector("[data-imp-filtro]");
+      if (selFiltro) selFiltro.value = "problema";
+      renderResultado();
+      const travadas = analise.linhas.filter((l) => l.situacao === "erro").length;
+      showToast(travadas ? `${travadas} linha(s) precisam de correção`
+                         : `${analise.linhas.length} linha(s) conferidas, tudo certo`,
+                travadas ? "error" : "success");
+      document.querySelector("[data-imp-resultado]").scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    if (ehXlsx) leitor.readAsArrayBuffer(arquivo);
+    else leitor.readAsText(arquivo, "UTF-8");
+  }
+
+  /* ---------- eventos ---------- */
+
+  document.querySelectorAll("[data-imp-tipo]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-imp-tipo]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      tipo = btn.dataset.impTipo;
+      analise = null;
+      document.querySelector("[data-imp-resultado]").hidden = true;
+      const nome = document.querySelector("[data-imp-nome]");
+      if (nome) nome.hidden = true;
+      renderColunas();
+    });
+  });
+
+  document.querySelectorAll("[data-imp-baixar]").forEach((btn) => {
+    btn.addEventListener("click", () => baixarModelo(btn.dataset.impBaixar || "xlsx"));
+  });
+  inputArquivo.addEventListener("change", () => {
+    if (inputArquivo.files[0]) processar(inputArquivo.files[0]);
+  });
+
+  const drop = document.querySelector("[data-imp-drop]");
+  if (drop) {
+    ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => {
+      e.preventDefault(); drop.classList.add("arrastando");
+    }));
+    ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => {
+      e.preventDefault(); drop.classList.remove("arrastando");
+    }));
+    drop.addEventListener("drop", (e) => {
+      const f = e.dataTransfer.files[0];
+      if (f) processar(f);
+    });
+  }
+
+  document.querySelector("[data-imp-filtro]")?.addEventListener("change", (e) => {
+    filtro = e.target.value;
+    renderResultado();
+  });
+
+  document.querySelector("[data-imp-confirmar]")?.addEventListener("click", () => {
+    const n = analise.linhas.filter((l) => l.situacao !== "erro").length;
+    showToast(`${n} linha(s) entrariam no orçamento — protótipo não grava.`, "info");
+  });
+
+  Promise.all([
+    carregarRef("organizacional.json"),
+    carregarRef("contas.json"),
+    carregarRef("produtos.json"),
+    carregarRef("pacotes.json"),
+  ]).then(([org, contas, produtos, pacotes]) => {
+    ref = { org, contas, produtos, pacotes };
+    renderColunas();
+  });
+}
+
 /* ---------- Init ---------- */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -3040,6 +3714,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initFormLancamento();
   initNotificacoes();
   initAuditoria();
+  initImportacao();
   initStatusCiclo();
   renderResumoLancamentos();
   initReferenceAutocomplete();
