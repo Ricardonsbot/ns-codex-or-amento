@@ -1,10 +1,15 @@
-"""Gera Referencias/inputs.json — os inputs orçamentários do ciclo seguinte.
+"""Gera Referencias/inputs.json — as linhas que compõem cada submissão.
 
 Ferramenta de bastidor, como gera_auditoria.py: roda na mão, e o que entra no
-repositório é só o JSON. O protótipo continua sem build step.
+repositório é só o JSON.
 
-As contas, empresas, torres e responsáveis saem dos arquivos que já existem,
-para a tela de aprovação não contradizer Entregas, Aprovações e os relatórios.
+O ponto central: cada input pertence a uma SUBMISSÃO de aprovacoes.json, e a
+soma dos inputs de uma submissão é exatamente o valor dela. Sem isso a tela de
+aprovação mostraria um total no cabeçalho e outro na soma das linhas, que é o
+tipo de contradição que derruba a confiança numa apresentação.
+
+O status também desce da submissão para as linhas: entrega aprovada não pode
+ter linha pendente.
 """
 import json
 import os
@@ -14,14 +19,14 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REF = os.path.join(RAIZ, "Referencias")
 rnd = random.Random(2027)          # semente fixa: roda de novo, dá o mesmo arquivo
 
+
 def ler(nome):
     with open(os.path.join(REF, nome), encoding="utf-8") as fh:
         return json.load(fh)
 
+
 contas = ler("contas.json")
-org = [o for o in ler("organizacional.json") if o["torre"] != "-"]
 aprov = ler("aprovacoes.json")
-pessoas = sorted({s["responsavel"] for s in aprov["submissoes"]})
 
 # Área é o departamento; centro de custo é o código dentro dele. O vocabulário
 # vem do que as grades de Despesa já usam (Comercial, TI, Marketing…).
@@ -40,7 +45,7 @@ AREAS = {
 JUSTIFICATIVAS = [
     "Reajuste de contrato indexado ao IGP-M, aniversário em março.",
     "Headcount aprovado no comitê de janeiro: duas vagas novas.",
-    "Renovação do contrato com reajuste de 8% negociado.",
+    "Renovação de contrato com reajuste de 8% negociado.",
     "Expansão da operação para a praça de Curitiba.",
     "Aumento de volume previsto no plano comercial.",
     "Migração de fornecedor com custo menor a partir de abril.",
@@ -57,60 +62,88 @@ MOTIVOS_REJEICAO = [
     "Reavaliar depois da decisão sobre o projeto de automação.",
 ]
 
+# Uma submissão de despesa não deveria puxar conta de receita. O filtro é
+# grosseiro de propósito: o plano de contas do protótipo tem 36 contas.
+def contas_da_categoria(categoria):
+    if categoria == "receita":
+        pool = [c for c in contas if "Revenue" in c["linhaPL"] or "Receita" in c["linhaPL"]]
+    else:
+        pool = [c for c in contas if "Despesa" in c["linhaPL"] or "Custo" in c["linhaPL"]]
+    return pool or contas
+
+
 inputs = []
-for i in range(140):
+for sub in aprov["submissoes"]:
     area = rnd.choice(list(AREAS))
-    cc_cod, cc_nome = rnd.choice(AREAS[area])
-    conta = rnd.choice(contas)
-    o = rnd.choice(org)
+    pool = contas_da_categoria(sub["categoria"])
+    n = rnd.randint(2, 5)
 
-    # valor atual = base do ano corrente; solicitado varia de -15% a +45%
-    atual = round(rnd.uniform(80, 4200), 1)
-    fator = rnd.choice([rnd.uniform(0.85, 0.99), rnd.uniform(1.0, 1.12),
-                        rnd.uniform(1.12, 1.45)])
-    solicitado = round(atual * fator, 1)
+    # reparte o valor da submissão entre as linhas; a última fecha a conta para
+    # a soma bater exatamente, sem sobra de arredondamento
+    pesos = [rnd.uniform(0.6, 1.6) for _ in range(n)]
+    total_peso = sum(pesos)
+    valores, acumulado = [], 0.0
+    for i, p in enumerate(pesos):
+        if i == n - 1:
+            valores.append(round(sub["valor"] - acumulado, 1))
+        else:
+            v = round(sub["valor"] * p / total_peso, 1)
+            valores.append(v)
+            acumulado += v
 
-    # a maioria fica pendente: a tela existe para dar conta dessa fila
-    status = rnd.choices(["pendente", "aprovado", "rejeitado"], weights=[62, 30, 8])[0]
+    for i, solicitado in enumerate(valores):
+        cc_cod, cc_nome = rnd.choice(AREAS[area])
+        conta = rnd.choice(pool)
 
-    item = {
-        "id": f"INP-{i + 1:04d}",
-        "area": area,
-        "centroCustoCodigo": cc_cod,
-        "centroCusto": cc_nome,
-        "conta": conta["conta"],
-        "descricao": conta["nome"],
-        "categoria": conta["categoria"],
-        "linhaPL": conta["linhaPL"],
-        "bu": o["bu"],
-        "torre": o["torre"],
-        "empresa": o["empresa"],
-        "responsavel": rnd.choice(pessoas),
-        "valorAtual": atual,
-        "valorSolicitado": solicitado,
-        "status": status,
-        "justificativa": rnd.choice(JUSTIFICATIVAS),
-        "solicitadoEm": f"2026-07-{rnd.randint(1, 28):02d}",
-    }
-    if status == "rejeitado":
-        item["motivoRejeicao"] = rnd.choice(MOTIVOS_REJEICAO)
-    if status in ("aprovado", "rejeitado"):
-        item["decididoPor"] = "Emerson Nakamura"
-        item["decididoEm"] = f"2026-08-{rnd.randint(1, 5):02d}"
-    inputs.append(item)
+        # valor atual = a base de hoje; o pedido varia de -15% a +45% sobre ela
+        fator = rnd.choice([rnd.uniform(0.85, 0.99), rnd.uniform(1.0, 1.12),
+                            rnd.uniform(1.12, 1.45)])
+        atual = round(solicitado / fator, 1)
 
-inputs.sort(key=lambda x: (x["area"], x["centroCusto"], x["conta"]))
-for i, x in enumerate(inputs, 1):
-    x["id"] = f"INP-{i:04d}"
+        # o status desce da entrega: aprovada não tem linha pendente
+        if sub["statusOficial"] == "aprovado":
+            status = "aprovado"
+        elif sub["statusOficial"] == "reprovado":
+            status = "rejeitado"
+        elif sub["statusOficial"] == "devolvido":
+            status = rnd.choices(["pendente", "rejeitado"], weights=[70, 30])[0]
+        else:
+            status = rnd.choices(["pendente", "aprovado"], weights=[85, 15])[0]
+
+        item = {
+            "id": f"INP-{len(inputs) + 1:04d}",
+            "submissaoId": sub["id"],
+            "area": area,
+            "centroCustoCodigo": cc_cod,
+            "centroCusto": cc_nome,
+            "conta": conta["conta"],
+            "descricao": conta["nome"],
+            "categoriaConta": conta["categoria"],
+            "linhaPL": conta["linhaPL"],
+            "bu": sub["bu"],
+            "torre": sub["torre"],
+            "empresa": sub["empresa"],
+            "categoria": sub["categoria"],
+            "responsavel": sub["responsavel"],
+            "valorAtual": atual,
+            "valorSolicitado": solicitado,
+            "status": status,
+            "justificativa": rnd.choice(JUSTIFICATIVAS),
+        }
+        if status == "rejeitado":
+            item["motivoRejeicao"] = rnd.choice(MOTIVOS_REJEICAO)
+        if status != "pendente":
+            item["decididoPor"] = (sub.get("decisao") or {}).get("por", "Emerson Nakamura")
+        inputs.append(item)
 
 saida = {
     "ciclo": "2027",
     "cicloRotulo": "Elaboração 2027",
     "baseComparacao": "Budget 2026 vigente",
-    "observacao": ("Inputs orcamentarios do ciclo de elaboracao seguinte. Contas, empresas, "
-                   "torres e responsaveis saem de contas.json, organizacional.json e "
-                   "aprovacoes.json, para a tela nao contradizer as demais. Valores e status "
-                   "sao ilustrativos do prototipo. Gerado por ferramentas/gera_inputs.py."),
+    "observacao": ("Linhas que compoem cada submissao de aprovacoes.json. A soma dos inputs de "
+                   "uma submissao e exatamente o valor dela, e o status desce da entrega para a "
+                   "linha. Contas, empresas e responsaveis saem dos mesmos arquivos das outras "
+                   "telas. Gerado por ferramentas/gera_inputs.py."),
     "areas": {a: [{"codigo": c, "nome": n} for c, n in ccs] for a, ccs in AREAS.items()},
     "motivosRejeicao": MOTIVOS_REJEICAO,
     "inputs": inputs,
@@ -119,11 +152,16 @@ saida = {
 with open(os.path.join(REF, "inputs.json"), "w", encoding="utf-8") as fh:
     json.dump(saida, fh, ensure_ascii=False, indent=2)
 
-from collections import Counter
-c = Counter(x["status"] for x in inputs)
-tot = lambda f: round(sum(x["valorSolicitado"] for x in inputs if f(x)), 1)
+# conferência: a soma das linhas tem de bater com o valor da submissão
+from collections import Counter, defaultdict
+por_sub = defaultdict(float)
+for x in inputs:
+    por_sub[x["submissaoId"]] += x["valorSolicitado"]
+divergentes = [s["id"] for s in aprov["submissoes"]
+               if abs(por_sub[s["id"]] - s["valor"]) > 0.05]
+
 print(f"{len(inputs)} inputs gravados em Referencias/inputs.json")
-print("por status:", dict(c))
-print(f"solicitado total: R$ {tot(lambda x: True):,.1f} mil".replace(",", "."))
-print(f"areas: {len(AREAS)} · centros de custo: {sum(len(v) for v in AREAS.values())}"
-      f" · categorias: {len({x['categoria'] for x in inputs})}")
+print("por status:", dict(Counter(x["status"] for x in inputs)))
+print(f"submissoes cobertas: {len(por_sub)} de {len(aprov['submissoes'])}")
+print("soma das linhas confere com o valor da submissao:",
+      "SIM em todas" if not divergentes else f"NAO em {divergentes}")

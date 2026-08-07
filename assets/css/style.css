@@ -1760,7 +1760,10 @@ tfoot td {
 }
 
 @media (max-width: 1100px) {
-  .aprov-layout { grid-template-columns: 1fr; }
+  /* minmax(0, 1fr) e não 1fr: coluna de grid tem min-width auto por padrão,
+     então conteúdo largo — a grade de linhas da entrega — empurra a coluna
+     para fora da tela em vez de rolar dentro do próprio .table-wrap. */
+  .aprov-layout { grid-template-columns: minmax(0, 1fr); }
 }
 
 .aprov-fila {

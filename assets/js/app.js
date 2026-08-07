@@ -1060,16 +1060,116 @@ function initAprovacoes() {
   const detalhe = document.querySelector("[data-aprov-detalhe]");
   if (!fila || !detalhe) return;
 
-  const filtros = { bu: "", categoria: "", status: "pendente", situacao: "", aceite: "" };
+  const VAZIO = { busca: "", bu: "", responsavel: "", categoria: "",
+                  status: "pendente", situacao: "", aceite: "" };
+  let filtros = { ...VAZIO };
   let dados = null;
+  let inputsDoCiclo = [];       // as linhas que compõem cada submissão
   let regrasPorCodigo = {};
   let selecionado = null;
+  const marcados = new Set();   // linhas marcadas para decisão em lote
+
+  const inputsDa = (subId) => inputsDoCiclo.filter((x) => x.submissaoId === subId);
+  const aprovMil = (v) =>
+    `R$ ${Number(v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mil`;
+
+  const INPUT_STATUS = {
+    pendente:  { rotulo: "Pendente",  classe: "status-em-aprovacao" },
+    aprovado:  { rotulo: "Aprovado",  classe: "status-aprovado" },
+    rejeitado: { rotulo: "Rejeitado", classe: "status-reprovado" },
+  };
+
+  /* Grid das linhas dentro do detalhe da entrega. Usa report-table + entry-grid,
+     os mesmos da grade de lançamento, para a tabela não parecer de outro app. */
+  function htmlLinhasInput(sub, linhas) {
+    if (!linhas.length) {
+      return '<div class="empty-hint">Nenhuma linha detalhada para esta entrega.</div>';
+    }
+    const decidivel = sub.statusOficial === "pendente";
+    const pendentes = linhas.filter((l) => l.status === "pendente");
+
+    const lote = decidivel && pendentes.length
+      ? `<div class="aprov-acoes">
+           <button class="btn btn-secondary btn-sm" data-aprov-linha-todas>
+             ${marcados.size === pendentes.length ? "Desmarcar todas" : `Marcar as ${pendentes.length} pendentes`}
+           </button>
+           <button class="btn btn-success btn-sm" data-aprov-linha-lote="aprovado" ${marcados.size ? "" : "disabled"}>
+             ✓ Aprovar ${marcados.size || ""} selecionada(s)
+           </button>
+           <button class="btn btn-danger btn-sm" data-aprov-linha-lote="rejeitado" ${marcados.size ? "" : "disabled"}>
+             ✕ Rejeitar selecionada(s)
+           </button>
+         </div>`
+      : "";
+
+    const corpo = linhas.map((l) => {
+      const info = INPUT_STATUS[l.status] || {};
+      const dif = l.valorSolicitado - l.valorAtual;
+      const pct = l.valorAtual ? (dif / Math.abs(l.valorAtual)) * 100 : 0;
+      const pendente = l.status === "pendente" && decidivel;
+      return `
+        <tr class="${marcados.has(l.id) ? "selected" : ""}">
+          <td>${pendente ? `<input type="checkbox" data-aprov-linha-marca="${escaparTexto(l.id)}" ${marcados.has(l.id) ? "checked" : ""} />` : ""}</td>
+          <td>${escaparTexto(l.area)}<br><span class="text-muted">${escaparTexto(l.centroCustoCodigo)} · ${escaparTexto(l.centroCusto)}</span></td>
+          <td>${escaparTexto(l.conta)}<br><span class="text-muted">${escaparTexto(l.descricao)}</span></td>
+          <td class="text-right">${aprovMil(l.valorAtual)}</td>
+          <td class="text-right">${aprovMil(l.valorSolicitado)}</td>
+          <td class="text-right ${dif > 0 ? "down" : ""}">${dif > 0 ? "+" : ""}${pct.toFixed(1)}%</td>
+          <td><span class="badge ${info.classe}">${escaparTexto(info.rotulo)}</span>
+              ${l.motivoRejeicao ? `<br><span class="text-muted">${escaparTexto(l.motivoRejeicao)}</span>` : ""}</td>
+          <td>${pendente ? `
+            <button class="btn btn-ghost btn-sm" data-aprov-linha="aprovado" data-aprov-linha-id="${escaparTexto(l.id)}" title="Aprovar linha">✓</button>
+            <button class="btn btn-ghost btn-sm" data-aprov-linha="rejeitado" data-aprov-linha-id="${escaparTexto(l.id)}" title="Rejeitar linha">✕</button>` : ""}</td>
+        </tr>`;
+    }).join("");
+
+    return `${lote}
+      <div class="table-wrap">
+        <table class="report-table entry-grid">
+          <thead>
+            <tr>
+              <th></th><th>Área / Centro de Custo</th><th>Conta</th>
+              <th class="text-right">Valor Atual</th>
+              <th class="text-right">Valor Solicitado</th>
+              <th class="text-right">Δ %</th>
+              <th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody>${corpo}</tbody>
+        </table>
+      </div>`;
+  }
+
+  function decidirLinhas(ids, status) {
+    let n = 0;
+    ids.forEach((id) => {
+      const l = inputsDoCiclo.find((x) => x.id === id);
+      if (!l || l.status !== "pendente") return;
+      l.status = status;
+      l.decididoPor = "Emerson Nakamura";
+      if (status === "rejeitado") {
+        l.motivoRejeicao = (dados.motivosRejeicaoInput || ["Recusado pelo aprovador."])[0];
+      }
+      n++;
+    });
+    marcados.clear();
+    redesenhar();
+    showToast(`${n} linha(s) ${status === "aprovado" ? "aprovada(s)" : "rejeitada(s)"} — protótipo não grava.`,
+              status === "aprovado" ? "success" : "info");
+  }
 
   function visiveis() {
     return dados.submissoes.filter((sub) => {
       if (filtros.bu && sub.bu !== filtros.bu) return false;
+      if (filtros.responsavel && sub.responsavel !== filtros.responsavel) return false;
       if (filtros.categoria && sub.categoria !== filtros.categoria) return false;
       if (filtros.status && sub.statusOficial !== filtros.status) return false;
+
+      const busca = filtros.busca.trim().toLowerCase();
+      if (busca) {
+        const alvo = `${sub.empresa} ${sub.torre} ${sub.bu} ${sub.responsavel} ${sub.id}`.toLowerCase();
+        if (!alvo.includes(busca)) return false;
+      }
 
       const travada = bloqueiosDaSubmissao(sub, regrasPorCodigo).length > 0;
       if (filtros.situacao === "bloqueada" && !travada) return false;
@@ -1093,12 +1193,24 @@ function initAprovacoes() {
     conta("bloqueadas", pendentes.filter((s) => bloqueiosDaSubmissao(s, regrasPorCodigo).length).length);
     conta("pendencias", pendentes.filter((s) => s.pendencias.length).length);
 
+    const travadas = pendentes.filter((s) => bloqueiosDaSubmissao(s, regrasPorCodigo).length).length;
+    conta("bloqueadas-detalhe", `${travadas} travada(s) por validação`);
+
+    /* O valor vem das LINHAS, não do cabeçalho da submissão: é o que permite
+       ver quanto já foi aprovado enquanto a entrega ainda está em análise. */
+    const soma = (f) => inputsDoCiclo.filter(f).reduce((t, l) => t + l.valorSolicitado, 0);
+    const aprovadosLinha = inputsDoCiclo.filter((l) => l.status === "aprovado");
+    const rejeitadosLinha = inputsDoCiclo.filter((l) => l.status === "rejeitado");
+
+    conta("valor-solicitado", aprovMil(soma(() => true)));
+    conta("valor-base", `contra ${aprovMil(inputsDoCiclo.reduce((t, l) => t + l.valorAtual, 0))} na base de hoje`);
+    conta("valor-aprovado", aprovMil(soma((l) => l.status === "aprovado")));
+    conta("valor-aprovado-detalhe", `${aprovadosLinha.length} de ${inputsDoCiclo.length} linha(s)`);
+    conta("valor-rejeitado", aprovMil(soma((l) => l.status === "rejeitado")));
+    conta("valor-rejeitado-detalhe", `${rejeitadosLinha.length} linha(s) recusada(s)`);
+
     const aprovadasLista = todas.filter((s) => s.statusOficial === "aprovado");
     const aprovadas = aprovadasLista.length;
-    const reprovadas = todas.filter((s) => s.statusOficial === "reprovado").length;
-    conta("decididas", aprovadas + reprovadas);
-    conta("decididas-detalhe", `${aprovadas} aprovadas · ${reprovadas} reprovadas`);
-
     const semAceite = aprovadasLista.filter((s) => !s.aceiteFinal).length;
     conta("sem-aceite", semAceite);
     conta("aceite-detalhe", `${aprovadas - semAceite} de ${aprovadas} já assumidas por um líder`);
@@ -1216,9 +1328,23 @@ function initAprovacoes() {
       })
       .join("");
 
-    const travado = bloqueios.length > 0;
+    /* A entrega só é aprovável quando as duas coisas estão resolvidas: nenhuma
+       validação bloqueante e nenhuma linha ainda pendente. Aprovar a entrega
+       com linha em aberto seria dizer "aprovo o total sem ter olhado as
+       partes" — que é exatamente o que esta tela existe para evitar. */
+    const linhas = inputsDa(sub.id);
+    const linhasPendentes = linhas.filter((l) => l.status === "pendente").length;
+    const travado = bloqueios.length > 0 || linhasPendentes > 0;
+
+    const motivos = [];
+    if (bloqueios.length) {
+      motivos.push(`validação: ${bloqueios.map((b) => escaparTexto(regrasPorCodigo[b.regra].nome)).join(", ")}`);
+    }
+    if (linhasPendentes) {
+      motivos.push(`${linhasPendentes} linha(s) ainda sem decisão`);
+    }
     const motivoTrava = travado
-      ? `<div class="aprov-trava">Aprovação bloqueada: ${bloqueios.map((b) => escaparTexto(regrasPorCodigo[b.regra].nome)).join(", ")}. Corrija na tela de lançamento ou devolva para ajuste.</div>`
+      ? `<div class="aprov-trava">Aprovação bloqueada — ${motivos.join(" · ")}. Decida as linhas abaixo, corrija no lançamento ou devolva para ajuste.</div>`
       : "";
 
     const acoes =
@@ -1249,6 +1375,11 @@ function initAprovacoes() {
           <h3>Status oficial do aprovador</h3>
           ${decisao}
           ${acoes}
+        </div>
+
+        <div class="aprov-bloco">
+          <h3>Linhas desta entrega — ${linhas.length} input(s), soma ${aprovMil(linhas.reduce((s, l) => s + l.valorSolicitado, 0))}</h3>
+          ${htmlLinhasInput(sub, linhas)}
         </div>
 
         <div class="aprov-bloco">
@@ -1289,7 +1420,38 @@ function initAprovacoes() {
     if (registrar) registrar.disabled = !e.target.checked;
   });
 
+  /* Decisão linha a linha. Delegação no painel de detalhe porque ele é
+     redesenhado inteiro a cada clique — listener preso no botão sumiria. */
   detalhe.addEventListener("click", (e) => {
+    const marca = e.target.closest("[data-aprov-linha-marca]");
+    if (marca) {
+      const id = marca.getAttribute("data-aprov-linha-marca");
+      if (marca.checked) marcados.add(id); else marcados.delete(id);
+      renderDetalhe();
+      return;
+    }
+
+    const todas = e.target.closest("[data-aprov-linha-todas]");
+    if (todas) {
+      const pendentes = inputsDa(selecionado).filter((l) => l.status === "pendente");
+      if (marcados.size === pendentes.length) marcados.clear();
+      else { marcados.clear(); pendentes.forEach((l) => marcados.add(l.id)); }
+      renderDetalhe();
+      return;
+    }
+
+    const lote = e.target.closest("[data-aprov-linha-lote]");
+    if (lote && !lote.disabled) {
+      decidirLinhas([...marcados], lote.getAttribute("data-aprov-linha-lote"));
+      return;
+    }
+
+    const uma = e.target.closest("[data-aprov-linha]");
+    if (uma) {
+      decidirLinhas([uma.getAttribute("data-aprov-linha-id")], uma.getAttribute("data-aprov-linha"));
+      return;
+    }
+
     const aceitar = e.target.closest("[data-aceite-registrar]");
     if (aceitar && !aceitar.disabled) {
       const sub = dados.submissoes.find((s) => s.id === selecionado);
@@ -1334,27 +1496,47 @@ function initAprovacoes() {
     redesenhar();
   });
 
-  document.querySelectorAll("[data-aprov-filtro]").forEach((select) => {
-    select.addEventListener("change", () => {
-      filtros[select.getAttribute("data-aprov-filtro")] = select.value;
+  document.querySelectorAll("[data-aprov-filtro]").forEach((campo) => {
+    campo.addEventListener(campo.tagName === "SELECT" ? "change" : "input", () => {
+      filtros[campo.getAttribute("data-aprov-filtro")] = campo.value;
       redesenhar();
     });
   });
 
-  carregarRef("aprovacoes.json")
-    .then((json) => {
+  document.querySelector("[data-aprov-limpar]")?.addEventListener("click", () => {
+    filtros = { ...VAZIO, status: "" };
+    document.querySelectorAll("[data-aprov-filtro]").forEach((campo) => {
+      campo.value = filtros[campo.getAttribute("data-aprov-filtro")] ?? "";
+    });
+    marcados.clear();
+    redesenhar();
+    showToast("Filtros limpos.", "info");
+  });
+
+  /* inputs.json é opcional: sem ele a tela continua funcionando no nível da
+     entrega, só sem o detalhamento por linha. */
+  Promise.all([
+    carregarRef("aprovacoes.json"),
+    carregarRef("inputs.json").catch(() => null),
+  ])
+    .then(([json, inputsDoc]) => {
       dados = json;
+      inputsDoCiclo = inputsDoc ? inputsDoc.inputs : [];
+      if (inputsDoc) dados.motivosRejeicaoInput = inputsDoc.motivosRejeicao;
       json.regras.forEach((regra) => { regrasPorCodigo[regra.codigo] = regra; });
 
-      const selectBu = document.querySelector('[data-aprov-filtro="bu"]');
-      if (selectBu) {
-        Array.from(new Set(json.submissoes.map((s) => s.bu))).forEach((bu) => {
+      const encher = (chave, valores) => {
+        const sel = document.querySelector(`[data-aprov-filtro="${chave}"]`);
+        if (!sel || sel.tagName !== "SELECT") return;
+        valores.forEach((v) => {
           const opt = document.createElement("option");
-          opt.value = bu;
-          opt.textContent = bu;
-          selectBu.appendChild(opt);
+          opt.value = v;
+          opt.textContent = v;
+          sel.appendChild(opt);
         });
-      }
+      };
+      encher("bu", [...new Set(json.submissoes.map((s) => s.bu))].sort());
+      encher("responsavel", [...new Set(json.submissoes.map((s) => s.responsavel))].sort());
 
       const primeira = json.submissoes.find((s) => s.statusOficial === "pendente");
       selecionado = primeira ? primeira.id : null;
@@ -4010,348 +4192,6 @@ function initCorrecoes() {
   });
 }
 
-/* ==========================================================================
-   Aprovação de Inputs Orçamentários — ciclo de elaboração seguinte
-   ==========================================================================
-   Diferente da tela de Aprovações, que decide uma ENTREGA inteira (empresa ×
-   categoria). Aqui a decisão é linha a linha, comparando o que se pede para o
-   ciclo novo contra o que vale hoje.
-
-   A tela é construída só com componentes que já existem: kpi-card, filter-bar,
-   report-table/entry-grid, badge de status, btn, modal-overlay e showToast.
-   Nenhuma classe visual nova foi criada.
-*/
-
-const INP_STATUS = {
-  pendente:  { rotulo: "Pendente",  classe: "status-em-aprovacao" },
-  aprovado:  { rotulo: "Aprovado",  classe: "status-aprovado" },
-  rejeitado: { rotulo: "Rejeitado", classe: "status-reprovado" },
-};
-
-const INP_VISOES_CHAVE = "nscodex.aprovacaoInputs.visoes";
-
-function inpMil(v) {
-  return `R$ ${Number(v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mil`;
-}
-
-function initAprovacaoInputs() {
-  const corpo = document.querySelector("[data-inp-corpo]");
-  if (!corpo) return;
-
-  const VAZIO = { busca: "", area: "", centroCusto: "", categoria: "",
-                  responsavel: "", status: "pendente", valorMin: "", valorMax: "" };
-  let filtros = { ...VAZIO };
-  let dados = null;
-  const marcados = new Set();
-  let alvoRejeicao = null;          // id único, ou null quando é rejeição em lote
-
-  /* ---------- filtro ---------- */
-
-  function visiveis() {
-    const busca = filtros.busca.trim().toLowerCase();
-    const min = filtros.valorMin === "" ? null : Number(filtros.valorMin);
-    const max = filtros.valorMax === "" ? null : Number(filtros.valorMax);
-
-    return dados.inputs.filter((x) => {
-      if (filtros.area && x.area !== filtros.area) return false;
-      if (filtros.centroCusto && x.centroCusto !== filtros.centroCusto) return false;
-      if (filtros.categoria && x.categoria !== filtros.categoria) return false;
-      if (filtros.responsavel && x.responsavel !== filtros.responsavel) return false;
-      if (filtros.status && x.status !== filtros.status) return false;
-      if (min !== null && x.valorSolicitado < min) return false;
-      if (max !== null && x.valorSolicitado > max) return false;
-      if (busca) {
-        const alvo = `${x.conta} ${x.descricao} ${x.empresa} ${x.centroCusto} ${x.categoria} ${x.responsavel}`.toLowerCase();
-        if (!alvo.includes(busca)) return false;
-      }
-      return true;
-    });
-  }
-
-  /* ---------- KPIs: sobre o ciclo inteiro, não sobre o filtro ---------- */
-
-  function renderKpis() {
-    const poe = (k, v) => document.querySelectorAll(`[data-inp-kpi="${k}"]`)
-                            .forEach((el) => { el.textContent = v; });
-    const t = dados.inputs;
-    const soma = (f) => t.filter(f).reduce((s, x) => s + x.valorSolicitado, 0);
-
-    const pend = t.filter((x) => x.status === "pendente");
-    const apr  = t.filter((x) => x.status === "aprovado");
-    const rej  = t.filter((x) => x.status === "rejeitado");
-    const decididos = apr.length + rej.length;
-    const pct = t.length ? Math.round((decididos / t.length) * 100) : 0;
-
-    poe("pendentes", pend.length);
-    poe("pendentes-detalhe", `de ${t.length} inputs do ciclo`);
-    poe("solicitado", inpMil(soma(() => true)));
-    poe("solicitado-detalhe", `contra ${inpMil(t.reduce((s, x) => s + x.valorAtual, 0))} hoje`);
-    poe("aprovado", inpMil(soma((x) => x.status === "aprovado")));
-    poe("aprovado-detalhe", `${apr.length} input(s)`);
-    poe("rejeitado", inpMil(soma((x) => x.status === "rejeitado")));
-    poe("rejeitado-detalhe", `${rej.length} input(s)`);
-    poe("pct", `${pct}%`);
-    poe("pct-detalhe", `${decididos} de ${t.length} decididos`);
-  }
-
-  /* ---------- grid ---------- */
-
-  function renderGrid() {
-    const lista = visiveis();
-    const vazio = document.querySelector("[data-inp-vazio]");
-    const resumo = document.querySelector("[data-inp-resumo]");
-
-    // marcações que saíram do filtro deixam de contar
-    const idsVisiveis = new Set(lista.map((x) => x.id));
-    [...marcados].forEach((id) => { if (!idsVisiveis.has(id)) marcados.delete(id); });
-
-    if (resumo) {
-      const total = dados.inputs.length;
-      resumo.textContent = marcados.size
-        ? `${marcados.size} selecionado(s) de ${lista.length} na tela`
-        : `${lista.length} de ${total} inputs`;
-    }
-    if (vazio) vazio.hidden = lista.length > 0;
-
-    corpo.innerHTML = lista.map((x) => {
-      const info = INP_STATUS[x.status] || {};
-      const dif = x.valorSolicitado - x.valorAtual;
-      const pct = x.valorAtual ? (dif / Math.abs(x.valorAtual)) * 100 : 0;
-      const classeDelta = dif > 0 ? "text-muted" : "text-muted";
-      const pendente = x.status === "pendente";
-      return `
-        <tr data-inp-linha="${escaparTexto(x.id)}" class="${marcados.has(x.id) ? "selected" : ""}">
-          <td><input type="checkbox" data-inp-marca="${escaparTexto(x.id)}"
-                     ${marcados.has(x.id) ? "checked" : ""} ${pendente ? "" : "disabled"} /></td>
-          <td>${escaparTexto(x.area)}</td>
-          <td>${escaparTexto(x.centroCustoCodigo)} · ${escaparTexto(x.centroCusto)}</td>
-          <td>${escaparTexto(x.conta)}</td>
-          <td>${escaparTexto(x.descricao)}<br><span class="text-muted">${escaparTexto(x.empresa)} · ${escaparTexto(x.categoria)}</span></td>
-          <td class="text-right">${inpMil(x.valorAtual)}</td>
-          <td class="text-right">${inpMil(x.valorSolicitado)}</td>
-          <td class="text-right ${dif > 0 ? "down" : ""}">${dif > 0 ? "+" : ""}${inpMil(dif)}</td>
-          <td class="text-right ${dif > 0 ? "down" : ""}">${dif > 0 ? "+" : ""}${pct.toFixed(1)}%</td>
-          <td>${escaparTexto(x.responsavel)}</td>
-          <td><span class="badge ${info.classe}">${escaparTexto(info.rotulo)}</span>
-              ${x.motivoRejeicao ? `<br><span class="text-muted">${escaparTexto(x.motivoRejeicao)}</span>` : ""}</td>
-          <td>
-            ${pendente ? `
-              <button class="btn btn-ghost btn-sm" data-inp-aprovar="${escaparTexto(x.id)}" title="Aprovar">✓</button>
-              <button class="btn btn-ghost btn-sm" data-inp-rejeitar="${escaparTexto(x.id)}" title="Rejeitar">✕</button>`
-            : `<span class="text-muted">${escaparTexto(x.decididoPor || "")}</span>`}
-          </td>
-        </tr>`;
-    }).join("");
-
-    const todos = document.querySelector("[data-inp-todos]");
-    if (todos) {
-      const selecionaveis = lista.filter((x) => x.status === "pendente");
-      todos.checked = selecionaveis.length > 0 && marcados.size === selecionaveis.length;
-      todos.indeterminate = marcados.size > 0 && marcados.size < selecionaveis.length;
-    }
-    document.querySelectorAll("[data-inp-lote], [data-inp-lote-rejeitar]")
-      .forEach((b) => { b.disabled = marcados.size === 0; });
-  }
-
-  /* ---------- decisão ---------- */
-
-  function decidir(ids, status, motivo, observacao) {
-    let n = 0;
-    ids.forEach((id) => {
-      const x = dados.inputs.find((i) => i.id === id);
-      if (!x || x.status !== "pendente") return;
-      x.status = status;
-      x.decididoPor = "Emerson Nakamura";
-      x.decididoEm = hojeISO();
-      if (status === "rejeitado") {
-        x.motivoRejeicao = [motivo, observacao].filter(Boolean).join(" — ");
-      }
-      n++;
-    });
-    marcados.clear();
-    renderKpis();
-    renderGrid();
-    const verbo = status === "aprovado" ? "aprovado" : "rejeitado";
-    showToast(`${n} input(s) ${verbo}(s) — protótipo não grava.`,
-              status === "aprovado" ? "success" : "info");
-  }
-
-  /* ---------- visões salvas ---------- */
-
-  const lerVisoes = () => {
-    try { return JSON.parse(localStorage.getItem(INP_VISOES_CHAVE) || "[]"); }
-    catch (e) { return []; }
-  };
-  const gravarVisoes = (v) => localStorage.setItem(INP_VISOES_CHAVE, JSON.stringify(v));
-
-  function renderVisoes() {
-    const caixa = document.querySelector("[data-inp-visoes]");
-    if (!caixa) return;
-    const lista = lerVisoes();
-    caixa.innerHTML = lista.length
-      ? lista.map((v, i) => `
-          <div class="filter-bar" style="margin:0 0 8px; padding:8px 10px;">
-            <strong style="flex:1">${escaparTexto(v.nome)}</strong>
-            <button class="btn btn-secondary btn-sm" data-inp-visao-aplicar="${i}">Aplicar</button>
-            <button class="btn btn-ghost btn-sm" data-inp-visao-remover="${i}" title="Remover">✕</button>
-          </div>`).join("")
-      : '<p class="empty-hint">Nenhuma visão salva ainda.</p>';
-  }
-
-  function aplicarFiltrosNaTela() {
-    document.querySelectorAll("[data-inp-filtro]").forEach((campo) => {
-      campo.value = filtros[campo.dataset.inpFiltro] ?? "";
-    });
-  }
-
-  /* ---------- eventos ---------- */
-
-  document.querySelectorAll("[data-inp-filtro]").forEach((campo) => {
-    campo.addEventListener(campo.tagName === "SELECT" ? "change" : "input", () => {
-      filtros[campo.dataset.inpFiltro] = campo.value;
-      renderGrid();
-    });
-  });
-
-  document.querySelector("[data-inp-limpar]")?.addEventListener("click", () => {
-    filtros = { ...VAZIO, status: "" };
-    aplicarFiltrosNaTela();
-    marcados.clear();
-    renderGrid();
-    showToast("Filtros limpos.", "info");
-  });
-
-  /* Delegação no tbody: as linhas são recriadas a cada filtro e a cada
-     decisão, então listener preso na <tr> sumiria no primeiro render. */
-  corpo.addEventListener("click", (ev) => {
-    const marca = ev.target.closest("[data-inp-marca]");
-    if (marca) {
-      const id = marca.dataset.inpMarca;
-      if (marca.checked) marcados.add(id); else marcados.delete(id);
-      renderGrid();
-      return;
-    }
-    const ok = ev.target.closest("[data-inp-aprovar]");
-    if (ok) { decidir([ok.dataset.inpAprovar], "aprovado"); return; }
-
-    const nao = ev.target.closest("[data-inp-rejeitar]");
-    if (nao) {
-      alvoRejeicao = nao.dataset.inpRejeitar;
-      abrirRejeicao();
-    }
-  });
-
-  document.querySelector("[data-inp-todos]")?.addEventListener("change", (ev) => {
-    marcados.clear();
-    if (ev.target.checked) {
-      visiveis().filter((x) => x.status === "pendente").forEach((x) => marcados.add(x.id));
-    }
-    renderGrid();
-  });
-
-  document.querySelector('[data-inp-lote="aprovado"]')?.addEventListener("click", () => {
-    decidir([...marcados], "aprovado");
-  });
-
-  document.querySelector("[data-inp-lote-rejeitar]")?.addEventListener("click", () => {
-    alvoRejeicao = null;
-    abrirRejeicao();
-  });
-
-  function abrirRejeicao() {
-    const alvo = document.querySelector("[data-inp-rejeitar-alvo]");
-    if (alvo) {
-      if (alvoRejeicao) {
-        const x = dados.inputs.find((i) => i.id === alvoRejeicao);
-        alvo.textContent = `${x.conta} · ${x.descricao} — ${inpMil(x.valorSolicitado)}`;
-      } else {
-        alvo.textContent = `${marcados.size} input(s) selecionado(s) serão rejeitados.`;
-      }
-    }
-    document.getElementById("modal-rejeitar")?.classList.add("open");
-  }
-
-  document.querySelector("[data-inp-rejeitar-confirma]")?.addEventListener("click", () => {
-    const motivo = document.querySelector("[data-inp-rejeitar-motivo]").value;
-    const obs = document.querySelector("[data-inp-rejeitar-obs]").value.trim();
-    decidir(alvoRejeicao ? [alvoRejeicao] : [...marcados], "rejeitado", motivo, obs);
-    document.getElementById("modal-rejeitar")?.classList.remove("open");
-    document.querySelector("[data-inp-rejeitar-obs]").value = "";
-  });
-
-  document.querySelector("[data-inp-visao-salvar]")?.addEventListener("click", () => {
-    const campo = document.querySelector("[data-inp-visao-nome]");
-    const nome = campo.value.trim();
-    if (!nome) { showToast("Dê um nome para a visão.", "error"); return; }
-    const lista = lerVisoes();
-    lista.push({ nome, filtros: { ...filtros } });
-    gravarVisoes(lista);
-    campo.value = "";
-    renderVisoes();
-    showToast(`Visão "${nome}" salva neste navegador.`, "success");
-  });
-
-  document.querySelector("[data-inp-visoes]")?.addEventListener("click", (ev) => {
-    const aplicar = ev.target.closest("[data-inp-visao-aplicar]");
-    if (aplicar) {
-      const v = lerVisoes()[Number(aplicar.dataset.inpVisaoAplicar)];
-      if (!v) return;
-      filtros = { ...VAZIO, ...v.filtros };
-      aplicarFiltrosNaTela();
-      marcados.clear();
-      renderGrid();
-      document.getElementById("modal-visoes")?.classList.remove("open");
-      showToast(`Visão "${v.nome}" aplicada.`, "info");
-      return;
-    }
-    const remover = ev.target.closest("[data-inp-visao-remover]");
-    if (remover) {
-      const lista = lerVisoes();
-      lista.splice(Number(remover.dataset.inpVisaoRemover), 1);
-      gravarVisoes(lista);
-      renderVisoes();
-    }
-  });
-
-  /* ---------- carga ---------- */
-
-  carregarRef("inputs.json").then((json) => {
-    dados = json;
-
-    const encher = (chave, valores) => {
-      const sel = document.querySelector(`[data-inp-filtro="${chave}"]`);
-      if (!sel || sel.tagName !== "SELECT") return;
-      valores.forEach((v) => {
-        const o = document.createElement("option");
-        o.value = v; o.textContent = v;
-        sel.appendChild(o);
-      });
-    };
-    const unicos = (c) => [...new Set(json.inputs.map((x) => x[c]))].sort();
-    encher("area", unicos("area"));
-    encher("centroCusto", unicos("centroCusto"));
-    encher("categoria", unicos("categoria"));
-    encher("responsavel", unicos("responsavel"));
-
-    const motivos = document.querySelector("[data-inp-rejeitar-motivo]");
-    if (motivos) {
-      (json.motivosRejeicao || []).forEach((m) => {
-        const o = document.createElement("option");
-        o.value = m; o.textContent = m;
-        motivos.appendChild(o);
-      });
-    }
-
-    document.querySelectorAll("[data-inp-ciclo]").forEach((el) => { el.textContent = json.cicloRotulo; });
-    document.querySelectorAll("[data-inp-base]").forEach((el) => { el.textContent = json.baseComparacao; });
-
-    aplicarFiltrosNaTela();
-    renderKpis();
-    renderGrid();
-    renderVisoes();
-  });
-}
-
 /* ---------- Init ---------- */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -4379,7 +4219,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initAuditoria();
   initImportacao();
   initCorrecoes();
-  initAprovacaoInputs();
   initVersaoBarra();
   initStatusCiclo();
   renderResumoLancamentos();
