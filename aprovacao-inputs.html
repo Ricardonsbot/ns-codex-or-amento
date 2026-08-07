@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aprovação de Inputs Orçamentários — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="index.html">
+    <div class="sidebar-brand">
+      <div class="logo-mark">NS</div>
+      <div class="brand-text">
+        <strong>NS Codex</strong>
+        <span>BU · Torres · Corporate</span>
+      </div>
+    </div>
+    </a>
+
+    <div class="sidebar-section-label">Visão geral</div>
+    <a href="index.html"><div class="nav-item" data-page="index.html"><span class="nav-icon">▦</span> Dashboard</div></a>
+
+    <div class="sidebar-section-label">Orçamento</div>
+    <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
+    <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
+    <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+    <a href="importar.html"><div class="nav-item" data-page="importar.html"><span class="nav-icon">⇧</span> Importar planilha</div></a>
+
+    <div class="sidebar-section-label">Fluxo</div>
+    <a href="entregas.html"><div class="nav-item" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div></a>
+    <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+    <div class="nav-item active" data-page="aprovacao-inputs.html"><span class="nav-icon">⇉</span> Aprovação de Inputs</div>
+    <a href="correcoes.html"><div class="nav-item" data-page="correcoes.html"><span class="nav-icon">↩</span> Correções</div></a>
+    <a href="notificacoes.html"><div class="nav-item" data-page="notificacoes.html"><span class="nav-icon">✉</span> Notificações</div></a>
+    <a href="auditoria.html"><div class="nav-item" data-page="auditoria.html"><span class="nav-icon">⧉</span> Auditoria</div></a>
+
+    <div class="sidebar-section-label">Análise</div>
+    <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+
+    <div class="sidebar-section-label">Administração</div>
+    <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
+
+    <div class="sidebar-section-label">Budget - Settings</div>
+    <a href="budget-settings.html"><div class="nav-item" data-page="budget-settings.html"><span class="nav-icon">⚙</span> Ciclos &amp; Versões</div></a>
+    <a href="login.html"><div class="nav-item" data-page="login.html"><span class="nav-icon">&#9099;</span> Sair</div></a>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">EN</div>
+        <div class="user-meta">
+          <strong>Emerson Nakamura</strong>
+          <span>NSTECH GR LTDA</span>
+        </div>
+      </div>
+      <div class="sidebar-role-badge">Aprovador</div>
+    </div>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Aprovação de Inputs Orçamentários</h1>
+        <p>Fluxo · Aprovação de Inputs — ciclo de elaboração <span data-inp-ciclo>—</span></p>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge status-em-aprovacao"><span class="badge-dot"></span><span data-inp-kpi="pendentes">—</span> pendentes</span>
+        <button class="btn btn-secondary" data-export-pdf title="Imprime o que está filtrado">⭳ Exportar PDF</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ===== Barra fixa: versão em edição + prazo ===== -->
+      <div class="version-status-bar" data-versao-barra="despesa">
+        <div class="version-status-item">
+          <span class="version-status-label">Versão em edição</span>
+          <span class="version-status-value" data-versao-atual>—</span>
+        </div>
+        <div class="version-status-item version-status-deadline">
+          <span class="version-status-label">Prazo para lançar Despesa</span>
+          <span class="version-status-value" data-versao-prazo>—</span>
+        </div>
+      </div>
+
+      <div class="proto-banner">
+        ⓘ Os inputs vêm de <strong>Referencias/inputs.json</strong>, derivado do mesmo plano de contas e da mesma estrutura organizacional das outras telas. O comparativo é contra o <strong data-inp-base>—</strong>. Aprovar e rejeitar mudam a tela na hora, mas o protótipo não grava.
+      </div>
+
+      <!-- ===== Dashboard resumo ===== -->
+      <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
+        <div class="kpi-card margem">
+          <div class="kpi-label">Pendentes de aprovação</div>
+          <div class="kpi-value" data-inp-kpi="pendentes">—</div>
+          <div class="kpi-delta" data-inp-kpi="pendentes-detalhe">—</div>
+        </div>
+        <div class="kpi-card capex">
+          <div class="kpi-label">Valor total solicitado</div>
+          <div class="kpi-value" data-inp-kpi="solicitado">—</div>
+          <div class="kpi-delta" data-inp-kpi="solicitado-detalhe">—</div>
+        </div>
+        <div class="kpi-card receita">
+          <div class="kpi-label">Valor já aprovado</div>
+          <div class="kpi-value" data-inp-kpi="aprovado">—</div>
+          <div class="kpi-delta up" data-inp-kpi="aprovado-detalhe">—</div>
+        </div>
+        <div class="kpi-card despesa">
+          <div class="kpi-label">Valor rejeitado</div>
+          <div class="kpi-value" data-inp-kpi="rejeitado">—</div>
+          <div class="kpi-delta down" data-inp-kpi="rejeitado-detalhe">—</div>
+        </div>
+        <div class="kpi-card margem">
+          <div class="kpi-label">Percentual concluído</div>
+          <div class="kpi-value" data-inp-kpi="pct">—</div>
+          <div class="kpi-delta" data-inp-kpi="pct-detalhe">—</div>
+        </div>
+      </div>
+
+      <!-- ===== Filtros ===== -->
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>Busca</label>
+          <input type="search" data-inp-filtro="busca" placeholder="Conta, descrição, empresa…" />
+        </div>
+        <div class="filter-field">
+          <label>Área</label>
+          <select data-inp-filtro="area"><option value="">Todas as áreas</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Centro de Custo</label>
+          <select data-inp-filtro="centroCusto"><option value="">Todos os CCs</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Categoria</label>
+          <select data-inp-filtro="categoria"><option value="">Todas</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Responsável</label>
+          <select data-inp-filtro="responsavel"><option value="">Qualquer um</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Status</label>
+          <select data-inp-filtro="status">
+            <option value="pendente">Pendentes</option>
+            <option value="">Todos</option>
+            <option value="aprovado">Aprovados</option>
+            <option value="rejeitado">Rejeitados</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Valor solicitado de</label>
+          <input type="number" data-inp-filtro="valorMin" placeholder="mín." />
+        </div>
+        <div class="filter-field">
+          <label>até</label>
+          <input type="number" data-inp-filtro="valorMax" placeholder="máx." />
+        </div>
+        <button class="btn btn-secondary" data-inp-limpar>Limpar filtros</button>
+        <button class="btn btn-secondary" data-modal-open="modal-visoes">★ Visões</button>
+      </div>
+
+      <!-- ===== Grid ===== -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Inputs do ciclo</h2>
+            <p data-inp-resumo>—</p>
+          </div>
+          <div class="topbar-actions">
+            <button class="btn btn-success btn-sm" data-inp-lote="aprovado" disabled>✓ Aprovar selecionados</button>
+            <button class="btn btn-danger btn-sm" data-modal-open="modal-rejeitar" data-inp-lote-rejeitar disabled>✕ Rejeitar selecionados</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="table-wrap">
+            <table class="report-table entry-grid">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" data-inp-todos title="Selecionar tudo que está filtrado" /></th>
+                  <th>Área</th>
+                  <th>Centro de Custo</th>
+                  <th>Conta</th>
+                  <th>Descrição</th>
+                  <th class="text-right">Valor Atual</th>
+                  <th class="text-right">Valor Solicitado</th>
+                  <th class="text-right">Δ R$</th>
+                  <th class="text-right">Δ %</th>
+                  <th>Responsável</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody data-inp-corpo></tbody>
+            </table>
+          </div>
+          <p class="empty-hint" data-inp-vazio hidden>Nenhum input para esses filtros.</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ===== Modal: rejeitar ===== -->
+<div class="modal-overlay" id="modal-rejeitar">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Rejeitar input</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <p data-inp-rejeitar-alvo>—</p>
+      <div class="filter-field" style="width:100%">
+        <label>Motivo da rejeição</label>
+        <select data-inp-rejeitar-motivo></select>
+      </div>
+      <div class="filter-field" style="width:100%; margin-top:12px;">
+        <label>Observação para o responsável</label>
+        <input type="text" data-inp-rejeitar-obs placeholder="Opcional — vai junto na notificação" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-modal-close>Cancelar</button>
+      <button class="btn btn-danger" data-inp-rejeitar-confirma>Rejeitar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: visões salvas ===== -->
+<div class="modal-overlay" id="modal-visoes">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Visões salvas</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="filter-field" style="width:100%">
+        <label>Salvar os filtros de agora como</label>
+        <input type="text" data-inp-visao-nome placeholder="Ex: Tecnologia acima de 1.000" />
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px" data-inp-visao-salvar>★ Salvar visão</button>
+      <div style="margin-top:18px" data-inp-visoes></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-modal-close>Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>

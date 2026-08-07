@@ -4010,6 +4010,348 @@ function initCorrecoes() {
   });
 }
 
+/* ==========================================================================
+   Aprovação de Inputs Orçamentários — ciclo de elaboração seguinte
+   ==========================================================================
+   Diferente da tela de Aprovações, que decide uma ENTREGA inteira (empresa ×
+   categoria). Aqui a decisão é linha a linha, comparando o que se pede para o
+   ciclo novo contra o que vale hoje.
+
+   A tela é construída só com componentes que já existem: kpi-card, filter-bar,
+   report-table/entry-grid, badge de status, btn, modal-overlay e showToast.
+   Nenhuma classe visual nova foi criada.
+*/
+
+const INP_STATUS = {
+  pendente:  { rotulo: "Pendente",  classe: "status-em-aprovacao" },
+  aprovado:  { rotulo: "Aprovado",  classe: "status-aprovado" },
+  rejeitado: { rotulo: "Rejeitado", classe: "status-reprovado" },
+};
+
+const INP_VISOES_CHAVE = "nscodex.aprovacaoInputs.visoes";
+
+function inpMil(v) {
+  return `R$ ${Number(v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mil`;
+}
+
+function initAprovacaoInputs() {
+  const corpo = document.querySelector("[data-inp-corpo]");
+  if (!corpo) return;
+
+  const VAZIO = { busca: "", area: "", centroCusto: "", categoria: "",
+                  responsavel: "", status: "pendente", valorMin: "", valorMax: "" };
+  let filtros = { ...VAZIO };
+  let dados = null;
+  const marcados = new Set();
+  let alvoRejeicao = null;          // id único, ou null quando é rejeição em lote
+
+  /* ---------- filtro ---------- */
+
+  function visiveis() {
+    const busca = filtros.busca.trim().toLowerCase();
+    const min = filtros.valorMin === "" ? null : Number(filtros.valorMin);
+    const max = filtros.valorMax === "" ? null : Number(filtros.valorMax);
+
+    return dados.inputs.filter((x) => {
+      if (filtros.area && x.area !== filtros.area) return false;
+      if (filtros.centroCusto && x.centroCusto !== filtros.centroCusto) return false;
+      if (filtros.categoria && x.categoria !== filtros.categoria) return false;
+      if (filtros.responsavel && x.responsavel !== filtros.responsavel) return false;
+      if (filtros.status && x.status !== filtros.status) return false;
+      if (min !== null && x.valorSolicitado < min) return false;
+      if (max !== null && x.valorSolicitado > max) return false;
+      if (busca) {
+        const alvo = `${x.conta} ${x.descricao} ${x.empresa} ${x.centroCusto} ${x.categoria} ${x.responsavel}`.toLowerCase();
+        if (!alvo.includes(busca)) return false;
+      }
+      return true;
+    });
+  }
+
+  /* ---------- KPIs: sobre o ciclo inteiro, não sobre o filtro ---------- */
+
+  function renderKpis() {
+    const poe = (k, v) => document.querySelectorAll(`[data-inp-kpi="${k}"]`)
+                            .forEach((el) => { el.textContent = v; });
+    const t = dados.inputs;
+    const soma = (f) => t.filter(f).reduce((s, x) => s + x.valorSolicitado, 0);
+
+    const pend = t.filter((x) => x.status === "pendente");
+    const apr  = t.filter((x) => x.status === "aprovado");
+    const rej  = t.filter((x) => x.status === "rejeitado");
+    const decididos = apr.length + rej.length;
+    const pct = t.length ? Math.round((decididos / t.length) * 100) : 0;
+
+    poe("pendentes", pend.length);
+    poe("pendentes-detalhe", `de ${t.length} inputs do ciclo`);
+    poe("solicitado", inpMil(soma(() => true)));
+    poe("solicitado-detalhe", `contra ${inpMil(t.reduce((s, x) => s + x.valorAtual, 0))} hoje`);
+    poe("aprovado", inpMil(soma((x) => x.status === "aprovado")));
+    poe("aprovado-detalhe", `${apr.length} input(s)`);
+    poe("rejeitado", inpMil(soma((x) => x.status === "rejeitado")));
+    poe("rejeitado-detalhe", `${rej.length} input(s)`);
+    poe("pct", `${pct}%`);
+    poe("pct-detalhe", `${decididos} de ${t.length} decididos`);
+  }
+
+  /* ---------- grid ---------- */
+
+  function renderGrid() {
+    const lista = visiveis();
+    const vazio = document.querySelector("[data-inp-vazio]");
+    const resumo = document.querySelector("[data-inp-resumo]");
+
+    // marcações que saíram do filtro deixam de contar
+    const idsVisiveis = new Set(lista.map((x) => x.id));
+    [...marcados].forEach((id) => { if (!idsVisiveis.has(id)) marcados.delete(id); });
+
+    if (resumo) {
+      const total = dados.inputs.length;
+      resumo.textContent = marcados.size
+        ? `${marcados.size} selecionado(s) de ${lista.length} na tela`
+        : `${lista.length} de ${total} inputs`;
+    }
+    if (vazio) vazio.hidden = lista.length > 0;
+
+    corpo.innerHTML = lista.map((x) => {
+      const info = INP_STATUS[x.status] || {};
+      const dif = x.valorSolicitado - x.valorAtual;
+      const pct = x.valorAtual ? (dif / Math.abs(x.valorAtual)) * 100 : 0;
+      const classeDelta = dif > 0 ? "text-muted" : "text-muted";
+      const pendente = x.status === "pendente";
+      return `
+        <tr data-inp-linha="${escaparTexto(x.id)}" class="${marcados.has(x.id) ? "selected" : ""}">
+          <td><input type="checkbox" data-inp-marca="${escaparTexto(x.id)}"
+                     ${marcados.has(x.id) ? "checked" : ""} ${pendente ? "" : "disabled"} /></td>
+          <td>${escaparTexto(x.area)}</td>
+          <td>${escaparTexto(x.centroCustoCodigo)} · ${escaparTexto(x.centroCusto)}</td>
+          <td>${escaparTexto(x.conta)}</td>
+          <td>${escaparTexto(x.descricao)}<br><span class="text-muted">${escaparTexto(x.empresa)} · ${escaparTexto(x.categoria)}</span></td>
+          <td class="text-right">${inpMil(x.valorAtual)}</td>
+          <td class="text-right">${inpMil(x.valorSolicitado)}</td>
+          <td class="text-right ${dif > 0 ? "down" : ""}">${dif > 0 ? "+" : ""}${inpMil(dif)}</td>
+          <td class="text-right ${dif > 0 ? "down" : ""}">${dif > 0 ? "+" : ""}${pct.toFixed(1)}%</td>
+          <td>${escaparTexto(x.responsavel)}</td>
+          <td><span class="badge ${info.classe}">${escaparTexto(info.rotulo)}</span>
+              ${x.motivoRejeicao ? `<br><span class="text-muted">${escaparTexto(x.motivoRejeicao)}</span>` : ""}</td>
+          <td>
+            ${pendente ? `
+              <button class="btn btn-ghost btn-sm" data-inp-aprovar="${escaparTexto(x.id)}" title="Aprovar">✓</button>
+              <button class="btn btn-ghost btn-sm" data-inp-rejeitar="${escaparTexto(x.id)}" title="Rejeitar">✕</button>`
+            : `<span class="text-muted">${escaparTexto(x.decididoPor || "")}</span>`}
+          </td>
+        </tr>`;
+    }).join("");
+
+    const todos = document.querySelector("[data-inp-todos]");
+    if (todos) {
+      const selecionaveis = lista.filter((x) => x.status === "pendente");
+      todos.checked = selecionaveis.length > 0 && marcados.size === selecionaveis.length;
+      todos.indeterminate = marcados.size > 0 && marcados.size < selecionaveis.length;
+    }
+    document.querySelectorAll("[data-inp-lote], [data-inp-lote-rejeitar]")
+      .forEach((b) => { b.disabled = marcados.size === 0; });
+  }
+
+  /* ---------- decisão ---------- */
+
+  function decidir(ids, status, motivo, observacao) {
+    let n = 0;
+    ids.forEach((id) => {
+      const x = dados.inputs.find((i) => i.id === id);
+      if (!x || x.status !== "pendente") return;
+      x.status = status;
+      x.decididoPor = "Emerson Nakamura";
+      x.decididoEm = hojeISO();
+      if (status === "rejeitado") {
+        x.motivoRejeicao = [motivo, observacao].filter(Boolean).join(" — ");
+      }
+      n++;
+    });
+    marcados.clear();
+    renderKpis();
+    renderGrid();
+    const verbo = status === "aprovado" ? "aprovado" : "rejeitado";
+    showToast(`${n} input(s) ${verbo}(s) — protótipo não grava.`,
+              status === "aprovado" ? "success" : "info");
+  }
+
+  /* ---------- visões salvas ---------- */
+
+  const lerVisoes = () => {
+    try { return JSON.parse(localStorage.getItem(INP_VISOES_CHAVE) || "[]"); }
+    catch (e) { return []; }
+  };
+  const gravarVisoes = (v) => localStorage.setItem(INP_VISOES_CHAVE, JSON.stringify(v));
+
+  function renderVisoes() {
+    const caixa = document.querySelector("[data-inp-visoes]");
+    if (!caixa) return;
+    const lista = lerVisoes();
+    caixa.innerHTML = lista.length
+      ? lista.map((v, i) => `
+          <div class="filter-bar" style="margin:0 0 8px; padding:8px 10px;">
+            <strong style="flex:1">${escaparTexto(v.nome)}</strong>
+            <button class="btn btn-secondary btn-sm" data-inp-visao-aplicar="${i}">Aplicar</button>
+            <button class="btn btn-ghost btn-sm" data-inp-visao-remover="${i}" title="Remover">✕</button>
+          </div>`).join("")
+      : '<p class="empty-hint">Nenhuma visão salva ainda.</p>';
+  }
+
+  function aplicarFiltrosNaTela() {
+    document.querySelectorAll("[data-inp-filtro]").forEach((campo) => {
+      campo.value = filtros[campo.dataset.inpFiltro] ?? "";
+    });
+  }
+
+  /* ---------- eventos ---------- */
+
+  document.querySelectorAll("[data-inp-filtro]").forEach((campo) => {
+    campo.addEventListener(campo.tagName === "SELECT" ? "change" : "input", () => {
+      filtros[campo.dataset.inpFiltro] = campo.value;
+      renderGrid();
+    });
+  });
+
+  document.querySelector("[data-inp-limpar]")?.addEventListener("click", () => {
+    filtros = { ...VAZIO, status: "" };
+    aplicarFiltrosNaTela();
+    marcados.clear();
+    renderGrid();
+    showToast("Filtros limpos.", "info");
+  });
+
+  /* Delegação no tbody: as linhas são recriadas a cada filtro e a cada
+     decisão, então listener preso na <tr> sumiria no primeiro render. */
+  corpo.addEventListener("click", (ev) => {
+    const marca = ev.target.closest("[data-inp-marca]");
+    if (marca) {
+      const id = marca.dataset.inpMarca;
+      if (marca.checked) marcados.add(id); else marcados.delete(id);
+      renderGrid();
+      return;
+    }
+    const ok = ev.target.closest("[data-inp-aprovar]");
+    if (ok) { decidir([ok.dataset.inpAprovar], "aprovado"); return; }
+
+    const nao = ev.target.closest("[data-inp-rejeitar]");
+    if (nao) {
+      alvoRejeicao = nao.dataset.inpRejeitar;
+      abrirRejeicao();
+    }
+  });
+
+  document.querySelector("[data-inp-todos]")?.addEventListener("change", (ev) => {
+    marcados.clear();
+    if (ev.target.checked) {
+      visiveis().filter((x) => x.status === "pendente").forEach((x) => marcados.add(x.id));
+    }
+    renderGrid();
+  });
+
+  document.querySelector('[data-inp-lote="aprovado"]')?.addEventListener("click", () => {
+    decidir([...marcados], "aprovado");
+  });
+
+  document.querySelector("[data-inp-lote-rejeitar]")?.addEventListener("click", () => {
+    alvoRejeicao = null;
+    abrirRejeicao();
+  });
+
+  function abrirRejeicao() {
+    const alvo = document.querySelector("[data-inp-rejeitar-alvo]");
+    if (alvo) {
+      if (alvoRejeicao) {
+        const x = dados.inputs.find((i) => i.id === alvoRejeicao);
+        alvo.textContent = `${x.conta} · ${x.descricao} — ${inpMil(x.valorSolicitado)}`;
+      } else {
+        alvo.textContent = `${marcados.size} input(s) selecionado(s) serão rejeitados.`;
+      }
+    }
+    document.getElementById("modal-rejeitar")?.classList.add("open");
+  }
+
+  document.querySelector("[data-inp-rejeitar-confirma]")?.addEventListener("click", () => {
+    const motivo = document.querySelector("[data-inp-rejeitar-motivo]").value;
+    const obs = document.querySelector("[data-inp-rejeitar-obs]").value.trim();
+    decidir(alvoRejeicao ? [alvoRejeicao] : [...marcados], "rejeitado", motivo, obs);
+    document.getElementById("modal-rejeitar")?.classList.remove("open");
+    document.querySelector("[data-inp-rejeitar-obs]").value = "";
+  });
+
+  document.querySelector("[data-inp-visao-salvar]")?.addEventListener("click", () => {
+    const campo = document.querySelector("[data-inp-visao-nome]");
+    const nome = campo.value.trim();
+    if (!nome) { showToast("Dê um nome para a visão.", "error"); return; }
+    const lista = lerVisoes();
+    lista.push({ nome, filtros: { ...filtros } });
+    gravarVisoes(lista);
+    campo.value = "";
+    renderVisoes();
+    showToast(`Visão "${nome}" salva neste navegador.`, "success");
+  });
+
+  document.querySelector("[data-inp-visoes]")?.addEventListener("click", (ev) => {
+    const aplicar = ev.target.closest("[data-inp-visao-aplicar]");
+    if (aplicar) {
+      const v = lerVisoes()[Number(aplicar.dataset.inpVisaoAplicar)];
+      if (!v) return;
+      filtros = { ...VAZIO, ...v.filtros };
+      aplicarFiltrosNaTela();
+      marcados.clear();
+      renderGrid();
+      document.getElementById("modal-visoes")?.classList.remove("open");
+      showToast(`Visão "${v.nome}" aplicada.`, "info");
+      return;
+    }
+    const remover = ev.target.closest("[data-inp-visao-remover]");
+    if (remover) {
+      const lista = lerVisoes();
+      lista.splice(Number(remover.dataset.inpVisaoRemover), 1);
+      gravarVisoes(lista);
+      renderVisoes();
+    }
+  });
+
+  /* ---------- carga ---------- */
+
+  carregarRef("inputs.json").then((json) => {
+    dados = json;
+
+    const encher = (chave, valores) => {
+      const sel = document.querySelector(`[data-inp-filtro="${chave}"]`);
+      if (!sel || sel.tagName !== "SELECT") return;
+      valores.forEach((v) => {
+        const o = document.createElement("option");
+        o.value = v; o.textContent = v;
+        sel.appendChild(o);
+      });
+    };
+    const unicos = (c) => [...new Set(json.inputs.map((x) => x[c]))].sort();
+    encher("area", unicos("area"));
+    encher("centroCusto", unicos("centroCusto"));
+    encher("categoria", unicos("categoria"));
+    encher("responsavel", unicos("responsavel"));
+
+    const motivos = document.querySelector("[data-inp-rejeitar-motivo]");
+    if (motivos) {
+      (json.motivosRejeicao || []).forEach((m) => {
+        const o = document.createElement("option");
+        o.value = m; o.textContent = m;
+        motivos.appendChild(o);
+      });
+    }
+
+    document.querySelectorAll("[data-inp-ciclo]").forEach((el) => { el.textContent = json.cicloRotulo; });
+    document.querySelectorAll("[data-inp-base]").forEach((el) => { el.textContent = json.baseComparacao; });
+
+    aplicarFiltrosNaTela();
+    renderKpis();
+    renderGrid();
+    renderVisoes();
+  });
+}
+
 /* ---------- Init ---------- */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -4037,6 +4379,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initAuditoria();
   initImportacao();
   initCorrecoes();
+  initAprovacaoInputs();
   initVersaoBarra();
   initStatusCiclo();
   renderResumoLancamentos();
