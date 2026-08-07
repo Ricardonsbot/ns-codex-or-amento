@@ -2654,18 +2654,23 @@ function initFormLancamento() {
     // a grade de Receita não tem coluna de ativação: o passo some
     if (passoAtivacao && !tabela.querySelector(".ativacao-input")) passoAtivacao.remove();
 
+    /* Nem todo formulário guiado tem o painel de Phasing. Sem estas guardas,
+       um formulário sem ele derrubava o DOMContentLoaded inteiro — e com ele
+       todos os init seguintes da página, não só este. */
     MESES_CURTOS.forEach((mes, i) => {
-      const label = document.createElement("label");
-      label.className = "reajuste-mes";
-      label.innerHTML = `<input type="checkbox" data-mes="${i}" /><span>${mes}</span>`;
-      caixaMeses.appendChild(label);
-
-      const campo = document.createElement("label");
-      campo.className = "mes-variavel";
-      campo.innerHTML = `<span>${mes}</span><input type="number" data-mes-valor="${i}" value="0" min="0" />`;
-      caixaVariavel.appendChild(campo);
-
-      selectMes.appendChild(new Option(mes, String(i)));
+      if (caixaMeses) {
+        const label = document.createElement("label");
+        label.className = "reajuste-mes";
+        label.innerHTML = `<input type="checkbox" data-mes="${i}" /><span>${mes}</span>`;
+        caixaMeses.appendChild(label);
+      }
+      if (caixaVariavel) {
+        const campo = document.createElement("label");
+        campo.className = "mes-variavel";
+        campo.innerHTML = `<span>${mes}</span><input type="number" data-mes-valor="${i}" value="0" min="0" />`;
+        caixaVariavel.appendChild(campo);
+      }
+      if (selectMes) selectMes.appendChild(new Option(mes, String(i)));
     });
 
     function ritmo() {
@@ -2741,14 +2746,14 @@ function initFormLancamento() {
       trocarPhasing(!phasing);
     });
 
-    form.querySelector("[data-form-limpar]").addEventListener("click", () => {
+    form.querySelector("[data-form-limpar]")?.addEventListener("click", () => {
       form.reset();
       trocarPhasing(false);
-      caixaMeses.querySelectorAll("input").forEach((c) => { c.checked = false; });
-      caixaVariavel.querySelectorAll("input").forEach((i) => { i.value = 0; });
+      caixaMeses?.querySelectorAll("input").forEach((c) => { c.checked = false; });
+      caixaVariavel?.querySelectorAll("input").forEach((i) => { i.value = 0; });
       form.querySelectorAll(".cartao-pacote").forEach((c) => c.classList.remove("escolhido"));
       pacoteEscolhido = "";
-      erro.hidden = true;
+      if (erro) erro.hidden = true;
       atualizar();
     });
 
@@ -4192,6 +4197,197 @@ function initCorrecoes() {
   });
 }
 
+/* ==========================================================================
+   Capex — o investimento e o que ele vira no P&L
+   ==========================================================================
+   A diferença para a tela de Despesa: lá o gasto se divide entre opex e capex
+   conforme o percentual de ativação. Aqui a linha JÁ É investimento inteiro,
+   e o que importa é o tipo de ativo — é ele que define a vida útil e se a
+   volta ao resultado é depreciação (CPC 27) ou amortização (CPC 04).
+
+   Ativar não cria valor: o caixa é o mesmo. Muda o caminho — sai de Capex e
+   volta diluído abaixo do EBITDA ao longo da vida útil. É essa conta, que
+   ninguém faz de cabeça, que o painel mostra enquanto a pessoa lança.
+*/
+
+function initCapex() {
+  const tabela = document.getElementById("tabela-capex");
+  const efeito = document.querySelector("[data-cpx-efeito]");
+  if (!tabela) return;
+
+  let ref = null;
+  const dinheiro = (v) =>
+    `R$ ${Number(v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} mil`;
+  const tipoPorNome = (nome) => (ref.tiposAtivo || []).find((t) => t.nome === nome) || null;
+
+  /* A depreciação começa no mês SEGUINTE ao da entrada do ativo — convenção
+     mais comum e a mais conservadora para orçamento. Ativo que entra em
+     dezembro não gera D&A nenhuma no próprio ciclo. */
+  function medirLinha(row) {
+    const meses = Array.from(row.querySelectorAll("td.month-col input"))
+      .map((i) => Number(i.value) || 0);
+    const total = meses.reduce((s, v) => s + v, 0);
+    const tipo = tipoPorNome(row.querySelector(".ativacao-input")?.value.trim() || "");
+    const vida = tipo ? tipo.vidaUtilAnos : 0;
+
+    let daNoCiclo = 0;
+    if (vida > 0) {
+      meses.forEach((v, m) => {
+        if (v) daNoCiclo += (v / (vida * 12)) * Math.max(0, 11 - m);
+      });
+    }
+    return {
+      total, tipo, vida, daNoCiclo,
+      daAno: vida > 0 ? total / vida : 0,
+      pacote: pacoteDaLinha(row),
+      nome: row.querySelector(".conta-nome-input")?.value.trim() || "projeto sem nome",
+    };
+  }
+
+  function calcular() {
+    const linhas = Array.from(tabela.querySelectorAll("tbody tr"))
+      .map(medirLinha).filter((l) => l.total > 0);
+
+    const r = { investido: 0, daAno: 0, daNoCiclo: 0, projetos: linhas.length,
+                porTipo: new Map(), alertas: [] };
+
+    linhas.forEach((l) => {
+      r.investido += l.total;
+      r.daAno += l.daAno;
+      r.daNoCiclo += l.daNoCiclo;
+
+      if (l.tipo) {
+        const at = r.porTipo.get(l.tipo.nome) || { tipo: l.tipo, valor: 0, daAno: 0 };
+        at.valor += l.total;
+        at.daAno += l.daAno;
+        r.porTipo.set(l.tipo.nome, at);
+      } else {
+        r.alertas.push(`<strong>${escaparTexto(l.nome)}</strong> está sem tipo de ativo — sem ele não há vida útil nem depreciação.`);
+      }
+
+      const lim = ref.limiteMaterialidade;
+      if (lim && l.total < lim.valorMil) {
+        r.alertas.push(`<strong>${escaparTexto(l.nome)}</strong> soma ${dinheiro(l.total)}, abaixo do limite de materialidade. ${escaparTexto(lim.texto)}`);
+      }
+
+      const eleg = (ref.elegibilidadePorPacote || {})[l.pacote];
+      if (eleg && eleg.grau === "nao") {
+        r.alertas.push(`Pacote <strong>${escaparTexto(l.pacote)}</strong> não é elegível a ativação. ${escaparTexto(eleg.nota)}`);
+      } else if (eleg && eleg.grau === "parcial") {
+        r.alertas.push(`Pacote <strong>${escaparTexto(l.pacote)}</strong> é elegível só em parte. ${escaparTexto(eleg.nota)}`);
+      }
+    });
+
+    /* média ponderada pelo valor: a simples enganaria, porque um projeto de
+       10 anos e R$ 50 mil pesaria igual a um de 5 anos e R$ 2 milhões */
+    const comVida = linhas.filter((l) => l.vida > 0);
+    const peso = comVida.reduce((s, l) => s + l.total, 0);
+    r.vidaMedia = peso ? comVida.reduce((s, l) => s + l.vida * l.total, 0) / peso : 0;
+    return r;
+  }
+
+  function render() {
+    if (!ref) return;
+    const r = calcular();
+    const poe = (k, v) => document.querySelectorAll(`[data-cpx-kpi="${k}"]`)
+                            .forEach((el) => { el.textContent = v; });
+
+    poe("investido", dinheiro(r.investido));
+    poe("projetos", `${r.projetos} projeto(s) na grade`);
+    poe("da-ano", dinheiro(r.daAno));
+    poe("da-ciclo", dinheiro(r.daNoCiclo));
+    poe("da-ciclo-detalhe", r.daAno ? `${Math.round((r.daNoCiclo / r.daAno) * 100)}% de um ano cheio` : "—");
+    poe("vida", r.vidaMedia ? `${r.vidaMedia.toFixed(1)} anos` : "—");
+
+    if (!efeito) return;
+    if (!r.projetos) {
+      efeito.innerHTML = '<div class="empty-hint">Lance um projeto na grade para ver o efeito.</div>';
+      return;
+    }
+
+    const porTipo = [...r.porTipo.values()].sort((a, b) => b.valor - a.valor).map((x) => `
+      <tr>
+        <td><strong>${escaparTexto(x.tipo.nome)}</strong><br><span class="text-muted">${escaparTexto(x.tipo.natureza)} · ${escaparTexto(x.tipo.norma)}</span></td>
+        <td class="text-right">${x.tipo.vidaUtilAnos} anos</td>
+        <td>${escaparTexto(x.tipo.metodo)}</td>
+        <td class="text-right">${dinheiro(x.valor)}</td>
+        <td class="text-right down">${dinheiro(x.daAno)}</td>
+      </tr>`).join("");
+
+    efeito.innerHTML = `
+      <div class="table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Tipo de ativo</th><th class="text-right">Vida útil</th><th>Volta como</th>
+              <th class="text-right">Investido no ano</th><th class="text-right">D&amp;A por ano cheio</th>
+            </tr>
+          </thead>
+          <tbody>${porTipo}</tbody>
+          <tfoot>
+            <tr>
+              <td><strong>Total</strong></td>
+              <td class="text-right">${r.vidaMedia ? r.vidaMedia.toFixed(1) + " anos" : "—"}</td>
+              <td>—</td>
+              <td class="text-right"><strong>${dinheiro(r.investido)}</strong></td>
+              <td class="text-right down"><strong>${dinheiro(r.daAno)}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="passo-ajuda">
+        Destes ${dinheiro(r.daAno)} de D&amp;A por ano cheio, <strong>${dinheiro(r.daNoCiclo)}</strong>
+        caem já neste ciclo — o resto começa nos anos seguintes, porque a depreciação
+        só corre a partir do mês seguinte à entrada de cada ativo.
+      </p>
+      ${r.alertas.length ? `<div class="aprov-trava">${r.alertas.join("<br>")}</div>` : ""}`;
+  }
+
+  /* Delegação no document: a grade é editada célula a célula e as linhas são
+     clonadas em "duplicar" — listener por input sumiria na cópia. */
+  ["input", "change"].forEach((ev) => {
+    document.addEventListener(ev, (e) => {
+      if (e.target.closest("#tabela-capex")) render();
+    });
+  });
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("[data-action]")) setTimeout(render, 60);
+  });
+
+  carregarRef("ativacao.json").then((json) => {
+    ref = json;
+    // Capex não oferece "Não ativa — Opex": se fosse opex não estaria aqui
+    const ativos = (json.tiposAtivo || []).filter((t) => t.natureza !== "Opex");
+
+    const lista = document.getElementById("ativacao-datalist");
+    if (lista) {
+      ativos.forEach((t) => {
+        const o = document.createElement("option");
+        o.value = t.nome;
+        lista.appendChild(o);
+      });
+    }
+
+    const sel = document.querySelector('[data-campo="tipoativo"]');
+    const ajuda = document.querySelector("[data-cpx-ajuda-tipo]");
+    if (sel) {
+      ativos.forEach((t) => {
+        const o = document.createElement("option");
+        o.value = t.nome;
+        o.textContent = `${t.nome} — ${t.vidaUtilAnos} anos`;
+        sel.appendChild(o);
+      });
+      const explicar = () => {
+        const t = tipoPorNome(sel.value);
+        if (ajuda && t) ajuda.textContent = `${t.norma} · ${t.metodo} em ${t.vidaUtilAnos} anos. ${t.ajuda || ""}`;
+      };
+      sel.addEventListener("change", explicar);
+      explicar();
+    }
+    render();
+  });
+}
+
 /* ---------- Init ---------- */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -4219,6 +4415,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initAuditoria();
   initImportacao();
   initCorrecoes();
+  initCapex();
   initVersaoBarra();
   initStatusCiclo();
   renderResumoLancamentos();

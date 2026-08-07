@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Orçamento de Capex</title>
+<title>Orçamento de Capex — NS Codex</title>
 <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
@@ -67,15 +67,15 @@
         <p>Projetos de investimento por BU e Torre</p>
       </div>
       <div class="topbar-actions">
-        <!-- esta tela ainda não tem grade, então o atalho para a trilha
-             fica na topbar em vez de um botão por linha -->
         <a class="btn btn-secondary" href="auditoria.html?categoria=capex">&#10226; Trilha de auditoria</a>
+        <button class="btn btn-secondary" data-action="save-draft" data-action-label="Orçamento de Capex">💾 Salvar Rascunho</button>
+        <button class="btn btn-primary" data-action="submit-approval" data-action-label="Orçamento de Capex">Enviar para Aprovação →</button>
       </div>
     </header>
 
     <div class="content">
-      <!-- ===== Barra fixa: versão em edição + prazo desta tela =====
-           Preenchida por initVersaoBarra a partir de cronograma.json. -->
+
+      <!-- ===== Barra fixa: versão em edição + prazo desta tela ===== -->
       <div class="version-status-bar" data-versao-barra="capex">
         <div class="version-status-item">
           <span class="version-status-label">Versão em edição</span>
@@ -88,57 +88,400 @@
       </div>
 
       <div class="proto-banner">
-        🚧 Tela em construção — trará uma tabela de projetos (valor previsto, data, status, justificativa). O contexto do lançamento abaixo já está definido: o Pacote escolhido aqui vai classificar cada projeto por motivo quando a grade existir.
+        ⓘ Capex é investimento: o dinheiro sai agora e volta ao resultado <strong>diluído como depreciação ou amortização</strong> ao longo da vida útil. O painel <strong>O que isso vira no P&amp;L</strong> mostra esse efeito enquanto você lança. Tipos de ativo, vidas úteis e normas vêm de <strong>Referencias/ativacao.json</strong> (CPC 27 e CPC 04).
       </div>
 
-      <div class="panel launch-context-panel">
-        <div class="panel-header">
-          <div>
-            <h2>Contexto do Lançamento</h2>
-            <p>Selecione BU, Torre, Empresa e o Pacote antes de lançar os projetos</p>
-          </div>
-        </div>
-        <div class="panel-body">
-          <div class="filter-bar" style="margin-bottom:0; border:none; padding:0;">
-            <div class="filter-field">
-              <label>BU</label>
-              <select><option>PSL</option><option>Embarcador</option><option>Corporate</option></select>
-            </div>
-            <div class="filter-field">
-              <label>Torre</label>
-              <select><option>Torre TMS</option><option>Torre Fintech</option><option>Torre Mobilidade</option><option>Torre Buonny</option></select>
-            </div>
-            <div class="filter-field">
-              <label>Empresa</label>
-              <select><option>NSTECH Log Brasil Ltda</option><option>NSTECH Cargo S.A.</option><option>NSTECH Corporate Holding</option></select>
-            </div>
-            <div class="filter-field">
-              <label>Ano</label>
-              <select><option>2026</option><option>2027</option></select>
-            </div>
-            <div class="filter-field">
-              <label>Pacote</label>
-              <select data-pacote-campo data-pacote-tipo="capex"></select>
-            </div>
-          </div>
-          <div class="pacote-motivo" data-pacote-motivo style="display:block; margin-top:10px;"></div>
-          <div class="pacote-legenda" data-pacote-legenda data-pacote-tipo="capex"></div>
-        </div>
+      <div class="tabs submenu" data-tabs="capex">
+        <button class="tab-btn active" data-tab-target="tab-resumo">▤ Resumo do que já foi lançado</button>
+        <button class="tab-btn" data-tab-target="tab-lancar">✎ Lançar</button>
       </div>
 
-      <div class="panel">
-        <div class="panel-body">
-          <div class="empty-hint">
-            A tela de Orçamento de Capex ainda será desenhada em detalhe.<br />
-            Volte para o <a href="index.html" style="color:var(--color-primary); font-weight:600;">Início</a> ou peça para construirmos esta tela agora.
+      <div data-tab-panel-group="capex">
+
+      <!-- ===================== RESUMO ===================== -->
+      <div id="tab-resumo" class="tab-panel active">
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>O que já foi lançado</h2>
+              <p data-resumo-topo>—</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" data-ir-para-lancar>＋ Lançar projeto</button>
+          </div>
+          <div class="panel-body">
+            <div class="resumo-lancamentos" data-resumo-lancamentos="tabela-capex" data-resumo-detalhe="Centro de Custo" data-resumo-nome="Projeto" data-resumo-grupo="Tipo de Ativo" data-resumo-termo-grupo="tipo(s) de ativo"></div>
           </div>
         </div>
-      </div>
+
+        <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
+          <div class="kpi-card capex">
+            <div class="kpi-label">Investimento no ano</div>
+            <div class="kpi-value" data-cpx-kpi="investido">—</div>
+            <div class="kpi-delta" data-cpx-kpi="projetos">—</div>
+          </div>
+          <div class="kpi-card despesa">
+            <div class="kpi-label">D&amp;A gerada por ano</div>
+            <div class="kpi-value" data-cpx-kpi="da-ano">—</div>
+            <div class="kpi-delta down">volta ao P&amp;L abaixo do EBITDA</div>
+          </div>
+          <div class="kpi-card margem">
+            <div class="kpi-label">D&amp;A que já cai neste ciclo</div>
+            <div class="kpi-value" data-cpx-kpi="da-ciclo">—</div>
+            <div class="kpi-delta" data-cpx-kpi="da-ciclo-detalhe">—</div>
+          </div>
+          <div class="kpi-card receita">
+            <div class="kpi-label">Vida útil média</div>
+            <div class="kpi-value" data-cpx-kpi="vida">—</div>
+            <div class="kpi-delta">ponderada pelo valor investido</div>
+          </div>
+        </div>
+
+      </div><!-- /tab-resumo -->
+
+      <!-- ===================== LANÇAR ===================== -->
+      <div id="tab-lancar" class="tab-panel">
+
+        <!-- ===== Contexto ===== -->
+        <div class="panel launch-context-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Contexto do Lançamento</h2>
+              <p>Selecione BU, Torre, Empresa e o Pacote antes de lançar os projetos</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="filter-bar" style="margin-bottom:0; border:none; padding:0;">
+              <div class="filter-field">
+                <label>BU</label>
+                <select><option>PSL</option><option>Embarcador</option><option>Corporate</option></select>
+              </div>
+              <div class="filter-field">
+                <label>Torre</label>
+                <select><option>Torre TMS</option><option>Torre Fintech</option><option>Torre Mobilidade</option><option>Torre Buonny</option></select>
+              </div>
+              <div class="filter-field">
+                <label>Empresa</label>
+                <select><option>NSTECH Log Brasil Ltda</option><option>NSTECH Cargo S.A.</option><option>NSTECH Corporate Holding</option></select>
+              </div>
+              <div class="filter-field">
+                <label>Ano</label>
+                <select><option>2026</option><option>2027</option></select>
+              </div>
+              <div class="filter-field">
+                <label>Pacote</label>
+                <select data-pacote-campo data-pacote-tipo="capex"></select>
+              </div>
+            </div>
+            <div class="pacote-motivo" data-pacote-motivo style="display:block; margin-top:10px;"></div>
+            <div class="pacote-legenda" data-pacote-legenda data-pacote-tipo="capex"></div>
+          </div>
+        </div>
+
+        <!-- ===== Formulário guiado ===== -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Lançar um projeto</h2>
+              <p>Quatro passos. Se preferir planilha, a grade completa está logo abaixo.</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <form class="form-guiado" data-form-lancamento="tabela-capex" data-form-coluna-contexto="Centro de Custo" data-form-tipo="capex">
+
+              <div class="passo">
+                <div class="passo-corpo">
+                  <h3><span class="passo-num">1</span> Que projeto é esse?</h3>
+                  <p class="passo-ajuda">O nome pelo qual a área conhece o investimento. A conta contábil é preenchida sozinha.</p>
+                  <div class="field-group">
+                    <label>Nome do projeto</label>
+                    <input type="text" data-campo="descricao" data-coluna="Projeto" list="contas-datalist"
+                           placeholder="Ex: Renovação do parque de notebooks" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="passo">
+                <div class="passo-corpo">
+                  <h3><span class="passo-num">2</span> Por que esse investimento existe?</h3>
+                  <p class="passo-ajuda">O pacote é o motivo. Ele é o que permite separar depois o que era manutenção do que era crescimento.</p>
+                  <div data-cartoes-pacote class="cartoes-pacote"></div>
+                </div>
+              </div>
+
+              <div class="passo">
+                <div class="passo-corpo">
+                  <h3><span class="passo-num">3</span> De qual área é esse investimento?</h3>
+                  <div class="field-group">
+                    <label>Centro de custo</label>
+                    <input type="text" data-campo="contexto" list="centros-datalist" placeholder="Ex: Tecnologia" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="passo">
+                <div class="passo-corpo">
+                  <h3><span class="passo-num">4</span> Que tipo de ativo é, e quanto custa?</h3>
+                  <p class="passo-ajuda">O tipo de ativo define a vida útil e se a volta ao resultado é depreciação ou amortização.</p>
+                  <div class="field-group">
+                    <label>Tipo de ativo</label>
+                    <select data-campo="tipoativo" data-coluna="Tipo de Ativo"></select>
+                    <p class="passo-ajuda" data-cpx-ajuda-tipo>—</p>
+                  </div>
+                  <div class="phasing-topo">
+                    <span class="phasing-estado" data-phasing-estado>Valor único, em um mês</span>
+                    <button type="button" class="btn btn-secondary btn-sm" data-phasing-toggle aria-pressed="false">⇄ Phasing</button>
+                  </div>
+
+                  <div class="campos-lado pontual-campos" data-modo-pontual>
+                    <label>
+                      <span>Valor (R$ mil)</span>
+                      <input type="number" data-campo="valor-pontual" value="0" min="0" step="1" />
+                    </label>
+                    <label>
+                      <span>Em qual mês entra?</span>
+                      <select data-campo="mes-pontual"></select>
+                    </label>
+                  </div>
+
+                  <div class="phasing-painel" data-modo-phasing hidden>
+                    <div class="ritmos">
+                      <label class="ritmo">
+                        <input type="radio" name="ritmo" value="igual" checked />
+                        <span class="ritmo-titulo">Todo mês igual</span>
+                        <span class="ritmo-ajuda">Mesmo desembolso de janeiro a dezembro</span>
+                      </label>
+                      <label class="ritmo">
+                        <input type="radio" name="ritmo" value="alguns" />
+                        <span class="ritmo-titulo">Só em alguns meses</span>
+                        <span class="ritmo-ajuda">Obra ou entrega em etapas</span>
+                      </label>
+                      <label class="ritmo">
+                        <input type="radio" name="ritmo" value="variavel" />
+                        <span class="ritmo-titulo">Muda mês a mês</span>
+                        <span class="ritmo-ajuda">Digita o desembolso de cada mês</span>
+                      </label>
+                    </div>
+
+                    <div class="ritmo-campo" data-ritmo-valor>
+                      <label>Valor por mês (R$ mil)</label>
+                      <input type="number" data-campo="valor" value="0" min="0" step="1" />
+                    </div>
+
+                    <div class="ritmo-campo" data-ritmo-meses hidden>
+                      <label>Em quais meses?</label>
+                      <div class="reajuste-meses" data-form-meses></div>
+                    </div>
+
+                    <div class="ritmo-campo" data-ritmo-variavel hidden>
+                      <label>Valor de cada mês (R$ mil)</label>
+                      <div class="meses-variaveis" data-form-variavel></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-total" data-form-total>Total no ano: <strong>R$ 0 mil</strong></div>
+              <div class="form-acoes">
+                <button type="button" class="btn btn-secondary" data-form-limpar>Limpar</button>
+                <button type="submit" class="btn btn-primary">＋ Adicionar ao orçamento</button>
+              </div>
+              <span class="form-erro" data-form-erro hidden></span>
+            </form>
+          </div>
+        </div>
+
+        <!-- ===== O que isso vira no P&L ===== -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>O que este Capex vira no P&amp;L</h2>
+              <p>Ativar não cria valor: o caixa é o mesmo. O que muda é o caminho — sai de Capex e volta diluído abaixo do EBITDA.</p>
+            </div>
+          </div>
+          <div class="panel-body" data-cpx-efeito>
+            <div class="empty-hint">Lance um projeto na grade para ver o efeito.</div>
+          </div>
+        </div>
+
+        <!-- ===== Grade ===== -->
+        <details class="modo-planilha">
+          <summary>Prefere planilha? Abrir a grade completa de projetos</summary>
+          <div class="panel">
+            <div class="panel-body table-wrap">
+              <table class="entry-grid" id="tabela-capex">
+                <thead>
+                  <tr>
+                    <th colspan="8"></th>
+                    <th colspan="12" class="month-group-header">
+                      <button class="month-toggle-btn" data-month-toggle="tabela-capex" title="Agrupar meses">
+                        <span class="month-toggle-icon">−</span> Meses
+                      </button>
+                    </th>
+                    <th colspan="2"></th>
+                  </tr>
+                  <tr>
+                    <th>Conta</th>
+                    <th>Projeto</th>
+                    <th>Linha do P&amp;L</th>
+                    <th>Pacote</th>
+                    <th>Tipo de Ativo</th>
+                    <th class="text-right">Vida Útil</th>
+                    <th>Centro de Custo</th>
+                    <th>Justificativa</th>
+                    <th class="text-right month-col">Jan</th>
+                    <th class="text-right month-col">Fev</th>
+                    <th class="text-right month-col">Mar</th>
+                    <th class="text-right month-col">Abr</th>
+                    <th class="text-right month-col">Mai</th>
+                    <th class="text-right month-col">Jun</th>
+                    <th class="text-right month-col">Jul</th>
+                    <th class="text-right month-col">Ago</th>
+                    <th class="text-right month-col">Set</th>
+                    <th class="text-right month-col">Out</th>
+                    <th class="text-right month-col">Nov</th>
+                    <th class="text-right month-col">Dez</th>
+                    <th class="text-right">Total</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><input type="text" value="1.2.03.001.001" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                    <td><input type="text" value="Renovação do parque de notebooks" class="conta-nome-input" list="contas-datalist" /></td>
+                    <td><input type="text" value="Capex &gt; Imobilizado" class="conta-linha-input" /></td>
+                    <td><input type="text" value="Manutenção e Reposição" class="pacote-input" list="pacotes-datalist" /></td>
+                    <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                    <td class="text-right"><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                    <td><input type="text" value="Tecnologia" list="centros-datalist" /></td>
+                    <td><input type="text" value="Máquinas com 5 anos de uso, fora de garantia" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="420" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="380" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="text-right total-cell">R$ 800</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Renovação do parque de notebooks" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Renovação do parque de notebooks" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Renovação do parque de notebooks" title="Remover">🗑</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><input type="text" value="1.2.04.002.003" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                    <td><input type="text" value="Plataforma de roteirização — desenvolvimento" class="conta-nome-input" list="contas-datalist" /></td>
+                    <td><input type="text" value="Capex &gt; Intangível" class="conta-linha-input" /></td>
+                    <td><input type="text" value="Projetos e Iniciativas" class="pacote-input" list="pacotes-datalist" /></td>
+                    <td><input type="text" value="Software desenvolvido internamente" class="ativacao-input" list="ativacao-datalist" /></td>
+                    <td class="text-right"><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                    <td><input type="text" value="Tecnologia" list="centros-datalist" /></td>
+                    <td><input type="text" value="Fase de desenvolvimento — 6 critérios do CPC 04 atendidos" /></td>
+                    <td class="month-col"><input type="number" value="180" /></td>
+                    <td class="month-col"><input type="number" value="180" /></td>
+                    <td class="month-col"><input type="number" value="180" /></td>
+                    <td class="month-col"><input type="number" value="180" /></td>
+                    <td class="month-col"><input type="number" value="180" /></td>
+                    <td class="month-col"><input type="number" value="180" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="text-right total-cell">R$ 1.080</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Plataforma de roteirização" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Plataforma de roteirização" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Plataforma de roteirização" title="Remover">🗑</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><input type="text" value="1.2.03.004.002" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                    <td><input type="text" value="Reforma do CD de Extrema" class="conta-nome-input" list="contas-datalist" /></td>
+                    <td><input type="text" value="Capex &gt; Imobilizado" class="conta-linha-input" /></td>
+                    <td><input type="text" value="Crescimento e Expansão" class="pacote-input" list="pacotes-datalist" /></td>
+                    <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
+                    <td class="text-right"><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                    <td><input type="text" value="Operações" list="centros-datalist" /></td>
+                    <td><input type="text" value="Ampliação de 1.200 m² para o novo contrato" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="600" /></td>
+                    <td class="month-col"><input type="number" value="600" /></td>
+                    <td class="month-col"><input type="number" value="600" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="text-right total-cell">R$ 1.800</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Reforma do CD de Extrema" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Reforma do CD de Extrema" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Reforma do CD de Extrema" title="Remover">🗑</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><input type="text" value="1.2.04.001.005" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                    <td><input type="text" value="Licenças do ERP — módulo fiscal" class="conta-nome-input" list="contas-datalist" /></td>
+                    <td><input type="text" value="Capex &gt; Intangível" class="conta-linha-input" /></td>
+                    <td><input type="text" value="Tecnologia e Licenças" class="pacote-input" list="pacotes-datalist" /></td>
+                    <td><input type="text" value="Licenças e software adquirido" class="ativacao-input" list="ativacao-datalist" /></td>
+                    <td class="text-right"><input type="text" value="3 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                    <td><input type="text" value="Financeiro" list="centros-datalist" /></td>
+                    <td><input type="text" value="Obrigatório para a reforma tributária" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="240" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="month-col"><input type="number" value="0" /></td>
+                    <td class="text-right total-cell">R$ 240</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Licenças do ERP" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Licenças do ERP" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Licenças do ERP" title="Remover">🗑</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+      </div><!-- /tab-lancar -->
+      </div><!-- /tab-panel-group -->
+
     </div>
   </main>
 </div>
 
+<datalist id="contas-datalist"></datalist>
+<datalist id="centros-datalist"></datalist>
+<datalist id="pacotes-datalist"></datalist>
+<datalist id="ativacao-datalist"></datalist>
+
 <div id="toast-container"></div>
+
 <script src="assets/js/app.js"></script>
 </body>
 </html>
