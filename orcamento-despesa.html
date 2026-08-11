@@ -40,6 +40,7 @@
 
     <div class="sidebar-section-label">Análise</div>
     <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> <span class="nav-label">Relatórios</span></div></a>
+    <a href="dashboard-executivo.html"><div class="nav-item" data-page="dashboard-executivo.html"><span class="nav-icon">◱</span> <span class="nav-label">Dashboard Executivo</span></div></a>
 
     <div class="sidebar-section-label">Administração</div>
     <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> <span class="nav-label">Cadastros</span></div></a>
@@ -149,7 +150,7 @@
             </div>
             <div class="filter-field">
               <label>Torre</label>
-              <select><option>Torre TMS</option><option>Torre Fintech</option><option>Torre Mobilidade</option><option>Torre Buonny</option></select>
+              <select><option>Torre ICP Médio e Grande</option><option>Fintech</option><option>Torre Mobilidade</option><option>Buonny</option></select>
             </div>
             <div class="filter-field">
               <label>Empresa</label>
@@ -301,7 +302,7 @@
       <div class="panel">
         <div class="panel-header">
           <div>
-            <h2>Lançamento de Despesas — Torre TMS / NSTECH Log Brasil Ltda</h2>
+            <h2>Lançamento de Despesas — Torre ICP Médio e Grande / KMM</h2>
             <p>Valores mensais em R$ mil. Clique em uma linha para abrir o detalhe no painel abaixo.</p>
           </div>
           <button class="btn btn-primary btn-sm" data-add-row="tabela-despesa">+ Adicionar Conta</button>
@@ -347,10 +348,10 @@
             </thead>
             <tbody>
               <tr data-drill-target="drill-salarios" class="selected">
-                <td><input type="text" value="3.1.001" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                <td><input type="text" value="Salários e Encargos - Equipe Comercial" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Despesas &gt; Pessoal" class="conta-linha-input" /></td>
-                <td><input type="text" value="Pessoal" class="conta-categoria-input" /></td>
+                <td><input type="text" value="4.7.03.001.001" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="SALARIOS E ORDENADOS" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Despesas &gt; Personnel Costs" class="conta-linha-input" /></td>
+                <td><input type="text" value="Salários+Encargos" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Estrutura de Pessoal" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Não ativa — Opex" class="ativacao-input" list="ativacao-datalist" /></td>
                 <td class="text-right"><input type="number" value="0" class="ativacao-pct" min="0" max="100" /></td>
@@ -379,10 +380,10 @@
                 </td>
               </tr>
               <tr data-drill-target="drill-beneficios">
-                <td><input type="text" value="3.1.002" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                <td><input type="text" value="Vale Refeição e Plano de Saúde" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Despesas &gt; Pessoal" class="conta-linha-input" /></td>
-                <td><input type="text" value="Pessoal" class="conta-categoria-input" /></td>
+                <td><input type="text" value="4.7.03.001.012" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="ALIMENTACAO DO TRABALHADOR" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Despesas &gt; Personnel Costs" class="conta-linha-input" /></td>
+                <td><input type="text" value="Benefícios" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Estrutura de Pessoal" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Não ativa — Opex" class="ativacao-input" list="ativacao-datalist" /></td>
                 <td class="text-right"><input type="number" value="0" class="ativacao-pct" min="0" max="100" /></td>
@@ -411,10 +412,10 @@
                 </td>
               </tr>
               <tr data-drill-target="drill-cloud">
-                <td><input type="text" value="3.2.010" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                <td><input type="text" value="Hospedagem AWS / Azure" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Despesas &gt; Serviços de Terceiros" class="conta-linha-input" /></td>
-                <td><input type="text" value="Tecnologia" class="conta-categoria-input" /></td>
+                <td><input type="text" value="4.7.03.004.007" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="GASTOS COM NUVEM" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Despesas &gt; Telecomunication / Technology expenses" class="conta-linha-input" /></td>
+                <td><input type="text" value="Cloud" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Tecnologia e Licenças" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Não ativa — Opex" class="ativacao-input" list="ativacao-datalist" /></td>
                 <td class="text-right"><input type="number" value="0" class="ativacao-pct" min="0" max="100" /></td>
@@ -443,9 +444,9 @@
                 </td>
               </tr>
               <tr data-drill-target="drill-marketing">
-                <td><input type="text" value="3.3.005" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                <td><input type="text" value="Mídia paga e performance" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Despesas &gt; Serviços de Terceiros" class="conta-linha-input" /></td>
+                <td><input type="text" value="4.7.03.003.007" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="AGENCIAS DE PERFORMACE" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Despesas &gt; Third Party Services & Mkt" class="conta-linha-input" /></td>
                 <td><input type="text" value="Marketing" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Crescimento e Expansão" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Não ativa — Opex" class="ativacao-input" list="ativacao-datalist" /></td>
@@ -475,9 +476,9 @@
                 </td>
               </tr>
               <tr data-drill-target="drill-viagens">
-                <td><input type="text" value="3.4.002" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                <td><input type="text" value="Passagens e Hospedagem" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Despesas &gt; Serviços de Terceiros" class="conta-linha-input" /></td>
+                <td><input type="text" value="4.7.03.005.001" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="PASSAGENS" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Despesas &gt; Travels/Rental/Generals" class="conta-linha-input" /></td>
                 <td><input type="text" value="Viagens" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Operação Base" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Não ativa — Opex" class="ativacao-input" list="ativacao-datalist" /></td>
@@ -507,10 +508,10 @@
                 </td>
               </tr>
               <tr>
-                <td><input type="text" value="3.1.031" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                <td><input type="text" value="Salários - Squad Novo TMS" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Despesas &gt; Pessoal" class="conta-linha-input" /></td>
-                <td><input type="text" value="Pessoal" class="conta-categoria-input" /></td>
+                <td><input type="text" value="4.7.03.001.001" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="SALARIOS E ORDENADOS" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Despesas &gt; Personnel Costs" class="conta-linha-input" /></td>
+                <td><input type="text" value="Salários+Encargos" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Projetos e Iniciativas" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Software desenvolvido internamente" class="ativacao-input" list="ativacao-datalist" /></td>
                 <td class="text-right"><input type="number" value="70" class="ativacao-pct" min="0" max="100" /></td>
@@ -539,10 +540,10 @@
                 </td>
               </tr>
               <tr>
-                <td><input type="text" value="3.2.014" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                <td><input type="text" value="Notebooks e estações de trabalho" class="conta-nome-input" list="contas-datalist" /></td>
-                <td><input type="text" value="Despesas &gt; Infra" class="conta-linha-input" /></td>
-                <td><input type="text" value="Infraestrutura" class="conta-categoria-input" /></td>
+                <td><input type="text" value="4.7.03.015.012" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="MATERIAL DE INFORMATICA" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Despesas &gt; Travels/Rental/Generals" class="conta-linha-input" /></td>
+                <td><input type="text" value="Facilities" class="conta-categoria-input" /></td>
                 <td><input type="text" value="Tecnologia e Licenças" class="pacote-input" list="pacotes-datalist" /></td>
                 <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
                 <td class="text-right"><input type="number" value="100" class="ativacao-pct" min="0" max="100" /></td>

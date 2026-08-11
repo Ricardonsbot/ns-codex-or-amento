@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard Executivo — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="index.html">
+    <div class="sidebar-brand">
+      <div class="logo-mark">NS</div>
+      <div class="brand-text">
+        <strong>NS Codex</strong>
+        <span>BU · Torres · Corporate</span>
+      </div>
+    </div>
+    </a>
+
+    <div class="sidebar-section-label">Visão geral</div>
+    <a href="index.html"><div class="nav-item" data-page="index.html"><span class="nav-icon">▦</span> Dashboard</div></a>
+
+    <div class="sidebar-section-label">Orçamento</div>
+    <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
+    <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
+    <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+    <a href="importar.html"><div class="nav-item" data-page="importar.html"><span class="nav-icon">⇧</span> Importar planilha</div></a>
+
+    <div class="sidebar-section-label">Fluxo</div>
+    <a href="entregas.html"><div class="nav-item" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div></a>
+    <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+    <a href="correcoes.html"><div class="nav-item" data-page="correcoes.html"><span class="nav-icon">↩</span> Correções</div></a>
+    <a href="notificacoes.html"><div class="nav-item" data-page="notificacoes.html"><span class="nav-icon">✉</span> Notificações</div></a>
+    <a href="auditoria.html"><div class="nav-item" data-page="auditoria.html"><span class="nav-icon">⧉</span> Auditoria</div></a>
+
+    <div class="sidebar-section-label">Análise</div>
+    <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+    <div class="nav-item active" data-page="dashboard-executivo.html"><span class="nav-icon">◱</span> Dashboard Executivo</div>
+
+    <div class="sidebar-section-label">Administração</div>
+    <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
+
+    <div class="sidebar-section-label">Budget - Settings</div>
+    <a href="budget-settings.html"><div class="nav-item" data-page="budget-settings.html"><span class="nav-icon">⚙</span> Ciclos &amp; Versões</div></a>
+    <a href="login.html"><div class="nav-item" data-page="login.html"><span class="nav-icon">&#9099;</span> Sair</div></a>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">EN</div>
+        <div class="user-meta">
+          <strong>Emerson Nakamura</strong>
+          <span>NSTECH GR LTDA</span>
+        </div>
+      </div>
+      <div class="sidebar-role-badge">Aprovador</div>
+    </div>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Dashboard Executivo</h1>
+        <p data-exec-subtitulo>Carregando o ciclo…</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" data-export-dashboard>⭳ Exportar CSV</button>
+        <button class="btn btn-secondary btn-sm" data-export-pdf>⭳ Exportar PDF</button>
+        <button class="btn btn-primary btn-sm" data-exec-pptx>◱ Gerar PowerPoint</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- Mesma resposta rápida do Dashboard: versão, pendências e encerramento -->
+      <div class="status-ciclo" data-status-ciclo>
+        <div class="empty-hint">Carregando o status do ciclo…</div>
+      </div>
+
+      <div class="proto-banner">
+        ⓘ Protótipo visual — os números desta tela saem de <strong>Referencias/inputs.json</strong>,
+        as mesmas linhas que a tela de Aprovações mostra. O PowerPoint é gerado do que está aqui,
+        então tela e apresentação não têm como divergir.
+      </div>
+
+      <!-- Filtros: valem para a tela E para o PowerPoint -->
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>BU</label>
+          <select data-exec-filtro="bu"><option value="">Todas as BUs</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Base do número</label>
+          <select data-exec-filtro="base">
+            <option value="tudo">Tudo que foi solicitado</option>
+            <option value="aprovado">Só o que já foi aprovado</option>
+          </select>
+        </div>
+        <span class="exec-filtro-nota">O recorte vale para a tela e para o PowerPoint.</span>
+      </div>
+
+      <!-- 1. O número -->
+      <div class="kpi-grid" data-exec-kpis></div>
+
+      <!-- 2. A ponte -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Revenue → EBITDA after Capex</h2>
+            <p data-exec-ponte-sub>—</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="bridge-chart" data-exec-ponte></div>
+          <p class="exec-leitura" data-exec-ponte-leitura></p>
+        </div>
+      </div>
+
+      <!-- 3. Firmeza do número -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Quanto do número já está firme</h2>
+            <p>Participação de cada situação de aprovação no total solicitado</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="exec-firmeza" data-exec-firmeza></div>
+        </div>
+      </div>
+
+      <!-- 4. Movimento por BU e Torre -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Como o número mudou — por BU e Torre</h2>
+            <p data-exec-movimento-sub>Clique na BU para abrir as Torres</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" data-action="export" data-action-label="Movimento por BU e Torre">⭳ Exportar</button>
+        </div>
+        <div class="panel-body table-wrap">
+          <table class="report-table" data-hierarchy-collapse>
+            <thead>
+              <tr>
+                <th>BU / Torre</th>
+                <th class="text-right">Base</th>
+                <th class="text-right">Solicitado</th>
+                <th class="text-right">Δ R$</th>
+                <th class="text-right">Δ %</th>
+                <th class="text-right">Linhas</th>
+                <th>Situação</th>
+              </tr>
+            </thead>
+            <tbody data-exec-movimento>
+              <tr><td colspan="7"><div class="empty-hint">Carregando…</div></td></tr>
+            </tbody>
+            <tfoot data-exec-total></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- 5. Os movimentos que explicam o Δ -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Os movimentos que explicam a variação</h2>
+            <p data-exec-top-sub>Maiores altas e maiores quedas em R$, com a justificativa de quem lançou</p>
+          </div>
+        </div>
+        <div class="panel-body table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>Conta</th>
+                <th>Centro de custo</th>
+                <th class="text-right">Base (R$ mil)</th>
+                <th class="text-right">Solicitado (R$ mil)</th>
+                <th class="text-right">Δ (R$ mil)</th>
+                <th>Justificativa</th>
+                <th>Situação</th>
+              </tr>
+            </thead>
+            <tbody data-exec-top>
+              <tr><td colspan="8"><div class="empty-hint">Carregando…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 {
-  "observacao": "Estrutura de input da Receita: Torre → Empresa → Produto → Sub-produto → Tipo de Receita. Torre e Empresa vêm de organizacional.json; aqui ficam o catálogo de produtos e os tipos de receita. Produto se liga à Torre, então a lista já chega filtrada no lançamento.",
+  "observacao": "Estrutura de input da Receita: Torre -> Empresa -> Produto -> Sub-produto -> Tipo de Receita. Torre e Empresa vem de organizacional.json; o catalogo de produto vem de deparaempresas.xlsx (coluna Produto_BaseRecebimento), a mesma base de recebimento que o financeiro usa. Sub-produto ficou vazio: a planilha para no produto. Gerado por ferramentas/carrega_cadastro.py.",
   "tiposReceita": [
     "Receita Recorrente",
     "Receita Não Recorrente",
@@ -7,17 +7,285 @@
     "Licenciamento"
   ],
   "produtos": [
-    { "nome": "Monitoramento", "torres": ["Torre VGR"], "subProdutos": ["Rastreamento", "Gerenciamento de Risco"] },
-    { "nome": "Background Check", "torres": ["Torre VGR"], "subProdutos": [] },
-    { "nome": "Torre Logística", "torres": ["Torre VGR"], "subProdutos": [] },
-    { "nome": "TMS Embarcador", "torres": ["Torre SW Embarcador"], "subProdutos": ["Last Mile", "YMS/WMS"] },
-    { "nome": "Roteirização", "torres": ["Torre SW Embarcador"], "subProdutos": [] },
-    { "nome": "TMS Transportador", "torres": ["Torre TMS"], "subProdutos": ["ICP Pequeno e Micro", "ICP Médio e Grande"] },
-    { "nome": "Gestão de Frota", "torres": ["Torre TMS", "Torre Mobilidade"], "subProdutos": [] },
-    { "nome": "Pagamento de Frete", "torres": ["Torre Fintech"], "subProdutos": ["e-frete", "Vale-pedágio"] },
-    { "nome": "Pedágio", "torres": ["Torre Fintech"], "subProdutos": [] },
-    { "nome": "Gerenciamento de Risco", "torres": ["Torre Buonny"], "subProdutos": [] },
-    { "nome": "Seguros", "torres": ["Insurance Market"], "subProdutos": [] },
-    { "nome": "Mídia e Conteúdo", "torres": ["Mídia"], "subProdutos": [] }
+    {
+      "nome": "TMS Transportador Pequeno FTL",
+      "torres": [
+        "Torre ICP Pequeno e Micro"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS Transportador Micro FTL",
+      "torres": [
+        "Torre ICP Pequeno e Micro"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Gestão de Documento Fiscais",
+      "torres": [
+        "Torre ICP Pequeno e Micro"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "ERP",
+      "torres": [
+        "Torre ICP Pequeno e Micro"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS Transportador Médio e Grande FTL",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS transportador Agro",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Jornada",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "nskote",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS Cabotagem",
+      "torres": [
+        "TMS Cabotagem"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Fintech PSL",
+      "torres": [
+        "Fintech"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Gasola",
+      "torres": [
+        "Fintech"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "nspedágio",
+      "torres": [
+        "Fintech"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "e-frete nsflow",
+      "torres": [
+        "Fintech"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS Transportador passageiro Grande",
+      "torres": [
+        "Torre Mobilidade"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS Transportador passageiro PME",
+      "torres": [
+        "Torre Mobilidade"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Transportador passageiro bilhetagem",
+      "torres": [
+        "Torre Mobilidade"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Background Check",
+      "torres": [
+        "Buonny"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Monitoramento",
+      "torres": [
+        "Buonny"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "BPS",
+      "torres": [
+        "Buonny"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Torre de Controle",
+      "torres": [
+        "Buonny"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Prevenção de Acidentes",
+      "torres": [
+        "Buonny"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Redes",
+      "torres": [
+        "Atua Redes"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Torre VGR",
+      "torres": [
+        "Torre VGR"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "YMS/WMS",
+      "torres": [
+        "YMS/WMS"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "YMS",
+      "torres": [
+        "YMS/WMS"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Multisoftware",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Fusion",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Routeasy",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Frete Rápido",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Comprovei",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Trizy App",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Runtec",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TNS Booking",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TNS Match",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Mundo Logistica",
+      "torres": [
+        "Mídia"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "AVERBA",
+      "torres": [
+        "Insurance Market"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "FATURAMENTO",
+      "torres": [
+        "Insurance Market"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "RESSEGURO",
+      "torres": [
+        "Insurance Market"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "OTHERS",
+      "torres": [
+        "Insurance Market"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "NSCORR",
+      "torres": [
+        "Insurance Market"
+      ],
+      "subProdutos": []
+    }
   ]
 }

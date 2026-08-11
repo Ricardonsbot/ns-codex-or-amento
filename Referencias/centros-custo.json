@@ -1,0 +1,1035 @@
+{
+  "observacao": "Centros de custo reais, de tbl_KMM_Organizacional.xlsx (colunas Nstech_CentroCusto_Codigo e _Nome). A planilha só tem centro de custo cadastrado para IM e Nstech — as demais empresas ainda lançam sem centro de custo. Gerado por ferramentas/carrega_cadastro.py.",
+  "empresasComCadastro": [
+    "IM",
+    "Nstech"
+  ],
+  "centros": [
+    {
+      "codigo": "2.2.3.2.6.117",
+      "nome": "AIGSEGUROSBRASILSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.118",
+      "nome": "AKADSEGUROSS.A.",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.119",
+      "nome": "ALLIANZSEGUROSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.121",
+      "nome": "AXASEGUROSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.122",
+      "nome": "BERKLEYINTERNATIONALDOBRASILSEGSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.124",
+      "nome": "BRADESCOSEGUROSS/A",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.125",
+      "nome": "BUNGEALIMENTOSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.126",
+      "nome": "CHUBBSEGUROSBRASILSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.127",
+      "nome": "CLIENTESC",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.128",
+      "nome": "CLIENTESD",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.129",
+      "nome": "CLIENTESE",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.130",
+      "nome": "ESSORSEGUROSS.A.",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.131",
+      "nome": "EZZESEGUROSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.133",
+      "nome": "FAIRFAXBRASILSEGUROSCORORATIVOSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.134",
+      "nome": "FAIRFAXBRASILSEGUROSCORPORATIVOSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.135",
+      "nome": "GPSLOGEGERENCIAMENTODERISOCLTDA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.136",
+      "nome": "GUEPSOLUCOESCORPORATIVASLTDA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.137",
+      "nome": "HDIGLOBALSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.139",
+      "nome": "HDISEGUROSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.141",
+      "nome": "KOVRSEGURADORAS/A",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.142",
+      "nome": "LIBERTYPAULISTASEGUROSLTDA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.144",
+      "nome": "MAPFREVERACRUZSEGURADORASA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.146",
+      "nome": "MITSUISUMITOMOSEGUROSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.148",
+      "nome": "RATEIOMAOOBRAOPERACIONALGERAL",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.149",
+      "nome": "SEGUROSSURAS.A.",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.150",
+      "nome": "SOMPOSEGUROSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.152",
+      "nome": "STARRINTERNATIONALBRASILSEGUROSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.153",
+      "nome": "SWISSRECORPSOLUCTSSEGUROSBRASILSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.155",
+      "nome": "TDKCORRETORALTDA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.156",
+      "nome": "TOKIOMARINESEGURADORASA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.157",
+      "nome": "TOKIOMARINESEGUROSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.2.3.2.6.158",
+      "nome": "ZURICHMINASBRASILSEGUROSSA",
+      "empresa": "IM",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "2.3.1.3.17.12",
+      "nome": "CORP-INTERCOMPANYCORPORATIVO",
+      "empresa": "IM",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "2.3.3.3.6.159",
+      "nome": "IM-FINANC.CORP.",
+      "empresa": "IM",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "2.3.3.3.6.160",
+      "nome": "IM-ADM.CORPORATIVO",
+      "empresa": "IM",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "2.3.3.3.6.161",
+      "nome": "IM-RECUR.HUMANOSESUSTENTABILIDADECORPOR",
+      "empresa": "IM",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "2.3.3.3.6.163",
+      "nome": "IM-DPFILIAL",
+      "empresa": "IM",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "2.3.3.3.6.164",
+      "nome": "IM-INFRAESTRUTURADETIBACKOFFICE",
+      "empresa": "IM",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "2.3.3.3.6.169",
+      "nome": "IM-MERCADOSECURITARIO",
+      "empresa": "IM",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "2.3.3.3.6.170",
+      "nome": "IM-MERCADOSECURITARIO",
+      "empresa": "IM",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "2.4.3.4.6.171",
+      "nome": "IM-VENDASSP",
+      "empresa": "IM",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "2.4.3.4.6.172",
+      "nome": "IM-VENDASSAOPAULO",
+      "empresa": "IM",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "2.4.3.4.6.173",
+      "nome": "IM - SALES E MARKETING (OPEN)",
+      "empresa": "IM",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "2.4.3.4.6.174",
+      "nome": "IM-COMERCIAL-RELACIONAMENTOEPARCERIAS",
+      "empresa": "IM",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "2.4.3.4.6.175",
+      "nome": "IM-MKTEXTERNO",
+      "empresa": "IM",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "2.5.3.5.6.177",
+      "nome": "IM-PESQUISAEDESENVOLVIMENTO",
+      "empresa": "IM",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "2.5.3.5.6.179",
+      "nome": "IM-PRODUTOS",
+      "empresa": "IM",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "2.5.3.5.6.181",
+      "nome": "IM-TECNOLOGIA",
+      "empresa": "IM",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "2.5.3.5.6.182",
+      "nome": "IM-INFRAESTRUTURA",
+      "empresa": "IM",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "2.5.3.5.6.183",
+      "nome": "IM-GERAL",
+      "empresa": "IM",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "2.5.3.5.6.184",
+      "nome": "IM-PLATAFORMA",
+      "empresa": "IM",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "2.5.3.5.6.185",
+      "nome": "IM-DESENVOLVIMENTODENEGOCIOS",
+      "empresa": "IM",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "2.5.3.5.6.186",
+      "nome": "IM-MERCADOSECURITARIO-P&D",
+      "empresa": "IM",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "9.9.9.9.99.992",
+      "nome": "RESULTADOFINANCEIRO",
+      "empresa": "IM",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "9.9.9.9.99.993",
+      "nome": "RESULTADOFINANCEIRO-FOLHA",
+      "empresa": "IM",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.2.1.2.1.1",
+      "nome": "CORP-ATENDIMENTON1N2",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) CoGS"
+    },
+    {
+      "codigo": "1.3.1.3.1.10",
+      "nome": "CORP-CONSELHO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.1.13",
+      "nome": "CORP - INTERCOMPANY BU",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.1.14",
+      "nome": "CORP-ESTRATEGIA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.1.15",
+      "nome": "CORP-NAORECORRENTE",
+      "empresa": "Nstech",
+      "categoriaPL": "Adjustments to EBITDA"
+    },
+    {
+      "codigo": "1.3.1.3.1.16",
+      "nome": "CORP-NSTECHAGRO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.1.2",
+      "nome": "CORP-FINANCE,LEGAL&GOVERNANCA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.1.3",
+      "nome": "CORP-M&A",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.1.4",
+      "nome": "CORP-PESSOASESUSTENTABILIDADE",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.1.5",
+      "nome": "CORP-PRESIDENCIA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.1.6",
+      "nome": "CORP-HUB",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.1.7",
+      "nome": "CORP-VALUECREATION",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.1.8",
+      "nome": "CORP - MARKETING",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.30",
+      "nome": "CSC-INTERCOMPANYCONTABIL,DPEFISCAL",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.32",
+      "nome": "CSC-CONTABILIDADE",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.33",
+      "nome": "CSC-FISCAL",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.35",
+      "nome": "CSC-DEPARTAMENTOPESSOAL",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.36",
+      "nome": "CSC-LEGALEGOVERNANCA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.37",
+      "nome": "CSC-FP&A",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.38",
+      "nome": "CSC-CONTROLADORIA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.39",
+      "nome": "CSC-CONTRATOS,CONSULTIVO,LGPD",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.40",
+      "nome": "CSC-TRANSFORMACAO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.41",
+      "nome": "CSC-ADMINISTRATIVO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.42",
+      "nome": "CSC-LITIGATION,LEGALOPS,COMPLIANCE",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.43",
+      "nome": "CSC-FINANCEIRO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.44",
+      "nome": "CSC-CONTROLESINTERNOS",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.45",
+      "nome": "CSC-SOCIETARIO,M&A",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.46",
+      "nome": "CSC-EQUIVALENCIAPATRIMONIAL",
+      "empresa": "Nstech",
+      "categoriaPL": "EQUIVALENCIA PATRIMONIAL"
+    },
+    {
+      "codigo": "1.3.1.3.2.47",
+      "nome": "CSC-TOTALREWARDS",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.48",
+      "nome": "CSC-INFRAESTRUTURA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.3.1.3.2.49",
+      "nome": "CSC-TALENTMANAGEMENT",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.2.50",
+      "nome": "CSC-TALENTACQUISITION",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.59",
+      "nome": "REPASSEBU-MUNDOLOGISTICA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.60",
+      "nome": "REPASSECSC-ROUTEASY",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.61",
+      "nome": "REPASSECSC-MULTISOFTWARE",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.63",
+      "nome": "REPASSE CSC - HIVELOG",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.67",
+      "nome": "REPASSE CSC - BGM/PRAXIO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.68",
+      "nome": "REPASSE CSC - TRAFEGUS",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.69",
+      "nome": "REPASSECSC-ONISYS",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.70",
+      "nome": "REPASSE CSC - DATAMEX",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.71",
+      "nome": "REPASSE CSC - BSOFT",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.72",
+      "nome": "REPASSE CSC - ATUA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.73",
+      "nome": "REPASSECSC-BUONNY",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.74",
+      "nome": "REPASSECSC-OPENTECH",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.75",
+      "nome": "REPASSECSC-TRIZY",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.76",
+      "nome": "REPASSECSC-BRK",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.77",
+      "nome": "REPASSECSC-E-FRETE",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.78",
+      "nome": "REPASSECSC-KMMSA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.79",
+      "nome": "REPASSE CSC - NSKOTE",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.80",
+      "nome": "REPASSE CSC - ATSLOG",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.81",
+      "nome": "REPASSE CSC - DIGITALCOMM",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.82",
+      "nome": "REPASSE CSC - OTIMIZY",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.83",
+      "nome": "REPASSE CSC - QUALP",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.1.3.3.84",
+      "nome": "REPASSE CSC - NSTECH INDAIATUBA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.2.3.15.188",
+      "nome": "FINTECH-CORPORATIVO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.2.3.5.103",
+      "nome": "VGRRateio-ATENDIMENTO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.2.3.5.104",
+      "nome": "VGRRateio-TORREDECONTROLE",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.3.3.16.102",
+      "nome": "VGR-RISKMANAGEMENT",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.3.3.4.88",
+      "nome": "EMBARCADOR-G&A",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.3.3.6.159",
+      "nome": "FINANC.CORP.",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.3.3.6.160",
+      "nome": "ADM. CORPORATIVO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.3.3.6.169",
+      "nome": "MERCADOSECURITARIO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.3.3.6.170",
+      "nome": "IM-CORPORATIVO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.3.3.8.85",
+      "nome": "PLATAFORMA-G&A",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.4.3.10.91",
+      "nome": "PSL-CORPORATIVO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.4.3.11.94",
+      "nome": "TORREMG-CORPORATIVO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.3.4.3.14.187",
+      "nome": "GRUPOBUONNY",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "1.4.1.4.1.17",
+      "nome": "CORP-CRO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.1.4.1.18",
+      "nome": "CORP-P500",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.1.4.1.19",
+      "nome": "CORP-SOLUTIONEPMO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.1.4.1.20",
+      "nome": "CORP-CANAISPARCEIROS",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.1.4.1.21",
+      "nome": "CORP-PRODUCTMARKETING",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.1.4.2.51",
+      "nome": "CSC-MARKETING",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.1.4.2.52",
+      "nome": "CSC-REVENUEOPS",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.1.4.2.53",
+      "nome": "CSC-MSENTERPRISE",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.1.4.2.54",
+      "nome": "CSC-CRO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.3.4.4.89",
+      "nome": "EMBARCADOR-COMERCIAL",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.3.4.4.90",
+      "nome": "EMBARCADOR-CS",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.3.4.5.105",
+      "nome": "VGRRateio-S&M",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.3.4.5.106",
+      "nome": "VGRRateio-SALES",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.3.4.5.107",
+      "nome": "VGRRateio-MARKETING",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.3.4.6.171",
+      "nome": "VENDASSP",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.3.4.6.176",
+      "nome": "IM-S&M",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.3.4.8.87",
+      "nome": "MIDIA-S&M",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.4.4.10.92",
+      "nome": "PSL-COMERCIAL",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.4.4.10.93",
+      "nome": "PSL-CS",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.4.4.4.11.95",
+      "nome": "PROJ.PLATAFORMAMKTPLACE-S&M",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) S&M"
+    },
+    {
+      "codigo": "1.5.1.5.1.23",
+      "nome": "CORP-TECNOLOGIA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.1.5.1.25",
+      "nome": "CORP-NSAPPS",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.1.5.1.28",
+      "nome": "CORP-HUBAGENDAMENTO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.1.5.1.29",
+      "nome": "CORP-HUBDECARGA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.1.5.2.55",
+      "nome": "CSC-DATALAKE",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.1.5.2.56",
+      "nome": "CSC-CYBERSECURITY",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.1.5.2.57",
+      "nome": "CSC-ARQUITETURA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.2.5.5.108",
+      "nome": "VGRRateio-CADASTRORUN",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.2.5.5.109",
+      "nome": "VGRRateio-ROADSAFETY",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.2.5.5.110",
+      "nome": "VGRRateio-RASTREARRUN",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.2.5.5.111",
+      "nome": "VGRRateio-RISKMANAGEMENT-P&D",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.2.5.5.112",
+      "nome": "VGRRateio-CADASTROTRANSFORM",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.2.5.5.113",
+      "nome": "VGRRateio-GRTRANSFORM",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.2.5.5.114",
+      "nome": "VGRRateio-NOVORASTREAR",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.2.5.5.115",
+      "nome": "VGRRateio-CADASTROUNICO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.2.5.5.116",
+      "nome": "VGRRateio-PRODUTO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.3.5.6.177",
+      "nome": "PESQUISAEDESENVOLVIMENTO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.3.5.6.181",
+      "nome": "TECNOLOGIA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.3.5.6.186",
+      "nome": "IM-P&D",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.3.5.8.184",
+      "nome": "PLATAFORMAR&D",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.4.5.11.100",
+      "nome": "PLATAFORMA-R&D",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.4.5.11.101",
+      "nome": "PROJ. PLATAFORMA IPASS",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.4.5.11.96",
+      "nome": "PROJ.PLATAFORMAMKTPLACE-P&D",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.4.5.11.98",
+      "nome": "SUPERAPP",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "1.5.4.5.11.99",
+      "nome": "PROJETOPLATAFORMA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) R&D"
+    },
+    {
+      "codigo": "9.9.9.9.99.98",
+      "nome": "RESULTADO FINANCEIRO FOLHA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "9.9.9.9.99.99",
+      "nome": "RESULTADOFINANCEIRO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "9.9.9.9.99.991",
+      "nome": "RESULTADOFINANCEIRO",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    },
+    {
+      "codigo": "9.9.9.9.99.994",
+      "nome": "RESULTADOFINANCEIRO-FOLHA",
+      "empresa": "Nstech",
+      "categoriaPL": "(-) G&A"
+    }
+  ]
+}

@@ -9,8 +9,8 @@
   "entregas": [
     {
       "bu": "PSL",
-      "torre": "Torre TMS",
-      "subTorre": "ICP Pequeno e Micro",
+      "torre": "Torre ICP Pequeno e Micro",
+      "subTorre": "-",
       "empresa": "Bsoft",
       "responsavel": "Ana Ribeiro",
       "status": {
@@ -21,8 +21,8 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre TMS",
-      "subTorre": "ICP Pequeno e Micro",
+      "torre": "Torre ICP Pequeno e Micro",
+      "subTorre": "-",
       "empresa": "Datamex",
       "responsavel": "Ana Ribeiro",
       "status": {
@@ -33,8 +33,8 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre TMS",
-      "subTorre": "ICP Pequeno e Micro",
+      "torre": "Torre ICP Pequeno e Micro",
+      "subTorre": "-",
       "empresa": "Hivecloud",
       "responsavel": "Ana Ribeiro",
       "status": {
@@ -45,8 +45,8 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre TMS",
-      "subTorre": "ICP Pequeno e Micro",
+      "torre": "Torre ICP Pequeno e Micro",
+      "subTorre": "-",
       "empresa": "Otimizy",
       "responsavel": "Ana Ribeiro",
       "status": {
@@ -57,8 +57,8 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre TMS",
-      "subTorre": "ICP Médio e Grande",
+      "torre": "Torre ICP Médio e Grande",
+      "subTorre": "-",
       "empresa": "KMM",
       "responsavel": "Carlos Mendes",
       "status": {
@@ -69,8 +69,8 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre TMS",
-      "subTorre": "ICP Médio e Grande",
+      "torre": "Torre ICP Médio e Grande",
+      "subTorre": "-",
       "empresa": "Praxio - Avacorp",
       "responsavel": "Carlos Mendes",
       "status": {
@@ -81,8 +81,8 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre TMS",
-      "subTorre": "ICP Médio e Grande",
+      "torre": "Torre ICP Médio e Grande",
+      "subTorre": "-",
       "empresa": "Praxio - Globus",
       "responsavel": "Carlos Mendes",
       "status": {
@@ -93,8 +93,8 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre TMS",
-      "subTorre": "ICP Médio e Grande",
+      "torre": "Torre ICP Médio e Grande",
+      "subTorre": "-",
       "empresa": "ATS - Logistica",
       "responsavel": "Carlos Mendes",
       "status": {
@@ -105,7 +105,7 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "TMS Cabotagem",
       "subTorre": "-",
       "empresa": "Signa",
       "responsavel": "Julia Prado",
@@ -117,8 +117,8 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre Fintech",
-      "subTorre": "e-frete",
+      "torre": "Fintech",
+      "subTorre": "e-frete nsflow",
       "empresa": "e-frete",
       "responsavel": "Rafael Souza",
       "status": {
@@ -129,8 +129,8 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre Fintech",
-      "subTorre": "Pedágio",
+      "torre": "Fintech",
+      "subTorre": "nspedágio",
       "empresa": "Digitalcomm",
       "responsavel": "Marina Costa",
       "status": {
@@ -141,8 +141,8 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre Fintech",
-      "subTorre": "Pedágio",
+      "torre": "Fintech",
+      "subTorre": "nspedágio",
       "empresa": "Qualp",
       "responsavel": "Marina Costa",
       "status": {
@@ -153,7 +153,7 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre Fintech",
+      "torre": "Fintech",
       "subTorre": "-",
       "empresa": "Gasola",
       "responsavel": "Bruno Tavares",
@@ -177,7 +177,7 @@
     },
     {
       "bu": "PSL",
-      "torre": "Torre Buonny",
+      "torre": "Buonny",
       "subTorre": "-",
       "empresa": "Buonny",
       "responsavel": "Diego Fontana",
@@ -189,7 +189,7 @@
     },
     {
       "bu": "PSL",
-      "torre": "-",
+      "torre": "Atua Redes",
       "subTorre": "-",
       "empresa": "Atua Sistemas",
       "responsavel": "Renata Aguiar",
@@ -201,7 +201,7 @@
     },
     {
       "bu": "PSL",
-      "torre": "-",
+      "torre": "Atua Redes",
       "subTorre": "-",
       "empresa": "Atua Redes",
       "responsavel": "Renata Aguiar",
@@ -273,8 +273,8 @@
     },
     {
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
-      "subTorre": "YMS/WMS",
+      "torre": "YMS/WMS",
+      "subTorre": "-",
       "empresa": "GBM Consultoria",
       "responsavel": "Camila Duarte",
       "status": {
@@ -285,8 +285,8 @@
     },
     {
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
-      "subTorre": "YMS/WMS",
+      "torre": "YMS/WMS",
+      "subTorre": "-",
       "empresa": "GBM Logística",
       "responsavel": "Camila Duarte",
       "status": {
@@ -298,7 +298,7 @@
     {
       "bu": "Embarcador",
       "torre": "Torre SW Embarcador",
-      "subTorre": "YMS/WMS",
+      "subTorre": "Trizy App",
       "empresa": "Trizy",
       "responsavel": "Camila Duarte",
       "status": {
@@ -309,8 +309,8 @@
     },
     {
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
-      "subTorre": "YMS/WMS",
+      "torre": "YMS/WMS",
+      "subTorre": "-",
       "empresa": "LogOne",
       "responsavel": "Camila Duarte",
       "status": {
@@ -429,7 +429,7 @@
     },
     {
       "bu": "Corporate",
-      "torre": "S&M",
+      "torre": "G&A",
       "subTorre": "-",
       "empresa": "Nstech Corporate Holding",
       "responsavel": "Priscila Amaral",
@@ -441,7 +441,7 @@
     },
     {
       "bu": "Corporate",
-      "torre": "R&D",
+      "torre": "G&A",
       "subTorre": "-",
       "empresa": "Nstech Corporate Holding",
       "responsavel": "Marcelo Ferraz",

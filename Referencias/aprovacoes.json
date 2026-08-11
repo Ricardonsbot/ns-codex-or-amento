@@ -43,7 +43,7 @@
     {
       "id": "SUB-001",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Pequeno e Micro",
       "empresa": "Bsoft",
       "categoria": "receita",
       "responsavel": "Ana Ribeiro",
@@ -90,11 +90,11 @@
       },
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Pequeno e Micro"
       },
       "aceiteFinal": {
         "por": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS",
+        "cargo": "Líder da Torre ICP Pequeno e Micro",
         "em": "2026-07-28T09:14",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Números batem com o headcount aprovado e com o plano comercial da área."
@@ -103,7 +103,7 @@
     {
       "id": "SUB-002",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Pequeno e Micro",
       "empresa": "Bsoft",
       "categoria": "despesa",
       "responsavel": "Ana Ribeiro",
@@ -150,11 +150,11 @@
       },
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Pequeno e Micro"
       },
       "aceiteFinal": {
         "por": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS",
+        "cargo": "Líder da Torre ICP Pequeno e Micro",
         "em": "2026-07-28T15:47",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Aceito com a ressalva de revisar Capex na primeira revisão do ciclo."
@@ -163,7 +163,7 @@
     {
       "id": "SUB-003",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Pequeno e Micro",
       "empresa": "Bsoft",
       "categoria": "capex",
       "responsavel": "Ana Ribeiro",
@@ -210,11 +210,11 @@
       },
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Pequeno e Micro"
       },
       "aceiteFinal": {
         "por": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS",
+        "cargo": "Líder da Torre ICP Pequeno e Micro",
         "em": "2026-07-29T08:02",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Conferido linha a linha com o responsável antes do aceite."
@@ -223,7 +223,7 @@
     {
       "id": "SUB-004",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Pequeno e Micro",
       "empresa": "Datamex",
       "categoria": "receita",
       "responsavel": "Ana Ribeiro",
@@ -270,14 +270,14 @@
       },
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Pequeno e Micro"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-005",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Pequeno e Micro",
       "empresa": "Datamex",
       "categoria": "despesa",
       "responsavel": "Ana Ribeiro",
@@ -326,7 +326,7 @@
       ],
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Pequeno e Micro"
       },
       "decisao": {
         "por": "Emerson Nakamura",
@@ -337,7 +337,7 @@
     {
       "id": "SUB-006",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Pequeno e Micro",
       "empresa": "Hivecloud",
       "categoria": "receita",
       "responsavel": "Ana Ribeiro",
@@ -379,14 +379,14 @@
       "pendencias": [],
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Pequeno e Micro"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-007",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Pequeno e Micro",
       "empresa": "Otimizy",
       "categoria": "receita",
       "responsavel": "Ana Ribeiro",
@@ -433,11 +433,11 @@
       },
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Pequeno e Micro"
       },
       "aceiteFinal": {
         "por": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS",
+        "cargo": "Líder da Torre ICP Pequeno e Micro",
         "em": "2026-07-28T15:47",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Aceito com a ressalva de revisar Capex na primeira revisão do ciclo."
@@ -446,7 +446,7 @@
     {
       "id": "SUB-008",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Pequeno e Micro",
       "empresa": "Otimizy",
       "categoria": "despesa",
       "responsavel": "Ana Ribeiro",
@@ -493,11 +493,11 @@
       },
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Pequeno e Micro"
       },
       "aceiteFinal": {
         "por": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS",
+        "cargo": "Líder da Torre ICP Pequeno e Micro",
         "em": "2026-07-29T08:02",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Conferido linha a linha com o responsável antes do aceite."
@@ -506,7 +506,7 @@
     {
       "id": "SUB-009",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Pequeno e Micro",
       "empresa": "Otimizy",
       "categoria": "capex",
       "responsavel": "Ana Ribeiro",
@@ -548,14 +548,14 @@
       "pendencias": [],
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Pequeno e Micro"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-010",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Médio e Grande",
       "empresa": "KMM",
       "categoria": "receita",
       "responsavel": "Carlos Mendes",
@@ -602,14 +602,14 @@
       },
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Médio e Grande"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-011",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Médio e Grande",
       "empresa": "KMM",
       "categoria": "despesa",
       "responsavel": "Carlos Mendes",
@@ -664,7 +664,7 @@
       ],
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Médio e Grande"
       },
       "decisao": {
         "por": "Emerson Nakamura",
@@ -675,7 +675,7 @@
     {
       "id": "SUB-012",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Médio e Grande",
       "empresa": "Praxio - Avacorp",
       "categoria": "receita",
       "responsavel": "Carlos Mendes",
@@ -717,14 +717,14 @@
       "pendencias": [],
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Médio e Grande"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-013",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Médio e Grande",
       "empresa": "Praxio - Globus",
       "categoria": "receita",
       "responsavel": "Carlos Mendes",
@@ -771,11 +771,11 @@
       },
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Médio e Grande"
       },
       "aceiteFinal": {
         "por": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS",
+        "cargo": "Líder da Torre ICP Médio e Grande",
         "em": "2026-07-29T08:02",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Conferido linha a linha com o responsável antes do aceite."
@@ -784,7 +784,7 @@
     {
       "id": "SUB-014",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Médio e Grande",
       "empresa": "Praxio - Globus",
       "categoria": "despesa",
       "responsavel": "Carlos Mendes",
@@ -831,14 +831,14 @@
       },
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Médio e Grande"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-015",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "Torre ICP Médio e Grande",
       "empresa": "Praxio - Globus",
       "categoria": "capex",
       "responsavel": "Carlos Mendes",
@@ -880,14 +880,14 @@
       "pendencias": [],
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder da Torre ICP Médio e Grande"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-016",
       "bu": "PSL",
-      "torre": "Torre TMS",
+      "torre": "TMS Cabotagem",
       "empresa": "Signa",
       "categoria": "receita",
       "responsavel": "Julia Prado",
@@ -942,7 +942,7 @@
       ],
       "liderResponsavel": {
         "nome": "Marcelo Ferraz",
-        "cargo": "Líder da Torre TMS"
+        "cargo": "Líder de TMS Cabotagem"
       },
       "decisao": {
         "por": "Emerson Nakamura",
@@ -953,7 +953,7 @@
     {
       "id": "SUB-017",
       "bu": "PSL",
-      "torre": "Torre Fintech",
+      "torre": "Fintech",
       "empresa": "e-frete",
       "categoria": "receita",
       "responsavel": "Rafael Souza",
@@ -1000,11 +1000,11 @@
       },
       "liderResponsavel": {
         "nome": "Priscila Amaral",
-        "cargo": "Líder da Torre Fintech"
+        "cargo": "Líder de Fintech"
       },
       "aceiteFinal": {
         "por": "Priscila Amaral",
-        "cargo": "Líder da Torre Fintech",
+        "cargo": "Líder de Fintech",
         "em": "2026-07-28T15:47",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Aceito com a ressalva de revisar Capex na primeira revisão do ciclo."
@@ -1013,7 +1013,7 @@
     {
       "id": "SUB-018",
       "bu": "PSL",
-      "torre": "Torre Fintech",
+      "torre": "Fintech",
       "empresa": "e-frete",
       "categoria": "despesa",
       "responsavel": "Rafael Souza",
@@ -1060,11 +1060,11 @@
       },
       "liderResponsavel": {
         "nome": "Priscila Amaral",
-        "cargo": "Líder da Torre Fintech"
+        "cargo": "Líder de Fintech"
       },
       "aceiteFinal": {
         "por": "Priscila Amaral",
-        "cargo": "Líder da Torre Fintech",
+        "cargo": "Líder de Fintech",
         "em": "2026-07-29T08:02",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Conferido linha a linha com o responsável antes do aceite."
@@ -1073,7 +1073,7 @@
     {
       "id": "SUB-019",
       "bu": "PSL",
-      "torre": "Torre Fintech",
+      "torre": "Fintech",
       "empresa": "e-frete",
       "categoria": "capex",
       "responsavel": "Rafael Souza",
@@ -1122,14 +1122,14 @@
       ],
       "liderResponsavel": {
         "nome": "Priscila Amaral",
-        "cargo": "Líder da Torre Fintech"
+        "cargo": "Líder de Fintech"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-020",
       "bu": "PSL",
-      "torre": "Torre Fintech",
+      "torre": "Fintech",
       "empresa": "Qualp",
       "categoria": "receita",
       "responsavel": "Marina Costa",
@@ -1176,14 +1176,14 @@
       },
       "liderResponsavel": {
         "nome": "Priscila Amaral",
-        "cargo": "Líder da Torre Fintech"
+        "cargo": "Líder de Fintech"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-021",
       "bu": "PSL",
-      "torre": "Torre Fintech",
+      "torre": "Fintech",
       "empresa": "Qualp",
       "categoria": "despesa",
       "responsavel": "Marina Costa",
@@ -1230,14 +1230,14 @@
       },
       "liderResponsavel": {
         "nome": "Priscila Amaral",
-        "cargo": "Líder da Torre Fintech"
+        "cargo": "Líder de Fintech"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-022",
       "bu": "PSL",
-      "torre": "Torre Fintech",
+      "torre": "Fintech",
       "empresa": "Gasola",
       "categoria": "receita",
       "responsavel": "Bruno Tavares",
@@ -1284,11 +1284,11 @@
       },
       "liderResponsavel": {
         "nome": "Priscila Amaral",
-        "cargo": "Líder da Torre Fintech"
+        "cargo": "Líder de Fintech"
       },
       "aceiteFinal": {
         "por": "Priscila Amaral",
-        "cargo": "Líder da Torre Fintech",
+        "cargo": "Líder de Fintech",
         "em": "2026-07-28T15:47",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Aceito com a ressalva de revisar Capex na primeira revisão do ciclo."
@@ -1297,7 +1297,7 @@
     {
       "id": "SUB-023",
       "bu": "PSL",
-      "torre": "Torre Fintech",
+      "torre": "Fintech",
       "empresa": "Gasola",
       "categoria": "despesa",
       "responsavel": "Bruno Tavares",
@@ -1351,7 +1351,7 @@
       },
       "liderResponsavel": {
         "nome": "Priscila Amaral",
-        "cargo": "Líder da Torre Fintech"
+        "cargo": "Líder de Fintech"
       },
       "aceiteFinal": null
     },
@@ -1463,7 +1463,7 @@
     {
       "id": "SUB-026",
       "bu": "PSL",
-      "torre": "-",
+      "torre": "Atua Redes",
       "empresa": "Atua Sistemas",
       "categoria": "receita",
       "responsavel": "Renata Aguiar",
@@ -1510,11 +1510,11 @@
       },
       "liderResponsavel": {
         "nome": "Emerson Nakamura",
-        "cargo": "Líder Corporate"
+        "cargo": "Líder de Atua Redes"
       },
       "aceiteFinal": {
         "por": "Emerson Nakamura",
-        "cargo": "Líder Corporate",
+        "cargo": "Líder de Atua Redes",
         "em": "2026-07-28T09:14",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Números batem com o headcount aprovado e com o plano comercial da área."
@@ -1523,7 +1523,7 @@
     {
       "id": "SUB-027",
       "bu": "PSL",
-      "torre": "-",
+      "torre": "Atua Redes",
       "empresa": "Atua Sistemas",
       "categoria": "despesa",
       "responsavel": "Renata Aguiar",
@@ -1570,11 +1570,11 @@
       },
       "liderResponsavel": {
         "nome": "Emerson Nakamura",
-        "cargo": "Líder Corporate"
+        "cargo": "Líder de Atua Redes"
       },
       "aceiteFinal": {
         "por": "Emerson Nakamura",
-        "cargo": "Líder Corporate",
+        "cargo": "Líder de Atua Redes",
         "em": "2026-07-28T15:47",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Aceito com a ressalva de revisar Capex na primeira revisão do ciclo."
@@ -1583,7 +1583,7 @@
     {
       "id": "SUB-028",
       "bu": "PSL",
-      "torre": "-",
+      "torre": "Atua Redes",
       "empresa": "Atua Redes",
       "categoria": "receita",
       "responsavel": "Renata Aguiar",
@@ -1630,11 +1630,11 @@
       },
       "liderResponsavel": {
         "nome": "Emerson Nakamura",
-        "cargo": "Líder Corporate"
+        "cargo": "Líder de Atua Redes"
       },
       "aceiteFinal": {
         "por": "Emerson Nakamura",
-        "cargo": "Líder Corporate",
+        "cargo": "Líder de Atua Redes",
         "em": "2026-07-29T08:02",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Conferido linha a linha com o responsável antes do aceite."
@@ -1643,7 +1643,7 @@
     {
       "id": "SUB-029",
       "bu": "PSL",
-      "torre": "-",
+      "torre": "Atua Redes",
       "empresa": "Atua Redes",
       "categoria": "despesa",
       "responsavel": "Renata Aguiar",
@@ -1692,7 +1692,7 @@
       ],
       "liderResponsavel": {
         "nome": "Emerson Nakamura",
-        "cargo": "Líder Corporate"
+        "cargo": "Líder de Atua Redes"
       },
       "decisao": {
         "por": "Emerson Nakamura",
@@ -1703,7 +1703,7 @@
     {
       "id": "SUB-030",
       "bu": "PSL",
-      "torre": "-",
+      "torre": "Atua Redes",
       "empresa": "Atua Redes",
       "categoria": "capex",
       "responsavel": "Renata Aguiar",
@@ -1750,7 +1750,7 @@
       },
       "liderResponsavel": {
         "nome": "Emerson Nakamura",
-        "cargo": "Líder Corporate"
+        "cargo": "Líder de Atua Redes"
       },
       "aceiteFinal": null
     },
@@ -2437,7 +2437,7 @@
     {
       "id": "SUB-043",
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
+      "torre": "YMS/WMS",
       "empresa": "GBM Consultoria",
       "categoria": "receita",
       "responsavel": "Camila Duarte",
@@ -2484,11 +2484,11 @@
       },
       "liderResponsavel": {
         "nome": "Luciana Brito",
-        "cargo": "Líder da Torre SW Embarcador"
+        "cargo": "Líder de YMS/WMS"
       },
       "aceiteFinal": {
         "por": "Luciana Brito",
-        "cargo": "Líder da Torre SW Embarcador",
+        "cargo": "Líder de YMS/WMS",
         "em": "2026-07-29T08:02",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Conferido linha a linha com o responsável antes do aceite."
@@ -2497,7 +2497,7 @@
     {
       "id": "SUB-044",
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
+      "torre": "YMS/WMS",
       "empresa": "GBM Consultoria",
       "categoria": "despesa",
       "responsavel": "Camila Duarte",
@@ -2544,14 +2544,14 @@
       },
       "liderResponsavel": {
         "nome": "Luciana Brito",
-        "cargo": "Líder da Torre SW Embarcador"
+        "cargo": "Líder de YMS/WMS"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-045",
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
+      "torre": "YMS/WMS",
       "empresa": "GBM Consultoria",
       "categoria": "capex",
       "responsavel": "Camila Duarte",
@@ -2598,14 +2598,14 @@
       },
       "liderResponsavel": {
         "nome": "Luciana Brito",
-        "cargo": "Líder da Torre SW Embarcador"
+        "cargo": "Líder de YMS/WMS"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-046",
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
+      "torre": "YMS/WMS",
       "empresa": "GBM Logística",
       "categoria": "receita",
       "responsavel": "Camila Duarte",
@@ -2652,11 +2652,11 @@
       },
       "liderResponsavel": {
         "nome": "Luciana Brito",
-        "cargo": "Líder da Torre SW Embarcador"
+        "cargo": "Líder de YMS/WMS"
       },
       "aceiteFinal": {
         "por": "Luciana Brito",
-        "cargo": "Líder da Torre SW Embarcador",
+        "cargo": "Líder de YMS/WMS",
         "em": "2026-07-28T09:14",
         "declaracao": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução.",
         "observacao": "Números batem com o headcount aprovado e com o plano comercial da área."
@@ -2665,7 +2665,7 @@
     {
       "id": "SUB-047",
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
+      "torre": "YMS/WMS",
       "empresa": "GBM Logística",
       "categoria": "despesa",
       "responsavel": "Camila Duarte",
@@ -2714,7 +2714,7 @@
       ],
       "liderResponsavel": {
         "nome": "Luciana Brito",
-        "cargo": "Líder da Torre SW Embarcador"
+        "cargo": "Líder de YMS/WMS"
       },
       "aceiteFinal": null
     },
@@ -2770,7 +2770,7 @@
     {
       "id": "SUB-049",
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
+      "torre": "YMS/WMS",
       "empresa": "LogOne",
       "categoria": "receita",
       "responsavel": "Camila Duarte",
@@ -2817,14 +2817,14 @@
       },
       "liderResponsavel": {
         "nome": "Luciana Brito",
-        "cargo": "Líder da Torre SW Embarcador"
+        "cargo": "Líder de YMS/WMS"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-050",
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
+      "torre": "YMS/WMS",
       "empresa": "LogOne",
       "categoria": "despesa",
       "responsavel": "Camila Duarte",
@@ -2871,14 +2871,14 @@
       },
       "liderResponsavel": {
         "nome": "Luciana Brito",
-        "cargo": "Líder da Torre SW Embarcador"
+        "cargo": "Líder de YMS/WMS"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-051",
       "bu": "Embarcador",
-      "torre": "Torre SW Embarcador",
+      "torre": "YMS/WMS",
       "empresa": "LogOne",
       "categoria": "capex",
       "responsavel": "Camila Duarte",
@@ -2920,7 +2920,7 @@
       "pendencias": [],
       "liderResponsavel": {
         "nome": "Luciana Brito",
-        "cargo": "Líder da Torre SW Embarcador"
+        "cargo": "Líder de YMS/WMS"
       },
       "aceiteFinal": null
     },
@@ -3765,7 +3765,7 @@
     {
       "id": "SUB-067",
       "bu": "Corporate",
-      "torre": "S&M",
+      "torre": "G&A",
       "empresa": "Nstech Corporate Holding",
       "categoria": "receita",
       "responsavel": "Priscila Amaral",
@@ -3813,15 +3813,15 @@
         }
       ],
       "liderResponsavel": {
-        "nome": "Renata Aguiar",
-        "cargo": "Líder de S&M"
+        "nome": "Emerson Nakamura",
+        "cargo": "Líder de G&A"
       },
       "aceiteFinal": null
     },
     {
       "id": "SUB-068",
       "bu": "Corporate",
-      "torre": "S&M",
+      "torre": "G&A",
       "empresa": "Nstech Corporate Holding",
       "categoria": "despesa",
       "responsavel": "Priscila Amaral",
@@ -3869,60 +3869,56 @@
         }
       ],
       "liderResponsavel": {
-        "nome": "Renata Aguiar",
-        "cargo": "Líder de S&M"
+        "nome": "Emerson Nakamura",
+        "cargo": "Líder de G&A"
       },
       "aceiteFinal": null
     }
   ],
   "lideres": {
-    "Torre TMS": {
-      "nome": "Marcelo Ferraz",
-      "cargo": "Líder da Torre TMS"
+    "Atua Redes": {
+      "nome": "Emerson Nakamura",
+      "cargo": "Líder de Atua Redes"
     },
-    "Torre Fintech": {
+    "Fintech": {
       "nome": "Priscila Amaral",
-      "cargo": "Líder da Torre Fintech"
-    },
-    "Torre Mobilidade": {
-      "nome": "André Vasconcelos",
-      "cargo": "Líder da Torre Mobilidade"
-    },
-    "Torre Buonny": {
-      "nome": "Fernanda Rocha",
-      "cargo": "Líder da Torre Buonny"
-    },
-    "Torre VGR": {
-      "nome": "Gustavo Pinheiro",
-      "cargo": "Líder da Torre VGR"
-    },
-    "Torre SW Embarcador": {
-      "nome": "Luciana Brito",
-      "cargo": "Líder da Torre SW Embarcador"
-    },
-    "Insurance Market": {
-      "nome": "Thiago Moreira",
-      "cargo": "Líder de Insurance Market"
-    },
-    "Mídia": {
-      "nome": "Camila Duarte",
-      "cargo": "Líder de Mídia"
+      "cargo": "Líder de Fintech"
     },
     "G&A": {
       "nome": "Emerson Nakamura",
       "cargo": "Líder de G&A"
     },
-    "S&M": {
-      "nome": "Renata Aguiar",
-      "cargo": "Líder de S&M"
+    "Insurance Market": {
+      "nome": "Thiago Moreira",
+      "cargo": "Líder de Insurance Market"
     },
-    "R&D": {
-      "nome": "Felipe Nunes",
-      "cargo": "Líder de R&D"
+    "TMS Cabotagem": {
+      "nome": "Marcelo Ferraz",
+      "cargo": "Líder de TMS Cabotagem"
     },
-    "-": {
-      "nome": "Emerson Nakamura",
-      "cargo": "Líder Corporate"
+    "Torre ICP Médio e Grande": {
+      "nome": "Marcelo Ferraz",
+      "cargo": "Líder da Torre ICP Médio e Grande"
+    },
+    "Torre ICP Pequeno e Micro": {
+      "nome": "Marcelo Ferraz",
+      "cargo": "Líder da Torre ICP Pequeno e Micro"
+    },
+    "Torre Mobilidade": {
+      "nome": "André Vasconcelos",
+      "cargo": "Líder da Torre Mobilidade"
+    },
+    "Torre SW Embarcador": {
+      "nome": "Luciana Brito",
+      "cargo": "Líder da Torre SW Embarcador"
+    },
+    "Torre VGR": {
+      "nome": "Gustavo Pinheiro",
+      "cargo": "Líder da Torre VGR"
+    },
+    "YMS/WMS": {
+      "nome": "Luciana Brito",
+      "cargo": "Líder de YMS/WMS"
     }
   },
   "declaracaoAceiteFinal": "Revisei os números desta submissão, confirmo que refletem o compromisso da minha área para o ciclo e assumo a responsabilidade pela sua execução."

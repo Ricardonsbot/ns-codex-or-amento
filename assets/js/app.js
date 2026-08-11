@@ -243,6 +243,15 @@ function initMonthGroup() {
 
 /* ---------- Sugestões de Conta e Organizacional (pasta Referencias/) ---------- */
 
+/* No plano de contas real 404 contas orçáveis têm só 323 descrições distintas:
+   "COMPARTILHAMENTO DE DESPESAS" aparece em sete contas diferentes. A descrição
+   sozinha, portanto, não identifica nada — a opção da lista precisa levar o
+   código junto. Depois de escolhida, o campo volta a mostrar só a descrição,
+   porque o código já tem coluna própria na grade. */
+function rotuloConta(c) {
+  return `${c.conta} — ${c.nome}`;
+}
+
 function initReferenceAutocomplete() {
   const contasDatalist = document.getElementById("contas-datalist");
   const centrosDatalist = document.getElementById("centros-datalist");
@@ -250,26 +259,29 @@ function initReferenceAutocomplete() {
 
   Promise.all([
     carregarRef("contas.json").catch(() => []),
+    carregarRef("centros-custo.json").catch(() => null),
     carregarRef("organizacional.json").catch(() => []),
-  ]).then(([contas, organizacional]) => {
+  ]).then(([contas, centrosRef, organizacional]) => {
     window.__contasRef = contas;
 
     if (contasDatalist) {
       contas.forEach((c) => {
         const opt = document.createElement("option");
-        opt.value = c.nome;
+        opt.value = rotuloConta(c);
         contasDatalist.appendChild(opt);
       });
     }
 
     if (centrosDatalist) {
-      const unidades = new Set(["Comercial", "Operações", "TI", "G&A", "S&M", "R&D"]);
-      organizacional.forEach((o) => {
-        if (o.torre && o.torre !== "-") unidades.add(o.torre);
-      });
-      unidades.forEach((u) => {
+      // Centro de custo de verdade tem código; as Torres entram como alternativa
+      // porque o cadastro real ainda só cobre parte das empresas.
+      const opcoes = (centrosRef?.centros || []).map((c) => `${c.codigo} — ${c.nome}`);
+      const unidades = new Set(organizacional.map((o) => o.torre).filter((t) => t && t !== "-"));
+      unidades.forEach((u) => opcoes.push(u));
+
+      opcoes.forEach((valor) => {
         const opt = document.createElement("option");
-        opt.value = u;
+        opt.value = valor;
         centrosDatalist.appendChild(opt);
       });
     }
@@ -280,16 +292,24 @@ function initReferenceAutocomplete() {
 
 function bindContaLookup(input) {
   input.addEventListener("change", () => {
-    const match = (window.__contasRef || []).find((c) => c.nome === input.value);
+    const digitado = input.value.trim();
+    const contas = window.__contasRef || [];
+    // aceita o rótulo inteiro, só o código ou só a descrição — nesta última a
+    // primeira conta que casa é a escolhida, e o código fica visível na grade
+    const match = contas.find((c) => rotuloConta(c) === digitado)
+      || contas.find((c) => c.conta === digitado)
+      || contas.find((c) => c.nome === digitado);
     if (!match) return;
+
     const row = input.closest("tr");
     const codigoInput = row?.querySelector(".conta-codigo-input");
     const linhaInput = row?.querySelector(".conta-linha-input");
     const categoriaInput = row?.querySelector(".conta-categoria-input");
+    input.value = match.nome;
     if (codigoInput) codigoInput.value = match.conta;
     if (linhaInput) linhaInput.value = match.linhaPL;
     if (categoriaInput) categoriaInput.value = match.categoria;
-    showToast(`Conta "${match.nome}" reconhecida — código e classificação preenchidos`, "success");
+    showToast(`Conta ${match.conta} — ${match.nome} reconhecida`, "success");
   });
 }
 
@@ -438,6 +458,15 @@ function moneyToNumber(text) {
   return match ? (match[1] ? "-" : "") + match[2] : null;
 }
 
+/* O texto que a célula mostra, sem o botão de recolher que initHierarchyCollapse
+   enfia na primeira coluna — senão a BU sai como "−Corporate" na planilha. */
+function celulaTexto(cel) {
+  if (!cel) return "";
+  const botao = cel.querySelector(".hier-toggle");
+  if (!botao) return cel.textContent.trim();
+  return Array.from(cel.childNodes).filter((n) => n !== botao).map((n) => n.textContent).join("").trim();
+}
+
 function pushTable(table, push) {
   const headers = Array.from(table.querySelectorAll("thead th"));
   // colunas sem título são de ação ("Ver detalhes"): não vão para a planilha
@@ -452,7 +481,7 @@ function pushTable(table, push) {
 
   table.querySelectorAll("tbody tr").forEach((row) => {
     push(...cols.map((i) => {
-      const text = row.children[i]?.textContent.trim() || "";
+      const text = celulaTexto(row.children[i]);
       return moneyToNumber(text) ?? text;
     }));
   });
@@ -471,7 +500,10 @@ function buildDashboardCsv() {
   if (filtros.length) {
     push("Filtros aplicados");
     filtros.forEach((field) => {
-      push(field.querySelector("label")?.textContent, field.querySelector("select")?.value);
+      const select = field.querySelector("select");
+      if (!select) return;
+      // o rótulo visível, não o `value` — "Todas as BUs" diz mais que "" na planilha
+      push(field.querySelector("label")?.textContent, select.selectedOptions[0]?.textContent ?? select.value);
     });
     push("");
   }
@@ -2217,6 +2249,38 @@ function initCronograma() {
  * números diferentes para a mesma pergunta.
  */
 
+/* Onde o ciclo está: o que falta entregar, o que espera decisão e quando fecha.
+   Duas telas mostram isso — o Dashboard e o Dashboard Executivo —, então a
+   contagem mora aqui em vez de em cada uma. Se divergissem, a apresentação
+   diria um número e a tela ao lado diria outro. */
+function resumoDoCiclo(crono, entregasDoc, aprov) {
+  let faltando = 0, atrasadas = 0, aguardandoDecisao = 0, aguardandoAceite = 0;
+
+  if (entregasDoc) {
+    entregasDoc.entregas.forEach((e) => {
+      ENTREGA_CATEGORIAS.forEach((c) => {
+        if (!infoStatusEntrega(e.status[c]).concluida) faltando++;
+        if (entregaAtrasada(e.status[c], entregasDoc.prazos[c])) atrasadas++;
+      });
+    });
+  }
+  if (aprov) {
+    aguardandoDecisao = aprov.submissoes.filter((s) => s.statusOficial === "pendente").length;
+    aguardandoAceite = aprov.submissoes.filter((s) => s.statusOficial === "aprovado" && !s.aceiteFinal).length;
+  }
+
+  const hoje = hojeISO();
+  const marcos = crono.marcos.slice().sort((a, b) => (a.data < b.data ? -1 : 1));
+  const fim = marcos[marcos.length - 1];
+  const proximo = marcos.find((m) => diasEntre(hoje, m.data) >= 0);
+
+  return {
+    faltando, atrasadas, aguardandoDecisao, aguardandoAceite, fim, proximo,
+    diasFim: diasEntre(hoje, fim.data),
+    diasProximo: proximo ? diasEntre(hoje, proximo.data) : null,
+  };
+}
+
 function initStatusCiclo() {
   const alvo = document.querySelector("[data-status-ciclo]");
   if (!alvo) return;
@@ -2227,7 +2291,7 @@ function initStatusCiclo() {
     carregarRef("aprovacoes.json").catch(() => null),
   ])
     .then(([crono, entregasDoc, aprov]) => {
-      const hoje = hojeISO();
+      const r = resumoDoCiclo(crono, entregasDoc, aprov);
 
       // ---- 1. versão vigente
       const versao = `<a class="status-card" href="budget-settings.html">
@@ -2238,46 +2302,26 @@ function initStatusCiclo() {
         </a>`;
 
       // ---- 2. pendências
-      let faltando = 0, atrasadas = 0, aguardandoDecisao = 0, aguardandoAceite = 0;
-
-      if (entregasDoc) {
-        entregasDoc.entregas.forEach((e) => {
-          ENTREGA_CATEGORIAS.forEach((c) => {
-            if (!infoStatusEntrega(e.status[c]).concluida) faltando++;
-            if (entregaAtrasada(e.status[c], entregasDoc.prazos[c])) atrasadas++;
-          });
-        });
-      }
-      if (aprov) {
-        aguardandoDecisao = aprov.submissoes.filter((s) => s.statusOficial === "pendente").length;
-        aguardandoAceite = aprov.submissoes.filter((s) => s.statusOficial === "aprovado" && !s.aceiteFinal).length;
-      }
-
-      const temPendencia = faltando + aguardandoDecisao + aguardandoAceite > 0;
-      const grau = atrasadas ? "ruim" : temPendencia ? "atencao" : "bom";
+      const temPendencia = r.faltando + r.aguardandoDecisao + r.aguardandoAceite > 0;
+      const grau = r.atrasadas ? "ruim" : temPendencia ? "atencao" : "bom";
 
       const pendencias = `<div class="status-card ${grau}">
           <span class="status-rot">Ainda tem pendência?</span>
           <strong class="status-valor">${temPendencia ? "Sim" : "Não"}</strong>
           <span class="status-linhas">
-            <a href="entregas.html">${faltando} entrega(s) por lançar${atrasadas ? ` · <strong>${atrasadas} atrasada(s)</strong>` : ""}</a>
-            <a href="aprovacoes.html">${aguardandoDecisao} aguardando decisão do aprovador</a>
-            <a href="aprovacoes.html">${aguardandoAceite} aguardando aceite do líder</a>
+            <a href="entregas.html">${r.faltando} entrega(s) por lançar${r.atrasadas ? ` · <strong>${r.atrasadas} atrasada(s)</strong>` : ""}</a>
+            <a href="aprovacoes.html">${r.aguardandoDecisao} aguardando decisão do aprovador</a>
+            <a href="aprovacoes.html">${r.aguardandoAceite} aguardando aceite do líder</a>
           </span>
         </div>`;
 
       // ---- 3. encerramento
-      const marcos = crono.marcos.slice().sort((a, b) => (a.data < b.data ? -1 : 1));
-      const fim = marcos[marcos.length - 1];
-      const proximo = marcos.find((m) => diasEntre(hoje, m.data) >= 0);
-      const diasFim = diasEntre(hoje, fim.data);
-
-      const encerramento = `<a class="status-card ${diasFim <= 15 ? "atencao" : ""}" href="budget-settings.html">
+      const encerramento = `<a class="status-card ${r.diasFim <= 15 ? "atencao" : ""}" href="budget-settings.html">
           <span class="status-rot">Quando encerra</span>
-          <strong class="status-valor">${dataBR(fim.data)}</strong>
-          <span class="status-linha">${escaparTexto(fim.nome)} · faltam <strong>${diasFim} dia(s)</strong></span>
-          <span class="status-nota">${proximo && proximo !== fim
-            ? `Próximo corte: ${escaparTexto(proximo.nome)}, em ${diasEntre(hoje, proximo.data)} dia(s)`
+          <strong class="status-valor">${dataBR(r.fim.data)}</strong>
+          <span class="status-linha">${escaparTexto(r.fim.nome)} · faltam <strong>${r.diasFim} dia(s)</strong></span>
+          <span class="status-nota">${r.proximo && r.proximo !== r.fim
+            ? `Próximo corte: ${escaparTexto(r.proximo.nome)}, em ${r.diasProximo} dia(s)`
             : "Último marco do ciclo"}</span>
         </a>`;
 
@@ -3313,7 +3357,10 @@ function zipCrc32(bytes) {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-function zipMontar(arquivos) {
+const ZIP_MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const ZIP_MIME_PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+
+function zipMontar(arquivos, mime = ZIP_MIME_XLSX) {
   const cod = new TextEncoder();
   const partes = [], central = [];
   let offset = 0;
@@ -3355,14 +3402,12 @@ function zipMontar(arquivos) {
     escreve(2, arquivos.length), escreve(2, arquivos.length),
     escreve(4, tamCentral), escreve(4, offset), escreve(2, 0),
   ];
-  return new Blob([...partes, ...central, ...fim], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
+  return new Blob([...partes, ...central, ...fim], { type: mime });
 }
 
-/* ---------- planilha ---------- */
+/* ---------- XML: escape compartilhado pela planilha e pela apresentação ---------- */
 
-function xlsxEscapar(s) {
+function xmlEscapar(s) {
   return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 
@@ -3432,7 +3477,7 @@ function xlsxGerar(matriz, nomeAba = "Modelo") {
       const ehNumero = txt !== "" && /^-?\d+(\.\d+)?$/.test(txt);
       return ehNumero
         ? `<c r="${ref}"><v>${txt}</v></c>`
-        : `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xlsxEscapar(txt)}</t></is></c>`;
+        : `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEscapar(txt)}</t></is></c>`;
     }).join("");
     return `<row r="${r + 1}">${celulas}</row>`;
   }).join("");
@@ -3445,12 +3490,238 @@ function xlsxGerar(matriz, nomeAba = "Modelo") {
     { nome: "_rels/.rels", texto:
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${rns}/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
     { nome: "xl/workbook.xml", texto:
-      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="${ns}" xmlns:r="${rns}"><sheets><sheet name="${xlsxEscapar(nomeAba)}" sheetId="1" r:id="rId1"/></sheets></workbook>` },
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="${ns}" xmlns:r="${rns}"><sheets><sheet name="${xmlEscapar(nomeAba)}" sheetId="1" r:id="rId1"/></sheets></workbook>` },
     { nome: "xl/_rels/workbook.xml.rels", texto:
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${rns}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>` },
     { nome: "xl/worksheets/sheet1.xml", texto:
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="${ns}"><sheetData>${linhas}</sheetData></worksheet>` },
   ]);
+}
+
+/* ==========================================================================
+   PowerPoint sem biblioteca — o mesmo truque do .xlsx acima
+   ==========================================================================
+   Um .pptx também é um ZIP de XML, e o ZIP já está escrito ali em cima. O que
+   a apresentação exige a mais é uma corrente mínima de peças, senão o
+   PowerPoint abre pedindo reparo: apresentação → slide master → layout → tema.
+   Nada disso aparece na tela; é só o andaime que o formato pede.
+
+   Não existe gráfico nativo aqui. As barras da ponte são retângulos
+   posicionados, do mesmo jeito que a tela desenha com <div> — o slide sai
+   igual ao painel porque é desenhado a partir dos mesmos números.
+
+   Medida do OOXML é EMU (English Metric Unit). Ninguém pensa um slide em EMU,
+   então as funções recebem centímetros e convertem aqui dentro.
+*/
+
+const PPT_LARGURA_CM = 33.87;   // 16:9 widescreen
+const PPT_ALTURA_CM = 19.05;
+const PPT_CM = 360000;          // 1 cm em EMU
+
+function pptCm(v) { return Math.round(v * PPT_CM); }
+function pptTam(v) { return Math.max(1, Math.round(v * PPT_CM)); }
+
+/* Caixa de texto. `texto` aceita string ou lista — cada item vira parágrafo e
+   pode ter tamanho/cor próprios, que é o que faz um cartão de KPI (rótulo
+   pequeno em cima, número grande embaixo) caber numa forma só. */
+function pptTexto(id, o) {
+  const paragrafos = (Array.isArray(o.texto) ? o.texto : [o.texto]).map((linha) => {
+    const t = typeof linha === "object" ? linha : { texto: linha };
+    const espaco = t.espacoAntes ? `<a:spcBef><a:spcPts val="${Math.round(t.espacoAntes * 100)}"/></a:spcBef>` : "";
+    const rpr = `<a:rPr lang="pt-BR" sz="${Math.round((t.tam ?? o.tam ?? 12) * 100)}" b="${(t.negrito ?? o.negrito) ? 1 : 0}" dirty="0">` +
+      `<a:solidFill><a:srgbClr val="${t.cor ?? o.cor ?? "1B2436"}"/></a:solidFill>` +
+      `<a:latin typeface="Segoe UI"/><a:cs typeface="Segoe UI"/></a:rPr>`;
+    return `<a:p><a:pPr algn="${t.alinha || o.alinha || "l"}">${espaco}</a:pPr>` +
+      `<a:r>${rpr}<a:t>${xmlEscapar(t.texto)}</a:t></a:r></a:p>`;
+  }).join("");
+
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Texto ${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>` +
+    `<p:spPr><a:xfrm><a:off x="${pptCm(o.x)}" y="${pptCm(o.y)}"/><a:ext cx="${pptTam(o.l)}" cy="${pptTam(o.a)}"/></a:xfrm>` +
+    `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>` +
+    `<p:txBody><a:bodyPr wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" anchor="${o.ancora || "t"}">` +
+    `<a:noAutofit/></a:bodyPr><a:lstStyle/>${paragrafos}</p:txBody></p:sp>`;
+}
+
+function pptRetangulo(id, o) {
+  const geom = o.raio
+    ? `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val ${o.raio}"/></a:avLst></a:prstGeom>`
+    : `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`;
+  const preenche = o.cor ? `<a:solidFill><a:srgbClr val="${o.cor}"/></a:solidFill>` : "<a:noFill/>";
+  const borda = o.borda
+    ? `<a:ln w="12700"><a:solidFill><a:srgbClr val="${o.borda}"/></a:solidFill></a:ln>`
+    : "<a:ln><a:noFill/></a:ln>";
+
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Forma ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>` +
+    `<p:spPr><a:xfrm><a:off x="${pptCm(o.x)}" y="${pptCm(o.y)}"/><a:ext cx="${pptTam(o.l)}" cy="${pptTam(o.a)}"/></a:xfrm>` +
+    `${geom}${preenche}${borda}</p:spPr>` +
+    `<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="pt-BR"/></a:p></p:txBody></p:sp>`;
+}
+
+/* Tabela de verdade (a:tbl), não texto alinhado com espaço: quem recebe o
+   arquivo consegue editar célula por célula. Sem tableStyleId de propósito —
+   o id apontaria para uma peça de estilos que este pacote não traz, e aí o
+   PowerPoint desenharia a tabela sem borda nenhuma. Cor vai célula a célula. */
+function pptTabela(id, o) {
+  const tam = o.tamFonte || 10;
+  const alturaLinha = pptCm(o.alturaLinha || 0.72);
+  const larguras = o.colunas.map((c) => pptCm(c.largura));
+
+  const celula = (texto, e) =>
+    `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="${e.alinha}"/>` +
+    `<a:r><a:rPr lang="pt-BR" sz="${Math.round(e.tam * 100)}" b="${e.negrito ? 1 : 0}" dirty="0">` +
+    `<a:solidFill><a:srgbClr val="${e.cor}"/></a:solidFill><a:latin typeface="Segoe UI"/></a:rPr>` +
+    `<a:t>${xmlEscapar(texto)}</a:t></a:r></a:p></a:txBody>` +
+    `<a:tcPr marL="91440" marR="91440" marT="45720" marB="45720" anchor="ctr">` +
+    `<a:lnB w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:srgbClr val="E3E7EE"/></a:solidFill>` +
+    "<a:prstDash val=\"solid\"/></a:lnB>" +
+    `<a:solidFill><a:srgbClr val="${e.fundo}"/></a:solidFill></a:tcPr></a:tc>`;
+
+  const cabecalho = `<a:tr h="${alturaLinha}">` + o.colunas.map((c) =>
+    celula(c.titulo, { alinha: c.alinha || "l", negrito: true, cor: "FFFFFF", fundo: "12213F", tam })
+  ).join("") + "</a:tr>";
+
+  const corpo = o.linhas.map((linha) => `<a:tr h="${alturaLinha}">` + linha.map((cel, i) => {
+    const c = typeof cel === "object" ? cel : { texto: cel };
+    return celula(c.texto, {
+      alinha: c.alinha || o.colunas[i].alinha || "l",
+      negrito: !!c.negrito,
+      cor: c.cor || "1B2436",
+      fundo: c.fundo || "FFFFFF",
+      tam: c.tam || tam,
+    });
+  }).join("") + "</a:tr>").join("");
+
+  const largura = larguras.reduce((s, w) => s + w, 0);
+  return `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${id}" name="Tabela ${id}"/>` +
+    '<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>' +
+    `<p:xfrm><a:off x="${pptCm(o.x)}" y="${pptCm(o.y)}"/>` +
+    `<a:ext cx="${largura}" cy="${alturaLinha * (o.linhas.length + 1)}"/></p:xfrm>` +
+    '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table">' +
+    `<a:tbl><a:tblPr firstRow="1" bandRow="0"/><a:tblGrid>${larguras.map((w) => `<a:gridCol w="${w}"/>`).join("")}</a:tblGrid>` +
+    `${cabecalho}${corpo}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
+}
+
+/* Um slide em construção. O id da forma só precisa ser único dentro do slide,
+   então o contador reinicia a cada desenho novo. */
+function pptDesenho() {
+  const formas = [];
+  let id = 1;
+  return {
+    formas,
+    texto: (o) => formas.push(pptTexto(++id, o)),
+    retangulo: (o) => formas.push(pptRetangulo(++id, o)),
+    tabela: (o) => formas.push(pptTabela(++id, o)),
+  };
+}
+
+const PPT_NS_A = "http://schemas.openxmlformats.org/drawingml/2006/main";
+const PPT_NS_P = "http://schemas.openxmlformats.org/presentationml/2006/main";
+const PPT_NS_R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+const PPT_NS_CT = "http://schemas.openxmlformats.org/package/2006/content-types";
+const PPT_NS_REL = "http://schemas.openxmlformats.org/package/2006/relationships";
+const PPT_XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+
+/* O grupo raiz que todo spTree precisa ter antes das formas. */
+const PPT_GRUPO_RAIZ =
+  '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
+  '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>' +
+  '<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
+
+/* Tema mínimo porém completo: o esquema de cores precisa das 12 entradas na
+   ordem certa, e o fmtScheme de três estilos em cada lista. Faltando qualquer
+   uma delas o PowerPoint recusa o arquivo. As cores são as do style.css. */
+function pptTema() {
+  const solido = '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>';
+  const linha = (w) => `<a:ln w="${w}"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>`;
+  const fonte = (tag) => `<a:${tag}><a:latin typeface="Segoe UI"/><a:ea typeface=""/><a:cs typeface=""/></a:${tag}>`;
+
+  return PPT_XML + `<a:theme xmlns:a="${PPT_NS_A}" name="NS Codex">` +
+    "<a:themeElements>" +
+    '<a:clrScheme name="NS Codex">' +
+      '<a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1>' +
+      '<a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1>' +
+      '<a:dk2><a:srgbClr val="12213F"/></a:dk2><a:lt2><a:srgbClr val="F4F6F9"/></a:lt2>' +
+      '<a:accent1><a:srgbClr val="1F4FD6"/></a:accent1><a:accent2><a:srgbClr val="1A9C6A"/></a:accent2>' +
+      '<a:accent3><a:srgbClr val="D64545"/></a:accent3><a:accent4><a:srgbClr val="7A4FD6"/></a:accent4>' +
+      '<a:accent5><a:srgbClr val="B8860B"/></a:accent5><a:accent6><a:srgbClr val="6B7280"/></a:accent6>' +
+      '<a:hlink><a:srgbClr val="1F4FD6"/></a:hlink><a:folHlink><a:srgbClr val="7A4FD6"/></a:folHlink>' +
+    "</a:clrScheme>" +
+    `<a:fontScheme name="NS Codex">${fonte("majorFont")}${fonte("minorFont")}</a:fontScheme>` +
+    '<a:fmtScheme name="NS Codex">' +
+      `<a:fillStyleLst>${solido}${solido}${solido}</a:fillStyleLst>` +
+      `<a:lnStyleLst>${linha(6350)}${linha(12700)}${linha(19050)}</a:lnStyleLst>` +
+      "<a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle>" +
+      "<a:effectStyle><a:effectLst/></a:effectStyle>" +
+      "<a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>" +
+      `<a:bgFillStyleLst>${solido}${solido}${solido}</a:bgFillStyleLst>` +
+    "</a:fmtScheme>" +
+    "</a:themeElements></a:theme>";
+}
+
+/* Monta o .pptx. `slides` é uma lista de listas de formas — o resultado de
+   pptDesenho().formas, um por slide. */
+function pptxGerar(slides) {
+  const rel = (id, tipo, alvo) => `<Relationship Id="${id}" Type="${PPT_NS_R}/${tipo}" Target="${alvo}"/>`;
+  const rels = (conteudo) => `${PPT_XML}<Relationships xmlns="${PPT_NS_REL}">${conteudo}</Relationships>`;
+  const arquivos = [];
+
+  arquivos.push({ nome: "[Content_Types].xml", texto:
+    PPT_XML + `<Types xmlns="${PPT_NS_CT}">` +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>' +
+    '<Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>' +
+    '<Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>' +
+    '<Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>' +
+    slides.map((_, i) => `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join("") +
+    "</Types>" });
+
+  arquivos.push({ nome: "_rels/.rels", texto: rels(rel("rId1", "officeDocument", "ppt/presentation.xml")) });
+
+  // rId1 é o master; os slides começam em rId2 e seguem a ordem do sldIdLst
+  arquivos.push({ nome: "ppt/presentation.xml", texto:
+    PPT_XML + `<p:presentation xmlns:a="${PPT_NS_A}" xmlns:r="${PPT_NS_R}" xmlns:p="${PPT_NS_P}">` +
+    '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>' +
+    "<p:sldIdLst>" + slides.map((_, i) => `<p:sldId id="${256 + i}" r:id="rId${i + 2}"/>`).join("") + "</p:sldIdLst>" +
+    `<p:sldSz cx="${pptCm(PPT_LARGURA_CM)}" cy="${pptCm(PPT_ALTURA_CM)}"/>` +
+    '<p:notesSz cx="6858000" cy="9144000"/></p:presentation>' });
+
+  arquivos.push({ nome: "ppt/_rels/presentation.xml.rels", texto: rels(
+    rel("rId1", "slideMaster", "slideMasters/slideMaster1.xml") +
+    slides.map((_, i) => rel(`rId${i + 2}`, "slide", `slides/slide${i + 1}.xml`)).join("")) });
+
+  arquivos.push({ nome: "ppt/slideMasters/slideMaster1.xml", texto:
+    PPT_XML + `<p:sldMaster xmlns:a="${PPT_NS_A}" xmlns:r="${PPT_NS_R}" xmlns:p="${PPT_NS_P}">` +
+    '<p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>' +
+    `<p:spTree>${PPT_GRUPO_RAIZ}</p:spTree></p:cSld>` +
+    '<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" ' +
+    'accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>' +
+    '<p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst></p:sldMaster>' });
+
+  arquivos.push({ nome: "ppt/slideMasters/_rels/slideMaster1.xml.rels", texto: rels(
+    rel("rId1", "slideLayout", "../slideLayouts/slideLayout1.xml") +
+    rel("rId2", "theme", "../theme/theme1.xml")) });
+
+  arquivos.push({ nome: "ppt/slideLayouts/slideLayout1.xml", texto:
+    PPT_XML + `<p:sldLayout xmlns:a="${PPT_NS_A}" xmlns:r="${PPT_NS_R}" xmlns:p="${PPT_NS_P}" type="blank" preserve="1">` +
+    `<p:cSld name="Em branco"><p:spTree>${PPT_GRUPO_RAIZ}</p:spTree></p:cSld>` +
+    "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>" });
+
+  arquivos.push({ nome: "ppt/slideLayouts/_rels/slideLayout1.xml.rels", texto: rels(
+    rel("rId1", "slideMaster", "../slideMasters/slideMaster1.xml")) });
+
+  arquivos.push({ nome: "ppt/theme/theme1.xml", texto: pptTema() });
+
+  slides.forEach((formas, i) => {
+    arquivos.push({ nome: `ppt/slides/slide${i + 1}.xml`, texto:
+      PPT_XML + `<p:sld xmlns:a="${PPT_NS_A}" xmlns:r="${PPT_NS_R}" xmlns:p="${PPT_NS_P}">` +
+      `<p:cSld><p:spTree>${PPT_GRUPO_RAIZ}${formas.join("")}</p:spTree></p:cSld>` +
+      "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>" });
+    arquivos.push({ nome: `ppt/slides/_rels/slide${i + 1}.xml.rels`, texto: rels(
+      rel("rId1", "slideLayout", "../slideLayouts/slideLayout1.xml")) });
+  });
+
+  return zipMontar(arquivos, ZIP_MIME_PPTX);
 }
 
 const IMP_MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
@@ -4388,7 +4659,610 @@ function initCapex() {
   });
 }
 
+/* ==========================================================================
+   Dashboard Executivo — a leitura do ciclo numa tela, e o deck que sai dela
+   ==========================================================================
+   Item 21 do roadmap. Duas coisas na mesma tela, de propósito:
+
+   1. A leitura que a liderança pede — qual é o número, quanto ele mudou
+      contra a base, quem mexeu nele, quanto dele já está aprovado e o que
+      ainda falta entregar.
+   2. O PowerPoint. E ele não é gerado do HTML: sai do MESMO objeto que
+      desenhou a tela (execModelo). Painel e slide não têm como divergir
+      porque são a mesma conta lida duas vezes.
+
+   Tudo vem de Referencias/inputs.json — as linhas que a tela de Aprovações
+   já mostra uma a uma. Valores no arquivo estão em R$ mil; os totais aparecem
+   em R$ mi e a tabela linha a linha em R$ mil, com a unidade no cabeçalho.
+*/
+
+const EXEC_CATEGORIAS = [
+  { chave: "receita", rotulo: "Revenue",  sinal: "(+)", classe: "receita", cor: "1A9C6A" },
+  { chave: "despesa", rotulo: "Expenses", sinal: "(−)", classe: "despesa", cor: "D64545" },
+  { chave: "capex",   rotulo: "Capex",    sinal: "(−)", classe: "capex",   cor: "7A4FD6" },
+];
+
+const EXEC_SITUACAO = {
+  aprovado:  { rotulo: "Aprovado",  badge: "status-aprovado",     cor: "1A9C6A" },
+  pendente:  { rotulo: "Pendente",  badge: "status-em-aprovacao", cor: "B8860B" },
+  rejeitado: { rotulo: "Rejeitado", badge: "status-reprovado",    cor: "D64545" },
+};
+
+const EXEC_MARGEM = 1.6;
+const EXEC_LARG = PPT_LARGURA_CM - 2 * EXEC_MARGEM;
+
+function execNum(v, casas = 1) {
+  return v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+}
+
+/* Total em R$ mi, no mesmo formato das outras telas ("− R$ 96,7 mi") — é o que
+   o export em CSV sabe reconverter para número. Entra em R$ mil. */
+function execMi(v) {
+  return `${v < 0 ? "− " : ""}R$ ${execNum(Math.abs(v) / 1000)} mi`;
+}
+
+/* Linha a linha o valor é pequeno demais para milhão: 16,9 mil viraria 0,0 mi.
+   Aqui sai só o número e a unidade fica no cabeçalho da coluna. */
+function execMil(v) {
+  return execNum(v);
+}
+
+/* Sem sinal quando a variação some no arredondamento: "− 0,0 mi" parece defeito
+   para quem lê, e a diferença entre −44 mil e zero não muda decisão nenhuma. */
+function execDeltaMi(v) {
+  const mi = Math.abs(v) / 1000;
+  return `${mi < 0.05 ? "" : v > 0 ? "+" : "−"}${execNum(mi)} mi`;
+}
+
+/* A seta diz para onde o número foi; a cor diz se isso é bom. Numa linha de
+   custo as duas coisas discordam — despesa que sobe é seta para cima e
+   vermelho —, e juntar as duas num símbolo só confunde. */
+function execSeta(delta) {
+  return Math.abs(delta) / 1000 < 0.05 ? "•" : delta > 0 ? "▲" : "▼";
+}
+
+function execPct(v) {
+  return `${v > 0 ? "+" : v < 0 ? "−" : ""}${execNum(Math.abs(v))}%`;
+}
+
+function execAgregado(nivel, rotulo, lista) {
+  const base = lista.reduce((s, i) => s + i.valorAtual, 0);
+  const solicitado = lista.reduce((s, i) => s + i.valorSolicitado, 0);
+  const pendentes = lista.filter((i) => i.status === "pendente").length;
+  const rejeitadas = lista.filter((i) => i.status === "rejeitado").length;
+
+  const partes = [];
+  if (pendentes) partes.push(`${pendentes} pendente(s)`);
+  if (rejeitadas) partes.push(`${rejeitadas} rejeitada(s)`);
+
+  return {
+    nivel, rotulo, base, solicitado,
+    delta: solicitado - base,
+    pct: base ? ((solicitado - base) / base) * 100 : 0,
+    linhas: lista.length, pendentes, rejeitadas,
+    situacao: partes.length ? partes.join(" · ") : "Tudo decidido",
+    grau: pendentes ? "pendente" : rejeitadas ? "rejeitado" : "aprovado",
+  };
+}
+
+/* O modelo. Uma função pura: entram os JSON e o recorte, sai tudo que a tela
+   desenha e o deck imprime. */
+function execCalcular(dados, filtros) {
+  const todas = dados.inputs.inputs;
+  const doRecorte = todas.filter((i) => !filtros.bu || i.bu === filtros.bu);
+  const linhas = doRecorte.filter((i) => filtros.base !== "aprovado" || i.status === "aprovado");
+
+  const totais = {};
+  EXEC_CATEGORIAS.forEach((c) => {
+    totais[c.chave] = execAgregado("categoria", c.rotulo, linhas.filter((i) => i.categoria === c.chave));
+  });
+
+  const R = totais.receita.solicitado, D = totais.despesa.solicitado, C = totais.capex.solicitado;
+  const Rb = totais.receita.base, Db = totais.despesa.base, Cb = totais.capex.base;
+
+  // A ponte anda de um degrau para o outro: cada etapa sabe de onde a barra
+  // sai, onde ela chega e em que altura o traço segue para a coluna seguinte.
+  const etapas = [
+    { chave: "receita", rotulo: "Revenue", sinal: "(+)", classe: "receita", cor: "1A9C6A",
+      valor: R, de: 0, ate: R, acumulado: R, delta: R - Rb, bom: R - Rb >= 0 },
+    { chave: "despesa", rotulo: "Expenses", sinal: "(−)", classe: "despesa", cor: "D64545",
+      valor: -D, de: R - D, ate: R, acumulado: R - D, delta: D - Db, bom: D - Db <= 0 },
+    { chave: "ebitda", rotulo: "EBITDA", sinal: "", classe: "subtotal", cor: "C3CAD6",
+      valor: R - D, de: 0, ate: R - D, acumulado: R - D,
+      delta: (R - D) - (Rb - Db), bom: (R - D) - (Rb - Db) >= 0 },
+    { chave: "capex", rotulo: "Capex", sinal: "(−)", classe: "capex", cor: "7A4FD6",
+      valor: -C, de: R - D - C, ate: R - D, acumulado: R - D - C, delta: C - Cb, bom: C - Cb <= 0 },
+    { chave: "final", rotulo: "EBITDA after Capex", sinal: "", classe: "final", cor: "1F4FD6",
+      valor: R - D - C, de: 0, ate: R - D - C, acumulado: R - D - C,
+      delta: (R - D - C) - (Rb - Db - Cb), bom: (R - D - C) - (Rb - Db - Cb) >= 0 },
+  ];
+
+  // A firmeza descreve o número inteiro do recorte, então ignora o filtro de
+  // base: com "só aprovado" ligado ela responderia 100% e não diria nada.
+  const totalRecorte = doRecorte.reduce((s, i) => s + i.valorSolicitado, 0);
+  const firmeza = Object.keys(EXEC_SITUACAO).map((chave) => {
+    const l = doRecorte.filter((i) => i.status === chave);
+    const valor = l.reduce((s, i) => s + i.valorSolicitado, 0);
+    return {
+      chave, rotulo: EXEC_SITUACAO[chave].rotulo, cor: EXEC_SITUACAO[chave].cor,
+      valor, linhas: l.length, pct: totalRecorte ? (valor / totalRecorte) * 100 : 0,
+    };
+  });
+
+  const movimento = [];
+  [...new Set(linhas.map((i) => i.bu))].sort().forEach((bu) => {
+    const daBu = linhas.filter((i) => i.bu === bu);
+    movimento.push(execAgregado("bu", bu, daBu));
+    [...new Set(daBu.map((i) => i.torre))].sort().forEach((torre) => {
+      movimento.push(execAgregado("torre", torre === "-" ? "(sem torre)" : torre,
+        daBu.filter((i) => i.torre === torre)));
+    });
+  });
+
+  // Os oito maiores movimentos em módulo: as altas e as quedas que sozinhas
+  // explicam a maior parte do Δ. Ordenados da maior alta para a maior queda.
+  const top = linhas
+    .map((i) => ({ ...i, delta: i.valorSolicitado - i.valorAtual }))
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 8)
+    .sort((a, b) => b.delta - a.delta);
+
+  const ciclo = resumoDoCiclo(dados.crono, dados.entregas, dados.aprov);
+  const rotuloBu = filtros.bu || "Todas as BUs";
+  const rotuloBase = filtros.base === "aprovado" ? "Só o que já foi aprovado" : "Tudo que foi solicitado";
+  const agora = new Date();
+
+  return {
+    filtros, etapas, firmeza, movimento, top, totais, ciclo,
+    total: execAgregado("total", "Total", linhas),
+    ciclos: { ciclo: dados.inputs.ciclo, rotulo: dados.inputs.cicloRotulo, base: dados.inputs.baseComparacao },
+    versao: dados.crono.versaoAtiva,
+    titulo: `Orçamento ${dados.inputs.ciclo}`,
+    subtitulo: `${dados.inputs.cicloRotulo} · ${rotuloBu} · ${rotuloBase}`,
+    rotuloBu, rotuloBase,
+    rodape: `NS Codex · ${dados.inputs.cicloRotulo} · versão ${dados.crono.versaoAtiva} · ` +
+      `recorte: ${rotuloBu}, ${rotuloBase.toLowerCase()} · gerado em ${agora.toLocaleString("pt-BR")}`,
+    geradoEm: agora,
+  };
+}
+
+/* ---------- Leituras em texto: a frase que sobra se o executivo ler uma só ---------- */
+
+function execLeituraPonte(m) {
+  const final = m.etapas[4], receita = m.etapas[0], capex = m.etapas[3];
+  const sinal = final.valor < 0 ? "não se paga" : "se paga";
+  return `Com ${execMi(receita.valor)} de Revenue e ${execMi(Math.abs(capex.valor))} de Capex, ` +
+    `o ciclo fecha em ${execMi(final.valor)} de EBITDA after Capex — ${execDeltaMi(final.delta)} ` +
+    `contra o ${m.ciclos.base}. O Capex ${sinal} com o EBITDA do próprio ano.`;
+}
+
+function execLeituraFirmeza(m) {
+  const aprovado = m.firmeza.find((f) => f.chave === "aprovado");
+  const pendente = m.firmeza.find((f) => f.chave === "pendente");
+  return `${execNum(aprovado.pct, 0)}% do número já passou pelo aprovador. ` +
+    `Os ${execNum(pendente.pct, 0)}% pendentes valem ${execMi(pendente.valor)} em ${pendente.linhas} linha(s) — ` +
+    `é o quanto o total ainda pode se mexer sem ninguém lançar nada novo.`;
+}
+
+/* ---------- Desenho da tela ---------- */
+
+function execRenderKpis(m) {
+  const alvo = document.querySelector("[data-exec-kpis]");
+  const final = m.etapas[4];
+
+  const cartao = (classe, rotulo, valor, delta, bom) => `
+    <div class="kpi-card ${classe}">
+      <div class="kpi-label">${escaparTexto(rotulo)}</div>
+      <div class="kpi-value">${escaparTexto(valor)}</div>
+      <div class="kpi-delta ${bom ? "up" : "down"}">${execSeta(delta)} ${escaparTexto(execDeltaMi(delta))} vs. ${escaparTexto(m.ciclos.base)}</div>
+    </div>`;
+
+  alvo.innerHTML =
+    EXEC_CATEGORIAS.map((c) => {
+      const t = m.totais[c.chave];
+      const bom = c.chave === "receita" ? t.delta >= 0 : t.delta <= 0;
+      return cartao(c.chave, `${c.sinal} ${c.rotulo}`, execMi(t.solicitado), t.delta, bom);
+    }).join("") +
+    cartao("margem", "EBITDA after Capex", execMi(final.valor), final.delta, final.bom);
+}
+
+function execRenderPonte(m) {
+  const alvo = document.querySelector("[data-exec-ponte]");
+  const min = Math.min(0, ...m.etapas.map((e) => Math.min(e.de, e.ate)));
+  const max = Math.max(0, ...m.etapas.map((e) => Math.max(e.de, e.ate)));
+  const faixa = max - min || 1;
+  const pct = (v) => ((v - min) / faixa) * 100;
+
+  // linha do zero: só aparece quando algum degrau desce abaixo dele
+  const zero = min < 0
+    ? `<div class="exec-zero" style="bottom:${pct(0).toFixed(2)}%"><span class="exec-zero-rot">0</span></div>`
+    : "";
+
+  const conector = (nivel) => `<div class="bridge-connector">
+      <div class="bridge-value">&nbsp;</div>
+      <div class="bridge-connector-track"><div class="bridge-connector-line" style="bottom:${nivel.toFixed(2)}%;"></div></div>
+      <div class="bridge-label">&nbsp;</div>
+      <div class="exec-delta">&nbsp;</div>
+    </div>`;
+
+  alvo.innerHTML = m.etapas.map((e, i) => {
+    const baixo = pct(Math.min(e.de, e.ate));
+    const alto = pct(Math.max(e.de, e.ate));
+    const classeDelta = Math.abs(e.delta) / 1000 < 0.05 ? "neutro" : e.bom ? "sobe" : "desce";
+    const seta = execSeta(e.delta);
+
+    const col = `<div class="bridge-col">
+        <div class="bridge-value">${escaparTexto(execMi(e.valor))}</div>
+        <div class="bridge-track">${zero}<div class="bridge-bar ${e.classe}" style="bottom:${baixo.toFixed(2)}%; height:${Math.max(alto - baixo, 0.4).toFixed(2)}%;"></div></div>
+        <div class="bridge-label">${e.sinal ? `<span class="bridge-sign">${e.sinal}</span>` : ""}${escaparTexto(e.rotulo)}</div>
+        <div class="exec-delta ${classeDelta}">${seta} ${escaparTexto(execDeltaMi(e.delta))}</div>
+      </div>`;
+
+    return i < m.etapas.length - 1 ? col + conector(pct(e.acumulado)) : col;
+  }).join("");
+
+  document.querySelector("[data-exec-ponte-sub]").textContent =
+    `${m.ciclos.rotulo} · ${m.rotuloBu} · ${m.rotuloBase} · comparado com ${m.ciclos.base} (R$ milhões)`;
+  document.querySelector("[data-exec-ponte-leitura]").textContent = execLeituraPonte(m);
+}
+
+function execRenderFirmeza(m) {
+  const alvo = document.querySelector("[data-exec-firmeza]");
+
+  const barra = m.firmeza.filter((f) => f.pct > 0).map((f) =>
+    `<div class="exec-barra-parte ${f.chave}" style="width:${f.pct.toFixed(2)}%" title="${escaparTexto(f.rotulo)}">${
+      f.pct >= 8 ? execNum(f.pct, 0) + "%" : ""}</div>`).join("");
+
+  const itens = m.firmeza.map((f) => `
+    <div class="exec-firmeza-item ${f.chave}">
+      <strong>${escaparTexto(execMi(f.valor))}</strong>
+      <span>${escaparTexto(f.rotulo)} · ${f.linhas} linha(s) · ${execNum(f.pct, 0)}% do total</span>
+    </div>`).join("");
+
+  alvo.innerHTML = `<div class="exec-barra">${barra}</div>
+    <div class="exec-firmeza-itens">${itens}</div>
+    <p class="exec-leitura">${escaparTexto(execLeituraFirmeza(m))}</p>`;
+}
+
+function execRenderMovimento(m) {
+  const corpo = document.querySelector("[data-exec-movimento]");
+  const linha = (a, classe) => `
+    <tr class="${classe}">
+      <td>${escaparTexto(a.rotulo)}</td>
+      <td class="text-right">${escaparTexto(execMi(a.base))}</td>
+      <td class="text-right">${escaparTexto(execMi(a.solicitado))}</td>
+      <td class="text-right ${a.delta >= 0 ? "up" : "down"}">${escaparTexto(execDeltaMi(a.delta))}</td>
+      <td class="text-right ${a.delta >= 0 ? "up" : "down"}">${escaparTexto(execPct(a.pct))}</td>
+      <td class="text-right">${a.linhas}</td>
+      <td><span class="badge ${EXEC_SITUACAO[a.grau].badge}"><span class="badge-dot"></span>${escaparTexto(a.situacao)}</span></td>
+    </tr>`;
+
+  corpo.innerHTML = m.movimento.length
+    ? m.movimento.map((a) => linha(a, a.nivel === "bu" ? "report-bu-row" : "report-torre-row")).join("")
+    : '<tr><td colspan="7"><div class="empty-hint">Nenhuma linha no recorte escolhido.</div></td></tr>';
+
+  document.querySelector("[data-exec-total]").innerHTML = m.movimento.length ? `
+    <tr>
+      <td>Total — ${escaparTexto(m.rotuloBu)}</td>
+      <td class="text-right">${escaparTexto(execMi(m.total.base))}</td>
+      <td class="text-right">${escaparTexto(execMi(m.total.solicitado))}</td>
+      <td class="text-right ${m.total.delta >= 0 ? "up" : "down"}">${escaparTexto(execDeltaMi(m.total.delta))}</td>
+      <td class="text-right ${m.total.delta >= 0 ? "up" : "down"}">${escaparTexto(execPct(m.total.pct))}</td>
+      <td class="text-right">${m.total.linhas}</td>
+      <td></td>
+    </tr>` : "";
+
+  // as linhas nasceram agora; o colapso de BU/Torre precisa ser religado nelas
+  initHierarchyCollapse();
+}
+
+function execRenderTop(m) {
+  const corpo = document.querySelector("[data-exec-top]");
+
+  corpo.innerHTML = m.top.length ? m.top.map((i) => `
+    <tr>
+      <td>${escaparTexto(i.empresa)}</td>
+      <td>${escaparTexto(i.descricao)}<br><span class="text-muted">${escaparTexto(i.conta)}</span></td>
+      <td>${escaparTexto(i.centroCusto)}</td>
+      <td class="text-right">${escaparTexto(execMil(i.valorAtual))}</td>
+      <td class="text-right">${escaparTexto(execMil(i.valorSolicitado))}</td>
+      <td class="text-right ${i.delta >= 0 ? "up" : "down"}">${i.delta >= 0 ? "+" : "−"}${escaparTexto(execMil(Math.abs(i.delta)))}</td>
+      <td class="exec-justificativa">${escaparTexto(i.justificativa || "—")}</td>
+      <td><span class="badge ${EXEC_SITUACAO[i.status].badge}"><span class="badge-dot"></span>${escaparTexto(EXEC_SITUACAO[i.status].rotulo)}</span></td>
+    </tr>`).join("")
+    : '<tr><td colspan="8"><div class="empty-hint">Nenhuma linha no recorte escolhido.</div></td></tr>';
+}
+
+/* ---------- O deck ----------
+   Um slide por painel, na ordem em que a conversa acontece: qual é o número,
+   quem mexeu nele, o que explica o movimento, quanto dele está firme e o que
+   ainda falta acontecer.
+*/
+
+function execSlideBase(m, titulo, subtitulo) {
+  const d = pptDesenho();
+  d.retangulo({ x: 0, y: 0, l: PPT_LARGURA_CM, a: 0.3, cor: "1F4FD6" });
+  d.texto({ x: EXEC_MARGEM, y: 1.15, l: EXEC_LARG, a: 1.25, texto: titulo, tam: 21, negrito: true, cor: "12213F" });
+  d.texto({ x: EXEC_MARGEM, y: 2.5, l: EXEC_LARG, a: 0.75, texto: subtitulo, tam: 11, cor: "6B7280" });
+  d.retangulo({ x: EXEC_MARGEM, y: 3.3, l: EXEC_LARG, a: 0.045, cor: "E3E7EE" });
+  d.texto({ x: EXEC_MARGEM, y: 17.7, l: EXEC_LARG, a: 0.6, texto: m.rodape, tam: 8.5, cor: "9AA1AD" });
+  return d;
+}
+
+function execSlideCapa(m) {
+  const d = pptDesenho();
+  const aprovado = m.firmeza.find((f) => f.chave === "aprovado");
+
+  d.retangulo({ x: 0, y: 0, l: PPT_LARGURA_CM, a: PPT_ALTURA_CM, cor: "12213F" });
+  d.retangulo({ x: 0, y: 0, l: PPT_LARGURA_CM, a: 0.32, cor: "1F4FD6" });
+
+  d.texto({ x: EXEC_MARGEM, y: 5.2, l: EXEC_LARG, a: 0.8, texto: "NS CODEX", tam: 12, negrito: true, cor: "7FA0E8" });
+  d.texto({ x: EXEC_MARGEM, y: 6.4, l: EXEC_LARG, a: 2.6, texto: m.titulo, tam: 36, negrito: true, cor: "FFFFFF" });
+  d.texto({ x: EXEC_MARGEM, y: 9.3, l: EXEC_LARG, a: 1, texto: m.subtitulo, tam: 14, cor: "C7D2E8" });
+
+  [
+    { rot: "Revenue solicitado", val: execMi(m.etapas[0].valor) },
+    { rot: "EBITDA after Capex", val: execMi(m.etapas[4].valor) },
+    { rot: "Já decidido pelo aprovador", val: `${execNum(aprovado.pct, 0)}%` },
+  ].forEach((c, i) => {
+    const x = EXEC_MARGEM + i * 7.5;
+    d.retangulo({ x, y: 11.4, l: 6.9, a: 2.9, cor: "1C3566", raio: 8000 });
+    d.texto({ x: x + 0.6, y: 11.95, l: 5.7, a: 0.6, texto: c.rot, tam: 9.5, cor: "9DB2DC" });
+    d.texto({ x: x + 0.6, y: 12.75, l: 5.7, a: 1.2, texto: c.val, tam: 19, negrito: true, cor: "FFFFFF" });
+  });
+
+  d.texto({ x: EXEC_MARGEM, y: 17.4, l: EXEC_LARG, a: 0.7, texto: m.rodape, tam: 9, cor: "8593AD" });
+  return d.formas;
+}
+
+function execSlidePonte(m) {
+  const d = execSlideBase(m, "Revenue → EBITDA after Capex",
+    `${m.rotuloBu} · ${m.rotuloBase} · comparado com ${m.ciclos.base} (R$ milhões)`);
+
+  const x0 = 2.2, largura = 29.4, colL = largura / m.etapas.length, barraL = 3.2;
+  const topo = 5.4, baseY = 13.9, alturaPlot = baseY - topo;
+
+  const min = Math.min(0, ...m.etapas.map((e) => Math.min(e.de, e.ate)));
+  const max = Math.max(0, ...m.etapas.map((e) => Math.max(e.de, e.ate)));
+  const faixa = max - min || 1;
+  const y = (v) => baseY - ((v - min) / faixa) * alturaPlot;
+
+  if (min < 0) {
+    d.retangulo({ x: x0, y: y(0), l: largura, a: 0.025, cor: "AAB2C0" });
+    d.texto({ x: x0 - 1.2, y: y(0) - 0.3, l: 1, a: 0.5, texto: "0", tam: 9, cor: "9AA1AD", alinha: "r" });
+  }
+
+  m.etapas.forEach((e, i) => {
+    const centro = x0 + i * colL + colL / 2;
+    const yTopo = y(Math.max(e.de, e.ate));
+    const yBase = y(Math.min(e.de, e.ate));
+
+    d.retangulo({ x: centro - barraL / 2, y: yTopo, l: barraL, a: Math.max(yBase - yTopo, 0.06), cor: e.cor, raio: 6000 });
+    d.texto({ x: centro - colL / 2, y: yTopo - 0.78, l: colL, a: 0.7, texto: execMi(e.valor),
+      tam: 11.5, negrito: true, alinha: "ctr", cor: "1B2436" });
+    d.texto({ x: centro - colL / 2, y: baseY + 0.35, l: colL, a: 0.6,
+      texto: (e.sinal ? e.sinal + " " : "") + e.rotulo, tam: 10.5, alinha: "ctr", cor: "6B7280" });
+    d.texto({ x: centro - colL / 2, y: baseY + 1.05, l: colL, a: 0.6,
+      texto: `${execSeta(e.delta)} ${execDeltaMi(e.delta)}`, tam: 9.5, negrito: true, alinha: "ctr",
+      cor: Math.abs(e.delta) / 1000 < 0.05 ? "6B7280" : e.bom ? "1A9C6A" : "D64545" });
+
+    if (i < m.etapas.length - 1) {
+      d.retangulo({ x: centro + barraL / 2, y: y(e.acumulado), l: colL - barraL, a: 0.025, cor: "C3CAD6" });
+    }
+  });
+
+  d.retangulo({ x: EXEC_MARGEM, y: 15.5, l: EXEC_LARG, a: 1.7, cor: "F4F6F9", raio: 6000 });
+  d.texto({ x: EXEC_MARGEM + 0.5, y: 15.85, l: EXEC_LARG - 1, a: 1.3, texto: execLeituraPonte(m), tam: 11, cor: "1B2436" });
+  return d.formas;
+}
+
+function execSlideMovimento(m) {
+  const d = execSlideBase(m, "Como o número mudou — por BU e Torre",
+    `Solicitado contra ${m.ciclos.base} · ${m.rotuloBase} (R$ milhões)`);
+
+  const linhas = m.movimento.slice(0, 13).map((a) => {
+    const corDelta = a.delta >= 0 ? "1A9C6A" : "D64545";
+    const fundo = a.nivel === "bu" ? "EEF1F6" : "FFFFFF";
+    return [
+      { texto: a.nivel === "bu" ? a.rotulo : `   ${a.rotulo}`, negrito: a.nivel === "bu", fundo },
+      { texto: execMi(a.base), alinha: "r", fundo },
+      { texto: execMi(a.solicitado), alinha: "r", negrito: a.nivel === "bu", fundo },
+      { texto: execDeltaMi(a.delta), alinha: "r", cor: corDelta, negrito: true, fundo },
+      { texto: execPct(a.pct), alinha: "r", cor: corDelta, fundo },
+      { texto: a.situacao, fundo, cor: "6B7280" },
+    ];
+  });
+
+  linhas.push([
+    { texto: `Total — ${m.rotuloBu}`, negrito: true, cor: "FFFFFF", fundo: "12213F" },
+    { texto: execMi(m.total.base), alinha: "r", cor: "FFFFFF", fundo: "12213F" },
+    { texto: execMi(m.total.solicitado), alinha: "r", negrito: true, cor: "FFFFFF", fundo: "12213F" },
+    { texto: execDeltaMi(m.total.delta), alinha: "r", negrito: true, cor: "FFFFFF", fundo: "12213F" },
+    { texto: execPct(m.total.pct), alinha: "r", cor: "FFFFFF", fundo: "12213F" },
+    { texto: `${m.total.linhas} linha(s)`, cor: "FFFFFF", fundo: "12213F" },
+  ]);
+
+  d.tabela({
+    x: EXEC_MARGEM, y: 4.1, alturaLinha: 0.78, tamFonte: 10.5,
+    colunas: [
+      { titulo: "BU / Torre", largura: 8.7 },
+      { titulo: "Base", largura: 4.2, alinha: "r" },
+      { titulo: "Solicitado", largura: 4.4, alinha: "r" },
+      { titulo: "Δ R$", largura: 3.9, alinha: "r" },
+      { titulo: "Δ %", largura: 3.2, alinha: "r" },
+      { titulo: "Situação", largura: 6.27 },
+    ],
+    linhas,
+  });
+  return d.formas;
+}
+
+function execSlideTop(m) {
+  const d = execSlideBase(m, "Os movimentos que explicam a variação",
+    "Maiores altas e quedas em R$, com a justificativa de quem lançou (R$ mil)");
+
+  const linhas = m.top.map((i) => [
+    { texto: i.empresa },
+    { texto: i.descricao },
+    { texto: execMil(i.valorAtual), alinha: "r" },
+    { texto: execMil(i.valorSolicitado), alinha: "r" },
+    { texto: `${i.delta >= 0 ? "+" : "−"}${execMil(Math.abs(i.delta))}`, alinha: "r",
+      negrito: true, cor: i.delta >= 0 ? "1A9C6A" : "D64545" },
+    { texto: i.justificativa || "—", cor: "6B7280", tam: 9 },
+    { texto: EXEC_SITUACAO[i.status].rotulo, cor: EXEC_SITUACAO[i.status].cor, negrito: true },
+  ]);
+
+  d.tabela({
+    x: EXEC_MARGEM, y: 4.1, alturaLinha: 0.95, tamFonte: 9.5,
+    colunas: [
+      { titulo: "Empresa", largura: 3.9 },
+      { titulo: "Conta", largura: 5.2 },
+      { titulo: "Base", largura: 2.5, alinha: "r" },
+      { titulo: "Solicitado", largura: 2.9, alinha: "r" },
+      { titulo: "Δ", largura: 2.5, alinha: "r" },
+      { titulo: "Justificativa", largura: 11.17 },
+      { titulo: "Situação", largura: 2.5 },
+    ],
+    linhas,
+  });
+  return d.formas;
+}
+
+function execSlideFirmeza(m) {
+  const d = execSlideBase(m, "Quanto do número já está firme",
+    `Participação de cada situação de aprovação no total solicitado · ${m.rotuloBu}`);
+
+  const x0 = EXEC_MARGEM, largura = EXEC_LARG;
+  let x = x0;
+  m.firmeza.filter((f) => f.pct > 0).forEach((f) => {
+    const l = (f.pct / 100) * largura;
+    d.retangulo({ x, y: 5.2, l, a: 1.15, cor: f.cor });
+    if (f.pct >= 8) {
+      d.texto({ x, y: 5.5, l, a: 0.6, texto: `${execNum(f.pct, 0)}%`, tam: 11, negrito: true, cor: "FFFFFF", alinha: "ctr" });
+    }
+    x += l;
+  });
+
+  m.firmeza.forEach((f, i) => {
+    const cx = x0 + i * (largura / 3);
+    const cl = largura / 3 - 0.5;
+    d.retangulo({ x: cx, y: 7.4, l: cl, a: 3.1, cor: "FFFFFF", borda: "E3E7EE", raio: 5000 });
+    d.retangulo({ x: cx, y: 7.4, l: 0.11, a: 3.1, cor: f.cor });
+    d.texto({ x: cx + 0.6, y: 7.9, l: cl - 1.1, a: 0.6, texto: f.rotulo, tam: 10.5, negrito: true, cor: f.cor });
+    d.texto({ x: cx + 0.6, y: 8.7, l: cl - 1.1, a: 1.1, texto: execMi(f.valor), tam: 20, negrito: true, cor: "12213F" });
+    d.texto({ x: cx + 0.6, y: 9.9, l: cl - 1.1, a: 0.6,
+      texto: `${f.linhas} linha(s) · ${execNum(f.pct, 0)}% do total`, tam: 9.5, cor: "6B7280" });
+  });
+
+  d.retangulo({ x: EXEC_MARGEM, y: 11.6, l: EXEC_LARG, a: 1.8, cor: "F4F6F9", raio: 6000 });
+  d.texto({ x: EXEC_MARGEM + 0.5, y: 11.95, l: EXEC_LARG - 1, a: 1.4, texto: execLeituraFirmeza(m), tam: 11, cor: "1B2436" });
+  return d.formas;
+}
+
+function execSlideCiclo(m) {
+  const c = m.ciclo;
+  const d = execSlideBase(m, "Onde o ciclo está", `Versão vigente ${m.versao} · ${m.ciclos.rotulo}`);
+
+  [
+    { rot: "Entregas por lançar", val: String(c.faltando),
+      nota: c.atrasadas ? `${c.atrasadas} já passaram do prazo` : "nenhuma atrasada",
+      cor: c.atrasadas ? "D64545" : "B8860B" },
+    { rot: "Aguardando decisão do aprovador", val: String(c.aguardandoDecisao),
+      nota: "submissões sem parecer", cor: "B8860B" },
+    { rot: "Aguardando aceite do líder", val: String(c.aguardandoAceite),
+      nota: "aprovadas, sem aceite final", cor: "1F4FD6" },
+  ].forEach((k, i) => {
+    const x = EXEC_MARGEM + i * (EXEC_LARG / 3);
+    const l = EXEC_LARG / 3 - 0.5;
+    d.retangulo({ x, y: 4.4, l, a: 3.3, cor: "FFFFFF", borda: "E3E7EE", raio: 5000 });
+    d.retangulo({ x, y: 4.4, l: 0.11, a: 3.3, cor: k.cor });
+    d.texto({ x: x + 0.6, y: 4.95, l: l - 1.1, a: 0.7, texto: k.rot, tam: 10, cor: "6B7280" });
+    d.texto({ x: x + 0.6, y: 5.85, l: l - 1.1, a: 1.3, texto: k.val, tam: 26, negrito: true, cor: "12213F" });
+    d.texto({ x: x + 0.6, y: 7.2, l: l - 1.1, a: 0.6, texto: k.nota, tam: 9.5, cor: "9AA1AD" });
+  });
+
+  d.texto({ x: EXEC_MARGEM, y: 8.6, l: EXEC_LARG, a: 0.8, texto: "Marcos que ainda vêm", tam: 13, negrito: true, cor: "12213F" });
+
+  const marcos = [];
+  if (c.proximo) marcos.push([c.proximo.nome, dataBR(c.proximo.data), `em ${c.diasProximo} dia(s)`, c.proximo.detalhe || ""]);
+  if (c.fim && c.fim !== c.proximo) marcos.push([c.fim.nome, dataBR(c.fim.data), `em ${c.diasFim} dia(s)`, c.fim.detalhe || ""]);
+
+  d.tabela({
+    x: EXEC_MARGEM, y: 9.5, alturaLinha: 0.85, tamFonte: 10.5,
+    colunas: [
+      { titulo: "Marco", largura: 7.5 },
+      { titulo: "Data", largura: 3.5 },
+      { titulo: "Prazo", largura: 3.5 },
+      { titulo: "O que trava", largura: 16.17 },
+    ],
+    linhas: marcos.length ? marcos : [["Ciclo sem marco futuro", "—", "—", "—"]],
+  });
+  return d.formas;
+}
+
 /* ---------- Init ---------- */
+
+let execModelo = null;   // o que a tela desenhou; o PowerPoint sai daqui
+
+function initDashboardExecutivo() {
+  if (!document.querySelector("[data-exec-kpis]")) return;
+
+  const filtros = { bu: "", base: "tudo" };
+  let dados = null;
+
+  const desenhar = () => {
+    execModelo = execCalcular(dados, filtros);
+    execRenderKpis(execModelo);
+    execRenderPonte(execModelo);
+    execRenderFirmeza(execModelo);
+    execRenderMovimento(execModelo);
+    execRenderTop(execModelo);
+    document.querySelector("[data-exec-subtitulo]").textContent =
+      `${execModelo.ciclos.rotulo} · versão ${execModelo.versao} · base de comparação: ${execModelo.ciclos.base}`;
+  };
+
+  document.querySelectorAll("[data-exec-filtro]").forEach((sel) => {
+    sel.addEventListener("change", () => {
+      filtros[sel.getAttribute("data-exec-filtro")] = sel.value;
+      desenhar();
+    });
+  });
+
+  document.querySelector("[data-exec-pptx]")?.addEventListener("click", () => {
+    if (!execModelo) return showToast("Os números ainda estão carregando.", "warning");
+    const slides = [
+      execSlideCapa(execModelo), execSlidePonte(execModelo), execSlideMovimento(execModelo),
+      execSlideTop(execModelo), execSlideFirmeza(execModelo), execSlideCiclo(execModelo),
+    ];
+    const nome = `dashboard-executivo-${execModelo.ciclos.ciclo}-${new Date().toISOString().slice(0, 10)}.pptx`;
+    downloadBlobFile(nome, pptxGerar(slides));
+    showToast(`Apresentação gerada: ${nome} · ${slides.length} slides`, "success");
+  });
+
+  Promise.all([
+    carregarRef("inputs.json"),
+    carregarRef("cronograma.json"),
+    carregarRef("entregas.json").catch(() => null),
+    carregarRef("aprovacoes.json").catch(() => null),
+  ])
+    .then(([inputs, crono, entregas, aprov]) => {
+      dados = { inputs, crono, entregas, aprov };
+
+      const sel = document.querySelector('[data-exec-filtro="bu"]');
+      [...new Set(inputs.inputs.map((i) => i.bu))].sort().forEach((bu) => {
+        const o = document.createElement("option");
+        o.value = bu;
+        o.textContent = bu;
+        sel.appendChild(o);
+      });
+
+      desenhar();
+    })
+    .catch(() => {
+      document.querySelector("[data-exec-kpis]").innerHTML =
+        '<div class="empty-hint">Não foi possível carregar os números do ciclo.</div>';
+    });
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   markActiveNav();
@@ -4418,6 +5292,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initCapex();
   initVersaoBarra();
   initStatusCiclo();
+  initDashboardExecutivo();
   renderResumoLancamentos();
   initReferenceAutocomplete();
 });

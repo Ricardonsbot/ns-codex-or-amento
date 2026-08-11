@@ -3998,3 +3998,115 @@ a.status-card:hover { background: var(--color-bg); }
 
 .cor-acoes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .cor-aviso { font-size: 12px; color: var(--color-text-muted); }
+
+/* ==========================================================================
+   Dashboard Executivo — a leitura do ciclo em uma tela só
+   ==========================================================================
+   Quase tudo aqui reaproveita o que já existe (.kpi-grid, .bridge-chart,
+   .report-table). O que é novo: a linha do zero na ponte — porque um número
+   derivado pode ser negativo, coisa que a ponte fixa do Dashboard nunca teve —
+   e a barra de composição por situação de aprovação.
+*/
+
+/* Fora de .filter-field de propósito: o export em CSV varre os .filter-field
+   para registrar o recorte, e um campo sem select viraria linha vazia. */
+.exec-filtro-nota {
+  align-self: center;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.exec-zero {
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  border-top: 1px dashed #aab2c0;
+  pointer-events: none;
+}
+
+.exec-zero-rot {
+  position: absolute;
+  top: -8px;
+  left: 0;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  padding: 0 3px;
+}
+
+.exec-delta {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.exec-delta.sobe  { color: var(--color-receita); }
+.exec-delta.desce { color: var(--color-despesa); }
+.exec-delta.neutro { color: var(--color-text-muted); font-weight: 500; }
+
+/* Leitura em texto embaixo de cada painel: a frase que o executivo levaria
+   embora se lesse só uma linha. */
+.exec-leitura {
+  margin: 18px 0 0;
+  padding: 11px 14px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+.exec-firmeza { display: flex; flex-direction: column; gap: 14px; }
+
+.exec-barra {
+  display: flex;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.exec-barra-parte {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.exec-barra-parte.aprovado  { background: var(--color-success); }
+.exec-barra-parte.pendente  { background: var(--color-warning); }
+.exec-barra-parte.rejeitado { background: var(--color-danger); }
+
+.exec-firmeza-itens {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.exec-firmeza-item {
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+.exec-firmeza-item.aprovado  { border-left-color: var(--color-success); }
+.exec-firmeza-item.pendente  { border-left-color: var(--color-warning); }
+.exec-firmeza-item.rejeitado { border-left-color: var(--color-danger); }
+
+.exec-firmeza-item strong { display: block; font-size: 18px; line-height: 1.25; }
+.exec-firmeza-item span   { font-size: 12px; color: var(--color-text-muted); }
+
+.exec-justificativa {
+  max-width: 320px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .exec-firmeza-itens { grid-template-columns: 1fr; }
+}

@@ -62,13 +62,13 @@ MOTIVOS_REJEICAO = [
     "Reavaliar depois da decisão sobre o projeto de automação.",
 ]
 
-# Uma submissão de despesa não deveria puxar conta de receita. O filtro é
-# grosseiro de propósito: o plano de contas do protótipo tem 36 contas.
+# Uma submissão de despesa não deveria puxar conta de receita — e desde que o
+# plano de contas real entrou (carrega_cadastro.py), Capex também tem conta
+# própria. Antes as três categorias dividiam o mesmo balaio de despesa, e um
+# lançamento de Capex saía classificado em Personnel Costs.
 def contas_da_categoria(categoria):
-    if categoria == "receita":
-        pool = [c for c in contas if "Revenue" in c["linhaPL"] or "Receita" in c["linhaPL"]]
-    else:
-        pool = [c for c in contas if "Despesa" in c["linhaPL"] or "Custo" in c["linhaPL"]]
+    prefixo = {"receita": "Receita", "capex": "Capex"}.get(categoria, "Despesas")
+    pool = [c for c in contas if c["linhaPL"].startswith(prefixo)]
     return pool or contas
 
 
