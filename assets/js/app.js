@@ -243,6 +243,36 @@ function initMonthGroup() {
 
 /* ---------- Sugestões de Conta e Organizacional (pasta Referencias/) ---------- */
 
+/* ---------- Cada conta na sua categoria ----------
+ * O plano de contas já separa Receita, Despesa e Capex — está no prefixo da
+ * linha do P&L, que veio de FPA_Pacote. O que faltava era a tela respeitar
+ * isso: com uma lista só, dava para lançar "SALARIOS E ORDENADOS" em Capex e
+ * "EQUIPAMENTOS DE INFORMATICA" em Despesa, e a classificação entrava errada
+ * sem ninguém perceber.
+ *
+ * A tradução prefixo -> categoria mora só aqui. A lista de sugestão, o
+ * preenchimento automático e a conferência da importação leem deste mesmo
+ * ponto — se cada um tivesse a sua, uma aceitaria o que a outra recusa.
+ */
+
+const CONTA_PREFIXO = { receita: "Receita", despesa: "Despesas", capex: "Capex" };
+const CONTA_ROTULO = { receita: "Receita", despesa: "Despesa", capex: "Capex" };
+
+function categoriaDaConta(conta) {
+  const linha = String(conta?.linhaPL || "");
+  return Object.keys(CONTA_PREFIXO).find((k) => linha.startsWith(CONTA_PREFIXO[k] + " >")) || null;
+}
+
+function contasDaCategoria(contas, categoria) {
+  return categoria ? contas.filter((c) => categoriaDaConta(c) === categoria) : contas;
+}
+
+/* A categoria da tela é a mesma marca que a barra de versão já usa para achar
+   o prazo do cronograma. Uma declaração só, dois usos. */
+function categoriaDaTela() {
+  return document.querySelector("[data-versao-barra]")?.dataset.versaoBarra || null;
+}
+
 /* No plano de contas real 404 contas orçáveis têm só 323 descrições distintas:
    "COMPARTILHAMENTO DE DESPESAS" aparece em sete contas diferentes. A descrição
    sozinha, portanto, não identifica nada — a opção da lista precisa levar o
@@ -252,20 +282,40 @@ function rotuloConta(c) {
   return `${c.conta} — ${c.nome}`;
 }
 
+function encherDatalist(id, valores) {
+  const alvo = document.getElementById(id);
+  if (!alvo) return;
+  [...new Set(valores)].filter((v) => v && v !== "-").sort().forEach((v) => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    alvo.appendChild(opt);
+  });
+}
+
 function initReferenceAutocomplete() {
   const contasDatalist = document.getElementById("contas-datalist");
   const centrosDatalist = document.getElementById("centros-datalist");
-  if (!contasDatalist && !centrosDatalist) return;
+  // a Receita não tem conta nem centro de custo: ela sugere Torre, Empresa e
+  // Produto. Sem este terceiro alvo o init saía antes e as listas dela
+  // continuavam vazias, como estavam desde sempre.
+  const torresDatalist = document.getElementById("torres-datalist");
+  if (!contasDatalist && !centrosDatalist && !torresDatalist) return;
 
   Promise.all([
     carregarRef("contas.json").catch(() => []),
     carregarRef("centros-custo.json").catch(() => null),
     carregarRef("organizacional.json").catch(() => []),
-  ]).then(([contas, centrosRef, organizacional]) => {
-    window.__contasRef = contas;
+    carregarRef("produtos.json").catch(() => null),
+  ]).then(([contas, centrosRef, organizacional, produtosRef]) => {
+    // a tela só sugere e só aceita conta da sua categoria; o resto do plano
+    // fica guardado para explicar a recusa em vez de o campo não fazer nada
+    const categoria = categoriaDaTela();
+    window.__contasRef = contasDaCategoria(contas, categoria);
+    window.__contasTodas = contas;
+    window.__contaCategoria = categoria;
 
     if (contasDatalist) {
-      contas.forEach((c) => {
+      window.__contasRef.forEach((c) => {
         const opt = document.createElement("option");
         opt.value = rotuloConta(c);
         contasDatalist.appendChild(opt);
@@ -286,20 +336,44 @@ function initReferenceAutocomplete() {
       });
     }
 
+    // O caminho da Receita: Torre → Empresa → Produto → Sub-produto → Tipo.
+    // As mesmas fontes das outras telas, para a grade não sugerir empresa que
+    // o formulário guiado recusa.
+    encherDatalist("torres-datalist", organizacional.map((o) => o.torre));
+    encherDatalist("empresas-datalist", organizacional.map((o) => o.empresa));
+    if (produtosRef) {
+      encherDatalist("produtos-datalist", produtosRef.produtos.map((p) => p.nome));
+      encherDatalist("subprodutos-datalist", produtosRef.produtos.flatMap((p) => p.subProdutos));
+      encherDatalist("tiposreceita-datalist", produtosRef.tiposReceita);
+    }
+
     document.querySelectorAll(".conta-nome-input").forEach(bindContaLookup);
   });
 }
 
 function bindContaLookup(input) {
+  // aceita o rótulo inteiro, só o código ou só a descrição — nesta última a
+  // primeira conta que casa é a escolhida, e o código fica visível na grade
+  const acha = (lista, digitado) =>
+    lista.find((c) => rotuloConta(c) === digitado)
+    || lista.find((c) => c.conta === digitado)
+    || lista.find((c) => c.nome === digitado);
+
   input.addEventListener("change", () => {
     const digitado = input.value.trim();
-    const contas = window.__contasRef || [];
-    // aceita o rótulo inteiro, só o código ou só a descrição — nesta última a
-    // primeira conta que casa é a escolhida, e o código fica visível na grade
-    const match = contas.find((c) => rotuloConta(c) === digitado)
-      || contas.find((c) => c.conta === digitado)
-      || contas.find((c) => c.nome === digitado);
-    if (!match) return;
+    const match = acha(window.__contasRef || [], digitado);
+
+    // Conta de outra categoria não entra calada: sem este aviso o campo
+    // simplesmente não reagiria, e quem lança acharia que a conta não existe.
+    if (!match) {
+      const deFora = acha(window.__contasTodas || [], digitado);
+      const daTela = CONTA_ROTULO[window.__contaCategoria];
+      if (deFora && daTela) {
+        showToast(`${deFora.conta} é conta de ${CONTA_ROTULO[categoriaDaConta(deFora)]} — ` +
+          `esta tela só lança ${daTela}`, "warning");
+      }
+      return;
+    }
 
     const row = input.closest("tr");
     const codigoInput = row?.querySelector(".conta-codigo-input");
@@ -3831,7 +3905,8 @@ function initImportacao() {
       case "produto":     return `produto do catálogo, compatível com a Torre (${ref.produtos.produtos.length} disponíveis)`;
       case "subproduto":  return "sub-produto do produto escolhido — deixe vazio se ele não tem divisão";
       case "tipoReceita": return ref.produtos.tiposReceita.join(" · ");
-      case "conta":       return `código do plano de contas (${ref.contas.length} disponíveis)`;
+      case "conta":       return `código do plano de contas de ${IMP_SPEC[tipo].rotulo} ` +
+                                 `(${contasDaCategoria(ref.contas, tipo).length} disponíveis)`;
       case "pacote":      return pacotesDo(tipo).map((p) => p.nome).join(" · ");
       case "percentual":  return "número de 0 a 100";
       default:            return "texto livre";
@@ -3857,7 +3932,10 @@ function initImportacao() {
           "Tipo Receita": ref.produtos.tiposReceita[i % ref.produtos.tiposReceita.length],
         });
       } else {
-        const c = ref.contas[i * 3 % ref.contas.length];
+        // o exemplo do modelo tem de passar na conferência da própria tela:
+        // conta de Capex num modelo de Despesa voltaria como erro
+        const pool = contasDaCategoria(ref.contas, tipo);
+        const c = pool[i * 3 % pool.length];
         Object.assign(linha, {
           "Conta": c.conta, "Empresa": o.empresa,
           "Centro de Custo": o.torre, "Pacote": pac ? pac.nome : "",
@@ -3955,6 +4033,11 @@ function initImportacao() {
           erros.push(`Conta "${valor("Conta")}" não existe no plano de contas`);
         } else if (c && !c.linhaPL) {
           erros.push(`Conta ${c.conta} não tem linha de P&L — não entra no consolidado`);  // regra PL
+        } else if (c && categoriaDaConta(c) !== tipo) {
+          // planilha de Despesa com conta de Capex passava batido e a linha
+          // entrava no consolidado na categoria errada
+          erros.push(`Conta ${c.conta} é de ${CONTA_ROTULO[categoriaDaConta(c)]} — ` +
+            `esta planilha é de ${spec.rotulo}`);
         }
         if (valor("Pacote") && !setPacotes.has(valor("Pacote"))) {
           erros.push(`Pacote "${valor("Pacote")}" não se aplica a ${spec.rotulo}`);        // regra PAC
