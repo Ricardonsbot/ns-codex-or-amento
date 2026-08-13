@@ -15,7 +15,27 @@
  */
 
 function carregarRef(arquivo) {
-  return fetch(`Referencias/${arquivo}?v=${Date.now()}`, { cache: "no-store" }).then((r) => r.json());
+  // Aberto com duplo clique (file://) não há servidor, e o navegador recusa o
+  // fetch por segurança — sem esta saída toda tela que depende de cadastro
+  // viria vazia na máquina de quem está testando. A cópia embutida é gerada
+  // dos mesmos JSON por ferramentas/gera_dados_embutidos.py.
+  // structuredClone porque vários init leem o mesmo arquivo: sem cópia, um
+  // deles mexeria no objeto do outro — o fetch sempre devolvia um novo.
+  const embutido = window.__DADOS_EMBUTIDOS;
+  const doDisco = () => (embutido && embutido[arquivo] ? structuredClone(embutido[arquivo]) : null);
+
+  if (location.protocol === "file:") {
+    const copia = doDisco();
+    if (copia) return Promise.resolve(copia);
+  }
+
+  return fetch(`Referencias/${arquivo}?v=${Date.now()}`, { cache: "no-store" })
+    .then((r) => r.json())
+    .catch((erro) => {
+      const copia = doDisco();
+      if (copia) return copia;
+      throw erro;
+    });
 }
 
 /* ---------- Toast ---------- */
@@ -306,7 +326,13 @@ function initReferenceAutocomplete() {
     carregarRef("centros-custo.json").catch(() => null),
     carregarRef("organizacional.json").catch(() => []),
     carregarRef("produtos.json").catch(() => null),
-  ]).then(([contas, centrosRef, organizacional, produtosRef]) => {
+    carregarRef("clientes.json").catch(() => null),
+    carregarRef("dimensoes-receita.json").catch(() => null),
+    carregarRef("indices-reajuste.json").catch(() => null),
+    carregarRef("fornecedores.json").catch(() => null),
+    carregarRef("pacotes-fpa.json").catch(() => null),
+  ]).then(([contas, centrosRef, organizacional, produtosRef,
+            clientesRef, dimensoes, indicesRef, gastosRef, pacotesFpa]) => {
     // a tela só sugere e só aceita conta da sua categoria; o resto do plano
     // fica guardado para explicar a recusa em vez de o campo não fazer nada
     const categoria = categoriaDaTela();
@@ -336,18 +362,134 @@ function initReferenceAutocomplete() {
       });
     }
 
-    // O caminho da Receita: Torre → Empresa → Produto → Sub-produto → Tipo.
-    // As mesmas fontes das outras telas, para a grade não sugerir empresa que
-    // o formulário guiado recusa.
+    // O caminho da Receita, no desenho do Template Budget: a linha é um
+    // CONTRATO — cliente, o que foi vendido e como reajusta.
     encherDatalist("torres-datalist", organizacional.map((o) => o.torre));
-    encherDatalist("empresas-datalist", organizacional.map((o) => o.empresa));
+    // quando a tela tem a barra BU → Torre → Empresa, quem manda na lista de
+    // empresa é o recorte escolhido lá; encher aqui também sobrescreveria o
+    // filtro, e qual dos dois venceria dependeria de qual fetch voltasse antes
+    if (!document.querySelector('[data-filtro-org="empresa"]')) {
+      encherDatalist("empresas-datalist", organizacional.map((o) => o.empresa));
+    }
     if (produtosRef) {
       encherDatalist("produtos-datalist", produtosRef.produtos.map((p) => p.nome));
       encherDatalist("subprodutos-datalist", produtosRef.produtos.flatMap((p) => p.subProdutos));
       encherDatalist("tiposreceita-datalist", produtosRef.tiposReceita);
     }
 
+    if (clientesRef) {
+      window.__clientesRef = clientesRef.clientes;
+      encherDatalist("clientes-datalist", clientesRef.clientes.map((c) => c.razaoSocial));
+      encherDatalist("cnpjs-datalist", clientesRef.clientes.map((c) => c.cnpj));
+      // as duas pontas procuram na mesma carteira: nome acha CNPJ, CNPJ acha nome
+      document.querySelectorAll(".cliente-nome-input, .cliente-cnpj-input").forEach(bindClienteLookup);
+    }
+
+    if (dimensoes) {
+      // As colunas da Base Receita do template, na ordem em que ela as tem.
+      // "Tipo Receita" e "Categoria" são eixos diferentes: o primeiro diz de
+      // onde vem o número (base, venda nova, churn), o segundo diz o que foi
+      // vendido (SaaS, On Premise, implantação).
+      encherDatalist("movimento-datalist", dimensoes.movimento);
+      encherDatalist("natureza-datalist", dimensoes.natureza);
+      encherDatalist("termometro-datalist", dimensoes.termometro);
+      encherDatalist("personas-datalist", dimensoes.personas);
+      encherDatalist("setores-datalist", dimensoes.setores);
+      encherDatalist("segmentos-datalist", dimensoes.segmentos);
+      encherDatalist("classes-datalist", dimensoes.classesCliente);
+    }
+
+    if (indicesRef) {
+      encherDatalist("indices-datalist", indicesRef.indices);
+      encherDatalist("mesreajuste-datalist", Object.keys(indicesRef.mesesDeAniversario));
+    }
+
+    // Pacote de FP&A: normalmente vem da conta, mas fica na lista para quem
+    // precisar corrigir uma linha
+    if (pacotesFpa) {
+      encherDatalist("pacotesfpa-datalist", pacotesFpa.pacotes.map((p) => p.nome));
+    }
+
+    // Colunas que a grade de Despesa não tinha e o template mostrou que existem
+    if (gastosRef) {
+      encherDatalist("areas-datalist", gastosRef.areas);
+      encherDatalist("fornecedores-datalist", gastosRef.fornecedores);
+      encherDatalist("projetos-datalist", gastosRef.projetos);
+      encherDatalist("responsaveis-datalist", gastosRef.responsaveis);
+    }
+
     document.querySelectorAll(".conta-nome-input").forEach(bindContaLookup);
+  });
+}
+
+/* O cliente entra por qualquer uma das duas pontas: quem tem o nome digita o
+   nome, quem tem o CNPJ digita o CNPJ, e o outro campo vem junto — com PMR,
+   persona, setor, segmento e classe. No template essas colunas são redigitadas
+   em toda linha do mesmo cliente; aqui saem da carteira, como o código sai da
+   conta. Mesmo princípio: não se digita o que o cadastro já sabe.
+
+   O CNPJ na base vem dos dois jeitos (2.887 pontuados, 903 só dígitos), então
+   a comparação é sempre por dígito — "02.427.026/0001-46" e "02427026000146"
+   têm de achar o mesmo cliente. */
+
+const CLIENTE_CAMPOS = ["pmr", "persona", "setor", "segmento", "classe"];
+
+function soDigitos(valor) {
+  return String(valor || "").replace(/\D/g, "");
+}
+
+function acharCliente(digitado) {
+  const clientes = window.__clientesRef || [];
+  const texto = String(digitado || "").trim();
+  if (!texto) return null;
+
+  const digitos = soDigitos(texto);
+  if (digitos.length >= 8) {
+    const porCnpj = clientes.find((c) => soDigitos(c.cnpj) === digitos);
+    if (porCnpj) return porCnpj;
+  }
+  return clientes.find((c) => c.razaoSocial === texto)
+    || clientes.find((c) => c.razaoSocial.toLowerCase() === texto.toLowerCase())
+    || null;
+}
+
+/* Preenche a linha (ou o passo do formulário) a partir do cliente achado.
+   `escopo` é a <tr> da grade ou o <form>; os dois têm os mesmos campos. */
+function preencherCliente(escopo, cliente) {
+  if (!escopo || !cliente) return 0;
+
+  const nome = escopo.querySelector(".cliente-nome-input");
+  const cnpj = escopo.querySelector(".cliente-cnpj-input");
+  if (nome) nome.value = cliente.razaoSocial;
+  if (cnpj) cnpj.value = cliente.cnpj;
+
+  let trazidos = 0;
+  CLIENTE_CAMPOS.forEach((campo) => {
+    const alvo = escopo.querySelector(`[data-cliente-campo="${campo}"]`);
+    if (alvo && cliente[campo]) { alvo.value = cliente[campo]; trazidos++; }
+  });
+  return trazidos;
+}
+
+function bindClienteLookup(input) {
+  input.addEventListener("change", () => {
+    const cliente = acharCliente(input.value);
+    if (!cliente) {
+      // CNPJ que não está na carteira é cliente novo, não erro: a linha segue
+      // como está e só avisa, para ninguém achar que o campo travou.
+      if (soDigitos(input.value).length >= 11 && input.classList.contains("cliente-cnpj-input")) {
+        showToast("CNPJ fora da carteira — cliente novo, preencha o nome à mão", "warning");
+      }
+      return;
+    }
+
+    const escopo = input.closest("tr") || input.closest("form");
+    const trazidos = preencherCliente(escopo, cliente);
+    const veioPeloCnpj = input.classList.contains("cliente-cnpj-input");
+
+    showToast(`${cliente.razaoSocial} — ${cliente.classe || "sem classe"} · ` +
+      `${cliente.contratos} contrato(s) na base · ` +
+      `${veioPeloCnpj ? "nome" : "CNPJ"} e mais ${trazidos} campo(s) preenchidos`, "success");
   });
 }
 
@@ -375,15 +517,24 @@ function bindContaLookup(input) {
       return;
     }
 
+    // Tudo que a conta já sabe entra sozinho. Pacote e subpacote vieram do
+    // Template Budget das Torres, onde são atributo da conta e não escolha de
+    // quem lança — a coluna "Motivo" é que continua sendo decisão da pessoa.
     const row = input.closest("tr");
-    const codigoInput = row?.querySelector(".conta-codigo-input");
-    const linhaInput = row?.querySelector(".conta-linha-input");
-    const categoriaInput = row?.querySelector(".conta-categoria-input");
+    const preenche = (seletor, valor) => {
+      const el = row?.querySelector(seletor);
+      if (el && valor !== undefined) el.value = valor;
+    };
     input.value = match.nome;
-    if (codigoInput) codigoInput.value = match.conta;
-    if (linhaInput) linhaInput.value = match.linhaPL;
-    if (categoriaInput) categoriaInput.value = match.categoria;
-    showToast(`Conta ${match.conta} — ${match.nome} reconhecida`, "success");
+    preenche(".conta-codigo-input", match.conta);
+    preenche(".conta-linha-input", match.linhaPL);
+    preenche(".conta-categoria-input", match.categoria);
+    preenche(".conta-pacote-input", match.pacote || "");
+    preenche(".conta-subpacote-input", match.subpacote || match.categoria || "");
+
+    showToast(match.pacote
+      ? `Conta ${match.conta} — ${match.nome} · ${match.pacote} / ${match.subpacote || "—"}`
+      : `Conta ${match.conta} — ${match.nome} reconhecida`, "success");
   });
 }
 
@@ -451,6 +602,64 @@ function initDrillRows() {
         panel.classList.toggle("active", panel.id === targetId);
       });
     });
+  });
+}
+
+/* ---------- Filtro BU → Torre → Empresa nas telas de orçamento ----------
+ * As três telas tinham essa barra escrita à mão no HTML, com torre que não
+ * existe ("Comercial", "TI") e empresa inventada ("NSTECH Log Brasil Ltda").
+ * Escolher a BU não fazia nada. Agora sai do cadastro e cascateia: PSL mostra
+ * as torres de PSL e só as empresas de PSL.
+ */
+
+function initFiltroOrg() {
+  const selects = {};
+  document.querySelectorAll("[data-filtro-org]").forEach((s) => {
+    selects[s.getAttribute("data-filtro-org")] = s;
+  });
+  if (!selects.bu && !selects.torre && !selects.empresa) return;
+
+  carregarRef("organizacional.json").then((org) => {
+    const visiveis = org.filter((o) => o.torre !== "-");
+
+    const encher = (select, valores, rotuloTodos) => {
+      if (!select) return;
+      const antes = select.value;
+      select.innerHTML = "";
+      select.appendChild(new Option(rotuloTodos, ""));
+      [...new Set(valores)].sort().forEach((v) => select.appendChild(new Option(v, v)));
+      // mantém a escolha se ela ainda existir no recorte novo
+      select.value = [...select.options].some((o) => o.value === antes) ? antes : "";
+    };
+
+    const aplicar = () => {
+      const bu = selects.bu?.value || "";
+      const noEscopo = visiveis.filter((o) => !bu || o.bu === bu);
+
+      encher(selects.torre, noEscopo.map((o) => o.torre), bu ? `Todas as Torres de ${bu}` : "Todas as Torres");
+      const torre = selects.torre?.value || "";
+      const empresas = noEscopo.filter((o) => !torre || o.torre === torre).map((o) => o.empresa);
+      encher(selects.empresa, empresas, torre ? `Todas de ${torre}` : bu ? `Todas de ${bu}` : "Todas as Empresas");
+
+      // o cabeçalho e o título da grade dizem o recorte escolhido — antes
+      // eram texto fixo e chegaram a citar torre que nem existe mais
+      const rotulo = [selects.empresa?.value, torre, bu].filter(Boolean).join(" · ") || "Todas as BUs";
+      document.querySelectorAll("[data-escopo-rotulo]").forEach((el) => { el.textContent = rotulo; });
+
+      // o recorte vale para as sugestões da grade também
+      window.__escopoEmpresas = new Set(empresas);
+      const lista = document.getElementById("empresas-datalist");
+      if (lista) {
+        lista.innerHTML = "";
+        encherDatalist("empresas-datalist", empresas);
+      }
+    };
+
+    encher(selects.bu, visiveis.map((o) => o.bu), "Todas as BUs");
+    aplicar();
+    selects.bu?.addEventListener("change", aplicar);
+    selects.torre?.addEventListener("change", aplicar);
+    selects.empresa?.addEventListener("change", aplicar);
   });
 }
 
@@ -2732,6 +2941,39 @@ function renderResumoLancamentos() {
     : '<div class="empty-hint">Nada lançado ainda. Use a aba <strong>Lançar</strong> para começar.</div>';
 
   alvo.innerHTML = `${barras ? `<div class="resumo-pacotes">${barras}</div>` : ""}<div class="resumo-itens">${cartoes}</div>`;
+
+  // ---- cartões do topo, da mesma grade
+  const kpis = document.querySelector("[data-resumo-kpis]");
+  if (!kpis) return;
+
+  const porel = (attr, texto) => {
+    const el = kpis.querySelector(`[${attr}]`);
+    if (el) el.textContent = texto;
+  };
+  const dinheiro = (v) => `R$ ${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mil`;
+
+  // O template separa movimento de natureza justamente para responder isto:
+  // quanto do número já é contrato que existe e quanto depende de vender.
+  const base = itens.filter((i) => /recorrente/i.test(i.pacote)).reduce((s, i) => s + i.total, 0);
+  const pctBase = totalGeral ? Math.round((base / totalGeral) * 100) : 0;
+  const detalhes = new Set(linhas.map((row) => celula(row, colDetalhe)).filter(Boolean));
+  const rotuloDetalhe = alvo.getAttribute("data-resumo-detalhe") || "detalhe";
+
+  porel("data-kpi-total", dinheiro(totalGeral));
+  porel("data-kpi-total-nota", `${porPacote.size} ${alvo.getAttribute("data-resumo-termo-grupo") || "grupo(s)"}`);
+  porel("data-kpi-linhas", String(itens.length));
+  porel("data-kpi-linhas-nota", `${detalhes.size} ${rotuloDetalhe.toLowerCase()}(s) distinta(s)`);
+  // Passar de 100% não é defeito: churn entra negativo e derruba o total
+  // abaixo da base. É justamente o que o eixo de movimento existe para mostrar.
+  const churn = itens.filter((i) => i.total < 0).reduce((s, i) => s + i.total, 0);
+  porel("data-kpi-base", `${pctBase}%`);
+  porel("data-kpi-base-nota", pctBase > 100
+    ? `${dinheiro(base)} de base, e ${dinheiro(Math.abs(churn))} saindo por churn`
+    : `${dinheiro(base)} de contrato que já existe`);
+
+  const cartaoBase = kpis.querySelector("[data-kpi-base]")?.closest(".kpi-card");
+  cartaoBase?.querySelector("[data-kpi-base-nota]")?.classList.toggle("up", pctBase >= 60);
+  cartaoBase?.querySelector("[data-kpi-base-nota]")?.classList.toggle("down", pctBase < 60);
 }
 
 function colunaPorTitulo(tabela, titulo) {
@@ -2937,6 +3179,14 @@ function initFormLancamento() {
         if (alvo) alvo.value = campo.value || "—";
       });
 
+      // O formulário pergunta o cliente, não os cinco campos que vêm com ele.
+      // A linha nova consulta a carteira sozinha, pelo nome ou pelo CNPJ que
+      // acabaram de ser copiados — assim PMR, persona, setor, segmento e
+      // classe chegam preenchidos como chegariam se a linha fosse digitada.
+      const clienteDaLinha = acharCliente(nova.querySelector(".cliente-cnpj-input")?.value)
+        || acharCliente(nova.querySelector(".cliente-nome-input")?.value);
+      if (clienteDaLinha) preencherCliente(nova, clienteDaLinha);
+
       if (selectAtivacao && nova.querySelector(".ativacao-input")) {
         nova.querySelector(".ativacao-input").value = selectAtivacao.value;
         const pct = nova.querySelector(".ativacao-pct");
@@ -2968,23 +3218,34 @@ function initFormLancamento() {
       const selEmpresa = form.querySelector('[data-campo="empresa"]');
       const selProduto = form.querySelector('[data-campo="produto"]');
       const selSub = form.querySelector('[data-campo="subproduto"]');
-      const selTipo = form.querySelector('[data-campo="tiporeceita"]');
+      const selMovimento = form.querySelector('[data-campo="movimento"]');
+      const selNatureza = form.querySelector('[data-campo="natureza"]');
 
+      // Guarda contra select que não existe nesta tela: Sub-produto saiu do
+      // formulário de Receita quando a grade passou a seguir a Base Receita.
+      // Sem isto o init morreria aqui e levaria junto todos os posteriores.
       const encher = (select, valores, vazio) => {
+        if (!select) return;
         select.innerHTML = "";
         if (vazio) select.appendChild(new Option(vazio, ""));
         valores.forEach((v) => select.appendChild(new Option(v, v)));
         select.disabled = valores.length === 0;
       };
 
-      Promise.all([carregarRef("organizacional.json"), carregarRef("produtos.json")])
-        .then(([org, cat]) => {
+      Promise.all([
+        carregarRef("organizacional.json"),
+        carregarRef("produtos.json"),
+        carregarRef("dimensoes-receita.json").catch(() => null),
+      ])
+        .then(([org, cat, dim]) => {
           const torres = Array.from(new Set(org.filter((o) => o.torre !== "-").map((o) => o.torre)));
           encher(selTorre, torres, "Escolha a Torre");
           encher(selEmpresa, [], "Escolha a Torre primeiro");
           encher(selProduto, [], "Escolha a Torre primeiro");
           encher(selSub, ["—"], null);
-          encher(selTipo, cat.tiposReceita, "Escolha o tipo");
+          // os dois eixos do template, no lugar do campo único que os misturava
+          encher(selMovimento, dim ? dim.movimento : [], "Movimento — de onde vem");
+          encher(selNatureza, dim ? dim.natureza : [], "Natureza — o que foi vendido");
 
           selTorre.addEventListener("change", () => {
             const empresas = Array.from(new Set(
@@ -3502,7 +3763,34 @@ function xlsxLetraDeColuna(i) {
 }
 
 /* Lê a primeira planilha e devolve linhas de texto, no mesmo formato do CSV. */
-async function xlsxLer(buffer) {
+/* Quais abas o arquivo tem, e em que peça do ZIP cada uma mora. O nome da aba
+   está em workbook.xml, mas o caminho do arquivo está no .rels — sem cruzar os
+   dois só dá para abrir a primeira planilha, que foi o que bastou até o
+   Template Budget aparecer com 23 abas. */
+async function xlsxAbas(buffer) {
+  const entradas = zipEntradas(buffer);
+  const acha = (nome) => entradas.find((e) => e.nome === nome);
+
+  const relsXml = await zipTexto(acha("xl/_rels/workbook.xml.rels"));
+  const alvoPorId = {};
+  if (relsXml) {
+    new DOMParser().parseFromString(relsXml, "application/xml")
+      .querySelectorAll("Relationship").forEach((r) => {
+        alvoPorId[r.getAttribute("Id")] = r.getAttribute("Target").replace(/^\/?(xl\/)?/, "");
+      });
+  }
+
+  const wbXml = await zipTexto(acha("xl/workbook.xml"));
+  if (!wbXml) return [];
+  return [...new DOMParser().parseFromString(wbXml, "application/xml").querySelectorAll("sheet")]
+    .map((s, i) => {
+      const rid = s.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id")
+        || s.getAttribute("r:id");
+      return { nome: s.getAttribute("name"), peca: "xl/" + (alvoPorId[rid] || `worksheets/sheet${i + 1}.xml`) };
+    });
+}
+
+async function xlsxLer(buffer, nomeAba) {
   const entradas = zipEntradas(buffer);
   const acha = (nome) => entradas.find((e) => e.nome === nome);
 
@@ -3516,7 +3804,14 @@ async function xlsxLer(buffer) {
     });
   }
 
-  const planilha = entradas.find((e) => /^xl\/worksheets\/sheet\d+\.xml$/.test(e.nome));
+  let planilha;
+  if (nomeAba) {
+    const aba = (await xlsxAbas(buffer)).find((a) => a.nome === nomeAba);
+    planilha = aba && acha(aba.peca);
+    if (!planilha) throw new Error(`O arquivo não tem a aba "${nomeAba}".`);
+  } else {
+    planilha = entradas.find((e) => /^xl\/worksheets\/sheet\d+\.xml$/.test(e.nome));
+  }
   if (!planilha) throw new Error("Arquivo .xlsx sem planilha legível.");
   const doc = new DOMParser().parseFromString(await zipTexto(planilha), "application/xml");
 
@@ -3803,45 +4098,131 @@ const IMP_MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
 
 /* Não se pede o que dá para deduzir: Linha do P&L e Categoria saem da Conta,
    então não viram coluna do modelo. */
+/* As colunas do modelo são as mesmas da grade, que por sua vez são as do
+   Template Budget. `de` é o índice da coluna equivalente na aba do template —
+   é o que permite subir o arquivo original sem ninguém remontar nada.
+   Coluna sem `de` é conceito da plataforma que o template não tem (o pacote
+   pelo motivo, a ativação) e sobe vazia para ser preenchida aqui. */
 const IMP_SPEC = {
   receita: {
     rotulo: "Receita",
+    aba: "Base Receita", cabecalho: 4, primeiroMes: 15,
+    // mesma ordem e mesmos nomes da aba Base Receita — quem conhece a planilha
+    // reconhece a tela, e o arquivo sobe sem ninguém remontar coluna
     colunas: [
-      { nome: "Torre",        obrigatoria: true,  aceita: "torre" },
-      { nome: "Empresa",      obrigatoria: true,  aceita: "empresa" },
-      { nome: "Produto",      obrigatoria: true,  aceita: "produto" },
-      { nome: "Sub-produto",  obrigatoria: false, aceita: "subproduto" },
-      { nome: "Tipo Receita", obrigatoria: true,  aceita: "tipoReceita" },
+      { nome: "Empresa",                 obrigatoria: true,  aceita: "empresa",    de: 1 },
+      { nome: "Tipo Receita",            obrigatoria: true,  aceita: "movimento",  de: 2 },
+      { nome: "CNPJ",                    obrigatoria: false, aceita: "texto",      de: 3 },
+      { nome: "Razão Social",            obrigatoria: true,  aceita: "texto",      de: 4 },
+      { nome: "PMR",                     obrigatoria: false, aceita: "texto",      de: 5 },
+      { nome: "Categoria",               obrigatoria: true,  aceita: "natureza",   de: 6 },
+      { nome: "Produto",                 obrigatoria: true,  aceita: "produto",    de: 7 },
+      { nome: "Persona",                 obrigatoria: false, aceita: "texto",      de: 8 },
+      { nome: "Setor",                   obrigatoria: false, aceita: "texto",      de: 9 },
+      { nome: "Segmento",                obrigatoria: false, aceita: "texto",      de: 10 },
+      { nome: "Classe de Clientes",      obrigatoria: false, aceita: "texto",      de: 11 },
+      { nome: "Termômetro Novas Vendas", obrigatoria: false, aceita: "termometro", de: 12 },
+      { nome: "Projetos",                obrigatoria: false, aceita: "texto",      de: 13 },
+      { nome: "OBS",                     obrigatoria: false, aceita: "texto",      de: 14 },
+      { nome: "Índice",                  obrigatoria: false, aceita: "indice",     de: 29 },
+      { nome: "Mês Reajuste",            obrigatoria: false, aceita: "mes",        de: 30 },
     ],
-    chave: ["Torre", "Empresa", "Produto", "Sub-produto", "Tipo Receita"],
+    chave: ["CNPJ", "Razão Social", "Produto", "Tipo Receita", "Categoria"],
   },
   despesa: {
     rotulo: "Despesa",
+    aba: "Base Gastos", cabecalho: 3, primeiroMes: 9, valorNegativo: true,
     colunas: [
-      { nome: "Conta",           obrigatoria: true,  aceita: "conta" },
-      { nome: "Empresa",         obrigatoria: true,  aceita: "empresa" },
-      { nome: "Centro de Custo", obrigatoria: true,  aceita: "texto" },
-      { nome: "Pacote",          obrigatoria: true,  aceita: "pacote" },
+      { nome: "Conta",           obrigatoria: true,  aceita: "conta",   de: 1 },
+      { nome: "Empresa",         obrigatoria: true,  aceita: "empresa", de: 0 },
+      { nome: "Centro de Custo", obrigatoria: true,  aceita: "texto",   de: 3 },
+      { nome: "Área",            obrigatoria: false, aceita: "area",    de: 26 },
+      { nome: "Produto",         obrigatoria: false, aceita: "texto",   de: 5 },
+      { nome: "Fornecedor",      obrigatoria: false, aceita: "texto",   de: 6 },
+      { nome: "Projeto",         obrigatoria: false, aceita: "texto",   de: 7 },
+      { nome: "Responsável",     obrigatoria: false, aceita: "texto",   de: 27 },
+      { nome: "Observação",      obrigatoria: false, aceita: "texto",   de: 8 },
+      { nome: "Pacote",          obrigatoria: false, aceita: "pacote" },
       { nome: "Ativação",        obrigatoria: false, aceita: "texto" },
       { nome: "% Ativação",      obrigatoria: false, aceita: "percentual" },
-      { nome: "Fornecedor",      obrigatoria: false, aceita: "texto" },
-      { nome: "Obs",             obrigatoria: false, aceita: "texto" },
     ],
-    chave: ["Conta", "Empresa", "Centro de Custo"],
+    // O template repete a mesma conta no mesmo centro de custo com fornecedor,
+    // produto ou projeto diferente — a chave precisa do grao real, senao a
+    // importacao acusa duplicata em linha que e legitima.
+    chave: ["Conta", "Empresa", "Centro de Custo", "Fornecedor", "Projeto", "Produto"],
   },
   capex: {
     rotulo: "Capex",
+    aba: "Base CAPEX", cabecalho: 3, primeiroMes: 9, valorNegativo: true,
     colunas: [
-      { nome: "Conta",           obrigatoria: true,  aceita: "conta" },
-      { nome: "Empresa",         obrigatoria: true,  aceita: "empresa" },
-      { nome: "Centro de Custo", obrigatoria: true,  aceita: "texto" },
-      { nome: "Pacote",          obrigatoria: true,  aceita: "pacote" },
-      { nome: "Projeto",         obrigatoria: true,  aceita: "texto" },
-      { nome: "Justificativa",   obrigatoria: false, aceita: "texto" },
+      { nome: "Conta",           obrigatoria: true,  aceita: "conta",   de: 1 },
+      { nome: "Empresa",         obrigatoria: true,  aceita: "empresa", de: 0 },
+      { nome: "Centro de Custo", obrigatoria: true,  aceita: "texto",   de: 3 },
+      { nome: "Projeto",         obrigatoria: true,  aceita: "texto",   de: 7 },
+      { nome: "Fornecedor",      obrigatoria: false, aceita: "texto",   de: 6 },
+      { nome: "Pacote",          obrigatoria: false, aceita: "pacote" },
+      { nome: "Justificativa",   obrigatoria: false, aceita: "texto",   de: 8 },
     ],
-    chave: ["Conta", "Empresa", "Centro de Custo", "Projeto"],
+    chave: ["Conta", "Empresa", "Centro de Custo", "Projeto", "Fornecedor"],
   },
 };
+
+/* Empresa vem com grafia livre no template e, em algumas linhas, com Torre ou
+   BU no lugar da empresa. Mesmo de/para de ferramentas/carrega_template.py. */
+const IMP_EMPRESA_DEPARA = {
+  "kmm": "KMM", "bsoft": "Bsoft", "99kote": "99Kote", "hive": "Hivecloud",
+  "atua": "Atua Sistemas", "ats jornada": "ATS - Jornada",
+  "ats logistica": "ATS - Logistica", "e-frete nsflow": "e-frete",
+  "e-frete pedagio": "e-frete", "e-frete meio pagamento": "e-frete",
+  "torre vgr buonny": "Buonny",
+};
+
+/* Data no .xlsx é número de série, não texto: o mês de reajuste chega como
+   "46023", não como "2026-01". A contagem começa em 30/12/1899 — o dia zero do
+   Excel, que existe por causa de um bug de 1900 que a Microsoft manteve. */
+function impMesDoExcel(valor) {
+  const n = Number(valor);
+  if (!Number.isFinite(n) || n < 20000) return String(valor).slice(0, 7);
+  const d = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+/* Traduz uma aba do Template Budget para a grade que o conferidor entende:
+   primeira linha com os nomes das colunas do modelo, depois as linhas de dado.
+   O template guarda gasto como número negativo; aqui vira positivo, porque a
+   plataforma já sabe que despesa subtrai. */
+function impDoTemplate(grade, spec) {
+  const cabecalho = spec.colunas.map((c) => c.nome).concat(IMP_MESES);
+  const linhas = [cabecalho];
+
+  grade.slice(spec.cabecalho).forEach((bruta) => {
+    const chave = bruta[spec.colunas.find((c) => c.de !== undefined).de];
+    if (!String(chave || "").trim()) return;
+
+    const saida = spec.colunas.map((c) => {
+      if (c.de === undefined) return "";
+      let v = String(bruta[c.de] ?? "").trim();
+      if (c.aceita === "empresa") v = IMP_EMPRESA_DEPARA[v.toLowerCase()] || v;
+      if (c.aceita === "conta" && /^\d{10,}$/.test(v)) {
+        v = v.replace(/^(\d)(\d)(\d\d)(\d\d\d)(\d\d\d)$/, "$1.$2.$3.$4.$5");
+      }
+      if (c.aceita === "mes" && v) v = impMesDoExcel(v);
+      if (c.aceita === "area") v = v.replace(/^Cogs$/i, "CoGS");
+      return v;
+    });
+
+    // Template em reais, grade em R$ mil. Duas casas porque a base tem linha de
+    // R$ 42/mês — arredondar para o milhar inteiro zeraria gasto que existe.
+    IMP_MESES.forEach((_, i) => {
+      const n = Number(bruta[spec.primeiroMes + i]);
+      const valor = Number.isFinite(n) ? (spec.valorNegativo ? Math.abs(n) : n) : 0;
+      saida.push((valor / 1000).toFixed(2));
+    });
+    linhas.push(saida);
+  });
+
+  return linhas;
+}
 
 /* Leitor de CSV que aguenta campo entre aspas com ; e " dentro, BOM e CRLF.
    Split simples por ";" quebraria em "Obs" com ponto e vírgula no meio. */
@@ -3902,9 +4283,15 @@ function initImportacao() {
     switch (col.aceita) {
       case "empresa":     return `uma das ${empresas().length} empresas do cadastro`;
       case "torre":       return `uma das ${torres().length} torres`;
-      case "produto":     return `produto do catálogo, compatível com a Torre (${ref.produtos.produtos.length} disponíveis)`;
+      case "produto":     return `produto do catálogo (${ref.produtos.produtos.length} disponíveis)`;
       case "subproduto":  return "sub-produto do produto escolhido — deixe vazio se ele não tem divisão";
       case "tipoReceita": return ref.produtos.tiposReceita.join(" · ");
+      case "movimento":   return ref.dimensoes ? ref.dimensoes.movimento.join(" · ") : "de onde vem o número";
+      case "natureza":    return ref.dimensoes ? ref.dimensoes.natureza.join(" · ") : "o que foi vendido";
+      case "termometro":  return ref.dimensoes ? ref.dimensoes.termometro.join(" · ") : "";
+      case "indice":      return ref.indices ? ref.indices.indices.join(" · ") : "";
+      case "mes":         return "mês do reajuste no formato AAAA-MM (o aniversário do contrato)";
+      case "area":        return ref.gastos ? ref.gastos.areas.join(" · ") : "";
       case "conta":       return `código do plano de contas de ${IMP_SPEC[tipo].rotulo} ` +
                                  `(${contasDaCategoria(ref.contas, tipo).length} disponíveis)`;
       case "pacote":      return pacotesDo(tipo).map((p) => p.nome).join(" · ");
@@ -3926,10 +4313,16 @@ function initImportacao() {
       const linha = {};
       if (tipo === "receita") {
         const prod = ref.produtos.produtos.find((p) => p.torres.includes(o.torre)) || ref.produtos.produtos[0];
+        const cli = ref.clientes?.clientes[i] || {};
+        const dim = ref.dimensoes;
         Object.assign(linha, {
-          "Torre": o.torre, "Empresa": o.empresa, "Produto": prod.nome,
-          "Sub-produto": prod.subProdutos[0] || "",
-          "Tipo Receita": ref.produtos.tiposReceita[i % ref.produtos.tiposReceita.length],
+          "CNPJ": cli.cnpj || "", "Razão Social": cli.razaoSocial || "Cliente exemplo",
+          "Empresa": o.empresa, "Produto": prod.nome,
+          "Tipo Receita": dim ? dim.movimento[i % dim.movimento.length] : "",
+          "Categoria": dim ? dim.natureza[i % dim.natureza.length] : "",
+          "Termômetro Novas Vendas": dim ? dim.termometro[0] : "",
+          "Índice": ref.indices ? ref.indices.indices[i % ref.indices.indices.length] : "",
+          "Mês Reajuste": "2026-01",
         });
       } else {
         // o exemplo do modelo tem de passar na conferência da própria tela:
@@ -3985,8 +4378,6 @@ function initImportacao() {
 
     const col = (linha, nome) => (linha[cabecalho.indexOf(nome)] ?? "").trim();
     const setEmpresas = new Set(empresas());
-    const setTorres   = new Set(torres());
-    const setTipos    = new Set(ref.produtos.tiposReceita);
     const setPacotes  = new Set(pacotesDo(tipo).map((p) => p.nome));
     const contaPorCodigo = new Map(ref.contas.map((c) => [String(c.conta).trim(), c]));
     const produtoPorNome = new Map(ref.produtos.produtos.map((p) => [p.nome, p]));
@@ -4007,25 +4398,39 @@ function initImportacao() {
       }
 
       if (tipo === "receita") {
-        if (valor("Torre") && !setTorres.has(valor("Torre"))) {
-          erros.push(`Torre "${valor("Torre")}" não existe`);
-        }
         const prod = produtoPorNome.get(valor("Produto"));
         if (valor("Produto") && !prod) {
           erros.push(`Produto "${valor("Produto")}" não está no catálogo`);
-        } else if (prod && valor("Torre") && !prod.torres.includes(valor("Torre"))) {
-          erros.push(`Produto "${prod.nome}" não pertence à ${valor("Torre")}`);
         }
-        if (prod) {
-          const sub = valor("Sub-produto");
-          if (sub && !prod.subProdutos.includes(sub)) {
-            erros.push(`Sub-produto "${sub}" não é de "${prod.nome}"`);
-          } else if (!sub && prod.subProdutos.length) {
-            alertas.push(`"${prod.nome}" tem sub-produto e o campo ficou vazio`);
+        // Não se confere produto contra a torre da empresa: o catálogo veio de
+        // deparaempresas.xlsx, que lista só a base de recebimento de cada torre
+        // e deixa várias com um produto só. A conferência acusaria 2.558 linhas
+        // legítimas — falso positivo desse tamanho esconde o erro de verdade.
+
+        // Os dois eixos: movimento (de onde vem) e natureza (o que foi vendido)
+        const dim = ref.dimensoes;
+        if (dim) {
+          if (valor("Tipo Receita") && !dim.movimento.includes(valor("Tipo Receita"))) {
+            erros.push(`Tipo Receita "${valor("Tipo Receita")}" não é um dos ${dim.movimento.length} aceitos`);
+          }
+          if (valor("Categoria") && !dim.natureza.includes(valor("Categoria"))) {
+            erros.push(`Categoria "${valor("Categoria")}" não é uma das ${dim.natureza.length} aceitas`);
+          }
+          if (valor("Termômetro Novas Vendas") && !dim.termometro.includes(valor("Termômetro Novas Vendas"))) {
+            erros.push(`Termômetro "${valor("Termômetro Novas Vendas")}" não é um dos aceitos`);
           }
         }
-        if (valor("Tipo Receita") && !setTipos.has(valor("Tipo Receita"))) {
-          erros.push(`Tipo Receita "${valor("Tipo Receita")}" não é um dos quatro aceitos`);
+        if (ref.indices && valor("Índice") && !ref.indices.indices.includes(valor("Índice"))) {
+          erros.push(`Índice "${valor("Índice")}" não está cadastrado nas premissas`);
+        }
+        if (valor("Índice") && valor("Índice") !== "Livre" && !valor("Mês Reajuste")) {
+          alertas.push("Índice sem mês de reajuste — o efeito vai cair todo em janeiro");
+        }
+        if (valor("Mês Reajuste") && !/^\d{4}-\d{2}$/.test(valor("Mês Reajuste"))) {
+          erros.push(`Mês Reajuste "${valor("Mês Reajuste")}" precisa estar como AAAA-MM`);
+        }
+        if (!valor("CNPJ") && valor("Tipo Receita") === "Receita Recorrente") {
+          alertas.push("Receita recorrente sem CNPJ — contrato da base deveria ter cliente");
         }
       } else {
         const c = contaPorCodigo.get(valor("Conta"));
@@ -4041,6 +4446,12 @@ function initImportacao() {
         }
         if (valor("Pacote") && !setPacotes.has(valor("Pacote"))) {
           erros.push(`Pacote "${valor("Pacote")}" não se aplica a ${spec.rotulo}`);        // regra PAC
+        } else if (!valor("Pacote")) {
+          // O Template Budget não tem o pacote pelo MOTIVO — a coluna que ele
+          // chama de pacote é a linha do P&L, que aqui já sai da conta. A linha
+          // entra e fica esperando classificação; travar impediria a importação
+          // inteira por um dado que a origem não produz.
+          alertas.push("Pacote em branco — o motivo do gasto precisa ser classificado aqui");
         }
         if (tipo === "despesa" && valor("% Ativação")) {
           const p = impNumero(valor("% Ativação"));
@@ -4060,10 +4471,16 @@ function initImportacao() {
       if (zerados === 12) erros.push("Os 12 meses estão vazios ou zerados");
       else if (zerados) alertas.push(`${zerados} mês(es) sem valor — costuma ser esquecimento`);  // regra MES
 
-      // duplicidade dentro do próprio arquivo — regra DUP
+      // Chave repetida dentro do arquivo — regra DUP. Vira ALERTA, não erro: o
+      // Template Budget tem 131 linhas iguais em todas as colunas com 109
+      // valores anuais diferentes. São itens distintos que a planilha não
+      // separa por campo nenhum (um por colaborador, um por contrato). Travar
+      // aqui impediria importar justamente o arquivo que a área preenche.
       const chave = spec.chave.map((k) => valor(k)).join(" | ");
-      if (vistas.has(chave)) erros.push(`Repete a linha ${vistas.get(chave)} (mesma ${spec.chave.join(" + ")})`);
-      else vistas.set(chave, i + 2);
+      if (vistas.has(chave)) {
+        alertas.push(`Mesma chave da linha ${vistas.get(chave)} (${spec.chave.join(" + ")}) — ` +
+          "confira se são itens diferentes ou lançamento repetido");
+      } else vistas.set(chave, i + 2);
 
       linhas.push({
         numero: i + 2,           // +2: cabeçalho é a linha 1 do arquivo
@@ -4151,11 +4568,39 @@ function initImportacao() {
 
   function processar(arquivo) {
     const nome = document.querySelector("[data-imp-nome]");
+
+    // .xlsb é o Excel binário: outro formato, não um .xlsx com outro nome. O
+    // leitor daqui desmonta ZIP + XML e não tem como abrir. Sem este aviso o
+    // arquivo caía no leitor de CSV e voltava como "planilha vazia", que manda
+    // a pessoa procurar defeito no lugar errado.
+    if (/\.xlsb$/i.test(arquivo.name)) {
+      if (nome) { nome.hidden = false; nome.textContent = `📄 ${arquivo.name}`; }
+      document.querySelector("[data-imp-resultado]").hidden = true;
+      showToast('Arquivo .xlsb (Excel binário) não é lido aqui. No Excel: ' +
+        'Arquivo → Salvar como → Pasta de Trabalho do Excel (.xlsx).', "error");
+      return;
+    }
+
     const ehXlsx = /\.xlsx$/i.test(arquivo.name);
     const leitor = new FileReader();
     leitor.onload = async () => {
       try {
-        const grade = ehXlsx ? await xlsxLer(leitor.result) : impLerCsv(String(leitor.result));
+        const spec = IMP_SPEC[tipo];
+        let grade;
+        if (ehXlsx) {
+          // O Template Budget vem com 23 abas; o modelo da plataforma, com uma.
+          // Se as abas do template estiverem lá, lê a que corresponde à
+          // categoria escolhida e traduz — ninguém precisa recortar planilha.
+          const abas = (await xlsxAbas(leitor.result)).map((a) => a.nome);
+          const ehTemplate = abas.includes(spec.aba);
+          grade = await xlsxLer(leitor.result, ehTemplate ? spec.aba : undefined);
+          if (ehTemplate) {
+            grade = impDoTemplate(grade, spec);
+            showToast(`Template reconhecido — li a aba "${spec.aba}"`, "info");
+          }
+        } else {
+          grade = impLerCsv(String(leitor.result));
+        }
         analise = conferir(grade);
       } catch (erro) {
         analise = { fatal: erro.message || "Não consegui ler esse arquivo." };
@@ -4231,8 +4676,12 @@ function initImportacao() {
     carregarRef("contas.json"),
     carregarRef("produtos.json"),
     carregarRef("pacotes.json"),
-  ]).then(([org, contas, produtos, pacotes]) => {
-    ref = { org, contas, produtos, pacotes };
+    carregarRef("dimensoes-receita.json").catch(() => null),
+    carregarRef("indices-reajuste.json").catch(() => null),
+    carregarRef("fornecedores.json").catch(() => null),
+    carregarRef("clientes.json").catch(() => null),
+  ]).then(([org, contas, produtos, pacotes, dimensoes, indices, gastos, clientes]) => {
+    ref = { org, contas, produtos, pacotes, dimensoes, indices, gastos, clientes };
     renderColunas();
   });
 }
@@ -5376,6 +5825,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initVersaoBarra();
   initStatusCiclo();
   initDashboardExecutivo();
+  initFiltroOrg();
   renderResumoLancamentos();
   initReferenceAutocomplete();
 });

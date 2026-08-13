@@ -1,0 +1,93 @@
+{
+  "observacao": "Pacote e subpacote de FP&A, do Template Budget das Torres (aba Plano de Contas). Sao atributo da CONTA, nao escolha de quem lanca: a grade preenche sozinha, como faz com a linha do P&L. Nao confundir com pacotes.json, que guarda o MOTIVO do gasto (Operacao Base, Novos Contratos) — conceito da plataforma, que nenhum template tem. Gerado por ferramentas/carrega_template_torres.py.",
+  "pacotes": [
+    {
+      "nome": "Capex",
+      "subpacotes": [
+        "Benfeitorias e outros",
+        "Equipamento",
+        "Software"
+      ],
+      "contas": 11
+    },
+    {
+      "nome": "D&A",
+      "subpacotes": [
+        "D&A",
+        "M&A Amortization"
+      ],
+      "contas": 10
+    },
+    {
+      "nome": "Equivalência Patrimonial",
+      "subpacotes": [
+        "Equivalência Patrimonial"
+      ],
+      "contas": 2
+    },
+    {
+      "nome": "Financial Results",
+      "subpacotes": [
+        "Financial Results"
+      ],
+      "contas": 23
+    },
+    {
+      "nome": "IR/CSLL",
+      "subpacotes": [
+        "Deferred Tax",
+        "Income Tax"
+      ],
+      "contas": 16
+    },
+    {
+      "nome": "Intercompany",
+      "subpacotes": [
+        "Intercompany"
+      ],
+      "contas": 1
+    },
+    {
+      "nome": "Personnel Costs",
+      "subpacotes": [
+        "Benefícios",
+        "Bônus e premiações",
+        "Férias",
+        "Hora Extra",
+        "Indenizações",
+        "Salários+Encargos"
+      ],
+      "contas": 28
+    },
+    {
+      "nome": "Telecomunication / Technology expenses",
+      "subpacotes": [
+        "Cloud",
+        "Tecnologia",
+        "Telecomunição"
+      ],
+      "contas": 11
+    },
+    {
+      "nome": "Third Party Services & Mkt",
+      "subpacotes": [
+        "Custo Variável",
+        "Jurídico",
+        "Marketing",
+        "PCLD",
+        "Terceiros"
+      ],
+      "contas": 39
+    },
+    {
+      "nome": "Travels/Rental/Generals",
+      "subpacotes": [
+        "Eventos Internos / Endomarketing",
+        "Facilities",
+        "Generals",
+        "Viagens"
+      ],
+      "contas": 66
+    }
+  ]
+}

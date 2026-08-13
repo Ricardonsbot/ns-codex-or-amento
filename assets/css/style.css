@@ -2502,7 +2502,10 @@ a.status-card:hover { background: var(--color-bg); }
 
 .form-erro[hidden] { display: none; }
 
-.modo-planilha {
+/* O modo planilha deixou de ser alternativa escondida: a grade é o caminho
+   principal de lançamento, porque quem orça entra com centenas de linhas de
+   uma vez. Quem quiser responder pergunta a pergunta abre o guiado. */
+.modo-guiado {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -2510,7 +2513,7 @@ a.status-card:hover { background: var(--color-bg); }
   margin-bottom: 22px;
 }
 
-.modo-planilha > summary {
+.modo-guiado > summary {
   cursor: pointer;
   padding: 12px 16px;
   font-size: 13px;
@@ -2518,7 +2521,7 @@ a.status-card:hover { background: var(--color-bg); }
   color: var(--color-primary);
 }
 
-.modo-planilha[open] > summary { border-bottom: 1px solid var(--color-border); }
+.modo-guiado[open] > summary { border-bottom: 1px solid var(--color-border); } }
 
 /* ---------- Resumo do que já foi lançado ---------- */
 

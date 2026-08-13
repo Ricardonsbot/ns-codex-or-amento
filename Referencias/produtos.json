@@ -1,5 +1,5 @@
 {
-  "observacao": "Estrutura de input da Receita: Torre -> Empresa -> Produto -> Sub-produto -> Tipo de Receita. Torre e Empresa vem de organizacional.json; o catalogo de produto vem de deparaempresas.xlsx (coluna Produto_BaseRecebimento), a mesma base de recebimento que o financeiro usa. Sub-produto ficou vazio: a planilha para no produto. Gerado por ferramentas/carrega_cadastro.py.",
+  "observacao": "Catalogo de produto da Receita. Produto e sub-produto vem do Template Budget das Torres (aba Lista Produtos), onde Produto Sintetico e o produto e Produto Analitico e a divisao dele — era o sub-produto que nenhuma fonte preenchia. Os produtos sem nivel analitico vieram de deparaempresas.xlsx e cobrem as torres que este template nao alcanca. Gerado por ferramentas/carrega_template_torres.py.",
   "tiposReceita": [
     "Receita Recorrente",
     "Receita Não Recorrente",
@@ -7,6 +7,263 @@
     "Licenciamento"
   ],
   "produtos": [
+    {
+      "nome": "Monitoramento",
+      "torres": [
+        "Torre VGR",
+        "Buonny"
+      ],
+      "subProdutos": [
+        "Pronta Resposta e Escolta Velada",
+        "Monitoramento Central Externa",
+        "Monitoramento Central Interna",
+        "PA Risco"
+      ]
+    },
+    {
+      "nome": "Background Check",
+      "torres": [
+        "Torre VGR",
+        "Buonny"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Torre de Controle",
+      "torres": [
+        "Torre VGR",
+        "Buonny"
+      ],
+      "subProdutos": [
+        "Torre de Controle BPO Interno",
+        "Torre de Controle BPO Externo",
+        "PA Logística",
+        "Torre de Controle SW"
+      ]
+    },
+    {
+      "nome": "Telemetria",
+      "torres": [
+        "Torre VGR",
+        "Buonny"
+      ],
+      "subProdutos": [
+        "Isca Descartável",
+        "Rastreador",
+        "Câmera",
+        "Localizador",
+        "Isca Retornável Comodato"
+      ]
+    },
+    {
+      "nome": "SAAS GR",
+      "torres": [
+        "Torre VGR"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Prevenção de Acidentes",
+      "torres": [
+        "Torre VGR",
+        "Buonny"
+      ],
+      "subProdutos": [
+        "Telematics",
+        "PA Safety"
+      ]
+    },
+    {
+      "nome": "TMS Embarcador",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "DMS Atacadista / Distribuidor",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS - YMS - Varejo",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Roteirizador",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Gestão de entrega",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "WMS",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Superapp",
+      "torres": [
+        "Torre SW Embarcador"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "nsseg",
+      "torres": [
+        "Insurance Market"
+      ],
+      "subProdutos": [
+        "Averba",
+        "CIT",
+        "BPO",
+        "Portal Seguradora (Auditoria, RCV, BI Sinistro)"
+      ]
+    },
+    {
+      "nome": "nsre",
+      "torres": [
+        "Insurance Market"
+      ],
+      "subProdutos": [
+        "CIR / SGE"
+      ]
+    },
+    {
+      "nome": "Dados",
+      "torres": [
+        "Insurance Market"
+      ],
+      "subProdutos": [
+        "Dados Frete"
+      ]
+    },
+    {
+      "nome": "nscorr",
+      "torres": [
+        "Insurance Market"
+      ],
+      "subProdutos": [
+        "nscorr (Portal Corretor - Atual e Novo"
+      ]
+    },
+    {
+      "nome": "Pedágio - Roteirização Qualp, Pagamento e Auditoria",
+      "torres": [
+        "Fintech"
+      ],
+      "subProdutos": [
+        "Integrador",
+        "Roteirização",
+        "HUB"
+      ]
+    },
+    {
+      "nome": "Eventos",
+      "torres": [
+        "Mídia"
+      ],
+      "subProdutos": [
+        "Logística do Futuro",
+        "Outros Eventos"
+      ]
+    },
+    {
+      "nome": "Gestão de Redes",
+      "torres": [
+        "Mídia"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Midia Impressa",
+      "torres": [
+        "Mídia"
+      ],
+      "subProdutos": [
+        "Revista"
+      ]
+    },
+    {
+      "nome": "Midia Digital",
+      "torres": [
+        "Mídia"
+      ],
+      "subProdutos": [
+        "Produto Midia"
+      ]
+    },
+    {
+      "nome": "TMS Transportador Médio FTL",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS Transportador Grande FTL",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS Agro",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "SW DE JORNADA MOTORISTA",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS Cabotagem",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "ERP",
+      "torres": [
+        "Torre ICP Médio e Grande",
+        "Torre ICP Pequeno e Micro"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "ATS - Outros",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "NSKote",
+      "torres": [
+        "Torre ICP Médio e Grande"
+      ],
+      "subProdutos": []
+    },
     {
       "nome": "TMS Transportador Pequeno FTL",
       "torres": [
@@ -29,10 +286,49 @@
       "subProdutos": []
     },
     {
-      "nome": "ERP",
+      "nome": "PEF - Meio de Pagamento",
       "torres": [
-        "Torre ICP Pequeno e Micro"
+        "Fintech"
       ],
+      "subProdutos": [
+        "PEF Pré Pago",
+        "Mensalidade Integração",
+        "PEF Pós Pago"
+      ]
+    },
+    {
+      "nome": "nsflow - Conta Digital",
+      "torres": [
+        "Fintech"
+      ],
+      "subProdutos": [
+        "Antecipação"
+      ]
+    },
+    {
+      "nome": "TMS Transportador passageiro PME",
+      "torres": [
+        "Torre Mobilidade"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Transportador passageiro bilhetagem",
+      "torres": [
+        "Torre Mobilidade"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "TMS Transportador passageiro Grande",
+      "torres": [
+        "Torre Mobilidade"
+      ],
+      "subProdutos": []
+    },
+    {
+      "nome": "Todos",
+      "torres": [],
       "subProdutos": []
     },
     {
@@ -60,13 +356,6 @@
       "nome": "nskote",
       "torres": [
         "Torre ICP Médio e Grande"
-      ],
-      "subProdutos": []
-    },
-    {
-      "nome": "TMS Cabotagem",
-      "torres": [
-        "TMS Cabotagem"
       ],
       "subProdutos": []
     },
@@ -99,56 +388,7 @@
       "subProdutos": []
     },
     {
-      "nome": "TMS Transportador passageiro Grande",
-      "torres": [
-        "Torre Mobilidade"
-      ],
-      "subProdutos": []
-    },
-    {
-      "nome": "TMS Transportador passageiro PME",
-      "torres": [
-        "Torre Mobilidade"
-      ],
-      "subProdutos": []
-    },
-    {
-      "nome": "Transportador passageiro bilhetagem",
-      "torres": [
-        "Torre Mobilidade"
-      ],
-      "subProdutos": []
-    },
-    {
-      "nome": "Background Check",
-      "torres": [
-        "Buonny"
-      ],
-      "subProdutos": []
-    },
-    {
-      "nome": "Monitoramento",
-      "torres": [
-        "Buonny"
-      ],
-      "subProdutos": []
-    },
-    {
       "nome": "BPS",
-      "torres": [
-        "Buonny"
-      ],
-      "subProdutos": []
-    },
-    {
-      "nome": "Torre de Controle",
-      "torres": [
-        "Buonny"
-      ],
-      "subProdutos": []
-    },
-    {
-      "nome": "Prevenção de Acidentes",
       "torres": [
         "Buonny"
       ],

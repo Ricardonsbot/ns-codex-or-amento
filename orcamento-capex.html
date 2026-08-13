@@ -93,14 +93,14 @@
       </div>
 
       <div class="tabs submenu" data-tabs="capex">
-        <button class="tab-btn active" data-tab-target="tab-resumo">▤ Resumo do que já foi lançado</button>
-        <button class="tab-btn" data-tab-target="tab-lancar">✎ Lançar</button>
+        <button class="tab-btn" data-tab-target="tab-resumo">▤ Resumo do que já foi lançado</button>
+        <button class="tab-btn active" data-tab-target="tab-lancar">▦ Lançar na planilha</button>
       </div>
 
       <div data-tab-panel-group="capex">
 
       <!-- ===================== RESUMO ===================== -->
-      <div id="tab-resumo" class="tab-panel active">
+      <div id="tab-resumo" class="tab-panel">
 
         <div class="panel">
           <div class="panel-header">
@@ -141,7 +141,7 @@
       </div><!-- /tab-resumo -->
 
       <!-- ===================== LANÇAR ===================== -->
-      <div id="tab-lancar" class="tab-panel">
+      <div id="tab-lancar" class="tab-panel active">
 
         <!-- ===== Contexto ===== -->
         <div class="panel launch-context-panel">
@@ -155,15 +155,15 @@
             <div class="filter-bar" style="margin-bottom:0; border:none; padding:0;">
               <div class="filter-field">
                 <label>BU</label>
-                <select><option>PSL</option><option>Embarcador</option><option>Corporate</option></select>
+                <select data-filtro-org="bu"></select>
               </div>
               <div class="filter-field">
                 <label>Torre</label>
-                <select><option>Torre ICP Médio e Grande</option><option>Fintech</option><option>Torre Mobilidade</option><option>Buonny</option></select>
+                <select data-filtro-org="torre"></select>
               </div>
               <div class="filter-field">
                 <label>Empresa</label>
-                <select><option>NSTECH Log Brasil Ltda</option><option>NSTECH Cargo S.A.</option><option>NSTECH Corporate Holding</option></select>
+                <select data-filtro-org="empresa"></select>
               </div>
               <div class="filter-field">
                 <label>Ano</label>
@@ -179,8 +179,606 @@
           </div>
         </div>
 
-        <!-- ===== Formulário guiado ===== -->
+        <!-- ===== Modo planilha — o caminho principal ===== -->
         <div class="panel">
+            <div class="panel-body table-wrap">
+              <table class="entry-grid" id="tabela-capex">
+                <thead>
+                  <tr>
+                    <th colspan="8"></th>
+                    <th colspan="12" class="month-group-header">
+                      <button class="month-toggle-btn" data-month-toggle="tabela-capex" title="Agrupar meses">
+                        <span class="month-toggle-icon">−</span> Meses
+                      </button>
+                    </th>
+                    <th colspan="2"></th>
+                  </tr>
+                  <tr>
+                    <th>Conta</th>
+                    <th>Projeto</th>
+                    <th>Linha do P&amp;L</th>
+                    <th>Pacote</th>
+                    <th>Tipo de Ativo</th>
+                    <th class="text-right">Vida Útil</th>
+                    <th>Centro de Custo</th>
+                    <th>Justificativa</th>
+                    <th class="text-right month-col">Jan</th>
+                    <th class="text-right month-col">Fev</th>
+                    <th class="text-right month-col">Mar</th>
+                    <th class="text-right month-col">Abr</th>
+                    <th class="text-right month-col">Mai</th>
+                    <th class="text-right month-col">Jun</th>
+                    <th class="text-right month-col">Jul</th>
+                    <th class="text-right month-col">Ago</th>
+                    <th class="text-right month-col">Set</th>
+                    <th class="text-right month-col">Out</th>
+                    <th class="text-right month-col">Nov</th>
+                    <th class="text-right month-col">Dez</th>
+                    <th class="text-right">Total</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><input type="text" value="1.2.05.003.004" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="MAQUINAS, APARELHOS E EQUIPAMENTOS" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="" list="centros-datalist" /></td>
+                <td><input type="text" value="BPS" /></td>
+                <td class="month-col"><input type="number" value="279.7" /></td>
+                <td class="month-col"><input type="number" value="287.2" /></td>
+                <td class="month-col"><input type="number" value="294.3" /></td>
+                <td class="month-col"><input type="number" value="301.8" /></td>
+                <td class="month-col"><input type="number" value="309.5" /></td>
+                <td class="month-col"><input type="number" value="317.6" /></td>
+                <td class="month-col"><input type="number" value="325.7" /></td>
+                <td class="month-col"><input type="number" value="333.8" /></td>
+                <td class="month-col"><input type="number" value="341.0" /></td>
+                <td class="month-col"><input type="number" value="348.1" /></td>
+                <td class="month-col"><input type="number" value="355.3" /></td>
+                <td class="month-col"><input type="number" value="362.4" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="MAQUINAS, APARELHOS E EQUI" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="MAQUINAS, APARELHOS E EQUI" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="MAQUINAS, APARELHOS E EQUI" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.001" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="BENFEITORIAS EM IMOVEIS DE TERCEIROS" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Benfeitorias e outros" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="" list="centros-datalist" /></td>
+                <td><input type="text" value="BENFEITORIAS EM IMOVEIS DE TERCEIROS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="40.0" /></td>
+                <td class="month-col"><input type="number" value="80.0" /></td>
+                <td class="month-col"><input type="number" value="80.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="BENFEITORIAS EM IMOVEIS DE" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="BENFEITORIAS EM IMOVEIS DE" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="BENFEITORIAS EM IMOVEIS DE" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.001" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="SALA DESCOMPRESSÃO OPERAÇÃO" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Benfeitorias e outros" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="" list="centros-datalist" /></td>
+                <td><input type="text" value="BENFEITORIAS EM IMOVEIS DE TERCEIROS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="72.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="SALA DESCOMPRESSÃO OPERAÇÃ" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="SALA DESCOMPRESSÃO OPERAÇÃ" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="SALA DESCOMPRESSÃO OPERAÇÃ" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.001" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="BENFEITORIAS EM IMOVEIS DE TERCEIROS" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Benfeitorias e outros" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="" list="centros-datalist" /></td>
+                <td><input type="text" value="BENFEITORIAS EM IMOVEIS DE TERCEIROS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="30.0" /></td>
+                <td class="month-col"><input type="number" value="30.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="BENFEITORIAS EM IMOVEIS DE" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="BENFEITORIAS EM IMOVEIS DE" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="BENFEITORIAS EM IMOVEIS DE" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.002" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Compra de equipamento de alta desempenho" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="" list="centros-datalist" /></td>
+                <td><input type="text" value="DELL" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="22.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Compra de equipamento de a" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Compra de equipamento de a" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Compra de equipamento de a" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.005" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="MOVEIS - B1 (DANIFICADO PELO VAZAMENTO DE AGUA)" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Benfeitorias e outros" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="Bsoft / 03 - G&amp;A / 14.3.3.3 - BackOffice | Facilities" list="centros-datalist" /></td>
+                <td><input type="text" value="MOVEIS E UTENSILIOS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="20.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="MOVEIS - B1 (DANIFICADO PE" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="MOVEIS - B1 (DANIFICADO PE" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="MOVEIS - B1 (DANIFICADO PE" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.002" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Reposição de acessórios - Headset, mouse" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="" list="centros-datalist" /></td>
+                <td><input type="text" value="Logitech" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="month-col"><input type="number" value="1.5" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Reposição de acessórios -" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Reposição de acessórios -" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Reposição de acessórios -" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.005" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="EVENTUAIS REPOSIÇOES DE MOVEIS E UTENSILIO" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Benfeitorias e outros" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="HIVE / 03 - G&amp;A / 14.3.3.3 - BackOffice | Facilities" list="centros-datalist" /></td>
+                <td><input type="text" value="MOVEIS E UTENSILIOS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="3.0" /></td>
+                <td class="month-col"><input type="number" value="2.0" /></td>
+                <td class="month-col"><input type="number" value="3.0" /></td>
+                <td class="month-col"><input type="number" value="2.0" /></td>
+                <td class="month-col"><input type="number" value="3.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="EVENTUAIS REPOSIÇOES DE MO" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="EVENTUAIS REPOSIÇOES DE MO" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="EVENTUAIS REPOSIÇOES DE MO" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.004" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Celular Galaxy S25+/iPhone 15" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="Bsoft / 04 - S&amp;M / 14.4.4.2.1 - TMS Pequeno FTL | Marketing | Marketing" list="centros-datalist" /></td>
+                <td><input type="text" value="MAQUINAS, APARELHOS E EQUIPAMENTOS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="8.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Celular Galaxy S25+/iPhone" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Celular Galaxy S25+/iPhone" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Celular Galaxy S25+/iPhone" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.004" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Celular Galaxy S25+/iPhone 15" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="Bsoft / 04 - S&amp;M / 14.4.4.2.1 - TMS Pequeno FTL | Marketing | Marketing" list="centros-datalist" /></td>
+                <td><input type="text" value="MAQUINAS, APARELHOS E EQUIPAMENTOS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="8.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Celular Galaxy S25+/iPhone" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Celular Galaxy S25+/iPhone" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Celular Galaxy S25+/iPhone" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.002" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Reposição de acessórios - Headset, mouse, celular" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="" list="centros-datalist" /></td>
+                <td><input type="text" value="Reposição de acessórios - Headset, mouse, celular" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="month-col"><input type="number" value="0.6" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Reposição de acessórios -" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Reposição de acessórios -" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Reposição de acessórios -" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.004" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Monitor para edição" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="Bsoft / 04 - S&amp;M / 14.4.4.2.1 - TMS Pequeno FTL | Marketing | Marketing" list="centros-datalist" /></td>
+                <td><input type="text" value="MAQUINAS, APARELHOS E EQUIPAMENTOS" /></td>
+                <td class="month-col"><input type="number" value="6.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Monitor para edição" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Monitor para edição" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Monitor para edição" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.005" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="COMPRA DE NOVO AR" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Benfeitorias e outros" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="DATAMEX / 03 - G&amp;A / 14.3.3.3 - BackOffice | Facilities" list="centros-datalist" /></td>
+                <td><input type="text" value="MOVEIS E UTENSILIOS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="5.5" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="COMPRA DE NOVO AR" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="COMPRA DE NOVO AR" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="COMPRA DE NOVO AR" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.005" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="EVENTUAIS REPOSIÇOES DE MOVEIS E UTENSILIO" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Benfeitorias e outros" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="OTIMIZY / 01 - CUSTO DE VENDA / 1.8.10 - PME SUPORTE" list="centros-datalist" /></td>
+                <td><input type="text" value="MOVEIS E UTENSILIOS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="2.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="2.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="EVENTUAIS REPOSIÇOES DE MO" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="EVENTUAIS REPOSIÇOES DE MO" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="EVENTUAIS REPOSIÇOES DE MO" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.005" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="FILTRO DE AGUA" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Benfeitorias e outros" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="Bsoft / 03 - G&amp;A / 14.3.3.3 - BackOffice | Facilities" list="centros-datalist" /></td>
+                <td><input type="text" value="-" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="3.5" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="FILTRO DE AGUA" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="FILTRO DE AGUA" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="FILTRO DE AGUA" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.004" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Iluminação portátil Bastão De Luz Led Rgb Bicolor 23w Lc500r Godox" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="Bsoft / 04 - S&amp;M / 14.4.4.2.1 - TMS Pequeno FTL | Marketing | Marketing" list="centros-datalist" /></td>
+                <td><input type="text" value="MAQUINAS, APARELHOS E EQUIPAMENTOS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="3.5" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Iluminação portátil Bastão" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Iluminação portátil Bastão" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Iluminação portátil Bastão" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.005" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="COMPRA NOVO FILTRO DE AGUA" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Benfeitorias e outros" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="DATAMEX / 03 - G&amp;A / 14.3.3.3 - BackOffice | Facilities" list="centros-datalist" /></td>
+                <td><input type="text" value="MOVEIS E UTENSILIOS" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="2.8" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="COMPRA NOVO FILTRO DE AGUA" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="COMPRA NOVO FILTRO DE AGUA" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="COMPRA NOVO FILTRO DE AGUA" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.004" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Tripé Profissional Manfroto" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="Bsoft / 04 - S&amp;M / 14.4.4.2.1 - TMS Pequeno FTL | Marketing | Marketing" list="centros-datalist" /></td>
+                <td><input type="text" value="MAQUINAS, APARELHOS E EQUIPAMENTOS" /></td>
+                <td class="month-col"><input type="number" value="1.8" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Tripé Profissional Manfrot" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Tripé Profissional Manfrot" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Tripé Profissional Manfrot" title="Remover">🗑</button>
+                    </td>
+              </tr>
+              <tr>
+                <td><input type="text" value="1.2.05.003.004" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
+                <td><input type="text" value="Webcam Logitec MAX Brio" class="conta-nome-input" list="contas-datalist" /></td>
+                <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
+                <td><input type="text" value="Capex" class="conta-pacote-input" list="pacotesfpa-datalist" /></td>
+                <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
+                <td><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
+                <td><input type="text" value="Bsoft / 04 - S&amp;M / 14.4.4.2.1 - TMS Pequeno FTL | Marketing | Marketing" list="centros-datalist" /></td>
+                <td><input type="text" value="MAQUINAS, APARELHOS E EQUIPAMENTOS" /></td>
+                <td class="month-col"><input type="number" value="1.4" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="month-col"><input type="number" value="0.0" /></td>
+                <td class="text-right total-cell">R$ 800</td>
+                <td>
+                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Webcam Logitec MAX Brio" title="Replicar Para Todos os Meses">⇥</button>
+                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Webcam Logitec MAX Brio" title="Duplicar">⧉</button>
+                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
+                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Webcam Logitec MAX Brio" title="Remover">🗑</button>
+                    </td>
+              </tr>
+            </tbody>
+              </table>
+            </div>
+          </div>
+
+        <!-- ===== Formulário guiado (modo secundário) ===== -->
+        <details class="modo-guiado">
+          <summary>Prefere responder passo a passo? Lançar um projeto por vez</summary>
+<div class="panel">
           <div class="panel-header">
             <div>
               <h2>Lançar um projeto</h2>
@@ -291,6 +889,7 @@
             </form>
           </div>
         </div>
+        </details>
 
         <!-- ===== O que isso vira no P&L ===== -->
         <div class="panel">
@@ -306,168 +905,7 @@
         </div>
 
         <!-- ===== Grade ===== -->
-        <details class="modo-planilha">
-          <summary>Prefere planilha? Abrir a grade completa de projetos</summary>
-          <div class="panel">
-            <div class="panel-body table-wrap">
-              <table class="entry-grid" id="tabela-capex">
-                <thead>
-                  <tr>
-                    <th colspan="8"></th>
-                    <th colspan="12" class="month-group-header">
-                      <button class="month-toggle-btn" data-month-toggle="tabela-capex" title="Agrupar meses">
-                        <span class="month-toggle-icon">−</span> Meses
-                      </button>
-                    </th>
-                    <th colspan="2"></th>
-                  </tr>
-                  <tr>
-                    <th>Conta</th>
-                    <th>Projeto</th>
-                    <th>Linha do P&amp;L</th>
-                    <th>Pacote</th>
-                    <th>Tipo de Ativo</th>
-                    <th class="text-right">Vida Útil</th>
-                    <th>Centro de Custo</th>
-                    <th>Justificativa</th>
-                    <th class="text-right month-col">Jan</th>
-                    <th class="text-right month-col">Fev</th>
-                    <th class="text-right month-col">Mar</th>
-                    <th class="text-right month-col">Abr</th>
-                    <th class="text-right month-col">Mai</th>
-                    <th class="text-right month-col">Jun</th>
-                    <th class="text-right month-col">Jul</th>
-                    <th class="text-right month-col">Ago</th>
-                    <th class="text-right month-col">Set</th>
-                    <th class="text-right month-col">Out</th>
-                    <th class="text-right month-col">Nov</th>
-                    <th class="text-right month-col">Dez</th>
-                    <th class="text-right">Total</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><input type="text" value="1.2.05.003.002" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                    <td><input type="text" value="EQUIPAMENTOS DE INFORMATICA" class="conta-nome-input" list="contas-datalist" /></td>
-                    <td><input type="text" value="Capex &gt; Equipamentos" class="conta-linha-input" /></td>
-                    <td><input type="text" value="Manutenção e Reposição" class="pacote-input" list="pacotes-datalist" /></td>
-                    <td><input type="text" value="Equipamentos e hardware" class="ativacao-input" list="ativacao-datalist" /></td>
-                    <td class="text-right"><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
-                    <td><input type="text" value="Tecnologia" list="centros-datalist" /></td>
-                    <td><input type="text" value="Máquinas com 5 anos de uso, fora de garantia" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="420" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="380" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="text-right total-cell">R$ 800</td>
-                    <td>
-                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Renovação do parque de notebooks" title="Replicar Para Todos os Meses">⇥</button>
-                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Renovação do parque de notebooks" title="Duplicar">⧉</button>
-                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
-                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Renovação do parque de notebooks" title="Remover">🗑</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><input type="text" value="1.2.07.001.001" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                    <td><input type="text" value="SOFTWARES - PROJETOS INTERNOS" class="conta-nome-input" list="contas-datalist" /></td>
-                    <td><input type="text" value="Capex &gt; Software" class="conta-linha-input" /></td>
-                    <td><input type="text" value="Projetos e Iniciativas" class="pacote-input" list="pacotes-datalist" /></td>
-                    <td><input type="text" value="Software desenvolvido internamente" class="ativacao-input" list="ativacao-datalist" /></td>
-                    <td class="text-right"><input type="text" value="5 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
-                    <td><input type="text" value="Tecnologia" list="centros-datalist" /></td>
-                    <td><input type="text" value="Fase de desenvolvimento — 6 critérios do CPC 04 atendidos" /></td>
-                    <td class="month-col"><input type="number" value="180" /></td>
-                    <td class="month-col"><input type="number" value="180" /></td>
-                    <td class="month-col"><input type="number" value="180" /></td>
-                    <td class="month-col"><input type="number" value="180" /></td>
-                    <td class="month-col"><input type="number" value="180" /></td>
-                    <td class="month-col"><input type="number" value="180" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="text-right total-cell">R$ 1.080</td>
-                    <td>
-                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Plataforma de roteirização" title="Replicar Para Todos os Meses">⇥</button>
-                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Plataforma de roteirização" title="Duplicar">⧉</button>
-                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
-                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Plataforma de roteirização" title="Remover">🗑</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><input type="text" value="1.2.05.003.001" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                    <td><input type="text" value="BENFEITORIAS EM IMOVEIS DE TERCEIROS" class="conta-nome-input" list="contas-datalist" /></td>
-                    <td><input type="text" value="Capex &gt; Benfeitorias e outros" class="conta-linha-input" /></td>
-                    <td><input type="text" value="Crescimento e Expansão" class="pacote-input" list="pacotes-datalist" /></td>
-                    <td><input type="text" value="Benfeitorias em imóveis de terceiros" class="ativacao-input" list="ativacao-datalist" /></td>
-                    <td class="text-right"><input type="text" value="10 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
-                    <td><input type="text" value="Operações" list="centros-datalist" /></td>
-                    <td><input type="text" value="Ampliação de 1.200 m² para o novo contrato" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="600" /></td>
-                    <td class="month-col"><input type="number" value="600" /></td>
-                    <td class="month-col"><input type="number" value="600" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="text-right total-cell">R$ 1.800</td>
-                    <td>
-                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Reforma do CD de Extrema" title="Replicar Para Todos os Meses">⇥</button>
-                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Reforma do CD de Extrema" title="Duplicar">⧉</button>
-                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
-                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Reforma do CD de Extrema" title="Remover">🗑</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><input type="text" value="1.2.07.001.002" class="conta-codigo-input input-readonly" style="min-width:70px;" readonly /></td>
-                    <td><input type="text" value="SOFTWARES - TERCEIROS" class="conta-nome-input" list="contas-datalist" /></td>
-                    <td><input type="text" value="Capex &gt; Software" class="conta-linha-input" /></td>
-                    <td><input type="text" value="Tecnologia e Licenças" class="pacote-input" list="pacotes-datalist" /></td>
-                    <td><input type="text" value="Licenças e software adquirido" class="ativacao-input" list="ativacao-datalist" /></td>
-                    <td class="text-right"><input type="text" value="3 anos" class="input-readonly" style="min-width:60px;" readonly /></td>
-                    <td><input type="text" value="Financeiro" list="centros-datalist" /></td>
-                    <td><input type="text" value="Obrigatório para a reforma tributária" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="240" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="month-col"><input type="number" value="0" /></td>
-                    <td class="text-right total-cell">R$ 240</td>
-                    <td>
-                      <button class="btn btn-ghost btn-sm" data-action="replicate-months" data-action-label="Licenças do ERP" title="Replicar Para Todos os Meses">⇥</button>
-                      <button class="btn btn-ghost btn-sm" data-action="duplicate-row" data-action-label="Licenças do ERP" title="Duplicar">⧉</button>
-                      <a class="btn btn-ghost btn-sm" href="auditoria.html?categoria=capex" title="Ver a trilha de auditoria de Capex">&#10226;</a>
-                      <button class="btn btn-ghost btn-sm" data-action="delete-row" data-action-label="Licenças do ERP" title="Remover">🗑</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </details>
+        
 
       </div><!-- /tab-lancar -->
       </div><!-- /tab-panel-group -->
@@ -481,8 +919,10 @@
 <datalist id="pacotes-datalist"></datalist>
 <datalist id="ativacao-datalist"></datalist>
 
+<datalist id="pacotesfpa-datalist"></datalist>
 <div id="toast-container"></div>
 
+<script src="assets/js/dados.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>
