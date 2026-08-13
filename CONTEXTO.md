@@ -1,6 +1,6 @@
 # Contexto do NS Codex — leia isto ao abrir um chat novo
 
-> Estado em 13/08/2026, commit `2767e30`. Num chat novo, basta pedir:
+> Estado em 13/08/2026, commit `a6d34b5`. Num chat novo, basta pedir:
 > **"leia CONTEXTO.md"**.
 
 ---
@@ -154,9 +154,11 @@ python ferramentas/semeia_grades.py             # 60/60/19 linhas nas grades
 python ferramentas/gera_dados_embutidos.py      # SEMPRE por último
 ```
 
-**`gera_dados_embutidos.py` é obrigatório no fim.** Ele reescreve
-`assets/js/dados.js`, que é o que o app lê quando aberto por duplo clique. Sem
-rodar, quem testar vê cadastro velho.
+**`gera_dados_embutidos.py` é obrigatório no fim**, e faz duas coisas:
+reescreve `assets/js/dados.js` (o que o app lê no duplo clique) e **carimba a
+versão dos assets nas 19 páginas**. Sem rodar, o navegador continua servindo a
+tela antiga mesmo com o disco certo — foi assim que a tela apareceu
+desatualizada em 13/08.
 
 ---
 
@@ -209,8 +211,13 @@ pela Row Level Security — a permissão mora no banco, não na tela.
 - **`.xlsb` é outro formato**, não um `.xlsx` renomeado. O leitor não abre.
 
 **Da verificação:**
-- **`?v=N` na URL não atualiza `app.js` nem `style.css`.** O que funciona:
-  `fetch(url, {cache:"reload"})` nos assets e só então recarregar.
+- **Cache do navegador servindo tela velha** foi o defeito mais teimoso do
+  projeto. **Já está resolvido:** `gera_dados_embutidos.py` carimba
+  `?v=<hash do conteúdo>` nas tags de CSS e JS das 19 páginas, e põe
+  `Cache-Control: no-cache` no `<head>` para o HTML ser relido. Um F5 comum
+  passou a bastar. **Mas o carimbo só se atualiza quando o script roda** — se
+  você editar `app.js` à mão e não rodar, o navegador continua com o velho, e
+  aí vale `fetch(url, {cache:"reload"})` antes de recarregar.
 - **Viewport zero** quando o painel do navegador está fechado.
 - **O console acumula erros entre navegações.**
 - Ao editar HTML por script, **prefira trocar a tag inteira a usar
