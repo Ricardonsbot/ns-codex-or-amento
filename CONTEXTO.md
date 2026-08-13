@@ -1,7 +1,7 @@
 # Contexto do NS Codex — leia isto ao abrir um chat novo
 
-> Estado em 11/08/2026, commit `09e9d9a`. Este arquivo substitui o contexto que
-> era colado à mão. Num chat novo, basta pedir: **"leia CONTEXTO.md"**.
+> Estado em 13/08/2026, commit `2767e30`. Num chat novo, basta pedir:
+> **"leia CONTEXTO.md"**.
 
 ---
 
@@ -9,40 +9,38 @@
 
 Maquete navegável do processo de **budget corporativo da NSTECH**. Não é o
 produto — é o instrumento para alinhar o processo com a liderança **antes** de
-construir o sistema.
+construir o sistema. Está em **período de testes**: o Ricardo enviou o pacote
+para o chefe usar.
 
 | | |
 |---|---|
 | Pasta | `Área de Trabalho\ns-codex-orcamento` (é o clone com `origin`) |
 | Repo | `https://github.com/Ricardonsbot/ns-codex-or-amento` (privado) |
 | Branch | `main` |
-| Rodar | servidor estático na porta 8081 → **`http://127.0.0.1:8081`** |
-| Tamanho | 19 páginas · `app.js` 5.381 linhas · `style.css` 4.112 linhas · 13 JSON |
+| Rodar | duplo clique no `index.html`, **ou** servidor estático na 8081 |
+| Tamanho | 19 páginas · `app.js` 5.829 linhas · `style.css` 4.115 · 18 JSON · 7 scripts |
 
 > **Cuidado com a cópia errada.** Existe uma segunda cópia no SharePoint, e ela
 > está velha. No `launch.json` do projeto vizinho as duas estão mapeadas:
-> `ns-codex` aponta para a do SharePoint (porta 8080) e **`ns-codex-github`
-> aponta para a do Desktop (porta 8081), que é a que vale.** Servir a errada
-> dá 404 em arquivo que existe, e o sintoma parece outra coisa.
+> `ns-codex` aponta para a do SharePoint (8080) e **`ns-codex-github` para a do
+> Desktop (8081), que é a que vale.** Servir a errada dá 404 em arquivo que
+> existe, e o sintoma não parece cache.
 >
-> O projeto Flask "Ferramenta Orçamentária" foi **parado** em 05/08/2026 — só
-> se trabalha aqui.
+> O projeto Flask "Ferramenta Orçamentária" foi **parado** em 05/08/2026.
 
 ---
 
 ## 2. Regras de arquitetura (não quebrar)
 
 - **HTML/CSS/JS puro.** Sem backend, sem build step, sem framework.
-- **Sem CDN e sem dependência externa.** O export em PDF é `window.print()`; o
-  leitor e o gerador de `.xlsx` e o gerador de `.pptx` foram escritos à mão
-  (ZIP + XML).
+- **Sem CDN e sem dependência externa.** O PDF é `window.print()`; o leitor e o
+  gerador de `.xlsx` e o gerador de `.pptx` foram escritos à mão (ZIP + XML).
 - **Um único JS** (`assets/js/app.js`) e **um único CSS** (`assets/css/style.css`).
-- **Toda leitura de JSON passa por `carregarRef()`** — senão o navegador serve
-  JSON velho do cache.
+- **Toda leitura de JSON passa por `carregarRef()`.** Ele tenta o `fetch` e, se
+  não houver servidor (`file://`), cai na cópia embutida em `assets/js/dados.js`.
 - Funções planas `initX()` registradas no `DOMContentLoaded`; seleção por
   `data-*`; `showToast()` para feedback; `escaparTexto()` antes de `innerHTML`.
-- **Linhas de grade são clonadas** → usar **delegação de evento**, nunca
-  listener preso na linha.
+- **Linhas de grade são clonadas** → delegação de evento, nunca listener na linha.
 - Comentários e textos de tela em **português**, tom direto, sem jargão de TI.
 - `ferramentas/*.py` são scripts de bastidor rodados na mão. **Não** são build
   step: o site lê só os JSON prontos.
@@ -51,9 +49,7 @@ construir o sistema.
 
 ## 3. O modelo de negócio
 
-- **Hierarquia:** BU → Torre → Sub Torre → Empresa. **3 BUs, 15 torres, 50
-  empresas.** As 12 torres operacionais vêm de `deparaempresas.xlsx`; as três
-  de Corporate (G&A, S&M, R&D) não estão lá e seguem escritas à mão.
+**Hierarquia:** BU → Torre → Sub Torre → Empresa. **3 BUs, 15 torres, 50 empresas.**
 
 | BU | Torres |
 |---|---|
@@ -61,28 +57,40 @@ construir o sistema.
 | Embarcador | Torre VGR · YMS/WMS · Torre SW Embarcador · Mídia · Insurance Market |
 | Corporate | G&A · S&M · R&D |
 
-- **P&L bridge:** Revenue → Expenses → EBITDA → Capex → EBITDA after Capex.
-- **As três categorias não são simétricas:**
+**P&L bridge:** Revenue → Expenses → EBITDA → Capex → EBITDA after Capex.
+
+**As três categorias não são simétricas:**
 
 | | Como se lança |
 |---|---|
-| Receita | Torre → Empresa → Produto → Sub-produto → **Tipo de Receita** |
-| Despesa | Conta → Empresa → Centro de Custo → **Pacote** → Ativação |
-| Capex | Conta → Empresa → Centro de Custo → **Pacote** → Tipo de Ativo |
+| Receita | Empresa → **Cliente (CNPJ)** → Produto → Tipo Receita → Categoria |
+| Despesa | Conta → Empresa → Centro de Custo → Motivo → Ativação |
+| Capex | Conta → Projeto → Centro de Custo → Tipo de Ativo |
 
-- **Receita não tem conta contábil.** É o caminho dela que classifica. A tela
-  de Receita não oferece plano de contas nem centro de custo.
-- **Cada tela só aceita conta da sua categoria** — Despesa sugere 292 contas,
-  Capex sugere 12. A categoria sai do prefixo da linha do P&L
-  (`Receita >`, `Despesas >`, `Capex >`), e a tradução mora num lugar só:
-  `categoriaDaConta()` em `app.js`.
-- **Pacote é o MOTIVO, não a natureza contábil.** Receita **não** tem pacote
-  (saiu no commit `ba03567`); usa Tipo de Receita.
-- **Ativação** (só em Despesa): quanto do gasto vira ativo. CPC 27 (imobilizado)
-  e CPC 04 (intangível). Pesquisa é despesa obrigatória; desenvolvimento é
-  capitalizável se os 6 critérios forem atendidos.
+- **Receita se lança por CONTRATO.** A linha é o cliente: CNPJ e razão social.
+  Preenchendo um dos dois o outro vem, com PMR, persona, setor, segmento e
+  classe. **Receita não tem conta contábil** — o caminho dela é que classifica.
+- **Cada tela só aceita conta da sua categoria** (Despesa 313, Capex 12,
+  Receita nenhuma). A categoria sai do prefixo da linha do P&L, e a tradução
+  mora só em `categoriaDaConta()`.
+- **Ativação** (só em Despesa): quanto do gasto vira ativo. CPC 27 e CPC 04.
 - **Índice acumula composto**, nunca soma: `(1+i₁)×(1+i₂)−1`.
-- Valores das grades em **R$ mil**. Totais consolidados aparecem em R$ mi.
+- Valores das grades em **R$ mil**. Totais consolidados em R$ mi.
+
+### As três palavras que significam duas coisas
+
+Isto custou muito tempo. Se você mexer em cadastro, leia antes:
+
+| Palavra | No template / ERP | Na plataforma |
+|---|---|---|
+| **Pacote** | agrupamento de FP&A (Personnel Costs, Travels/Rental/Generals) — **atributo da conta** | era o **motivo** do gasto (Operação Base, Novos Contratos) |
+| **Tipo Receita** | **movimento**: base, venda nova, expansão, churn | era natureza |
+| **Categoria** | **natureza**: SaaS, On Premise, implantação | era o subpacote da conta |
+
+Hoje a grade usa os nomes do template. Pacote e Subpacote **se preenchem
+sozinhos ao escolher a conta**. A coluna **Motivo** guarda o conceito da
+plataforma, que **não existe em template nenhum** — é disciplina nova que
+alguém terá de preencher.
 
 ---
 
@@ -93,167 +101,159 @@ construir o sistema.
 
 **Fluxo:** `entregas` · `aprovacoes` · `correcoes` · `notificacoes` · `auditoria`
 
-**Análise e admin:** `relatorios` · **`dashboard-executivo`** · `usuarios` ·
+**Análise e admin:** `relatorios` · `dashboard-executivo` · `usuarios` ·
 `layouts` · `indices` · `budget-settings` · `login`
 
-Receita, Despesa e Capex têm o mesmo esqueleto: abas **Resumo / Lançar**,
-formulário guiado por passos, **Phasing** e a grade completa atrás do
-`<details>` "Prefere planilha?".
+As três de orçamento têm abas **Resumo / Lançar na planilha**. **A grade é o
+caminho principal** — quem orça entra com centenas de linhas, não uma por vez.
+O formulário guiado ficou recolhido atrás de `<details class="modo-guiado">`.
 
 ---
 
 ## 5. Os dados
 
-Treze JSON em `Referencias/`. **As telas derivam das mesmas fontes para nunca
+Dezoito JSON em `Referencias/`. **As telas derivam das mesmas fontes para nunca
 divergirem** — este é o princípio mais importante do projeto.
 
 | Arquivo | Conteúdo |
 |---|---|
+| `contas` | **425 contas** (100 receita, 313 despesa, 12 capex); 207 com pacote e subpacote |
+| `pacotes-fpa` | 10 pacotes de FP&A com seus subpacotes — **atributo da conta** |
+| `pacotes` | 9 pacotes-**motivo** — conceito da plataforma, sem fonte externa |
+| `centros-custo` | 104 centros com código, nome, diretoria e grupo |
 | `organizacional` | 52 linhas · 50 empresas em 15 torres |
-| `contas` | 404 contas orçáveis (100 receita, 292 despesa, 12 capex) |
-| `centros-custo` | 171 centros de custo reais |
-| `produtos` | 40 produtos + 4 tipos de receita |
-| `pacotes` | 9 pacotes (motivo do gasto) |
-| `inputs` | 261 linhas — o que compõe cada submissão |
-| `aprovacoes` | 68 submissões |
-| `entregas` | 37 entregas |
-| `auditoria` | 360 eventos |
+| `produtos` | 67 produtos, 14 com sub-produto (33 no total) |
+| `clientes` | **3.797 CNPJs** com razão social, PMR, persona, setor, segmento, classe |
+| `fornecedores` | 1.040 fornecedores, 20 projetos, 5 áreas, 6 responsáveis |
+| `dimensoes-receita` | os dois eixos: 5 movimentos, 16 naturezas, personas, setores |
+| `indices-reajuste` | índice acumulado 12m por mês de aniversário (IGP-M, IPCA, INPC, Livre, Dólar) |
+| `inputs` (261) · `aprovacoes` (68) · `entregas` (37) · `auditoria` (360) | o ciclo simulado |
 | `cronograma` · `premissas` · `ativacao` · `notificacoes` | apoio |
 
-Dependências reais: `aprovacoes` deriva de `entregas`; `auditoria` e `inputs`
-são **gerados** de `aprovacoes` por `ferramentas/*.py`. Por isso os totais
-batem em qualquer tela.
+### As cinco planilhas de origem
 
-**O cadastro real da NSTECH já está carregado.** Três `.xlsx` versionados em
-`Referencias/`, lidos por `ferramentas/carrega_cadastro.py`:
+Todas versionadas em `Referencias/`, lidas só pelos scripts de bastidor:
 
-- `tbl_KMM_Contas.xlsx` — 635 contas, das quais 404 são orçáveis (as 231 de
-  balanço ficam de fora: não se orça saldo patrimonial).
-- `tbl_KMM_Organizacional.xlsx` — 3.284 linhas; de onde saem as empresas e os
-  centros de custo.
-- `deparaempresas.xlsx` — BU → Torre → Produto_BaseRecebimento. É a de/para que
-  faltava.
+| Planilha | O que dá |
+|---|---|
+| `tbl_KMM_Contas.xlsx` | 635 contas, 404 orçáveis |
+| `tbl_KMM_Organizacional.xlsx` | empresas e centros de custo |
+| `deparaempresas.xlsx` | **BU → Torre → Produto** — a de/para que faltava |
+| `template-budget-psl.xlsx` | lançamentos: carteira, fornecedores, os dois eixos |
+| `template-budget-torres.xlsb` | **cadastro**: pacote×linha do P&L, sub-produto, centros |
 
-**Armadilha desta planilha:** a coluna `FPA_Pacote` **não** é pacote — guarda a
-linha do P&L. Pacote neste produto é o motivo do gasto, e isso não existe em
-`.xlsx` nenhum. `pacotes.json` continua escrito à mão.
-
-Para recarregar tudo depois de mexer nos `.xlsx`:
+### Para recarregar tudo
 
 ```
-python ferramentas/carrega_cadastro.py
-python ferramentas/gera_inputs.py
-python ferramentas/gera_auditoria.py
+python ferramentas/carrega_cadastro.py          # contas, centros, org, produtos
+python ferramentas/carrega_template.py          # carteira, dimensões, índices (PSL)
+python ferramentas/carrega_template_torres.py   # pacotes, sub-produtos (~2 min, .xlsb)
+python ferramentas/gera_inputs.py               # inputs.json
+python ferramentas/gera_auditoria.py            # auditoria.json
+python ferramentas/semeia_grades.py             # 60/60/19 linhas nas grades
+python ferramentas/gera_dados_embutidos.py      # SEMPRE por último
 ```
+
+**`gera_dados_embutidos.py` é obrigatório no fim.** Ele reescreve
+`assets/js/dados.js`, que é o que o app lê quando aberto por duplo clique. Sem
+rodar, quem testar vê cadastro velho.
 
 ---
 
-## 6. Banco de dados (novo, não ligado)
+## 6. O pacote de testes
 
-`banco/*.sql` — 7 arquivos, 30 tabelas em PostgreSQL, mais o guia
-`BANCO-DE-DADOS.md`. Passam pelo parser oficial (libpg_query), **não foram
-executados**.
-
-Cinco decisões embutidas: uma linha por mês (nunca 12 colunas); versão fechada
-imutável; `uuid` estável por lançamento para o ida-e-volta com Excel; valores em
-reais com centavos (`numeric`, nunca `float`); realizado em tabela separada do
-orçado.
-
-Postgres foi escolhido pela **Row Level Security** — a permissão mora no banco,
-não no código da tela.
+- Zipar a pasta → duplo clique no `index.html`. Sem Python, sem servidor, sem rede.
+- `COMO-TESTAR.md` explica o que é real e o que é simulado.
+- `ABRIR NS CODEX.bat` é atalho opcional (sobe servidor se houver Python).
+- Dá para tirar `Referencias/` do zip: o app não precisa dela.
+- **Nada persiste.** Fechou o navegador, volta ao estado original.
 
 ---
 
-## 7. Armadilhas já pagas (não repetir)
+## 7. Banco de dados (novo, não ligado)
+
+`banco/*.sql` — 7 arquivos, 30 tabelas em PostgreSQL, mais `BANCO-DE-DADOS.md`.
+Passam pelo parser oficial, **não foram executados**. Postgres foi escolhido
+pela Row Level Security — a permissão mora no banco, não na tela.
+
+---
+
+## 8. Armadilhas já pagas (não repetir)
 
 **Do JS:**
-- **Um `init` que estoura mata todos os posteriores** no `DOMContentLoaded`. O
-  sintoma aparece longe da causa. Se uma tela "não carrega nada", olhe o console
-  e procure o primeiro `init` que falhou.
-- `initFormLancamento` assumia que todo formulário guiado tem os elementos do de
-  Despesa. Corrigido com guardas — mas o padrão pode existir noutros lugares.
-- **`[hidden]` não esconde elemento com `display` na classe.** Toda classe com
-  `display: flex/grid/block` que usa `hidden` precisa de
-  `.classe[hidden] { display: none; }`.
-- `colunaPorTitulo(tabela, "")` casa com o `<th>` vazio da coluna de ações.
-- `new Event('change')` sem `{ bubbles: true }` não chega em listener delegado.
+- **Um `init` que estoura mata todos os posteriores.** O sintoma aparece longe
+  da causa. Aconteceu de novo ao remover um `<select>`: `encher()` sem guarda
+  de `null`. Se uma tela "não carrega nada", ache o primeiro `init` que falhou.
+- **`[hidden]` não vence `display` na classe.**
 - **Init que preenche tabela por fetch precisa religar o que roda no
-  `DOMContentLoaded`.** `initHierarchyCollapse()` varre linhas que ainda não
-  existem quando a tela monta a grade depois.
+  `DOMContentLoaded`** (`initHierarchyCollapse`).
+- **Dois donos do mesmo datalist** viram corrida: quem preencher por último
+  vence, e isso depende de qual fetch voltar antes.
+- `new Event('change')` sem `{ bubbles: true }` não chega em listener delegado.
 
 **Do CSS:**
-- **Coluna de grid `1fr` não segura conteúdo largo** — tem `min-width: auto` por
-  padrão. Use `minmax(0, 1fr)`.
+- **Coluna de grid `1fr` não segura conteúdo largo** — use `minmax(0, 1fr)`.
 - `calc()` não multiplica porcentagem por porcentagem.
-- `.proto-banner` com `display: flex` embaralha texto com `<strong>` dentro.
 
 **Dos dados:**
 - **Trocar um JSON de catálogo deixa órfã a linha de exemplo fixa no HTML.**
-  Aconteceu duas vezes: contas inventadas nas grades de Despesa e Capex, e
-  produtos que sumiram na grade de Receita. Depois de trocar catálogo,
-  **varra as grades** conferindo código, linha do P&L e categoria.
-- **Renomear torre respinga em três arquivos.** `entregas.json` e
-  `aprovacoes.json` guardam `bu`/`torre` próprios, e o cargo do líder aparece
-  congelado dentro do aceite final. `carrega_cadastro.py` reescreve os três.
+  Aconteceu três vezes. Depois de trocar catálogo, **varra as grades**.
+- **Renomear torre respinga em três arquivos** — `entregas`, `aprovacoes` e o
+  cargo do líder congelado dentro do aceite final.
+- **Cabeçalho e corpo da grade têm de ter o mesmo número de colunas**, colspan
+  incluído. O Capex ficou com 29 células numa tabela de 22 e ninguém viu.
+- **O template repete linha legitimamente**: 131 idênticas em todas as colunas
+  com 109 valores diferentes. Duplicidade é alerta, não erro.
+- **Data no `.xlsx` é número de série**, não texto.
+- **CNPJ vem nos dois formatos** — comparar sempre por dígito.
+- **`.xlsb` é outro formato**, não um `.xlsx` renomeado. O leitor não abre.
 
-**Da verificação — importantes:**
-- **Cache do navegador mordeu várias vezes.** `?v=N` na URL da página **não**
-  atualiza `app.js` nem `style.css`, que são pedidos pelo mesmo endereço. O que
-  funciona: `fetch(url, {cache:"reload"})` nos assets e só então recarregar.
-- **Viewport zero.** Quando o painel do navegador está fechado,
-  `document.documentElement.clientWidth` é **0** e *tudo* parece estourar.
-- **O console acumula erros entre navegações.** Ver um erro não prova que ele é
-  da carga atual.
-- Ao editar HTML por script Python, ancore em string com a quebra de linha, e
-  **prefira trocar a tag inteira a usar backreferência de regex** — um `\1`
-  malposto comeu o `list="..."` de sete campos de uma vez.
-- **O `.pptx` gerado dá para conferir com `python-pptx`** (abre, conta slides,
-  lê tabelas). Não substitui abrir no PowerPoint de verdade, que ainda não foi
-  feito.
+**Da verificação:**
+- **`?v=N` na URL não atualiza `app.js` nem `style.css`.** O que funciona:
+  `fetch(url, {cache:"reload"})` nos assets e só então recarregar.
+- **Viewport zero** quando o painel do navegador está fechado.
+- **O console acumula erros entre navegações.**
+- Ao editar HTML por script, **prefira trocar a tag inteira a usar
+  backreferência de regex** — um `\1` malposto comeu o `list=` de sete campos.
+- **O `.pptx` dá para conferir com `python-pptx`.** Não substitui abrir no
+  PowerPoint, **que ainda não foi feito**.
 
 ---
 
-## 8. Decisões pendentes (são suas, não minhas)
+## 9. Decisões pendentes (são suas, não minhas)
 
 1. **TI:** dado financeiro da NSTECH pode ir para serviço fora do tenant
-   Microsoft? Isso bloqueia o passo 0 do banco.
-2. **Pacote NOV (Novos Contratos) está órfão** — só servia receita, e o conceito
-   dele não é coberto por nenhum dos 4 Tipos de Receita.
-3. **`try/catch` por `init`** no `DOMContentLoaded`, para a página degradar em
-   vez de morrer. Muda o comportamento de todas as telas de uma vez.
-4. **Nove empresas foram encaixadas por inferência**, não por leitura de
-   planilha: as variantes `- Compartilhado` e `- Corporate` dos grupos ATS, Atua
-   e Praxio, mais KMM - Gridnet, Atua Sistemas e as duas grafias duplicadas de
-   GBM. Estão marcadas com `[?]` linha a linha em `carrega_cadastro.py`.
-5. **"GBM - Consultoria" e "Gbm Consultoria"** parecem ser a mesma empresa que
-   "GBM Consultoria", com grafia diferente no ERP. A limpeza é na origem.
-6. **O número do Dashboard não bate com o do Dashboard Executivo.** `index` e
-   `relatorios` têm a ponte fixa no HTML (R$ 184,2 mi de Revenue, ciclo 2026); o
-   Dashboard Executivo deriva de `inputs.json` (R$ 68,9 mi, ciclo 2027). Fazer
-   as duas primeiras derivarem da mesma fonte resolve, mas mexe em tela já
-   aprovada.
-
-> **De/para Torre → BU: resolvido** em 11/08/2026 por `deparaempresas.xlsx`.
-> Toda empresa tem BU e Torre; nenhuma ficou em `-`.
+   Microsoft? **A carteira com 3.797 CNPJs e 20 MB de planilha já estão no
+   GitHub** — desfazer exige reescrever histórico, não basta remover.
+2. **O pacote-motivo vai existir?** Não está em template nenhum. Ou vira
+   disciplina nova no lançamento, ou a coluna Motivo sai.
+3. **Nove empresas foram encaixadas por inferência**, não por leitura de
+   planilha — marcadas `[?]` em `carrega_cadastro.py`.
+4. **"GBM - Consultoria" e "Gbm Consultoria"** parecem a mesma empresa que
+   "GBM Consultoria". A limpeza é na origem.
+5. **O número do Dashboard não bate com o do Dashboard Executivo.** `index` e
+   `relatorios` têm a ponte fixa no HTML (R$ 184,2 mi, ciclo 2026); o Executivo
+   deriva de `inputs.json` (R$ 68,9 mi, ciclo 2027).
+6. **`try/catch` por `init`** no `DOMContentLoaded`, para a página degradar em
+   vez de morrer.
 
 ---
 
-## 9. Roadmap ainda aberto
+## 10. Roadmap ainda aberto
 
-O `ROADMAP.md` numerado mora no **projeto Flask** (parado), mas os itens são
+O `ROADMAP.md` numerado mora no projeto Flask (parado), mas os itens são
 implementados aqui. Em aberto: **17** (copiar orçamento anterior), **22**
-(orçado vs. realizado — destrava RFC e Δ R$ / Δ % na receita), **23**
-(simulação de cenários).
+(orçado vs. realizado), **23** (simulação de cenários).
 
-Também aberto: **retificação de número já aprovado** (mexer no que o líder já
-assumiu) e **sub-produto**, que ficou vazio porque a de/para para no produto.
+Também aberto: **retificação de número já aprovado** e o **cálculo do reajuste
+pelo aniversário** — o índice e o mês já estão na linha, a conta não existe.
 
-Fechados: **21** (dashboard executivo + PowerPoint) e **carregar o cadastro real
-dos `.xlsx`**, ambos em 11/08/2026.
+Fechados: **21** (dashboard executivo + PowerPoint) e o carregamento do
+cadastro real, ambos em 11–13/08/2026.
 
 ---
 
-## 10. Como o Ricardo trabalha
+## 11. Como o Ricardo trabalha
 
 - **Um commit por funcionalidade**, mensagem em português **sem acentos**
   (convenção deste repo), corpo explicando o *porquê*.
@@ -263,47 +263,30 @@ dos `.xlsx`**, ambos em 11/08/2026.
 
 ---
 
-## 11. O que foi feito
+## 12. O que foi feito
 
-**Sessão de 10–11/08/2026**
+**Sessão de 12–13/08/2026** — `2767e30`
 
-```
-0d96558  dashboard executivo com PowerPoint e o cadastro real da NSTECH
-09e9d9a  cada tela so oferece e so aceita conta da sua categoria
-```
+O Template Budget virou o modelo do input: a grade de Receita ganhou as colunas
+da aba Base Receita na ordem dela, os dois eixos foram separados e a receita
+passou a se lançar por contrato. A grade virou o caminho principal, o
+formulário guiado ficou recolhido. O cadastro do template das Torres trouxe
+pacote e subpacote por conta, sub-produto e 104 centros de custo. E o app
+passou a abrir com duplo clique, via `assets/js/dados.js`.
 
-Duas frentes. O **Dashboard Executivo** (19ª tela) responde numa tela só qual é
-o número, quanto mudou contra a base, quem mexeu nele, quanto já passou pelo
-aprovador e o que falta entregar — tudo derivado de `inputs.json`. O
-**PowerPoint** sai do mesmo objeto que desenhou a tela, não do HTML: painel e
-slide são a mesma conta lida duas vezes. O gerador de `.pptx` reaproveita o ZIP
-que o `.xlsx` já tinha e monta a corrente que o PowerPoint cobra para não pedir
-reparo (apresentação → master → layout → tema).
+**Sessão de 11/08/2026** — `0d96558` `09e9d9a` `53deeef`
 
-E o **cadastro real** entrou: 36 contas de brinquedo viraram 404, apareceram 171
-centros de custo e 12 contas de Capex de verdade, e a de/para fechou a
-hierarquia em 50 empresas. Como a Torre TMS virou três torres, `entregas`,
-`aprovacoes` e os cargos de líder foram reescritos junto.
+Dashboard Executivo (19ª tela) com gerador de PowerPoint escrito à mão sobre o
+mesmo ZIP do `.xlsx`; o deck sai do objeto que desenha a tela, não do HTML.
+Cadastro real: 36 contas de brinquedo viraram 404, e `deparaempresas.xlsx`
+fechou a hierarquia em 50 empresas. Cada tela passou a só aceitar conta da sua
+categoria.
 
-**Sessão de 06–07/08/2026**
+**Sessão de 06–07/08/2026** — `27ded6a` a `cecf0ef`
 
-```
-27ded6a  trilha de auditoria com o historico de cada lancamento
-a57b4b0  trilha de auditoria com export, deep link e atalho das grades
-ac2befc  importar planilha de Receita, Despesa e Capex em .xlsx e .csv
-3477bfa  pacotes.json alinhado ao modelo e Auditoria exportando em PDF
-c1bc88d  schema PostgreSQL do orcamento, em sete passos executaveis
-466f85e  barra de versao em edicao nas tres telas, lendo o cronograma
-df7e0b4  tela de correcao para o que o aprovador devolveu
-c731d63  aprovacao unificada — entrega e linhas na mesma tela
-cecf0ef  Capex sai de "em construcao" e ganha grade, formulario e efeito no P&L
-```
-
-Destaques: **Auditoria** (quem mexeu em cada número), **Importação** de `.xlsx`
-e `.csv` sem biblioteca, **Correções** (o que o aprovador devolveu),
-**Aprovações unificada** (a entrega não aprova com linha pendente) e **Capex
-completo** com o painel *"O que este Capex vira no P&L"*.
+Auditoria (360 eventos), importação de `.xlsx` e `.csv` sem biblioteca,
+Correções, Aprovações unificada e Capex completo com o painel *"O que este
+Capex vira no P&L"*.
 
 `fc5c7ff` criou uma tela avulsa de aprovação de inputs que `c731d63`
-**removeu**, incorporando-a à tela de Aprovações. Se encontrar referência a
-`aprovacao-inputs.html`, é resíduo.
+**removeu**. Se encontrar referência a `aprovacao-inputs.html`, é resíduo.

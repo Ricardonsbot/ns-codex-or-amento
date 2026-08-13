@@ -1,11 +1,5 @@
 {
-  "observacao": "Catalogo de produto da Receita. Produto e sub-produto vem do Template Budget das Torres (aba Lista Produtos), onde Produto Sintetico e o produto e Produto Analitico e a divisao dele — era o sub-produto que nenhuma fonte preenchia. Os produtos sem nivel analitico vieram de deparaempresas.xlsx e cobrem as torres que este template nao alcanca. Gerado por ferramentas/carrega_template_torres.py.",
-  "tiposReceita": [
-    "Receita Recorrente",
-    "Receita Não Recorrente",
-    "Serviços e Implantação",
-    "Licenciamento"
-  ],
+  "observacao": "Catalogo de produto da Receita. Produto e sub-produto vem do Template Budget das Torres (aba Lista Produtos), onde Produto Sintetico e o produto e Produto Analitico e a divisao dele — era o sub-produto que nenhuma fonte preenchia. Os produtos sem nivel analitico vieram de deparaempresas.xlsx e cobrem as torres que este template nao alcanca. Os eixos de classificacao da receita (movimento e natureza) ficam em dimensoes-receita.json, nao aqui: o campo tiposReceita saiu porque guardava a taxonomia antiga, de quando os dois eixos eram um campo so. Gerado por ferramentas/carrega_template_torres.py.",
   "produtos": [
     {
       "nome": "Monitoramento",

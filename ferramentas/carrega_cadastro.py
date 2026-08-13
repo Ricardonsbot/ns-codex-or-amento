@@ -299,7 +299,6 @@ def carregar_produtos(produtos_da_torre, ordem):
             "base de recebimento que o financeiro usa. Sub-produto ficou vazio: a planilha "
             "para no produto. Gerado por ferramentas/carrega_cadastro.py."
         ),
-        "tiposReceita": atual["tiposReceita"],
         "produtos": produtos,
     })
     print(f"produtos.json        {len(produtos):5d} produtos em {len(ordem)} torres")

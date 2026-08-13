@@ -202,7 +202,6 @@ def carregar_produtos(lista):
             "Os produtos sem nivel analitico vieram de deparaempresas.xlsx e cobrem as "
             "torres que este template nao alcanca. "
             "Gerado por ferramentas/carrega_template_torres.py."),
-        "tiposReceita": atual["tiposReceita"],
         "produtos": list(porNome.values()) + herdados,
     })
     comSub = sum(1 for p in porNome.values() if p["subProdutos"])

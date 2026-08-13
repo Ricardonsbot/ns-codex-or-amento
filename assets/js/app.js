@@ -374,7 +374,6 @@ function initReferenceAutocomplete() {
     if (produtosRef) {
       encherDatalist("produtos-datalist", produtosRef.produtos.map((p) => p.nome));
       encherDatalist("subprodutos-datalist", produtosRef.produtos.flatMap((p) => p.subProdutos));
-      encherDatalist("tiposreceita-datalist", produtosRef.tiposReceita);
     }
 
     if (clientesRef) {
@@ -4285,7 +4284,6 @@ function initImportacao() {
       case "torre":       return `uma das ${torres().length} torres`;
       case "produto":     return `produto do catálogo (${ref.produtos.produtos.length} disponíveis)`;
       case "subproduto":  return "sub-produto do produto escolhido — deixe vazio se ele não tem divisão";
-      case "tipoReceita": return ref.produtos.tiposReceita.join(" · ");
       case "movimento":   return ref.dimensoes ? ref.dimensoes.movimento.join(" · ") : "de onde vem o número";
       case "natureza":    return ref.dimensoes ? ref.dimensoes.natureza.join(" · ") : "o que foi vendido";
       case "termometro":  return ref.dimensoes ? ref.dimensoes.termometro.join(" · ") : "";
