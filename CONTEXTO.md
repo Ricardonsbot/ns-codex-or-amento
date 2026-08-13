@@ -17,7 +17,7 @@ para o chefe usar.
 | Pasta | `Área de Trabalho\ns-codex-orcamento` (é o clone com `origin`) |
 | Repo | `https://github.com/Ricardonsbot/ns-codex-or-amento` (privado) |
 | Branch | `main` |
-| Rodar | duplo clique no `index.html`, **ou** servidor estático na 8081 |
+| Rodar | duplo clique no `index.html`, **ou** `python ferramentas/servidor.py` (8081) |
 | Tamanho | 19 páginas · `app.js` 5.829 linhas · `style.css` 4.115 · 18 JSON · 7 scripts |
 
 > **Cuidado com a cópia errada.** Existe uma segunda cópia no SharePoint, e ela
@@ -212,12 +212,17 @@ pela Row Level Security — a permissão mora no banco, não na tela.
 
 **Da verificação:**
 - **Cache do navegador servindo tela velha** foi o defeito mais teimoso do
-  projeto. **Já está resolvido:** `gera_dados_embutidos.py` carimba
-  `?v=<hash do conteúdo>` nas tags de CSS e JS das 19 páginas, e põe
-  `Cache-Control: no-cache` no `<head>` para o HTML ser relido. Um F5 comum
-  passou a bastar. **Mas o carimbo só se atualiza quando o script roda** — se
-  você editar `app.js` à mão e não rodar, o navegador continua com o velho, e
-  aí vale `fetch(url, {cache:"reload"})` antes de recarregar.
+  projeto. **Está resolvido nas duas pontas:**
+  - **Desenvolvendo:** use `python ferramentas/servidor.py` — é o que o
+    `ns-codex-github` e o `.bat` chamam. Ele manda `no-store` em toda resposta,
+    então o navegador nunca guarda cópia: editou, salvou, F5, apareceu. **Não**
+    use `python -m http.server`: ele não manda Cache-Control, o Chrome decide
+    sozinho por quanto tempo confia no que já tem, e foi assim que a tela abriu
+    desatualizada em 13/08.
+  - **No zip de quem testa** (`file://`, sem servidor): vale o carimbo
+    `?v=<hash do conteúdo>` que `gera_dados_embutidos.py` põe nas 19 páginas,
+    mais `Cache-Control: no-cache` no `<head>`. Ali o cache é bem-vindo — o
+    `dados.js` tem 1,5 MB e desceria de novo a cada clique no menu.
 - **Viewport zero** quando o painel do navegador está fechado.
 - **O console acumula erros entre navegações.**
 - Ao editar HTML por script, **prefira trocar a tag inteira a usar
