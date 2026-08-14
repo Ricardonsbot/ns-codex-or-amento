@@ -93,6 +93,14 @@ CREATE POLICY lancamento_mes_segue_o_pai ON lancamento_mes
 CREATE POLICY entrega_le ON entrega
     FOR SELECT USING (empresa_id IN (SELECT app_empresas_visiveis()));
 
+-- Quem abre a entrega é o admin, no começo do ciclo — o responsável recebe uma
+-- entrega, não cria a sua. Sem esta política a tabela ficava intransitável:
+-- com RLS ligada, o que nenhuma política permite é proibido, então o GRANT
+-- INSERT lá de cima não produzia efeito nenhum e ninguém criava entrega.
+CREATE POLICY entrega_cria ON entrega
+    FOR INSERT
+    WITH CHECK (app_perfil() = 'admin');
+
 -- Só o aprovador decide; o responsável mexe no que é dele.
 CREATE POLICY entrega_escreve ON entrega
     FOR UPDATE
