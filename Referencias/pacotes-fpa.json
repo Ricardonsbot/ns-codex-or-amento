@@ -41,13 +41,6 @@
       "contas": 16
     },
     {
-      "nome": "Intercompany",
-      "subpacotes": [
-        "Intercompany"
-      ],
-      "contas": 1
-    },
-    {
       "nome": "Personnel Costs",
       "subpacotes": [
         "Benefícios",

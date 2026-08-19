@@ -19,3 +19,7 @@ backend/**/obj/
 
 # Config local com credencial de banco (o de exemplo, sim, vai versionado)
 backend/NsCodex.Api/appsettings.Development.json
+
+# Cache do Python
+__pycache__/
+*.pyc

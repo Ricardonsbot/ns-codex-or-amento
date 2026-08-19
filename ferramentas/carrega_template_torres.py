@@ -109,9 +109,23 @@ def enriquecer_contas(plano):
     (Receita > / Despesas > / Capex >) que separa as categorias nas telas."""
     caminho = os.path.join(REF, "contas.json")
     contas = json.load(io.open(caminho, encoding="utf-8"))
-    porCodigo = {c["conta"].replace(".", ""): c for c in contas}
+
+    # Colapsa repetição que já esteja no arquivo — resíduo da versão anterior
+    # deste script, que duplicava (ver o comentário do laço abaixo).
+    porCodigo, unicas, repetidas = {}, [], 0
+    for c in contas:
+        chave = c["conta"].replace(".", "")
+        if chave in porCodigo:
+            repetidas += 1
+            continue
+        porCodigo[chave] = c
+        unicas.append(c)
+    if repetidas:
+        print(f"  ⚠ {repetidas} conta(s) repetida(s) no contas.json colapsada(s)")
+    contas = unicas
 
     enriquecidas = novas = 0
+    divergencias = []
     for l in plano[4:]:
         codigo = col(l, 2)
         if not codigo or not codigo.isdigit():
@@ -124,17 +138,57 @@ def enriquecer_contas(plano):
         }
         alvo = porCodigo.get(codigo)
         if alvo:
+            # A MESMA conta aparece duas vezes na aba com classificação
+            # diferente: 4703002097 vem como "Telecomunication / Technology
+            # expenses" E como "Intercompany". Não dá para escolher aqui — a
+            # planilha se contradiz e a resposta é de FP&A. Registra e mantém a
+            # primeira, para o resultado não depender da ordem de leitura.
+            anterior = alvo.get("pacote")
+            if anterior and extra["pacote"] and anterior != extra["pacote"]:
+                divergencias.append((pontuar(codigo), alvo.get("nome"), anterior, extra["pacote"]))
+                enriquecidas += 1
+                continue
             alvo.update({k: v for k, v in extra.items() if v})
             enriquecidas += 1
         else:
             pacote = extra["pacote"]
             prefixo = "Capex" if pacote == "Capex" else "Despesas"
-            contas.append({
+            nova = {
                 "conta": pontuar(codigo), "nome": col(l, 4),
                 "linhaPL": f"{prefixo} > {pacote}" if pacote else "",
                 "categoria": extra["subpacote"] or pacote, **extra,
-            })
+            }
+            contas.append(nova)
+            # ⚠ REGISTRAR A NOVA AQUI É O CONSERTO. Sem esta linha, um código que
+            # apareça duas vezes na aba não se encontra na segunda passagem e
+            # entra DE NOVO — foi assim que 4.7.03.002.097 ficou duplicada no
+            # contas.json com duas linhas de P&L diferentes, e o banco (que tem
+            # codigo UNIQUE) passou a escolher uma por ordem de leitura.
+            porCodigo[codigo] = nova
             novas += 1
+
+    if divergencias:
+        print(f"  ⚠ {len(divergencias)} conta(s) com classificação DIVERGENTE na própria aba "
+              f"(mantida a primeira; a decisão é de FP&A):")
+        for cod, nome, a, b in divergencias:
+            print(f"      {cod}  {nome}")
+            print(f"         mantido: {a!r}   ignorado: {b!r}")
+
+    # Um formato só para o código. Contas trazidas por versões antigas deste
+    # script ficaram como "4702001004", ao lado de "4.7.02.001.002" vindo do
+    # outro cadastro — e foi essa diferença de grafia que fez a MESMA conta
+    # entrar duas vezes: a chave literal não casava. Normalizar aqui fecha a
+    # porta. Só toca em código de 10 dígitos, que é o que pontuar() sabe ler;
+    # os de outro comprimento ficam como estão e aparecem no aviso abaixo.
+    fora_do_padrao = []
+    for c in contas:
+        c["conta"] = pontuar(c["conta"])
+        if "." not in c["conta"]:
+            fora_do_padrao.append(c["conta"])
+    if fora_do_padrao:
+        print(f"  ⚠ {len(fora_do_padrao)} código(s) fora do padrão de 10 dígitos, "
+              f"mantidos como vieram: {', '.join(fora_do_padrao[:5])}"
+              f"{'…' if len(fora_do_padrao) > 5 else ''}")
 
     contas.sort(key=lambda c: c["conta"])
     gravar("contas.json", contas)

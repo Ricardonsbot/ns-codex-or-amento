@@ -720,16 +720,14 @@
     "linhaPLDetalhe": "?"
   },
   {
-    "conta": "3101005014",
-    "nome": "ANTECIPAÇÃO DE RECEITA (NT-PIS/COFINS)",
-    "linhaPL": "Receita > (-) Deductions",
-    "categoria": "(-) PIS"
-  },
-  {
     "conta": "4.7.01.001.001",
     "nome": "CUSTOS DOS PRODUTOS VENDIDOS",
     "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Custo Variável"
+    "categoria": "Custo Variável",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Custo Variável",
+    "caixa": "Others",
+    "linhaPLDetalhe": "Others"
   },
   {
     "conta": "4.7.01.001.002",
@@ -751,13 +749,31 @@
     "conta": "4.7.02.001.002",
     "nome": "COMUNICACAO SASCAR",
     "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Custo Variável"
+    "categoria": "Custo Variável",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Custo Variável",
+    "caixa": "Others",
+    "linhaPLDetalhe": "Telecommunication"
   },
   {
     "conta": "4.7.02.001.003",
     "nome": "RASTREAMENTO VEICULAR",
     "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Custo Variável"
+    "categoria": "Custo Variável",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Custo Variável",
+    "caixa": "Others",
+    "linhaPLDetalhe": "Others"
+  },
+  {
+    "conta": "4.7.02.001.004",
+    "nome": "SERV GERENCIAMENTO E MONITORAMENTO",
+    "linhaPL": "Despesas > Telecomunication / Technology expenses",
+    "categoria": "Tecnologia",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Custo Variável",
+    "caixa": "Third party services",
+    "linhaPLDetalhe": "Third Party Services"
   },
   {
     "conta": "4.7.02.001.005",
@@ -985,7 +1001,11 @@
     "conta": "4.7.03.001.021",
     "nome": "ANUENIOS",
     "linhaPL": "Despesas > Personnel Costs",
-    "categoria": "Benefícios"
+    "categoria": "Benefícios",
+    "pacote": "Personnel Costs",
+    "subpacote": "Benefícios",
+    "caixa": "Employee",
+    "linhaPLDetalhe": "Employee"
   },
   {
     "conta": "4.7.03.001.022",
@@ -1187,7 +1207,11 @@
     "conta": "4.7.03.002.006",
     "nome": "SERVICOS DE PRONTA RESP. E ACOMP. VELADO",
     "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Custo Variável"
+    "categoria": "Custo Variável",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Custo Variável",
+    "caixa": "Escort",
+    "linhaPLDetalhe": "Third Party Services"
   },
   {
     "conta": "4.7.03.002.007",
@@ -1233,7 +1257,11 @@
     "conta": "4.7.03.002.011",
     "nome": "SERVICOS DE COBRANCA",
     "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Terceiros"
+    "categoria": "Terceiros",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Terceiros",
+    "caixa": "Third party services",
+    "linhaPLDetalhe": "Third Party Services"
   },
   {
     "conta": "4.7.03.002.012",
@@ -1280,16 +1308,6 @@
     "subpacote": "Tecnologia",
     "caixa": "Technology Expense",
     "linhaPLDetalhe": "Softwares"
-  },
-  {
-    "conta": "4.7.03.002.097",
-    "nome": "ELIMINAÇÃO DESPESAS INTERCOMPANY",
-    "linhaPL": "Despesas > Intercompany",
-    "categoria": "Intercompany",
-    "pacote": "Intercompany",
-    "subpacote": "Intercompany",
-    "caixa": "",
-    "linhaPLDetalhe": "Others"
   },
   {
     "conta": "4.7.03.002.098",
@@ -1820,6 +1838,16 @@
     "linhaPLDetalhe": "Others"
   },
   {
+    "conta": "4.7.03.011.008",
+    "nome": "COMBUSTIVEIS - GERADOR",
+    "linhaPL": "Despesas > Travels/Rental/Generals",
+    "categoria": "Generals",
+    "pacote": "Travels/Rental/Generals",
+    "subpacote": "Generals",
+    "caixa": "Others",
+    "linhaPLDetalhe": "Others"
+  },
+  {
     "conta": "4.7.03.011.098",
     "nome": "COMPARTILHAMENTO DE UTILIDADES E SERVICO",
     "linhaPL": "Despesas > Travels/Rental/Generals",
@@ -1885,13 +1913,21 @@
     "conta": "4.7.03.013.006",
     "nome": "IPVA",
     "linhaPL": "Despesas > Travels/Rental/Generals",
-    "categoria": "Generals"
+    "categoria": "Generals",
+    "pacote": "Travels/Rental/Generals",
+    "subpacote": "Generals",
+    "caixa": "Others",
+    "linhaPLDetalhe": "Others"
   },
   {
     "conta": "4.7.03.013.007",
     "nome": "SEGURO VEICULAR",
     "linhaPL": "Despesas > Travels/Rental/Generals",
-    "categoria": "Generals"
+    "categoria": "Generals",
+    "pacote": "Travels/Rental/Generals",
+    "subpacote": "Generals",
+    "caixa": "Others",
+    "linhaPLDetalhe": "Others"
   },
   {
     "conta": "4.7.03.013.098",
@@ -1919,7 +1955,11 @@
     "conta": "4.7.03.015.002",
     "nome": "REVISTAS E PUBLICACOES",
     "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Marketing"
+    "categoria": "Marketing",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Marketing",
+    "caixa": "Others",
+    "linhaPLDetalhe": "Others"
   },
   {
     "conta": "4.7.03.015.003",
@@ -2002,6 +2042,16 @@
     "linhaPLDetalhe": "Others"
   },
   {
+    "conta": "4.7.03.015.011",
+    "nome": "IMOBILIZACAO DE BENS INTANGIVEIS",
+    "linhaPL": "Despesas > D&A",
+    "categoria": "D&A",
+    "pacote": "D&A",
+    "subpacote": "D&A",
+    "caixa": "Não vai para FC",
+    "linhaPLDetalhe": "D&A"
+  },
+  {
     "conta": "4.7.03.015.012",
     "nome": "MATERIAL DE INFORMATICA",
     "linhaPL": "Despesas > Travels/Rental/Generals",
@@ -2015,13 +2065,21 @@
     "conta": "4.7.03.015.013",
     "nome": "DESPESAS COM PROCESSOS JUDICIAIS",
     "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Jurídico"
+    "categoria": "Jurídico",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Jurídico",
+    "caixa": "Third party services",
+    "linhaPLDetalhe": "Third Party Services"
   },
   {
     "conta": "4.7.03.015.014",
     "nome": "PROVISÃO CONTINGÊNCIAS TRABALHISTAS",
     "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Jurídico"
+    "categoria": "Jurídico",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Jurídico",
+    "caixa": "Não vai para FC",
+    "linhaPLDetalhe": "Others"
   },
   {
     "conta": "4.7.03.015.015",
@@ -2047,7 +2105,11 @@
     "conta": "4.7.03.015.017",
     "nome": "(-) REVERSAO DE PROVISOES CIVEIS",
     "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Jurídico"
+    "categoria": "Jurídico",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Jurídico",
+    "caixa": "Não vai para FC",
+    "linhaPLDetalhe": "Others"
   },
   {
     "conta": "4.7.03.015.018",
@@ -2063,7 +2125,11 @@
     "conta": "4.7.03.015.019",
     "nome": "(-) REVERSAO DE PROVISOES TRIBUTARIA",
     "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Jurídico"
+    "categoria": "Jurídico",
+    "pacote": "Third Party Services & Mkt",
+    "subpacote": "Jurídico",
+    "caixa": "Não vai para FC",
+    "linhaPLDetalhe": "Others"
   },
   {
     "conta": "4.7.03.015.020",
@@ -2368,6 +2434,12 @@
     "linhaPLDetalhe": "Financial Results"
   },
   {
+    "conta": "4.7.10.001.011",
+    "nome": "(NT-PIS/COFINS) ANTECIPAÇÃO RECEITA (-)",
+    "linhaPL": "Despesas > Financial Results",
+    "categoria": "Financial Results"
+  },
+  {
     "conta": "4.7.10.001.012",
     "nome": "ATUALIZACAO DE INDEBITOS CREDITO TRIBUTARIO",
     "linhaPL": "Despesas > Financial Results",
@@ -2421,7 +2493,11 @@
     "conta": "4.7.10.002.005",
     "nome": "VARIACOES CAMBIAIS PASSIVAS",
     "linhaPL": "Despesas > Financial Results",
-    "categoria": "Financial Results"
+    "categoria": "Financial Results",
+    "pacote": "Financial Results",
+    "subpacote": "Financial Results",
+    "caixa": "Financial application",
+    "linhaPLDetalhe": "Financial Results"
   },
   {
     "conta": "4.7.10.002.006",
@@ -2436,6 +2512,16 @@
   {
     "conta": "4.7.10.002.007",
     "nome": "IOF SOBRE OPERACOES FINANCEIRAS",
+    "linhaPL": "Despesas > Financial Results",
+    "categoria": "Financial Results",
+    "pacote": "Financial Results",
+    "subpacote": "Financial Results",
+    "caixa": "Financial application",
+    "linhaPLDetalhe": "Financial Results"
+  },
+  {
+    "conta": "4.7.10.002.008",
+    "nome": "TAXA FEE - EMPRESTIMOS",
     "linhaPL": "Despesas > Financial Results",
     "categoria": "Financial Results",
     "pacote": "Financial Results",
@@ -2550,6 +2636,12 @@
     "linhaPLDetalhe": "Equivalencia Patrimonial"
   },
   {
+    "conta": "4.7.11.001.006",
+    "nome": "DESMOBILIZACAO",
+    "linhaPL": "Despesas > Travels/Rental/Generals",
+    "categoria": "Generals"
+  },
+  {
     "conta": "4.7.11.001.007",
     "nome": "IMPAIRMENT",
     "linhaPL": "Despesas > Travels/Rental/Generals",
@@ -2602,166 +2694,6 @@
     "nome": "BONIFICAÇÃO OU BRINDE",
     "linhaPL": "Despesas > Travels/Rental/Generals",
     "categoria": "Generals"
-  },
-  {
-    "conta": "4701001001",
-    "nome": "CUSTOS DOS PRODUTOS VENDIDOS",
-    "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Custo Variável",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Custo Variável",
-    "caixa": "Others",
-    "linhaPLDetalhe": "Others"
-  },
-  {
-    "conta": "4702001002",
-    "nome": "COMUNICACAO SASCAR",
-    "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Custo Variável",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Custo Variável",
-    "caixa": "Others",
-    "linhaPLDetalhe": "Telecommunication"
-  },
-  {
-    "conta": "4702001003",
-    "nome": "RASTREAMENTO VEICULAR",
-    "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Custo Variável",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Custo Variável",
-    "caixa": "Others",
-    "linhaPLDetalhe": "Others"
-  },
-  {
-    "conta": "4702001004",
-    "nome": "SERV GERENCIAMENTO E MONITORAMENTO",
-    "linhaPL": "Despesas > Telecomunication / Technology expenses",
-    "categoria": "Tecnologia",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Custo Variável",
-    "caixa": "Third party services",
-    "linhaPLDetalhe": "Third Party Services"
-  },
-  {
-    "conta": "4703001021",
-    "nome": "ANUENIOS",
-    "linhaPL": "Despesas > Personnel Costs",
-    "categoria": "Benefícios",
-    "pacote": "Personnel Costs",
-    "subpacote": "Benefícios",
-    "caixa": "Employee",
-    "linhaPLDetalhe": "Employee"
-  },
-  {
-    "conta": "4703002006",
-    "nome": "SERVICOS DE PRONTA RESP. E ACOMP. VELADO",
-    "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Custo Variável",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Custo Variável",
-    "caixa": "Escort",
-    "linhaPLDetalhe": "Third Party Services"
-  },
-  {
-    "conta": "4703002011",
-    "nome": "SERVICOS DE COBRANCA",
-    "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Terceiros",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Terceiros",
-    "caixa": "Third party services",
-    "linhaPLDetalhe": "Third Party Services"
-  },
-  {
-    "conta": "4703011008",
-    "nome": "COMBUSTIVEIS - GERADOR",
-    "linhaPL": "Despesas > Travels/Rental/Generals",
-    "categoria": "Generals",
-    "pacote": "Travels/Rental/Generals",
-    "subpacote": "Generals",
-    "caixa": "Others",
-    "linhaPLDetalhe": "Others"
-  },
-  {
-    "conta": "4703013006",
-    "nome": "IPVA",
-    "linhaPL": "Despesas > Travels/Rental/Generals",
-    "categoria": "Generals",
-    "pacote": "Travels/Rental/Generals",
-    "subpacote": "Generals",
-    "caixa": "Others",
-    "linhaPLDetalhe": "Others"
-  },
-  {
-    "conta": "4703013007",
-    "nome": "SEGURO VEICULAR",
-    "linhaPL": "Despesas > Travels/Rental/Generals",
-    "categoria": "Generals",
-    "pacote": "Travels/Rental/Generals",
-    "subpacote": "Generals",
-    "caixa": "Others",
-    "linhaPLDetalhe": "Others"
-  },
-  {
-    "conta": "4703015002",
-    "nome": "REVISTAS E PUBLICACOES",
-    "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Marketing",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Marketing",
-    "caixa": "Others",
-    "linhaPLDetalhe": "Others"
-  },
-  {
-    "conta": "4703015011",
-    "nome": "IMOBILIZACAO DE BENS INTANGIVEIS",
-    "linhaPL": "Despesas > D&A",
-    "categoria": "D&A",
-    "pacote": "D&A",
-    "subpacote": "D&A",
-    "caixa": "Não vai para FC",
-    "linhaPLDetalhe": "D&A"
-  },
-  {
-    "conta": "4703015013",
-    "nome": "DESPESAS COM PROCESSOS JUDICIAIS",
-    "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Jurídico",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Jurídico",
-    "caixa": "Third party services",
-    "linhaPLDetalhe": "Third Party Services"
-  },
-  {
-    "conta": "4703015014",
-    "nome": "REVERSAO DE PROVISAO DE CONTINGENCIA TRABALHISTA",
-    "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Jurídico",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Jurídico",
-    "caixa": "Não vai para FC",
-    "linhaPLDetalhe": "Others"
-  },
-  {
-    "conta": "4703015017",
-    "nome": "(-) REVERSAO DE PROVISOES CIVEIS",
-    "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Jurídico",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Jurídico",
-    "caixa": "Não vai para FC",
-    "linhaPLDetalhe": "Others"
-  },
-  {
-    "conta": "4703015019",
-    "nome": "(-) REVERSAO DE PROVISOES TRIBUTÁRIA",
-    "linhaPL": "Despesas > Third Party Services & Mkt",
-    "categoria": "Jurídico",
-    "pacote": "Third Party Services & Mkt",
-    "subpacote": "Jurídico",
-    "caixa": "Não vai para FC",
-    "linhaPLDetalhe": "Others"
   },
   {
     "conta": "4703017001001",
@@ -2834,32 +2766,6 @@
     "linhaPLDetalhe": "Others"
   },
   {
-    "conta": "4710001011",
-    "nome": "(NT-PIS/COFINS) ANTECIPAÇÃO RECEITA (-)",
-    "linhaPL": "Despesas > Financial Results",
-    "categoria": "Financial Results"
-  },
-  {
-    "conta": "4710002005",
-    "nome": "VARIACOES CAMBIAIS PASSIVAS",
-    "linhaPL": "Despesas > Financial Results",
-    "categoria": "Financial Results",
-    "pacote": "Financial Results",
-    "subpacote": "Financial Results",
-    "caixa": "Financial application",
-    "linhaPLDetalhe": "Financial Results"
-  },
-  {
-    "conta": "4710002008",
-    "nome": "TAXA FEE - EMPRESTIMOS",
-    "linhaPL": "Despesas > Financial Results",
-    "categoria": "Financial Results",
-    "pacote": "Financial Results",
-    "subpacote": "Financial Results",
-    "caixa": "Financial application",
-    "linhaPLDetalhe": "Financial Results"
-  },
-  {
     "conta": "4711001",
     "nome": "OUTRAS RECEITAS E DESPESAS NAO OPERACION",
     "linhaPL": "Despesas > Travels/Rental/Generals",
@@ -2868,12 +2774,6 @@
     "subpacote": "Generals",
     "caixa": "Others",
     "linhaPLDetalhe": "Others Income and Expense"
-  },
-  {
-    "conta": "4711001006",
-    "nome": "DESMOBILIZACAO",
-    "linhaPL": "Despesas > Travels/Rental/Generals",
-    "categoria": "Generals"
   },
   {
     "conta": "5.1.01.001.001",
@@ -2909,13 +2809,21 @@
     "conta": "5.1.01.001.003.0001",
     "nome": "CONTRIBUICAO SOCIAL DIF AMT AGIO CASH",
     "linhaPL": "Despesas > IR/CSLL",
-    "categoria": "Deferred Tax"
+    "categoria": "Deferred Tax",
+    "pacote": "IR/CSLL",
+    "subpacote": "Deferred Tax",
+    "caixa": "Tax",
+    "linhaPLDetalhe": "Deferred Tax"
   },
   {
     "conta": "5.1.01.001.003.0002",
     "nome": "CONTRIBUICAO SOCIAL DIF AMT AGIO ACOES",
     "linhaPL": "Despesas > IR/CSLL",
-    "categoria": "Deferred Tax"
+    "categoria": "Deferred Tax",
+    "pacote": "IR/CSLL",
+    "subpacote": "Deferred Tax",
+    "caixa": "Tax",
+    "linhaPLDetalhe": "Deferred Tax"
   },
   {
     "conta": "5.1.01.001.003.0003",
@@ -3013,13 +2921,21 @@
     "conta": "5.1.01.001.004.0001",
     "nome": "IMPOSTO DE RENDA DIFERIDO AMT AGIO CASH",
     "linhaPL": "Despesas > IR/CSLL",
-    "categoria": "Deferred Tax"
+    "categoria": "Deferred Tax",
+    "pacote": "IR/CSLL",
+    "subpacote": "Deferred Tax",
+    "caixa": "Tax",
+    "linhaPLDetalhe": "Deferred Tax"
   },
   {
     "conta": "5.1.01.001.004.0002",
     "nome": "IMPOSTO DE RENDA DIFERIDO AMT AGIO ACOES",
     "linhaPL": "Despesas > IR/CSLL",
-    "categoria": "Deferred Tax"
+    "categoria": "Deferred Tax",
+    "pacote": "IR/CSLL",
+    "subpacote": "Deferred Tax",
+    "caixa": "Tax",
+    "linhaPLDetalhe": "Deferred Tax"
   },
   {
     "conta": "5.1.01.001.004.0003",
@@ -3318,46 +3234,6 @@
     "nome": "IMPOSTO DE RENDA DIF PROVISÕES FORNECEDORES",
     "linhaPL": "Despesas > IR/CSLL",
     "categoria": "Deferred Tax"
-  },
-  {
-    "conta": "51010010030001",
-    "nome": "CONTRIBUICAO SOCIAL DIF AMT AGIO CASH",
-    "linhaPL": "Despesas > IR/CSLL",
-    "categoria": "Deferred Tax",
-    "pacote": "IR/CSLL",
-    "subpacote": "Deferred Tax",
-    "caixa": "Tax",
-    "linhaPLDetalhe": "Deferred Tax"
-  },
-  {
-    "conta": "51010010030002",
-    "nome": "CONTRIBUICAO SOCIAL DIF AMT AGIO ACOES",
-    "linhaPL": "Despesas > IR/CSLL",
-    "categoria": "Deferred Tax",
-    "pacote": "IR/CSLL",
-    "subpacote": "Deferred Tax",
-    "caixa": "Tax",
-    "linhaPLDetalhe": "Deferred Tax"
-  },
-  {
-    "conta": "51010010040001",
-    "nome": "IMPOSTO DE RENDA DIFERIDO AMT AGIO CASH",
-    "linhaPL": "Despesas > IR/CSLL",
-    "categoria": "Deferred Tax",
-    "pacote": "IR/CSLL",
-    "subpacote": "Deferred Tax",
-    "caixa": "Tax",
-    "linhaPLDetalhe": "Deferred Tax"
-  },
-  {
-    "conta": "51010010040002",
-    "nome": "IMPOSTO DE RENDA DIFERIDO AMT AGIO ACOES",
-    "linhaPL": "Despesas > IR/CSLL",
-    "categoria": "Deferred Tax",
-    "pacote": "IR/CSLL",
-    "subpacote": "Deferred Tax",
-    "caixa": "Tax",
-    "linhaPLDetalhe": "Deferred Tax"
   },
   {
     "conta": "BU Allocation",
