@@ -12,3 +12,10 @@ node_modules/
 
 # Arquivos temporários do Excel
 ~$*.xlsx
+
+# Build do backend .NET
+backend/**/bin/
+backend/**/obj/
+
+# Config local com credencial de banco (o de exemplo, sim, vai versionado)
+backend/NsCodex.Api/appsettings.Development.json
