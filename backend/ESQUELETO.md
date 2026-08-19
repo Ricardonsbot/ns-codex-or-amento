@@ -242,3 +242,68 @@ vidas, a troca de tela, o token viajando nas chamadas, o 401 derrubando a sessã
 e o catálogo vindo do banco.
 
 **Botão de sair.** Existe a função `sair()`, mas nenhuma tela a chama ainda.
+
+---
+
+# Carga do plano de contas (14/08/2026)
+
+Primeira fatia da Fase 1: `ferramentas/carrega_contas_no_banco.py` põe o plano de
+contas real no Postgres.
+
+**Lê de `Referencias/contas.json`, não do `.xlsx`.** O JSON já é o artefato
+curado — o `carrega_cadastro.py` descarta conta de balanço e monta a linha do
+P&L a partir de `FPA_Pacote` (a coluna que se chama pacote mas guarda a linha do
+P&L), e o `carrega_template_torres.py` enriquece. Derivar de novo da planilha
+criaria uma **segunda tradução** das mesmas colunas, e duas traduções da mesma
+coisa saem de sincronia — que é o defeito mais caro deste projeto.
+
+## Resultado no `orcamento_dev`
+
+| | |
+|---|---:|
+| Linhas de P&L | 20 |
+| Contas ativas | **424** |
+| Despesas · Receita · Capex | 312 · 100 · 12 |
+
+E a tela de Despesa passou a listar **312 contas vindas do banco** — antes da
+carga listava zero, porque a única conta semeada tinha linha de P&L `"Expenses"`,
+que não casa com nenhum prefixo real. Verificado no navegador: nenhuma leitura de
+`Referencias/contas.json` aconteceu; tudo veio de `GET /api/ref/contas`.
+
+## Um defeito de dado encontrado
+
+**`4.7.03.002.097` — "ELIMINAÇÃO DESPESAS INTERCOMPANY" aparece DUAS VEZES no
+`contas.json`, com linhas de P&L diferentes:**
+
+```
+linhaPL='Despesas > Telecomunication / Technology expenses'  categoria='Tecnologia'
+linhaPL='Despesas > Intercompany'                            categoria='Intercompany'
+```
+
+Na planilha de origem ela aparece **uma vez só**, como `Intercompany`. Ou seja, a
+duplicata nasce na geração do JSON (o enriquecimento do template das Torres),
+não no ERP.
+
+Como `cadastro.conta` tem `codigo` UNIQUE, a primeira versão do carregador
+resolveu isso sozinha: venceu a última linha do arquivo. Deu certo por acaso — a
+que venceu é a que bate com a planilha. **Classificação contábil decidida por
+ordem de leitura, em silêncio, é exatamente o modo de errar que este projeto já
+pagou caro.** O carregador agora detecta código repetido com conteúdo divergente,
+**deixa a conta de fora** e avisa; decidir a qual linha do P&L ela pertence é
+pergunta de negócio, não de script.
+
+**Pendente:** corrigir o gerador do `contas.json` para não duplicar. Enquanto
+isso, a conta segue no banco com a classificação `Intercompany` (que veio da
+primeira carga e coincide com a origem), e a tela mostra a conta duas vezes na
+lista quando lê do arquivo.
+
+## O que esta carga não cobre
+
+`pacote`, `subpacote`, `caixa` e `linhaPLDetalhe` continuam saindo nulos: não há
+coluna para eles em `cadastro.conta`. Dois dos quatro têm origem clara na
+planilha (`FPA_Pacote`, `FPA_Subpacote`); os outros dois eu não sei de onde vêm.
+Enquanto isso, o `GET /api/ref/contas` ainda não substitui o arquivo por completo.
+
+E o resto do cadastro — empresas, torres, centros de custo, produtos — não foi
+carregado. Depende do de/para Torre → BU, que são ~12 linhas que só a área
+consegue escrever.
