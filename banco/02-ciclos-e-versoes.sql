@@ -50,12 +50,16 @@ CREATE UNIQUE INDEX versao_uma_aberta_por_ciclo
 -- exatamente assim que três rotas de exclusão ficaram sem checagem no
 -- protótipo anterior.
 CREATE FUNCTION versao_aceita_escrita(p_versao_id bigint) RETURNS boolean
-LANGUAGE sql STABLE AS $$
+LANGUAGE sql STABLE
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
     SELECT status = 'aberta' FROM versao WHERE id = p_versao_id;
 $$;
 
 CREATE FUNCTION exige_versao_aberta() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
 DECLARE
     v_id bigint;
 BEGIN
@@ -73,7 +77,9 @@ $$;
 -- se foi fechada por engano, cria-se uma revisão — assim a trilha mostra o que
 -- aconteceu em vez de esconder.
 CREATE FUNCTION versao_nao_reabre() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
 BEGIN
     IF OLD.status = 'fechada' AND NEW.status <> 'fechada' THEN
         RAISE EXCEPTION

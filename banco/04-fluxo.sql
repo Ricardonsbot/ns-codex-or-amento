@@ -85,7 +85,9 @@ CREATE TABLE submissao_validacao (
 
 -- Uma submissão com regra 'bloqueia' falhando não pode ser aprovada.
 CREATE FUNCTION nao_aprova_com_bloqueio() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
 BEGIN
     IF NEW.status_oficial = 'aprovado' AND EXISTS (
         SELECT 1 FROM submissao_validacao sv
@@ -119,7 +121,9 @@ CREATE TABLE aceite_final (
 
 -- Só se assume o que já foi aprovado.
 CREATE FUNCTION aceite_exige_aprovacao() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
 BEGIN
     IF (SELECT status_oficial FROM submissao WHERE id = NEW.submissao_id) <> 'aprovado' THEN
         RAISE EXCEPTION 'Aceite final só vale sobre submissão aprovada.'

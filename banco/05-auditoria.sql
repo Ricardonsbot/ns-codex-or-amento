@@ -51,7 +51,9 @@ CREATE TABLE evento (
 -- ── Append-only ──────────────────────────────────────────────────────────────
 
 CREATE FUNCTION evento_imutavel() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
 BEGIN
     RAISE EXCEPTION 'auditoria.evento é append-only: linha não pode ser % .', lower(TG_OP)
         USING ERRCODE = 'insufficient_privilege';
@@ -73,7 +75,9 @@ CREATE TRIGGER evento_sem_delete
 -- Assim o gatilho grava a autoria sem a aplicação precisar lembrar de chamar
 -- nada — que é onde esse tipo de registro costuma falhar.
 CREATE FUNCTION registra_lancamento() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
 DECLARE
     r        record;
     v_acao   text;

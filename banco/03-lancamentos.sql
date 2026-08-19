@@ -83,7 +83,9 @@ CREATE TABLE lancamento_mes (
 -- Regra PAC: o pacote precisa servir a categoria do lançamento. Sem isto,
 -- "Estrutura de Pessoal" entra num Capex e ninguém percebe.
 CREATE FUNCTION pacote_serve_categoria() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
 BEGIN
     IF NEW.pacote_id IS NOT NULL AND NOT EXISTS (
         SELECT 1 FROM cadastro.pacote_categoria
@@ -108,7 +110,9 @@ CREATE TRIGGER lancamento_versao_aberta
 -- O mês também é protegido: sem isto daria para alterar o valor de uma versão
 -- fechada mexendo direto na tabela filha, que é a porta dos fundos.
 CREATE FUNCTION mes_exige_versao_aberta() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
 DECLARE
     v_id bigint;
 BEGIN

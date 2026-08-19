@@ -22,8 +22,19 @@ SET search_path TO orcamento, cadastro, public;
 
 -- ── Papéis ───────────────────────────────────────────────────────────────────
 
-CREATE ROLE app_leitura;
-CREATE ROLE app_escrita;
+-- Papel é objeto do CLUSTER, não do banco: sobrevive ao dropdb. Sem esta guarda,
+-- recriar o banco e reaplicar o schema estoura aqui com "role já existe" — e como
+-- este arquivo é o gate de deploy (infra/scripts/aplicar-schema.sh), o gate
+-- passaria a falhar por um motivo que não tem nada a ver com o deploy.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_leitura') THEN
+        CREATE ROLE app_leitura;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_escrita') THEN
+        CREATE ROLE app_escrita;
+    END IF;
+END $$;
 
 GRANT USAGE ON SCHEMA cadastro, orcamento, auditoria, realizado TO app_leitura, app_escrita;
 GRANT SELECT ON ALL TABLES IN SCHEMA cadastro, orcamento, realizado TO app_leitura, app_escrita;
@@ -39,20 +50,36 @@ REVOKE UPDATE, DELETE ON auditoria.evento FROM app_leitura, app_escrita;
 
 -- ── Funções de contexto ──────────────────────────────────────────────────────
 
+-- ⚠ TODA função deste schema fixa o próprio search_path, e isto NÃO é enfeite.
+-- O corpo de uma função SQL/plpgsql é resolvido na EXECUÇÃO, com o search_path
+-- de quem chamou. Como as funções nasceram no schema orcamento e as políticas
+-- as chamam sem qualificar, uma sessão com search_path padrão — que é o caso da
+-- credencial da aplicação — falhava com "função app_perfil() não existe" em TODA
+-- leitura de lançamento. Com superusuário e search_path ajustado (como nos
+-- testes da Fase 0) o defeito não aparece: ele estava reservado para a produção.
+-- Fixar aqui também fecha a porta de alguém trocar o search_path para plantar
+-- uma função homônima na frente desta.
+
 CREATE FUNCTION app_pessoa_id() RETURNS bigint
-LANGUAGE sql STABLE AS $$
+LANGUAGE sql STABLE
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
     SELECT NULLIF(current_setting('app.pessoa_id', true), '')::bigint;
 $$;
 
 CREATE FUNCTION app_perfil() RETURNS text
-LANGUAGE sql STABLE AS $$
+LANGUAGE sql STABLE
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
     SELECT COALESCE(NULLIF(current_setting('app.perfil', true), ''), 'nenhum');
 $$;
 
 -- Empresas que a sessão pode enxergar. Admin e aprovador veem tudo; os demais
 -- veem só o que está em pessoa_empresa.
 CREATE FUNCTION app_empresas_visiveis() RETURNS SETOF bigint
-LANGUAGE sql STABLE AS $$
+LANGUAGE sql STABLE
+SET search_path = orcamento, cadastro, auditoria, realizado, public, pg_temp
+AS $$
     SELECT e.id FROM cadastro.empresa e
      WHERE app_perfil() IN ('admin', 'aprovador')
     UNION
