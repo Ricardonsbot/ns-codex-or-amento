@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
+using NsCodex.Api.Auth;
 using Microsoft.AspNetCore.Mvc;
 using NsCodex.Application.Abstractions;
 using NsCodex.Application.Dtos;
@@ -15,6 +17,8 @@ namespace NsCodex.Api.Controllers;
 /// </summary>
 [ApiController]
 [Authorize]
+[RequerSecao("cadastro")]
+[EnableRateLimiting("cubo")]
 [Route("api/ref")]
 public class RefController : ControllerBase
 {

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using NsCodex.Application.Abstractions;
 using NsCodex.Application.Dtos;
 using NsCodex.Domain.Enums;
@@ -45,6 +46,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("sso")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<LoginResponse>> Sso([FromBody] SsoLoginRequest req, CancellationToken ct)
     {
         if (!_entra.Habilitado)

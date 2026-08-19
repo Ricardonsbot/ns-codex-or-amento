@@ -307,3 +307,91 @@ Enquanto isso, o `GET /api/ref/contas` ainda não substitui o arquivo por comple
 E o resto do cadastro — empresas, torres, centros de custo, produtos — não foi
 carregado. Depende do de/para Torre → BU, que são ~12 linhas que só a área
 consegue escrever.
+
+---
+
+# RBAC por seção e rate limiting (19/08/2026)
+
+Duas camadas que a nsView tem e nós não tínhamos. Antes disso, **qualquer pessoa
+autenticada alcançava qualquer rota** e **toda leitura era ilimitada**.
+
+## Seção: a segunda camada de RBAC
+
+A RLS de `banco/07` responde "quais LINHAS esta pessoa vê". Ela não tem como
+responder "esta pessoa abre a tela de auditoria" — isso é um 403, não um filtro.
+Espremer isso em política de banco daria tela vazia em vez de recusa, que é pior:
+a pessoa não sabe se não tem acesso ou se não há dado.
+
+`banco/08-secoes.sql` traz `secao` (6 seções grossas: cadastro, orcamento, fluxo,
+relatorios, auditoria, admin), `pessoa_secao` e `config_plataforma`.
+
+**As seções são grossas de propósito** — uma por área, não uma por tela. Seção
+por tela vira matriz que ninguém mantém, e o efeito prático é conceder tudo a
+todos para parar de reclamar.
+
+**Não vai no token**, pela mesma razão que a lista de empresas não vai: cópia no
+JWT envelhece, e revogar uma seção só valeria oito horas depois. Lê-se do banco a
+cada request, com cache dentro do request.
+
+**A decisão é função pura** (`SecaoEnforce.Permite`, no Domain), testada sem
+banco e sem HTTP. Tem dois consumidores previstos: o gate dos endpoints e, quando
+existir, o que monta o menu — se cada um tivesse a sua cópia, o menu ofereceria
+tela que a rota recusa.
+
+### O interruptor
+
+`config_plataforma.rbac_secao_enforce` desliga a fiscalização **sem deploy e sem
+SSH**, valendo em até 30 segundos. Ligar RBAC sem poder desligar é como se trava
+a operação num domingo — e aí alguém desliga do jeito errado, dando admin para
+todo mundo. Ausente = **fiscalizando**: o default de flag de segurança é o lado
+seguro.
+
+## Rate limiting
+
+| Política | Limite | Partição | Onde |
+|---|---|---|---|
+| global | 600/min | usuário (`sub`), IP se anônimo | toda rota |
+| `cubo` | 60/min | usuário | `/api/ref/*` |
+| `auth` | 30/5min | IP | `POST /api/auth/sso` |
+
+Particionado por **usuário e não por IP** porque o escritório sai por NAT
+compartilhado: partição por IP puniria todos pelo comportamento de um. O global é
+`GlobalLimiter` em vez de anotação espalhada — dono único, e não há como esquecer
+de anotar um endpoint novo.
+
+⚠ O `UseRateLimiter` vem **depois** do `UseAuthentication` no pipeline, porque a
+partição lê a claim `sub`. Subir o limiter na ordem faria tudo virar partição por
+IP em silêncio.
+
+## Verificado
+
+| | |
+|---|---|
+| operacional sem a seção | **403** com mensagem explicando |
+| operacional com a seção | **200** · 405 contas |
+| admin sem seção nenhuma | **200** (admin passa em tudo) |
+| flag para `false`, sem reiniciar | 403 vira **200** em ≤33s |
+| 66 chamadas seguidas ao `/api/ref/contas` | 59× 200, **7× 429** com `Retry-After: 60` |
+
+36 testes passando (eram 26).
+
+## ⚠ Ao aplicar o `08` num banco com gente dentro
+
+Ninguém tem seção até alguém conceder. Com a fiscalização ligada — que é o
+default — **só admin passa**, e todo o resto toma 403. A ordem certa é: aplicar o
+`08`, conceder as seções, e só então confirmar que a fiscalização está ligada.
+Ou aplicar com `rbac_secao_enforce = false` e ligar depois.
+
+```sql
+INSERT INTO cadastro.pessoa_secao (pessoa_id, secao)
+SELECT id, 'orcamento' FROM cadastro.pessoa WHERE perfil = 'operacional';
+```
+
+## O que ficou de fora
+
+**Não há tela para conceder seção** — hoje é `INSERT` no banco. Entra junto com a
+tela de usuários.
+
+**Só o `/api/ref` está anotado**, porque é o único controller de negócio que
+existe. Endpoint novo nasce com `[RequerSecao]`; o global de rate limit já cobre
+todos sem anotação.

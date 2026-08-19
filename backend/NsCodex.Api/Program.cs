@@ -1,6 +1,8 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NsCodex.Api.Auth;
@@ -91,6 +93,9 @@ builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<IContaRepository, ContaRepository>();
 builder.Services.AddScoped<IPessoaRepository, PessoaRepository>();
 builder.Services.AddScoped<ISessaoDiagnostico, SessaoDiagnostico>();
+builder.Services.AddScoped<ISecoesDaPessoa, SecoesDaPessoa>();
+// Singleton: guarda o cache de 30s das flags e vive além de um request.
+builder.Services.AddSingleton<IPlataformaConfig, PlataformaConfig>();
 
 // O interceptor declara ao Postgres quem está agindo em toda conexão aberta.
 // É o que faz a RLS e a auditoria funcionarem sem nenhuma rota lembrar de nada.
@@ -98,6 +103,67 @@ builder.Services.AddScoped<ContextoDaSessaoInterceptor>();
 builder.Services.AddDbContext<AppDbContext>((sp, o) =>
     o.UseNpgsql(conn, npg => npg.CommandTimeout(30))
      .AddInterceptors(sp.GetRequiredService<ContextoDaSessaoInterceptor>()));
+
+// ----- Rate limiting -----
+// Portado da nsView. Antes disso, toda leitura era ilimitada — e o
+// /api/ref/contas já devolve 424 linhas por chamada.
+//
+// Particionado por USUÁRIO (claim `sub`), não por IP: o escritório sai por NAT
+// compartilhado, então partição por IP puniria todo mundo pelo comportamento de
+// um. Sem identidade (antes do login) cai no IP, que é o melhor disponível ali.
+//
+// ⚠ Depende de ctx.User já estar populado, ou seja, o UseRateLimiter TEM de vir
+// depois do UseAuthentication. Está assim no pipeline abaixo; se alguém subir o
+// limiter na ordem, tudo silenciosamente vira partição por IP.
+static string ChavePorUsuario(HttpContext ctx) =>
+    ctx.User.FindFirst("sub")?.Value
+    ?? ctx.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+    ?? ctx.Connection.RemoteIpAddress?.ToString()
+    ?? "sem-identidade";
+
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // 429 com Retry-After: é o que um cliente automatizado sabe respeitar — o
+    // header manda ele recuar sozinho. Fila seria pior: esconderia a saturação e
+    // viraria latência inexplicável para o humano do outro lado do mesmo banco.
+    o.OnRejected = async (ctx, ct) =>
+    {
+        if (ctx.Lease.TryGetMetadata(MetadataName.RetryAfter, out var espera))
+            ctx.HttpContext.Response.Headers.RetryAfter = ((int)espera.TotalSeconds).ToString();
+        await ctx.HttpContext.Response.WriteAsJsonAsync(
+            new { mensagem = "Limite de requisições excedido. Aguarde e tente novamente." }, ct);
+    };
+
+    // Teto geral, em TODA rota. Global em vez de anotação espalhada por
+    // controller: dono único, e não há como esquecer de anotar um endpoint novo.
+    // Uma tela carrega ~5-10 requests; 600/min são 10/s sustentados por pessoa,
+    // que nenhuma sessão humana alcança.
+    o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(ChavePorUsuario(ctx),
+            _ => new FixedWindowRateLimiterOptions
+            { PermitLimit = 600, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+
+    // Anti-força-bruta no login. Generoso de propósito: vários usuários saem pelo
+    // MESMO IP público, então um limite apertado barraria gente de verdade numa
+    // segunda de manhã. O SSO é assinado pela Microsoft — não dá para adivinhar
+    // por tentativa — então isto é teto de volume, não de adivinhação.
+    o.AddPolicy("auth", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            ctx.Connection.RemoteIpAddress?.ToString() ?? "sem-ip",
+            _ => new FixedWindowRateLimiterOptions
+            { PermitLimit = 30, Window = TimeSpan.FromMinutes(5), QueueLimit = 0 }));
+
+    // Endpoints que devolvem catálogo inteiro numa request — o eixo caro. Para
+    // humano é correto e barato (troca filtro no cliente, não refaz a chamada);
+    // para consumidor automatizado é o contrário. O global roda ANTES e os dois
+    // encadeiam: este é teto adicional, não substituto.
+    o.AddPolicy("cubo", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(ChavePorUsuario(ctx),
+            _ => new FixedWindowRateLimiterOptions
+            { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
 
 builder.Services.AddControllers();
 
@@ -120,6 +186,8 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+// Depois do UseAuthentication de propósito: a partição usa a claim "sub".
+app.UseRateLimiter();
 app.MapControllers();
 
 // Health sem banco e sem auth: responde mesmo com o Postgres fora, e é o que o

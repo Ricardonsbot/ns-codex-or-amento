@@ -15,14 +15,30 @@
 #   DATABASE_URL=postgresql://nscodex_migrator:senha@localhost/nscodex \
 #     bash infra/scripts/aplicar-schema.sh
 #
-#   --dry-run   lista o que aplicaria e sai sem tocar no banco
+#   --dry-run          lista o que aplicaria e sai sem tocar no banco
+#   --adotar-ate=NOME  marca como aplicados os arquivos ATÉ NOME, sem executar
+#
+# O --adotar-ate existe para o banco que já tem o schema mas nunca passou por
+# aqui — o orcamento_dev nasceu assim, aplicado à mão na Fase 0. Sem ele, a
+# primeira execução tenta recriar tudo e morre em "relação já existe".
+#
+# ⚠ É a operação mais perigosa deste script: marcar sem executar significa que o
+# arquivo NUNCA vai rodar naquele banco. Só use com certeza de que o schema já
+# está lá — um engano aqui só aparece quando faltar uma tabela em produção.
 #
 set -euo pipefail
 
 RAIZ="$(cd "$(dirname "$0")/../.." && pwd)"
 BANCO_DIR="$RAIZ/banco"
 DRY_RUN=0
-[ "${1:-}" = "--dry-run" ] && DRY_RUN=1
+ADOTAR_ATE=""
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run)      DRY_RUN=1 ;;
+        --adotar-ate=*) ADOTAR_ATE="${arg#*=}" ;;
+        *) echo "opção desconhecida: $arg"; exit 2 ;;
+    esac
+done
 
 : "${DATABASE_URL:?DATABASE_URL ausente}"
 
@@ -53,6 +69,12 @@ for arq in "$BANCO_DIR"/*.sql; do
         pendentes=$((pendentes + 1))
         if [ "$DRY_RUN" = 1 ]; then
             echo "  APLICARIA  $nome ($hash)"
+            continue
+        fi
+        if [ -n "$ADOTAR_ATE" ]; then
+            echo "  ADOTANDO   $nome ($hash) — marcado SEM executar"
+            psql_ -c "INSERT INTO schema_versao (arquivo, hash) VALUES ('$nome', '$hash')" >/dev/null
+            [ "$nome" = "$ADOTAR_ATE" ] && ADOTAR_ATE=""
             continue
         fi
         echo "  aplicando  $nome ($hash)"
