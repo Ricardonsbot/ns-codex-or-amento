@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NsCodex.Application.Abstractions;
 using NsCodex.Application.Dtos;
@@ -13,6 +14,7 @@ namespace NsCodex.Api.Controllers;
 /// linhas dentro do Infrastructure) e onde dá para não escorregar começando agora.
 /// </summary>
 [ApiController]
+[Authorize]
 [Route("api/ref")]
 public class RefController : ControllerBase
 {

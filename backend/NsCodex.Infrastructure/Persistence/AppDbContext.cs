@@ -21,9 +21,23 @@ public class AppDbContext : DbContext
 
     public DbSet<Conta> Contas => Set<Conta>();
     public DbSet<LinhaPl> LinhasPl => Set<LinhaPl>();
+    public DbSet<Pessoa> Pessoas => Set<Pessoa>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
+        mb.Entity<Pessoa>(e =>
+        {
+            e.ToTable("pessoa", "cadastro");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.Login).HasColumnName("login");
+            e.Property(x => x.Nome).HasColumnName("nome");
+            e.Property(x => x.Email).HasColumnName("email");
+            e.Property(x => x.PerfilBruto).HasColumnName("perfil");
+            e.Property(x => x.Ativo).HasColumnName("ativo");
+            e.Ignore(x => x.Perfil);
+        });
+
         mb.Entity<LinhaPl>(e =>
         {
             e.ToTable("linha_pl", "cadastro");

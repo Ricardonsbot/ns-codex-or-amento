@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NsCodex.Domain\NsCodex.Domain.csproj" />
     <ProjectReference Include="..\NsCodex.Application\NsCodex.Application.csproj" />
+    <ProjectReference Include="..\NsCodex.Infrastructure\NsCodex.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

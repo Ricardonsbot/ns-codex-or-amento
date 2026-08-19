@@ -93,8 +93,94 @@ a derivar de outro lugar. **Enquanto isso não for resolvido, o
 molde: entidade no Domain quando houver regra, DTO no Application com os nomes do
 JSON, repositório no Infrastructure, uma action no `RefController`.
 
-**Nada de autenticação ainda.** Entra ID + JWT é o passo 3 da ordem de ataque.
-Enquanto não existir, todo endpoint está aberto — não expor fora da máquina.
+**~~Nada de autenticação ainda~~** — feito em 14/08, ver a segunda metade deste
+arquivo. Todo endpoint de catálogo agora exige token.
 
 **`appsettings.Development.json` está no `.gitignore`** de propósito: é onde a
 connection string local com senha acabaria parando.
+
+---
+
+# Autenticação — Entra ID + JWT (14/08/2026)
+
+## Como funciona
+
+```
+navegador ──popup Microsoft──► Entra ID ──id_token──► POST /api/auth/sso
+                                                          │ valida assinatura, issuer,
+                                                          │ audience e validade
+                                                          ▼
+                                        casa o e-mail com cadastro.pessoa (ATIVA)
+                                                          │
+                                                          ▼
+                                          JWT da aplicação (8h) ──► toda request
+                                                          │
+                                   ContextoDaSessaoInterceptor declara ao Postgres
+                                   app.pessoa_id / app.perfil / app.pessoa_login
+                                                          │
+                                            RLS filtra · gatilho audita
+```
+
+| Endpoint | |
+|---|---|
+| `GET /api/auth/config` | público — a tela pergunta antes de desenhar o botão |
+| `POST /api/auth/sso` | troca o `id_token` da Microsoft pelo token da aplicação |
+| `GET /api/auth/eu` | quem sou, segundo o token |
+| `GET /api/auth/sessao` | quem o **banco** acha que sou, e quantos lançamentos enxergo |
+
+## As decisões
+
+**Um caminho de entrada só.** Não há login por senha, porque `cadastro.pessoa`
+não tem coluna de senha — decisão registrada no `01-cadastro.sql` e mantida. A
+consequência precisa ser dita: **se o Entra cair, ninguém entra, e não há
+break-glass.** Criar um exigiria coluna de senha, e uma conta de emergência com
+senha é uma porta permanente para poupar um problema raro. A nsView tem esse
+caminho porque já tinha senha; nós não temos, e não vamos criar sem decisão
+explícita.
+
+**Default-deny.** Ter conta no tenant da NSTECH não é ter acesso ao orçamento: a
+pessoa precisa existir e estar ativa em `cadastro.pessoa`. Não auto-provisiona.
+
+**O token não carrega escopo.** É a diferença principal em relação à nsView, que
+põe `familia_fpa` nas claims porque filtra as linhas no service. Aqui quem filtra
+é a RLS, que deriva as empresas de `pessoa_empresa`. Duplicar a lista na claim
+criaria uma verdade que envelhece — tirar alguém de uma empresa não teria efeito
+até o token expirar.
+
+**Perfil ilegível é recusa, não default.** Valor fora do CHECK significa banco
+mexido à mão; adivinhar o perfil de alguém é a pior hora para ser prestativo.
+
+**Fail-fast no segredo.** Em produção, `JWT_SECRET` ausente ou com menos de 32
+caracteres aborta o boot. Token assinado com chave conhecida é token que qualquer
+um forja.
+
+## Verificado ponta a ponta
+
+Com a API rodando como `nscodex_app` contra o banco de teste:
+
+| | |
+|---|---|
+| `/api/ref/contas` sem token | **401** |
+| token assinado com outra chave | **401** |
+| `/api/auth/eu` com token da Ana | `{"login":"ana.alfa","perfil":"operacional"}` |
+| `/api/auth/sessao` — perfil `operacional` | role `nscodex_app`, **1 lançamento visível** |
+| `/api/auth/sessao` — perfil `admin` | role `nscodex_app`, **2 lançamentos visíveis** |
+
+As duas últimas linhas são a prova que importa: **o mesmo código, o mesmo banco,
+e o número muda com o perfil declarado no token**. É a RLS respondendo à
+autenticação, sem nenhuma rota filtrar nada.
+
+## O que falta
+
+**Um app registration próprio no Entra.** Não dá para reaproveitar o `ClientId`
+da nsView: a audience do `id_token` tem de ser a deste aplicativo. Enquanto não
+existir, `ENTRA_TENANT_ID`/`ENTRA_CLIENT_ID` ficam vazios, `/api/auth/config`
+responde `ssoDisponivel: false` e o boot avisa no log. **É um pedido para quem
+administra o Entra da NSTECH, e bloqueia o primeiro login real.**
+
+**A tela de login.** O front ainda não chama `/api/auth/sso` — falta o popup MSAL
+e guardar o token. É o próximo passo, e é o que destrava publicar o front.
+
+**Nenhuma pessoa cadastrada.** `cadastro.pessoa` está vazia num banco novo, e
+sem senha não há seed de admin que se sustente sozinho: a primeira pessoa entra
+por `INSERT`, feito por quem tem a credencial do migrator.
