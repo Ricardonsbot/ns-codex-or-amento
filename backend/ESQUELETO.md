@@ -184,3 +184,61 @@ e guardar o token. É o próximo passo, e é o que destrava publicar o front.
 **Nenhuma pessoa cadastrada.** `cadastro.pessoa` está vazia num banco novo, e
 sem senha não há seed de admin que se sustente sozinho: a primeira pessoa entra
 por `INSERT`, feito por quem tem a credencial do migrator.
+
+---
+
+# A tela de login (14/08/2026)
+
+O front passou a ter as **duas vidas explicitamente**, e as duas foram
+verificadas no navegador:
+
+| | Como se comporta |
+|---|---|
+| **Maquete** — `file://` ou servida sem API | login simulado, navegação livre, nada muda. É o pacote que está em teste |
+| **Sistema** — servida com API viva | senha some da tela, login é por conta Microsoft, cada request leva o token |
+
+Quem decide é a API **responder** — não o protocolo. A primeira versão do guard
+olhava só o `apiBase()`, que devolve `/api` para qualquer página servida por
+http, e com isso quem subisse o `ferramentas/servidor.py` só para ver a maquete
+era jogado no login a cada clique, sem ter como sair. Custou um piscar de
+conteúdo consertar; teria custado a maquete inteira não consertar.
+
+## PKCE escrito à mão
+
+Sem MSAL, porque a regra do projeto é não ter CDN nem dependência externa. O
+fluxo é Authorization Code + PKCE em ~40 linhas, usando só `crypto.subtle`:
+`code_verifier` aleatório → `code_challenge` SHA-256 → `authorize` → volta com
+`code` → troca no `token` endpoint → o `id_token` vai para `/api/auth/sso` → o
+nosso token fica em `sessionStorage`.
+
+PKCE e não implícito porque o implícito devolve o token na URL, onde ele fica no
+histórico. `sessionStorage` e não `localStorage` porque o token morre ao fechar
+a aba — em máquina compartilhada é a diferença entre "saiu" e "continua logado
+amanhã". E o `state` é conferido na volta, para a resposta só ser aceita pela
+aba que iniciou a ida.
+
+## O catálogo já vem do banco
+
+`carregarRef()` ganhou uma terceira fonte, antes do arquivo: com API e sessão,
+tenta `/api/ref/<catálogo>`. O que a API ainda não serve devolve 404 e **cai no
+arquivo** — então a migração é catálogo a catálogo, sem coordenar as duas pontas.
+
+Verificado no navegador: `carregarRef('contas.json')` devolveu a linha do
+**banco** (1 conta), enquanto os outros 17 catálogos seguiram vindo de
+`Referencias/`.
+
+## O que falta
+
+**O app registration no Entra**, e agora com requisito preciso: plataforma
+**Single-page application** (não "Web"), com o redirect URI apontando para a
+`login.html` do ambiente — `https://<host>/login.html`. Só a plataforma SPA
+devolve os cabeçalhos de CORS que a troca do `code` pelo token exige a partir do
+navegador. Enquanto não existir, a tela mostra "Login indisponível — Entra ID não
+configurado", que foi o estado verificado.
+
+**O fluxo real de ponta a ponta não foi exercitado** — sem app registration não
+há como. O que foi verificado é tudo o que não depende dele: o guard, as duas
+vidas, a troca de tela, o token viajando nas chamadas, o 401 derrubando a sessão
+e o catálogo vindo do banco.
+
+**Botão de sair.** Existe a função `sair()`, mas nenhuma tela a chama ainda.

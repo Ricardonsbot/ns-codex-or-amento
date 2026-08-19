@@ -36,7 +36,12 @@ public class AuthController : ControllerBase
     [HttpGet("config")]
     [AllowAnonymous]
     public ActionResult<AuthConfigDto> Config()
-        => Ok(new AuthConfigDto { SsoDisponivel = _entra.Habilitado });
+        => Ok(new AuthConfigDto
+        {
+            SsoDisponivel = _entra.Habilitado,
+            TenantId = _entra.Habilitado ? _entra.TenantId : null,
+            ClientId = _entra.Habilitado ? _entra.ClientId : null
+        });
 
     [HttpPost("sso")]
     [AllowAnonymous]

@@ -33,6 +33,8 @@ public class EntraTokenValidator
     }
 
     public bool Habilitado => _settings.Habilitado;
+    public string TenantId => _settings.TenantId;
+    public string ClientId => _settings.ClientId;
 
     /// <summary>
     /// TODOS os identificadores de e-mail do token, em minúsculas e sem repetir.

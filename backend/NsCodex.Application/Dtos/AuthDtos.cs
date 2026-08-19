@@ -24,8 +24,15 @@ public sealed class EuDto
     public string Perfil { get; init; } = "";
 }
 
-/// <summary>Config pública da tela de login: diz se dá para entrar.</summary>
+/// <summary>
+/// Config pública da tela de login. Traz TenantId e ClientId porque é a tela
+/// que monta a URL de autorização do Entra — e os dois são identificadores
+/// públicos, não segredo. Publicá-los evita ter de repetir a configuração no
+/// front e sair de sincronia com o servidor.
+/// </summary>
 public sealed class AuthConfigDto
 {
     public bool SsoDisponivel { get; init; }
+    public string? TenantId { get; init; }
+    public string? ClientId { get; init; }
 }

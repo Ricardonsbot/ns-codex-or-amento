@@ -29,13 +29,299 @@ function carregarRef(arquivo) {
     if (copia) return Promise.resolve(copia);
   }
 
-  return fetch(`Referencias/${arquivo}?v=${Date.now()}`, { cache: "no-store" })
-    .then((r) => r.json())
-    .catch((erro) => {
-      const copia = doDisco();
-      if (copia) return copia;
-      throw erro;
+  const doArquivo = () =>
+    fetch(`Referencias/${arquivo}?v=${Date.now()}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .catch((erro) => {
+        const copia = doDisco();
+        if (copia) return copia;
+        throw erro;
+      });
+
+  // Com API e sessão, o catálogo vem do BANCO — no mesmo formato do arquivo,
+  // que é a razão de o contrato de leitura ter sido desenhado assim (ver
+  // BACKEND.md §2). A migração é catálogo a catálogo: o que a API ainda não
+  // serve cai no arquivo, sem ninguém precisar coordenar as duas pontas.
+  if (!apiBase() || !tokenGuardado()) return doArquivo();
+
+  return apiFetch(`/ref/${arquivo.replace(/\.json$/, "")}`)
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null)
+    .then((doBanco) => doBanco || doArquivo());
+}
+
+/* ---------- Autenticação (Entra ID, sem biblioteca) ----------
+ *
+ * O NS Codex tem DUAS VIDAS e as duas precisam continuar funcionando:
+ *
+ *   1. Maquete: aberta por duplo clique (file://) ou servida sem API. Nada é
+ *      gravado, o login é simulado, e é assim que o pacote de testes roda na
+ *      máquina de quem está avaliando o processo.
+ *   2. Sistema: servida junto de uma API. Aí o login é de verdade, por conta
+ *      corporativa, e cada request leva o token.
+ *
+ * Quem decide qual vida é o apiBase(): sem API alcançável, tudo segue como
+ * antes. É o mesmo princípio que já governa o carregarRef().
+ *
+ * SEM BIBLIOTECA, de propósito — a regra do projeto é não ter CDN nem
+ * dependência externa. O fluxo abaixo é o Authorization Code + PKCE escrito à
+ * mão: usa só crypto.subtle e não traz o MSAL junto. PKCE e não implícito
+ * porque o implícito devolve o token na URL, onde ele fica no histórico.
+ */
+
+const NS_TOKEN_KEY    = "ns_token";
+const NS_VERIFIER_KEY = "ns_pkce_verifier";
+const NS_ESTADO_KEY   = "ns_pkce_estado";
+const NS_DESTINO_KEY  = "ns_destino";
+
+/* Onde está a API. Três casos, nesta ordem:
+ *   1. localStorage.ns_api_base — override de desenvolvimento (front em :8081,
+ *      API em :5055). No console:
+ *        localStorage.ns_api_base = "http://127.0.0.1:5055/api"
+ *   2. mesma origem, quando servido por http(s) — o caso de produção, em que o
+ *      nginx serve o front e faz proxy de /api/ no mesmo domínio.
+ *   3. null em file:// — maquete, sem rede.
+ */
+function apiBase() {
+  const override = (localStorage.getItem("ns_api_base") || "").trim();
+  if (override) return override.replace(/\/$/, "");
+  if (location.protocol === "http:" || location.protocol === "https:") return "/api";
+  return null;
+}
+
+function tokenGuardado() { return sessionStorage.getItem(NS_TOKEN_KEY); }
+
+/* sessionStorage e não localStorage: o token morre ao fechar a aba. Em máquina
+ * compartilhada é a diferença entre "saiu" e "continua logado amanhã". */
+function guardarToken(t) { sessionStorage.setItem(NS_TOKEN_KEY, t); }
+function limparToken()   { sessionStorage.removeItem(NS_TOKEN_KEY); }
+
+/* Toda chamada à API passa por aqui: injeta o token e trata 401 num lugar só.
+ * Espalhar esse tratamento por chamada é como uma tela fica em branco sem
+ * dizer que a sessão expirou. */
+async function apiFetch(caminho, opts = {}) {
+  const base = apiBase();
+  if (!base) throw new Error("sem API");
+
+  const headers = Object.assign({}, opts.headers || {});
+  const t = tokenGuardado();
+  if (t) headers.Authorization = "Bearer " + t;
+  if (opts.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+
+  const r = await fetch(base + caminho, Object.assign({}, opts, { headers }));
+  if (r.status === 401) {
+    limparToken();
+    if (!location.pathname.endsWith("login.html")) {
+      sessionStorage.setItem(NS_DESTINO_KEY, paginaAtual());
+      location.href = "login.html";
+    }
+    throw new Error("nao autenticado");
+  }
+  return r;
+}
+
+function paginaAtual() {
+  return location.pathname.split("/").pop() || "index.html";
+}
+
+/* Memoizado: o guard e a tela de login perguntam os dois, e sem isto cada
+ * carregamento fazia duas idas — que na maquete viram dois 404 no console. O
+ * console acumula erro entre navegações, e ruído conhecido é ruído que faz a
+ * gente parar de olhar. Guarda a PROMESSA, não o resultado, senão duas chamadas
+ * simultâneas ainda disparam duas requisições. */
+let _authConfigPromise = null;
+
+function authConfig() {
+  if (_authConfigPromise) return _authConfigPromise;
+  _authConfigPromise = apiFetch("/auth/config")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);
+  return _authConfigPromise;
+}
+
+/* ---- PKCE ---- */
+
+function base64url(bytes) {
+  let s = "";
+  for (const b of new Uint8Array(bytes)) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function aleatorio(n) {
+  return base64url(crypto.getRandomValues(new Uint8Array(n)));
+}
+
+async function desafioDe(verifier) {
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  return base64url(hash);
+}
+
+/* O redirect_uri tem de casar EXATAMENTE com o registrado no Entra, inclusive
+ * porta e barra final. Divergência dá AADSTS50011, e a mensagem não diz qual
+ * dos dois está errado — então deriva-se da própria página, em vez de escrever
+ * o endereço à mão em dois lugares que saem de sincronia. */
+function urlDeRetorno() {
+  return location.origin + location.pathname;
+}
+
+async function iniciarLoginMicrosoft(cfg) {
+  const verifier = aleatorio(48);
+  const estado   = aleatorio(16);
+  sessionStorage.setItem(NS_VERIFIER_KEY, verifier);
+  sessionStorage.setItem(NS_ESTADO_KEY, estado);
+
+  const p = new URLSearchParams({
+    client_id: cfg.clientId,
+    response_type: "code",
+    redirect_uri: urlDeRetorno(),
+    response_mode: "query",
+    // openid + profile + email: só identidade. Nada de escopo do Graph — o
+    // sistema não lê da Microsoft nada além de quem a pessoa é.
+    scope: "openid profile email",
+    state: estado,
+    code_challenge: await desafioDe(verifier),
+    code_challenge_method: "S256"
+  });
+  location.href = "https://login.microsoftonline.com/" + cfg.tenantId +
+                  "/oauth2/v2.0/authorize?" + p.toString();
+}
+
+/* Volta do Entra: troca o code por id_token, e o id_token pelo nosso token. */
+async function concluirLoginMicrosoft(cfg, codigo, estadoRecebido) {
+  const estadoEsperado = sessionStorage.getItem(NS_ESTADO_KEY);
+  sessionStorage.removeItem(NS_ESTADO_KEY);
+  // O state confere que esta volta corresponde à ida que ESTA aba começou.
+  if (!estadoEsperado || estadoRecebido !== estadoEsperado)
+    throw new Error("Estado inválido — recomece o login.");
+
+  const verifier = sessionStorage.getItem(NS_VERIFIER_KEY);
+  sessionStorage.removeItem(NS_VERIFIER_KEY);
+  if (!verifier) throw new Error("Sessão de login perdida — recomece.");
+
+  const corpo = new URLSearchParams({
+    client_id: cfg.clientId,
+    grant_type: "authorization_code",
+    code: codigo,
+    redirect_uri: urlDeRetorno(),
+    code_verifier: verifier,
+    scope: "openid profile email"
+  });
+
+  const r = await fetch("https://login.microsoftonline.com/" + cfg.tenantId + "/oauth2/v2.0/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: corpo
+  });
+  const dados = await r.json();
+  if (!r.ok || !dados.id_token)
+    throw new Error(dados.error_description || "A Microsoft não devolveu um token.");
+
+  // O id_token vale para a Microsoft. Quem decide se a pessoa tem acesso ao
+  // orçamento é o nosso servidor, contra cadastro.pessoa.
+  const nosso = await apiFetch("/auth/sso", {
+    method: "POST",
+    body: JSON.stringify({ idToken: dados.id_token })
+  });
+  const sessao = await nosso.json();
+  if (!nosso.ok) throw new Error(sessao.mensagem || "Acesso negado.");
+
+  guardarToken(sessao.token);
+  return sessao.eu;
+}
+
+/* ---- Telas ---- */
+
+async function initLogin() {
+  const form = document.querySelector(".login-form");
+  if (!form) return;
+
+  const cfg = await authConfig();
+
+  // Sem API: maquete. O comportamento simulado de sempre continua valendo, e o
+  // aviso na tela deixa claro que nada ali é real.
+  if (!cfg) return;
+
+  // Com API não há senha: cadastro.pessoa não tem coluna de senha.
+  form.querySelectorAll(".field-group, .login-form-row, .login-divider").forEach(function (el) { el.remove(); });
+  const botaoSenha = form.querySelector('[data-action="login"]');
+  if (botaoSenha) botaoSenha.remove();
+  const banner = document.querySelector(".proto-banner");
+  if (banner) banner.remove();
+
+  const botao = form.querySelector('[data-action="sso-login"]');
+  if (!botao) return;
+
+  if (!cfg.ssoDisponivel) {
+    botao.disabled = true;
+    botao.textContent = "Login indisponível — Entra ID não configurado";
+    showToast("O servidor está sem configuração de SSO. Fale com quem cuida do ambiente.", "warning");
+    return;
+  }
+
+  // Tira o data-action para o dispatcher genérico (que simula) não disputar o
+  // clique com o handler real.
+  botao.removeAttribute("data-action");
+  botao.addEventListener("click", function () {
+    botao.disabled = true;
+    iniciarLoginMicrosoft(cfg).catch(function (e) {
+      botao.disabled = false;
+      showToast(e.message, "error");
     });
+  });
+
+  const q = new URLSearchParams(location.search);
+  if (q.get("error")) {
+    showToast(q.get("error_description") || q.get("error"), "error");
+    history.replaceState({}, "", location.pathname);
+    return;
+  }
+
+  const codigo = q.get("code");
+  if (!codigo) return;
+
+  botao.disabled = true;
+  botao.textContent = "Entrando…";
+  try {
+    const eu = await concluirLoginMicrosoft(cfg, codigo, q.get("state"));
+    // Tira o code da URL: link com code no histórico é lixo que não funciona
+    // duas vezes e confunde quem tentar reusar.
+    history.replaceState({}, "", location.pathname);
+    showToast("Bem-vindo, " + eu.nome, "success");
+    const destino = sessionStorage.getItem(NS_DESTINO_KEY) || "index.html";
+    sessionStorage.removeItem(NS_DESTINO_KEY);
+    setTimeout(function () { location.href = destino; }, 600);
+  } catch (e) {
+    history.replaceState({}, "", location.pathname);
+    botao.disabled = false;
+    botao.textContent = "🪟 Entrar com conta Microsoft";
+    showToast(e.message, "error");
+  }
+}
+
+/* Nas demais telas: sem token, volta para o login. Só quando há API — na
+ * maquete não existe sessão e a navegação segue livre.
+ *
+ * ⚠ A condição é a API RESPONDER, não o protocolo ser http. A primeira versão
+ * disto olhava só o apiBase(), que devolve "/api" para qualquer página servida
+ * por http — e aí quem sobe o `ferramentas/servidor.py` só para ver a maquete
+ * era jogado no login a cada clique, sem ter como sair. O custo de perguntar
+ * antes é um piscar de conteúdo; o custo de não perguntar era a maquete parar
+ * de funcionar no servidor de desenvolvimento. */
+async function initGuardaDeSessao() {
+  if (!apiBase()) return;
+  if (location.pathname.endsWith("login.html")) return;
+  if (tokenGuardado()) return;
+
+  const cfg = await authConfig();
+  if (!cfg) return;                       // sem API viva: maquete, navegação livre
+
+  sessionStorage.setItem(NS_DESTINO_KEY, paginaAtual());
+  location.href = "login.html";
+}
+
+function sair() {
+  limparToken();
+  location.href = "login.html";
 }
 
 /* ---------- Toast ---------- */
@@ -5795,6 +6081,8 @@ function initDashboardExecutivo() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  initGuardaDeSessao();
+  initLogin();
   markActiveNav();
   initModals();
   initSimulatedActions();
