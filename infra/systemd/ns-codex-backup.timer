@@ -1,0 +1,11 @@
+[Unit]
+Description=NS Codex - Backup diario do Postgres
+
+[Timer]
+# 03:00 no horário da VM, fora do pico. Persistent: se a máquina estava desligada
+# na hora, roda assim que ligar — senão um fim de semana sem backup passa batido.
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
