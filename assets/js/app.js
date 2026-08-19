@@ -319,9 +319,84 @@ async function initGuardaDeSessao() {
   location.href = "login.html";
 }
 
+/* Vale nas duas vidas: com API, apaga o token e a próxima tela exige login de
+ * novo; na maquete, limparToken() é inofensivo e o efeito é voltar ao login
+ * simulado — que é o que a pessoa espera do botão nos dois casos.
+ *
+ * Não pergunta "tem certeza?": sair é reversível em um clique, e confirmação
+ * para ação reversível só ensina a clicar em OK sem ler. */
 function sair() {
   limparToken();
   location.href = "login.html";
+}
+
+/* ---------- Rodapé da barra lateral: quem está logado e o botão de sair ----------
+ *
+ * Renderizado por JS e não escrito no HTML porque o bloco é IDÊNTICO nas 18
+ * telas: escrever à mão seria 18 lugares para esquecer um. O `sidebar-footer`
+ * já existe em todas — aqui só se preenche e se acrescenta o botão.
+ */
+
+/* Lê o payload do token só para EXIBIR. Nada aqui é decisão de permissão: quem
+ * decide é o servidor, e depois dele a RLS. Se este código mentisse sobre o
+ * perfil, a única consequência seria um rótulo errado na tela. */
+function dadosDoToken() {
+  const t = tokenGuardado();
+  if (!t) return null;
+  try {
+    const parte = t.split(".")[1];
+    if (!parte) return null;
+    const b64 = parte.replace(/-/g, "+").replace(/_/g, "/");
+    const cru = atob(b64.padEnd(Math.ceil(b64.length / 4) * 4, "="));
+    // atob devolve bytes; sem o TextDecoder, nome com acento vira caractere
+    // trocado — e o primeiro a reclamar seria alguém chamado "Inês".
+    const texto = new TextDecoder("utf-8").decode(
+      Uint8Array.from(cru, (c) => c.charCodeAt(0)));
+    return JSON.parse(texto);
+  } catch (e) {
+    return null;
+  }
+}
+
+function iniciaisDe(nome) {
+  const partes = String(nome || "").trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return "?";
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
+function initBarraDoUsuario() {
+  const rodape = document.querySelector(".sidebar-footer");
+  if (!rodape) return;              // login.html não tem barra lateral
+
+  const dados = dadosDoToken();
+
+  // Com sessão, o chip mostra QUEM ESTÁ LOGADO. Sem isto, todas as telas
+  // seguiriam exibindo o nome fixo do protótipo para uma pessoa real — que é
+  // pior do que não mostrar nome nenhum.
+  if (dados) {
+    const avatar = rodape.querySelector(".user-chip .avatar");
+    const nome   = rodape.querySelector(".user-chip .user-meta strong");
+    const sub    = rodape.querySelector(".user-chip .user-meta span");
+    const badge  = rodape.querySelector(".sidebar-role-badge");
+
+    if (avatar) avatar.textContent = iniciaisDe(dados.nome);
+    if (nome)   nome.textContent   = dados.nome || dados.login || "—";
+    if (sub)    sub.textContent    = dados.login || "";
+    if (badge && dados.perfil)
+      badge.textContent = dados.perfil.charAt(0).toUpperCase() + dados.perfil.slice(1);
+  }
+
+  if (rodape.querySelector(".sidebar-sair")) return;   // idempotente
+
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "sidebar-sair";
+  botao.title = "Sair";
+  botao.innerHTML = '<span aria-hidden="true">⏻</span>' +
+                    '<span class="sidebar-sair-rotulo">Sair</span>';
+  botao.addEventListener("click", sair);
+  rodape.appendChild(botao);
 }
 
 /* ---------- Toast ---------- */
@@ -6081,6 +6156,7 @@ function initDashboardExecutivo() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  initBarraDoUsuario();
   initGuardaDeSessao();
   initLogin();
   markActiveNav();

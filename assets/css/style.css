@@ -4113,3 +4113,34 @@ a.status-card:hover { background: var(--color-bg); }
 @media (max-width: 900px) {
   .exec-firmeza-itens { grid-template-columns: 1fr; }
 }
+
+/* ---------- Sair (rodapé da barra lateral) ----------
+   Vive na barra escura, então não reaproveita .btn (que é para fundo claro).
+   Some o rótulo quando a barra está recolhida, igual ao resto do rodapé — sem
+   isso o botão estoura a largura de 72px e empurra o layout. */
+.sidebar-sair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 12px 0 14px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #cfe0ff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-sair:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+.sidebar.collapsed .sidebar-sair .sidebar-sair-rotulo { display: none; }
+.sidebar.collapsed .sidebar-sair { padding: 8px 0; }
