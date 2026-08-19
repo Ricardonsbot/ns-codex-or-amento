@@ -3,6 +3,13 @@
 > Traçado em 13/08/2026 sobre o commit `9d487da`. Complementa o
 > `BANCO-DE-DADOS.md`, que cobre só o banco. Aqui é a aplicação inteira:
 > o que existe, o que falta, em que ordem, e o que pode dar errado.
+>
+> ⚠ **Atualizado em 14/08 por [`ARQUITETURA-NSVIEW.md`](ARQUITETURA-NSVIEW.md)**,
+> escrito depois de estudar a plataforma nsView (`nstechhub/nsview`), que resolve
+> este mesmo problema em produção. Três decisões daqui mudaram: a **stack** (.NET
+> em vez de FastAPI, §2), a **autenticação** (Entra ID resolve a pendência da
+> Fase 3) e a **hospedagem** (VM Azure da NSTECH — o risco nº 1 desta página está
+> respondido por precedente, e a Fase 1 não depende mais da TI).
 
 ---
 
