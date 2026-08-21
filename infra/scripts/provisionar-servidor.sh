@@ -18,6 +18,28 @@ DOTNET_CHANNEL=9.0
 BANCO=nscodex
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 
+echo "── 0. Pacotes do sistema ───────────────────────────────────────────────────"
+# Postgres, nginx e o resto vêm do apt. O Postgres fica NA PRÓPRIA VM e escutando
+# só em localhost — é o desenho da nsView e não é economia de máquina.
+#
+# A razão é a RLS: ela protege contra a APLICAÇÃO errar, não contra alguém com a
+# credencial mentir. Quem tiver a senha de nscodex_app e um psql declara
+# `SET app.perfil = 'admin'` e enxerga tudo. Com o banco só em localhost, um
+# vazamento de credencial ainda exige entrar na VM antes de virar acesso a dado.
+DEBIAN_FRONTEND=noninteractive apt-get update -qq
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+    postgresql postgresql-client nginx rsync curl ca-certificates
+systemctl enable --now postgresql
+echo "   postgres: $(sudo -u postgres psql -tAc 'SHOW server_version')"
+
+# Confere que não está escutando fora. Se alguém tiver aberto, é decisão
+# consciente de outra pessoa — o script avisa em vez de silenciosamente fechar.
+ESCUTA="$(sudo -u postgres psql -tAc 'SHOW listen_addresses')"
+if [ "$ESCUTA" != "localhost" ] && [ "$ESCUTA" != "127.0.0.1" ]; then
+    echo "   ⚠ listen_addresses = '$ESCUTA' — o Postgres aceita conexão de fora."
+    echo "     Confira o pg_hba.conf e o firewall antes de carregar dado real."
+fi
+
 echo "── 1. Runtime .NET ─────────────────────────────────────────────────────────"
 # .NET 9 não está nos repos do Ubuntu 24.04 (só 8 e 10) — daí o instalador
 # oficial. Em local de SISTEMA, não no home de alguém: deploy e systemd
