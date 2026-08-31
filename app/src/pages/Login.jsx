@@ -10,20 +10,20 @@ export default function Login() {
 
   function handleEntrar() {
     showToast('Login simulado com sucesso. Redirecionando...', 'success')
-    setTimeout(() => navigate('/'), 900)
+    setTimeout(() => navigate('/dashboard'), 900)
   }
 
   function handleSso() {
     showToast('Autenticação simulada via SSO Corporativo. Redirecionando...', 'info')
-    setTimeout(() => navigate('/'), 900)
+    setTimeout(() => navigate('/dashboard'), 900)
   }
 
   return (
     <div className="login-shell">
       <div className="login-brand-header">
         <div className="logo-mark">NS</div>
-        <strong>NS Codex</strong>
-        <span>Orçamento Corporativo · BU · Torres · Corporate</span>
+        <strong><span className="brand-ns">NS</span> <span className="brand-rest">Budget</span></strong>
+        <span>Ferramenta Orçamentária Nstech</span>
       </div>
 
       <div className="login-card">

@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom'
 const NAV_SECTIONS = [
   {
     label: 'Visão geral',
-    items: [{ to: '/', icon: '▦', text: 'Dashboard' }],
+    items: [{ to: '/dashboard', icon: '▦', text: 'Dashboard' }],
   },
   {
     label: 'Orçamento',
@@ -42,15 +42,19 @@ export default function Layout({ children }) {
     <div className="app-shell">
       <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
         <div className="sidebar-brand">
-          <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+          <NavLink to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
             <div className="logo-mark">NS</div>
             <div className="brand-text">
-              <strong>NS Codex</strong>
-              <span>BU · Torres · Corporate</span>
+              <strong><span className="brand-ns">NS</span> <span className="brand-rest">Budget</span></strong>
+              <span>Ferramenta Orçamentária Nstech</span>
             </div>
           </NavLink>
-          <button className="sidebar-toggle" onClick={() => setCollapsed((c) => !c)} title="Recolher/expandir menu">
-            «
+          <button
+            className="sidebar-toggle"
+            onClick={() => setCollapsed((c) => !c)}
+            title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+          >
+            {collapsed ? '»' : '«'}
           </button>
         </div>
 

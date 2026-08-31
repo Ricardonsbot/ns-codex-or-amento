@@ -1,10 +1,10 @@
-# NS Codex — App React
+# NS Budget — App React
 
-Versão em migração do protótipo estático (pasta raiz do repositório) para um app React de verdade, conectado a um banco Postgres no [Supabase](https://supabase.com).
+App de orçamento corporativo (React + [Supabase](https://supabase.com)), migrado do protótipo estático (pasta raiz do repositório).
 
-**Status:** Fase 1 — estrutura, rotas e layout compartilhado prontos. Telas migradas até agora: **Login** e **Dashboard**. As demais aparecem como "🚧 em construção" até serem migradas.
+**Status:** todas as telas do menu estão conectadas ao Supabase (dados reais) — Dashboard, Cadastros (10 categorias), Orçamento de Receita/Despesa/Capex, Relatórios, Aprovações e Budget-Settings (Ciclos & Versões). Só o **Login** ainda é simulado (sem `supabase.auth` de verdade).
 
-## Rodando localmente
+## Rodando localmente (sem Docker)
 
 ```bash
 npm install
@@ -15,9 +15,9 @@ Abre em `http://localhost:5173`.
 
 ## Conectar ao Supabase
 
-1. Crie uma conta gratuita em [supabase.com](https://supabase.com) e um novo projeto.
+1. Crie uma conta gratuita em [supabase.com](https://supabase.com) e um novo projeto (ou peça acesso ao projeto já existente do time).
 2. No projeto, vá em **SQL Editor → New query**, cole o conteúdo de [`supabase/schema.sql`](./supabase/schema.sql) e clique em **Run**. Isso cria as tabelas.
-3. Vá em **Settings → API** e copie a **Project URL** e a chave **anon public**.
+3. Vá em **Settings → API** e copie a **Project URL** e a chave **publishable/anon public**.
 4. Copie `.env.example` para `.env` e preencha:
    ```
    VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
@@ -25,23 +25,59 @@ Abre em `http://localhost:5173`.
    ```
 5. Reinicie `npm run dev`.
 
-O arquivo `.env` **nunca** deve ser commitado (já está no `.gitignore`) — ele é diferente pra cada pessoa/ambiente.
+O arquivo `.env` **nunca** deve ser commitado (já está no `.gitignore`) — ele é diferente pra cada pessoa/ambiente. Se o time inteiro usa o **mesmo** projeto Supabase (recomendado, já que os dados ficam sincronizados automaticamente pra todo mundo), basta compartilhar essas duas variáveis por um canal seguro (não pelo Git).
+
+## Rodando com Docker
+
+Requer [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando.
+
+```bash
+cd app
+docker compose up --build
+```
+
+Abre em `http://localhost:8090`.
+
+**Importante:** o Vite embute as variáveis `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` no JavaScript **durante o build** (não são lidas em tempo de execução do container). O `docker-compose.yml` já está configurado pra ler essas duas variáveis do seu `app/.env` local e passá-las como build args — ou seja, configure o `.env` (passo acima) **antes** de rodar `docker compose up`. Se trocar as chaves depois, rode `docker compose up --build` de novo para reconstruir a imagem com os novos valores.
+
+Esse Dockerfile faz um build de produção (`npm run build`) e serve os arquivos estáticos resultantes via nginx — não é hot-reload como o `npm run dev`; é o equivalente a rodar a versão "publicada" do app localmente.
 
 ## Estrutura
 
 ```
 src/
 ├── components/
-│   ├── Layout.jsx         Sidebar + estrutura compartilhada entre as telas logadas
-│   └── ToastProvider.jsx  Sistema de notificações (toast), equivalente ao showToast() do protótipo
-├── lib/
-│   └── supabaseClient.js  Cliente do Supabase, lido das variáveis de ambiente
+│   ├── Layout.jsx              Sidebar + estrutura compartilhada entre as telas logadas
+│   └── ToastProvider.jsx       Sistema de notificações (toast)
+├── lib/                        Camada de acesso ao Supabase, uma "fonte de dados" por domínio
+│   ├── supabaseClient.js       Cliente do Supabase, lido das variáveis de ambiente
+│   ├── dashboardData.js        BU/Torre/Empresa + resumo do bridge chart do Dashboard
+│   ├── contasData.js           CRUD do plano de contas
+│   ├── indicesData.js          CRUD de índices de reajuste + valores mensais
+│   ├── cadastroSimplesData.js  CRUD genérico (parametrizado por nome de tabela)
+│   ├── cadastrosSimplesConfig.js  Config dos 8 cadastros "simples" (Usuários, Clientes, etc.)
+│   ├── ciclosData.js           Ciclos/Versões (Budget-Settings + Aprovações)
+│   ├── lancamentosData.js      Lançamentos de Receita/Despesa/Capex + valores mensais
+│   └── relatoriosData.js       Agregação hierárquica (BU→Torre→SubTorre→Empresa) dos Relatórios
 ├── pages/
 │   ├── Login.jsx
 │   ├── Dashboard.jsx
-│   └── EmConstrucao.jsx   Placeholder para telas ainda não migradas
-├── App.jsx                 Definição das rotas
-└── main.jsx                 Ponto de entrada (React Router + CSS global)
+│   ├── Cadastros.jsx           Hub com as 10 categorias de cadastro
+│   ├── cadastros/
+│   │   ├── ContasContabeis.jsx
+│   │   ├── Indices.jsx
+│   │   └── CadastroSimples.jsx Tela genérica reusada pelos 8 cadastros simples (rota /cadastros/:slug)
+│   ├── orcamento/
+│   │   ├── OrcamentoEntry.jsx  Grade de lançamento genérica (parametrizada por tipo)
+│   │   ├── Receita.jsx / Despesa.jsx / Capex.jsx
+│   ├── Relatorios.jsx
+│   ├── Aprovacoes.jsx
+│   ├── BudgetSettings.jsx
+│   └── EmConstrucao.jsx        Placeholder (não usado mais, mantido por segurança)
+├── App.jsx                     Definição das rotas
+└── main.jsx                    Ponto de entrada (React Router + CSS global)
+
+Dockerfile, nginx.conf, docker-compose.yml    Empacotamento pra rodar o build de produção via Docker
 ```
 
 O `src/index.css` é uma cópia do `assets/css/style.css` do protótipo original — mesma paleta de cores e componentes visuais, sem depender de framework de CSS.
