@@ -2,7 +2,9 @@
 
 App de orçamento corporativo (React + [Supabase](https://supabase.com)), migrado do protótipo estático (pasta raiz do repositório).
 
-**Status:** todas as telas do menu estão conectadas ao Supabase (dados reais) — Dashboard, Cadastros (10 categorias), Orçamento de Receita/Despesa/Capex, Relatórios, Aprovações e Budget-Settings (Ciclos & Versões). Só o **Login** ainda é simulado (sem `supabase.auth` de verdade).
+**Status:** todas as telas do menu estão conectadas ao Supabase (dados reais) — Dashboard, Cadastros (10 categorias), Orçamento de Receita/Despesa/Capex, Relatórios, Aprovações e Budget-Settings (Ciclos & Versões). Login é real (Supabase Auth), sem autocadastro — só entra quem já foi pré-cadastrado no Supabase.
+
+**Login de desenvolvimento** (acesso ao sistema): `dev@nstech.com.br` / `123456` — conta fixa, pré-cadastrada direto no Supabase Auth (Authentication → Users), sem fluxo de cadastro pela tela de login. Cadastro público de novos usuários está desativado no projeto (Authentication → Sign In / Providers → "Allow new users to sign up" = off) — para adicionar alguém, crie a conta manualmente em Authentication → Users → Add user.
 
 ## Rodando localmente (sem Docker)
 
