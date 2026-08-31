@@ -4,6 +4,7 @@ import Layout from '../../components/Layout'
 import { useToast } from '../../components/ToastProvider'
 import ImportExportBar from '../../components/ImportExportBar'
 import { fetchContas, createConta, updateConta, deleteConta } from '../../lib/contasData'
+import { MODULOS, nomeArquivoExportacao } from '../../lib/modulos'
 
 const CAMPOS_VAZIOS = { codigo: '', nome: '', linha_pl: '', categoria: '' }
 const COLUNAS = [
@@ -179,7 +180,7 @@ export default function ContasContabeis() {
               <p>{loading ? 'Carregando…' : `${contas.length} conta(s)`}</p>
             </div>
             <ImportExportBar
-              nomeArquivo="contas-contabeis"
+              nomeArquivo={nomeArquivoExportacao(MODULOS.CADASTROS, 'ContaContabeis')}
               colunas={COLUNAS}
               dados={contas}
               onImportarLinha={handleImportarLinha}

@@ -2,6 +2,7 @@ export const CADASTROS_SIMPLES = {
   usuarios: {
     titulo: 'Usuários',
     tabela: 'usuario',
+    tela: 'Usuario',
     campos: [
       { key: 'nome', label: 'Nome', obrigatorio: true },
       { key: 'email', label: 'E-mail', obrigatorio: true },
@@ -11,6 +12,7 @@ export const CADASTROS_SIMPLES = {
   'centros-de-custo': {
     titulo: 'Centros de Custo',
     tabela: 'centro_de_custo',
+    tela: 'CentroDeCusto',
     campos: [
       { key: 'codigo', label: 'Código', obrigatorio: true },
       { key: 'nome', label: 'Nome', obrigatorio: true },
@@ -19,6 +21,7 @@ export const CADASTROS_SIMPLES = {
   diretorias: {
     titulo: 'Diretorias',
     tabela: 'diretoria',
+    tela: 'Diretoria',
     campos: [
       { key: 'nome', label: 'Nome', obrigatorio: true },
       { key: 'responsavel', label: 'Responsável' },
@@ -27,6 +30,7 @@ export const CADASTROS_SIMPLES = {
   operacoes: {
     titulo: 'Operações',
     tabela: 'operacao',
+    tela: 'Operacao',
     campos: [
       { key: 'nome', label: 'Nome', obrigatorio: true },
       { key: 'descricao', label: 'Descrição' },
@@ -35,6 +39,7 @@ export const CADASTROS_SIMPLES = {
   produtos: {
     titulo: 'Produtos',
     tabela: 'produto',
+    tela: 'Produto',
     campos: [
       { key: 'codigo', label: 'Código', obrigatorio: true },
       { key: 'nome', label: 'Nome', obrigatorio: true },
@@ -44,6 +49,7 @@ export const CADASTROS_SIMPLES = {
   clientes: {
     titulo: 'Clientes',
     tabela: 'cliente',
+    tela: 'Cliente',
     campos: [
       { key: 'nome', label: 'Nome', obrigatorio: true },
       { key: 'documento', label: 'CNPJ/CPF' },
@@ -53,6 +59,7 @@ export const CADASTROS_SIMPLES = {
   fornecedores: {
     titulo: 'Fornecedores',
     tabela: 'fornecedor',
+    tela: 'Fornecedor',
     campos: [
       { key: 'nome', label: 'Nome', obrigatorio: true },
       { key: 'documento', label: 'CNPJ/CPF' },
@@ -62,6 +69,7 @@ export const CADASTROS_SIMPLES = {
   layouts: {
     titulo: 'Layouts',
     tabela: 'layout',
+    tela: 'Layout',
     campos: [
       { key: 'nome', label: 'Nome', obrigatorio: true },
       { key: 'tipo', label: 'Tipo' },

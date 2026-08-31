@@ -5,6 +5,7 @@ import { useToast } from '../../components/ToastProvider'
 import ImportExportBar from '../../components/ImportExportBar'
 import { fetchAll, criar, atualizar, remover } from '../../lib/cadastroSimplesData'
 import { CADASTROS_SIMPLES } from '../../lib/cadastrosSimplesConfig'
+import { MODULOS, nomeArquivoExportacao } from '../../lib/modulos'
 
 function campoVazio(campos) {
   return Object.fromEntries(campos.map((c) => [c.key, '']))
@@ -164,7 +165,7 @@ export default function CadastroSimples() {
               <p>{loading ? 'Carregando…' : `${itens.length} registro(s)`}</p>
             </div>
             <ImportExportBar
-              nomeArquivo={slug}
+              nomeArquivo={nomeArquivoExportacao(MODULOS.CADASTROS, config.tela)}
               colunas={campos}
               dados={itens}
               onImportarLinha={handleImportarLinha}

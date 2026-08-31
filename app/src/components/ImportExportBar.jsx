@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import { toCsv, baixarArquivo, parseCsv, lerArquivoTexto } from '../lib/csvUtils'
+import { exportarExcel, lerArquivoExcel } from '../lib/excelUtils'
 
-// Componente genérico de Exportar/Importar CSV, reutilizado por todas as telas de
+// Componente genérico de Exportar/Importar Excel, reutilizado por todas as telas de
 // Cadastro. As colunas exportadas/esperadas na importação vêm de `colunas`
 // (mesma config que define os campos daquele cadastro) — adicionar ou remover uma
 // coluna na configuração da tela já reflete aqui automaticamente, sem editar este
@@ -11,8 +11,7 @@ export default function ImportExportBar({ nomeArquivo, colunas, dados, onImporta
   const [importando, setImportando] = useState(false)
 
   function handleExportar() {
-    const csv = toCsv(dados, colunas)
-    baixarArquivo(`${nomeArquivo}.csv`, csv)
+    exportarExcel(nomeArquivo, dados, colunas)
   }
 
   async function handleArquivoSelecionado(e) {
@@ -22,8 +21,7 @@ export default function ImportExportBar({ nomeArquivo, colunas, dados, onImporta
 
     setImportando(true)
     try {
-      const texto = await lerArquivoTexto(file)
-      const linhas = parseCsv(texto)
+      const linhas = await lerArquivoExcel(file)
       if (!linhas.length) {
         showToast('Nenhuma linha encontrada no arquivo.', 'warning')
         return
@@ -57,7 +55,7 @@ export default function ImportExportBar({ nomeArquivo, colunas, dados, onImporta
       <button className="btn btn-secondary btn-sm" type="button" onClick={() => inputRef.current?.click()} disabled={importando}>
         {importando ? 'Importando…' : '⭱ Importar'}
       </button>
-      <input ref={inputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleArquivoSelecionado} />
+      <input ref={inputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleArquivoSelecionado} />
     </div>
   )
 }
