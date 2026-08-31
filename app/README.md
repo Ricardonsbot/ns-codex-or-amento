@@ -29,6 +29,40 @@ Abre em `http://localhost:5173`.
 
 O arquivo `.env` **nunca** deve ser commitado (já está no `.gitignore`) — ele é diferente pra cada pessoa/ambiente. Se o time inteiro usa o **mesmo** projeto Supabase (recomendado, já que os dados ficam sincronizados automaticamente pra todo mundo), basta compartilhar essas duas variáveis por um canal seguro (não pelo Git).
 
+## Carregar o plano de contas do datalake
+
+A tabela `conta` é alimentada a partir da fonte de verdade de FP&A —
+`FPA_DW/Datalake_readFiles/tbl_KMM_Contas.xlsx`, aba `dContas` — e não à mão.
+
+```bash
+cd app
+node --env-file=.env scripts/importar-contas.mjs "<caminho do tbl_KMM_Contas.xlsx>" --dry-run
+```
+
+O `--dry-run` mostra o que seria carregado sem gravar nada. Tirando a flag, ele
+recarrega a tabela `conta`.
+
+O que o script faz, e por quê:
+
+- **Fica só com resultado e capex.** Das 635 contas da planilha, 231 são de
+  balanço (Fornecedores, Imobilizado, Tributos a pagar...). Não se orça sobre
+  elas, então ficam fora do cadastro.
+- **Deduplica por código normalizado.** O datalake cadastra algumas contas duas
+  vezes, uma com o código pontuado (`4.7.03.001.021`) e outra sem
+  (`4703001021`). Quando as duas descrevem a mesma conta, fica a pontuada — a
+  comparação ignora acento e caixa, porque a descrição vem ora com, ora sem.
+- **Reporta os conflitos que não sabe resolver.** Quando o mesmo código
+  normalizado tem descrições realmente diferentes, mantém as duas linhas e
+  imprime um aviso: decidir qual está errada exige quem conhece o plano de
+  contas.
+- **Não quebra lançamentos.** `lancamento.conta_id` é FK com `RESTRICT`; as
+  contas ainda referenciadas são atualizadas no lugar, preservando o `id`, e só
+  o restante é recriado.
+
+Hoje isso resulta em **387 contas** carregadas, com 17 duplicatas descartadas e
+2 conflitos reportados. Os nomes ficam como estão no datalake (caixa alta, sem
+acento) — a planilha é a referência, a correção de grafia é feita lá.
+
 ## Rodando com Docker
 
 Requer [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando.
