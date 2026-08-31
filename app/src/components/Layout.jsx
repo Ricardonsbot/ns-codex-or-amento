@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from './AuthProvider'
+import { sair } from '../lib/authData'
+import { useToast } from './ToastProvider'
 
 const NAV_SECTIONS = [
   {
@@ -28,15 +31,27 @@ const NAV_SECTIONS = [
   },
   {
     label: 'Budget - Settings',
-    items: [
-      { to: '/budget-settings', icon: '⚙', text: 'Ciclos & Versões' },
-      { to: '/login', icon: '⎋', text: 'Sair' },
-    ],
+    items: [{ to: '/budget-settings', icon: '⚙', text: 'Ciclos & Versões' }],
   },
 ]
 
 export default function Layout({ children }) {
   const [collapsed, setCollapsed] = useState(false)
+  const { sessao } = useAuth()
+  const navigate = useNavigate()
+  const showToast = useToast()
+
+  const email = sessao?.user?.email ?? ''
+  const iniciais = email ? email.slice(0, 2).toUpperCase() : '—'
+
+  async function handleSair() {
+    try {
+      await sair()
+      navigate('/login')
+    } catch (err) {
+      showToast(`Erro ao sair: ${err.message}`, 'error')
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -73,11 +88,16 @@ export default function Layout({ children }) {
           </div>
         ))}
 
+        <div className="sidebar-section-label">Conta</div>
+        <div className="nav-item" onClick={handleSair} style={{ cursor: 'pointer' }}>
+          <span className="nav-icon">⎋</span> <span className="nav-label">Sair</span>
+        </div>
+
         <div className="sidebar-footer">
           <div className="user-chip">
-            <div className="avatar">EN</div>
+            <div className="avatar">{iniciais}</div>
             <div className="user-meta">
-              <strong>Emerson Nakamura</strong>
+              <strong>{email || 'Usuário'}</strong>
               <span>NSTECH GR LTDA</span>
             </div>
           </div>

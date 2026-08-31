@@ -1,21 +1,37 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useToast } from '../components/ToastProvider'
+import { useAuth } from '../components/AuthProvider'
+import { entrar } from '../lib/authData'
 
 export default function Login() {
   const navigate = useNavigate()
   const showToast = useToast()
-  const [email, setEmail] = useState('emerson.nakamura@nstech.com.br')
-  const [senha, setSenha] = useState('')
+  const { sessao, carregando } = useAuth()
+  const [email, setEmail] = useState('dev@nstech.com.br')
+  const [senha, setSenha] = useState('123456')
+  const [entrando, setEntrando] = useState(false)
 
-  function handleEntrar() {
-    showToast('Login simulado com sucesso. Redirecionando...', 'success')
-    setTimeout(() => navigate('/dashboard'), 900)
+  if (!carregando && sessao) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  async function handleEntrar(e) {
+    e.preventDefault()
+    setEntrando(true)
+    try {
+      await entrar(email, senha)
+      showToast('Login realizado com sucesso.', 'success')
+      navigate('/dashboard')
+    } catch (err) {
+      showToast(`Não foi possível entrar: ${err.message}`, 'error')
+    } finally {
+      setEntrando(false)
+    }
   }
 
   function handleSso() {
-    showToast('Autenticação simulada via SSO Corporativo. Redirecionando...', 'info')
-    setTimeout(() => navigate('/dashboard'), 900)
+    showToast('Login via SSO Corporativo ainda não está disponível.', 'info')
   }
 
   return (
@@ -31,18 +47,19 @@ export default function Login() {
         <p className="login-subtitle">Entre com sua conta corporativa para acessar o ciclo de orçamento.</p>
 
         <div className="proto-banner" style={{ marginBottom: 18 }}>
-          ⓘ Login ainda simulado — a integração com Supabase Auth entra numa próxima etapa.
+          ⓘ Acesso restrito a pessoas já cadastradas — não há autocadastro nesta tela.
         </div>
 
-        <div className="login-form">
+        <form className="login-form" onSubmit={handleEntrar}>
           <div className="field-group">
             <label htmlFor="login-email">E-mail corporativo</label>
             <input
-              type="text"
+              type="email"
               id="login-email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nome.sobrenome@empresa.com"
+              required
             />
           </div>
 
@@ -54,6 +71,7 @@ export default function Login() {
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               placeholder="••••••••"
+              required
             />
           </div>
 
@@ -62,21 +80,21 @@ export default function Login() {
               <input type="checkbox" defaultChecked style={{ width: 'auto' }} />
               Manter conectado
             </label>
-            <a href="#" onClick={(e) => { e.preventDefault(); showToast('Fluxo de recuperação de senha simulado', 'info') }}>
+            <a href="#" onClick={(e) => { e.preventDefault(); showToast('Fale com o time de FP&A Corporate para redefinir sua senha.', 'info') }}>
               Esqueci minha senha
             </a>
           </div>
 
-          <button className="btn btn-primary btn-block" onClick={handleEntrar}>
-            Entrar →
+          <button className="btn btn-primary btn-block" type="submit" disabled={entrando}>
+            {entrando ? 'Entrando…' : 'Entrar →'}
           </button>
 
           <div className="login-divider">ou</div>
 
-          <button className="btn btn-sso" onClick={handleSso}>
+          <button className="btn btn-sso" type="button" onClick={handleSso}>
             🪟 Entrar com conta Microsoft
           </button>
-        </div>
+        </form>
 
         <p className="login-footer-note">
           Acesso restrito a colaboradores autorizados. Em caso de dúvida, contate o time de FP&amp;A Corporate.
