@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { useToast } from '../../components/ToastProvider'
+import ImportExportBar from '../../components/ImportExportBar'
 import { fetchAll, criar, atualizar, remover } from '../../lib/cadastroSimplesData'
 import { CADASTROS_SIMPLES } from '../../lib/cadastrosSimplesConfig'
 
@@ -93,6 +94,17 @@ export default function CadastroSimples() {
     }
   }
 
+  async function handleImportarLinha(linhaCsv) {
+    const faltando = campos.filter((c) => c.obrigatorio && !linhaCsv[c.key]?.trim())
+    if (faltando.length) throw new Error(`faltando: ${faltando.map((c) => c.key).join(', ')}`)
+    const payload = Object.fromEntries(campos.map((c) => [c.key, linhaCsv[c.key] ?? '']))
+    return criar(config.tabela, payload)
+  }
+
+  function handleImportConcluido(novos) {
+    setItens((atual) => [...atual, ...novos])
+  }
+
   if (!config) {
     return (
       <Layout>
@@ -151,6 +163,14 @@ export default function CadastroSimples() {
               <h2>Registros</h2>
               <p>{loading ? 'Carregando…' : `${itens.length} registro(s)`}</p>
             </div>
+            <ImportExportBar
+              nomeArquivo={slug}
+              colunas={campos}
+              dados={itens}
+              onImportarLinha={handleImportarLinha}
+              onImportConcluido={handleImportConcluido}
+              showToast={showToast}
+            />
           </div>
           <div className="panel-body">
             <div className="table-wrap">

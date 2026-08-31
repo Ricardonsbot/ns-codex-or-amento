@@ -2,9 +2,16 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { useToast } from '../../components/ToastProvider'
+import ImportExportBar from '../../components/ImportExportBar'
 import { fetchContas, createConta, updateConta, deleteConta } from '../../lib/contasData'
 
 const CAMPOS_VAZIOS = { codigo: '', nome: '', linha_pl: '', categoria: '' }
+const COLUNAS = [
+  { key: 'codigo', label: 'Código', obrigatorio: true },
+  { key: 'nome', label: 'Nome', obrigatorio: true },
+  { key: 'linha_pl', label: 'Linha do P&L' },
+  { key: 'categoria', label: 'Categoria' },
+]
 
 export default function ContasContabeis() {
   const showToast = useToast()
@@ -86,6 +93,20 @@ export default function ContasContabeis() {
     }
   }
 
+  async function handleImportarLinha(linhaCsv) {
+    if (!linhaCsv.codigo?.trim() || !linhaCsv.nome?.trim()) throw new Error('faltando código ou nome')
+    return createConta({
+      codigo: linhaCsv.codigo,
+      nome: linhaCsv.nome,
+      linha_pl: linhaCsv.linha_pl ?? '',
+      categoria: linhaCsv.categoria ?? '',
+    })
+  }
+
+  function handleImportConcluido(novas) {
+    setContas((atual) => [...atual, ...novas].sort((a, b) => a.codigo.localeCompare(b.codigo)))
+  }
+
   return (
     <Layout>
       <header className="topbar">
@@ -157,6 +178,14 @@ export default function ContasContabeis() {
               <h2>Contas Cadastradas</h2>
               <p>{loading ? 'Carregando…' : `${contas.length} conta(s)`}</p>
             </div>
+            <ImportExportBar
+              nomeArquivo="contas-contabeis"
+              colunas={COLUNAS}
+              dados={contas}
+              onImportarLinha={handleImportarLinha}
+              onImportConcluido={handleImportConcluido}
+              showToast={showToast}
+            />
           </div>
           <div className="panel-body">
             <div className="table-wrap">
