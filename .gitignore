@@ -12,3 +12,11 @@ node_modules/
 
 # Arquivos temporários do Excel
 ~$*.xlsx
+
+# Dados reais nunca entram no repositório — só dados simulados.
+# As planilhas de origem (plano de contas, estrutura organizacional,
+# fechamentos) ficam fora do Git.
+*.xlsx
+*.xlsb
+*.xls
+*.csv

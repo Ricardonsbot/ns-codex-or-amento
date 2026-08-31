@@ -52,7 +52,7 @@ Projeto - Estrutura/
 ├── assets/
 │   ├── css/style.css          Todo o CSS do app (compartilhado entre as páginas)
 │   └── js/app.js              Todo o JS do app (ações simuladas, tabs, autocomplete etc.)
-├── Referencias/                Dados reais de referência (plano de contas e estrutura organizacional)
+├── Referencias/                Dados SIMULADOS de referência (plano de contas e estrutura organizacional)
 │   ├── contas.json             Usado no autocomplete de "Conta" nas grades
 │   └── organizacional.json     Usado no autocomplete de "Centro de Custo"
 ├── Dockerfile

@@ -1,39 +1,224 @@
 [
-  { "bu": "PSL", "torre": "Torre TMS", "subTorre": "ICP Pequeno e Micro", "empresa": "Bsoft" },
-  { "bu": "PSL", "torre": "Torre TMS", "subTorre": "ICP Pequeno e Micro", "empresa": "Datamex" },
-  { "bu": "PSL", "torre": "Torre TMS", "subTorre": "ICP Pequeno e Micro", "empresa": "Hivecloud" },
-  { "bu": "PSL", "torre": "Torre TMS", "subTorre": "ICP Pequeno e Micro", "empresa": "Otimizy" },
-  { "bu": "PSL", "torre": "Torre TMS", "subTorre": "ICP Médio e Grande", "empresa": "KMM" },
-  { "bu": "PSL", "torre": "Torre TMS", "subTorre": "ICP Médio e Grande", "empresa": "Praxio - Avacorp" },
-  { "bu": "PSL", "torre": "Torre TMS", "subTorre": "ICP Médio e Grande", "empresa": "Praxio - Globus" },
-  { "bu": "PSL", "torre": "Torre TMS", "subTorre": "ICP Médio e Grande", "empresa": "ATS - Logistica" },
-  { "bu": "PSL", "torre": "Torre TMS", "subTorre": "-", "empresa": "Signa" },
-  { "bu": "PSL", "torre": "Torre Fintech", "subTorre": "e-frete", "empresa": "e-frete" },
-  { "bu": "PSL", "torre": "Torre Fintech", "subTorre": "Pedágio", "empresa": "Digitalcomm" },
-  { "bu": "PSL", "torre": "Torre Fintech", "subTorre": "Pedágio", "empresa": "Qualp" },
-  { "bu": "PSL", "torre": "Torre Fintech", "subTorre": "-", "empresa": "Gasola" },
-  { "bu": "PSL", "torre": "Torre Mobilidade", "subTorre": "-", "empresa": "Praxio - Mobilidade" },
-  { "bu": "PSL", "torre": "Torre Buonny", "subTorre": "-", "empresa": "Buonny" },
-  { "bu": "PSL", "torre": "-", "subTorre": "-", "empresa": "Atua Sistemas" },
-  { "bu": "PSL", "torre": "-", "subTorre": "-", "empresa": "Atua Redes" },
-  { "bu": "Embarcador", "torre": "Torre VGR", "subTorre": "Núcleo VGR", "empresa": "Opentech" },
-  { "bu": "Embarcador", "torre": "Torre VGR", "subTorre": "Núcleo VGR", "empresa": "BRK" },
-  { "bu": "Embarcador", "torre": "Torre VGR", "subTorre": "Núcleo VGR", "empresa": "LogRisk" },
-  { "bu": "Embarcador", "torre": "Torre VGR", "subTorre": "Núcleo VGR", "empresa": "Onisys" },
-  { "bu": "Embarcador", "torre": "Torre VGR", "subTorre": "Núcleo VGR", "empresa": "Trafegus" },
-  { "bu": "Embarcador", "torre": "Torre SW Embarcador", "subTorre": "YMS/WMS", "empresa": "GBM Consultoria" },
-  { "bu": "Embarcador", "torre": "Torre SW Embarcador", "subTorre": "YMS/WMS", "empresa": "GBM Logística" },
-  { "bu": "Embarcador", "torre": "Torre SW Embarcador", "subTorre": "YMS/WMS", "empresa": "Trizy" },
-  { "bu": "Embarcador", "torre": "Torre SW Embarcador", "subTorre": "YMS/WMS", "empresa": "LogOne" },
-  { "bu": "Embarcador", "torre": "Torre SW Embarcador", "subTorre": "Last Mile", "empresa": "Fusion" },
-  { "bu": "Embarcador", "torre": "Torre SW Embarcador", "subTorre": "Last Mile", "empresa": "RoutEasy" },
-  { "bu": "Embarcador", "torre": "Torre SW Embarcador", "subTorre": "Last Mile", "empresa": "Comprovei" },
-  { "bu": "Embarcador", "torre": "Torre SW Embarcador", "subTorre": "-", "empresa": "Multisoftware" },
-  { "bu": "Embarcador", "torre": "Torre SW Embarcador", "subTorre": "-", "empresa": "Frete Rapido" },
-  { "bu": "Embarcador", "torre": "Torre SW Embarcador", "subTorre": "-", "empresa": "Runtec" },
-  { "bu": "Embarcador", "torre": "Insurance Market", "subTorre": "-", "empresa": "IM" },
-  { "bu": "Embarcador", "torre": "Mídia", "subTorre": "-", "empresa": "Mundo Logistica" },
-  { "bu": "Corporate", "torre": "G&A", "subTorre": "-", "empresa": "Nstech Corporate Holding" },
-  { "bu": "Corporate", "torre": "S&M", "subTorre": "-", "empresa": "Nstech Corporate Holding" },
-  { "bu": "Corporate", "torre": "R&D", "subTorre": "-", "empresa": "Nstech Corporate Holding" }
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre TMS",
+    "subTorre": "Clientes Pequeno e Micro",
+    "empresa": "Aurora Sistemas"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre TMS",
+    "subTorre": "Clientes Pequeno e Micro",
+    "empresa": "Boreal Log"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre TMS",
+    "subTorre": "Clientes Pequeno e Micro",
+    "empresa": "Cirrus Cloud"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre TMS",
+    "subTorre": "Clientes Pequeno e Micro",
+    "empresa": "Delta Otimiza"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre TMS",
+    "subTorre": "Clientes Médio e Grande",
+    "empresa": "Everest TMS"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre TMS",
+    "subTorre": "Clientes Médio e Grande",
+    "empresa": "Fênix Frota"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre TMS",
+    "subTorre": "Clientes Médio e Grande",
+    "empresa": "Fênix Transporte"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre TMS",
+    "subTorre": "Clientes Médio e Grande",
+    "empresa": "Galena Logística"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre TMS",
+    "subTorre": "-",
+    "empresa": "Horizonte Sinais"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre Fintech",
+    "subTorre": "Frete",
+    "empresa": "Íris Frete"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre Fintech",
+    "subTorre": "Pedágio",
+    "empresa": "Juno Comm"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre Fintech",
+    "subTorre": "Pedágio",
+    "empresa": "Kairós Rotas"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre Fintech",
+    "subTorre": "-",
+    "empresa": "Lumen Combustível"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre Mobilidade",
+    "subTorre": "-",
+    "empresa": "Fênix Mobilidade"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "Torre Risco",
+    "subTorre": "-",
+    "empresa": "Meridian Risco"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "-",
+    "subTorre": "-",
+    "empresa": "Nimbus Sistemas"
+  },
+  {
+    "bu": "Serviços Log",
+    "torre": "-",
+    "subTorre": "-",
+    "empresa": "Nimbus Redes"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Rastreamento",
+    "subTorre": "Núcleo Risco",
+    "empresa": "Órion Telemetria"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Rastreamento",
+    "subTorre": "Núcleo Risco",
+    "empresa": "Pégaso Rastreio"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Rastreamento",
+    "subTorre": "Núcleo Risco",
+    "empresa": "Quasar Risco"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Rastreamento",
+    "subTorre": "Núcleo Risco",
+    "empresa": "Rigel Monitoramento"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Rastreamento",
+    "subTorre": "Núcleo Risco",
+    "empresa": "Sirius Tráfego"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Software Embarcador",
+    "subTorre": "YMS/WMS",
+    "empresa": "Tália Consultoria"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Software Embarcador",
+    "subTorre": "YMS/WMS",
+    "empresa": "Tália Logística"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Software Embarcador",
+    "subTorre": "YMS/WMS",
+    "empresa": "Ubano Pátio"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Software Embarcador",
+    "subTorre": "YMS/WMS",
+    "empresa": "Vega Armazém"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Software Embarcador",
+    "subTorre": "Last Mile",
+    "empresa": "Zênite Entregas"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Software Embarcador",
+    "subTorre": "Last Mile",
+    "empresa": "Atlas Rotas"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Software Embarcador",
+    "subTorre": "Last Mile",
+    "empresa": "Bravo Comprovante"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Software Embarcador",
+    "subTorre": "-",
+    "empresa": "Cobalt Software"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Software Embarcador",
+    "subTorre": "-",
+    "empresa": "Drakkar Frete"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Torre Software Embarcador",
+    "subTorre": "-",
+    "empresa": "Estelar Tec"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Seguros",
+    "subTorre": "-",
+    "empresa": "Ícaro Seguros"
+  },
+  {
+    "bu": "Cadeia de Suprimentos",
+    "torre": "Mídia",
+    "subTorre": "-",
+    "empresa": "Verbo Mídia"
+  },
+  {
+    "bu": "Corporativo",
+    "torre": "G&A",
+    "subTorre": "-",
+    "empresa": "Holding Simulada"
+  },
+  {
+    "bu": "Corporativo",
+    "torre": "S&M",
+    "subTorre": "-",
+    "empresa": "Holding Simulada"
+  },
+  {
+    "bu": "Corporativo",
+    "torre": "R&D",
+    "subTorre": "-",
+    "empresa": "Holding Simulada"
+  }
 ]

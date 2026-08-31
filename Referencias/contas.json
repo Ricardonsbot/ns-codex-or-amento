@@ -1,38 +1,218 @@
 [
-  { "conta": "4.7.03.001.003", "nome": "Décimo Terceiro Salário", "linhaPL": "Despesas > Personnel Costs", "categoria": "Salários+Encargos" },
-  { "conta": "4.7.03.001.007", "nome": "FGTS", "linhaPL": "Despesas > Personnel Costs", "categoria": "Salários+Encargos" },
-  { "conta": "4.7.03.001.028", "nome": "Bolsa Auxílio", "linhaPL": "Despesas > Personnel Costs", "categoria": "Salários+Encargos" },
-  { "conta": "4.7.03.001.004", "nome": "Férias", "linhaPL": "Despesas > Personnel Costs", "categoria": "Férias" },
-  { "conta": "4.7.03.001.012", "nome": "Alimentação do Trabalhador", "linhaPL": "Despesas > Personnel Costs", "categoria": "Benefícios" },
-  { "conta": "4.7.03.001.016", "nome": "Assistência Médica", "linhaPL": "Despesas > Personnel Costs", "categoria": "Benefícios" },
-  { "conta": "4.7.03.001.027", "nome": "Assistência Odontológica", "linhaPL": "Despesas > Personnel Costs", "categoria": "Benefícios" },
-  { "conta": "4.7.03.001.021", "nome": "Anuênios", "linhaPL": "Despesas > Personnel Costs", "categoria": "Benefícios" },
-  { "conta": "4.7.03.001.013", "nome": "Bônus", "linhaPL": "Despesas > Personnel Costs", "categoria": "Bônus e Premiações" },
-  { "conta": "4.7.03.001.014", "nome": "Comissões", "linhaPL": "Despesas > Personnel Costs", "categoria": "Bônus e Premiações" },
-  { "conta": "4.7.03.003.002", "nome": "Agência de Publicidade", "linhaPL": "Despesas > Third Party Services & Mkt", "categoria": "Marketing" },
-  { "conta": "4.7.03.003.007", "nome": "Agências de Performance", "linhaPL": "Despesas > Third Party Services & Mkt", "categoria": "Marketing" },
-  { "conta": "4.7.03.003.003", "nome": "Assessoria de Imprensa", "linhaPL": "Despesas > Third Party Services & Mkt", "categoria": "Marketing" },
-  { "conta": "4.7.03.003.005", "nome": "Campanhas Promocionais", "linhaPL": "Despesas > Third Party Services & Mkt", "categoria": "Marketing" },
-  { "conta": "4.7.03.003.006", "nome": "Feiras e Eventos", "linhaPL": "Despesas > Third Party Services & Mkt", "categoria": "Marketing" },
-  { "conta": "4.7.03.015.013", "nome": "Despesas com Processos Judiciais", "linhaPL": "Despesas > Third Party Services & Mkt", "categoria": "Jurídico" },
-  { "conta": "4.7.03.017.001", "nome": "Despesas com PECLD", "linhaPL": "Despesas > Third Party Services & Mkt", "categoria": "PCLD" },
-  { "conta": "4.7.02.001.001", "nome": "Comunicação Autotrac", "linhaPL": "Despesas > Third Party Services & Mkt", "categoria": "Custo Variável" },
-  { "conta": "4.7.02.001.002", "nome": "Comunicação Sascar", "linhaPL": "Despesas > Third Party Services & Mkt", "categoria": "Custo Variável" },
-  { "conta": "4.7.02.001.098", "nome": "Compartilhamento com Provedores de Tecnologia", "linhaPL": "Despesas > Travels/Rental/Generals", "categoria": "Compartilhamento" },
-  { "conta": "4.7.03.007.001", "nome": "Aluguéis", "linhaPL": "Despesas > Travels/Rental/Generals", "categoria": "Facilities" },
-  { "conta": "4.7.03.007.007", "nome": "Condomínios", "linhaPL": "Despesas > Travels/Rental/Generals", "categoria": "Facilities" },
-  { "conta": "4.7.03.013.003", "nome": "Aluguel de Veículos", "linhaPL": "Despesas > Travels/Rental/Generals", "categoria": "Viagens" },
-  { "conta": "4.7.03.005.007", "nome": "Estacionamentos - Viagens", "linhaPL": "Despesas > Travels/Rental/Generals", "categoria": "Viagens" },
-  { "conta": "4.7.03.009.001", "nome": "Depreciações", "linhaPL": "Despesas > D&A", "categoria": "D&A" },
-  { "conta": "4.7.03.009.002", "nome": "Amortizações Intangível", "linhaPL": "Despesas > D&A", "categoria": "D&A" },
-  { "conta": "4.7.10.002.002", "nome": "Despesas Bancárias Diversas", "linhaPL": "Despesas > Financial Results", "categoria": "Financial Results" },
-  { "conta": "4.7.10.002.003", "nome": "Encargos sobre Empréstimos e Financiamentos", "linhaPL": "Despesas > Financial Results", "categoria": "Financial Results" },
-  { "conta": "4.7.11.001.003", "nome": "Baixa de Ativo Imobilizado", "linhaPL": "Despesas > Others Income and Expense", "categoria": "Generals" },
-  { "conta": "1.2.05.003.001", "nome": "Benfeitorias em Imóveis de Terceiros", "linhaPL": "Capex", "categoria": "Benfeitorias e Outros" },
-  { "conta": "1.2.05.003.002", "nome": "Equipamentos de Informática", "linhaPL": "Capex", "categoria": "Equipamentos" },
-  { "conta": "1.2.05.003.009", "nome": "Edificações", "linhaPL": "Capex", "categoria": "Benfeitorias e Outros" },
-  { "conta": "5.1.01.001.001", "nome": "Contribuição Social Corrente", "linhaPL": "Despesas > IR/CSLL", "categoria": "Income Tax" },
-  { "conta": "3.1.01.006.005", "nome": "Cloud / Infra de Tecnologia", "linhaPL": "Receita > Gross Revenue", "categoria": "Gross Revenue" },
-  { "conta": "3.1.01.006.003", "nome": "BPO + Software", "linhaPL": "Receita > Gross Revenue", "categoria": "Gross Revenue" },
-  { "conta": "3.1.01.005.100", "nome": "Provisão de Receita Software", "linhaPL": "Receita > Gross Revenue", "categoria": "Gross Revenue" }
+  {
+    "conta": "4.01.001",
+    "nome": "Décimo Terceiro Salário",
+    "linhaPL": "Despesas > Personnel Costs",
+    "categoria": "Salários+Encargos"
+  },
+  {
+    "conta": "4.01.002",
+    "nome": "FGTS",
+    "linhaPL": "Despesas > Personnel Costs",
+    "categoria": "Salários+Encargos"
+  },
+  {
+    "conta": "4.01.003",
+    "nome": "Bolsa Auxílio",
+    "linhaPL": "Despesas > Personnel Costs",
+    "categoria": "Salários+Encargos"
+  },
+  {
+    "conta": "4.01.004",
+    "nome": "Férias",
+    "linhaPL": "Despesas > Personnel Costs",
+    "categoria": "Férias"
+  },
+  {
+    "conta": "4.01.005",
+    "nome": "Alimentação do Trabalhador",
+    "linhaPL": "Despesas > Personnel Costs",
+    "categoria": "Benefícios"
+  },
+  {
+    "conta": "4.01.006",
+    "nome": "Assistência Médica",
+    "linhaPL": "Despesas > Personnel Costs",
+    "categoria": "Benefícios"
+  },
+  {
+    "conta": "4.01.007",
+    "nome": "Assistência Odontológica",
+    "linhaPL": "Despesas > Personnel Costs",
+    "categoria": "Benefícios"
+  },
+  {
+    "conta": "4.01.008",
+    "nome": "Anuênios",
+    "linhaPL": "Despesas > Personnel Costs",
+    "categoria": "Benefícios"
+  },
+  {
+    "conta": "4.01.009",
+    "nome": "Bônus",
+    "linhaPL": "Despesas > Personnel Costs",
+    "categoria": "Bônus e Premiações"
+  },
+  {
+    "conta": "4.01.010",
+    "nome": "Comissões",
+    "linhaPL": "Despesas > Personnel Costs",
+    "categoria": "Bônus e Premiações"
+  },
+  {
+    "conta": "4.02.001",
+    "nome": "Agência de Publicidade",
+    "linhaPL": "Despesas > Third Party Services & Mkt",
+    "categoria": "Marketing"
+  },
+  {
+    "conta": "4.02.002",
+    "nome": "Agências de Performance",
+    "linhaPL": "Despesas > Third Party Services & Mkt",
+    "categoria": "Marketing"
+  },
+  {
+    "conta": "4.02.003",
+    "nome": "Assessoria de Imprensa",
+    "linhaPL": "Despesas > Third Party Services & Mkt",
+    "categoria": "Marketing"
+  },
+  {
+    "conta": "4.02.004",
+    "nome": "Campanhas Promocionais",
+    "linhaPL": "Despesas > Third Party Services & Mkt",
+    "categoria": "Marketing"
+  },
+  {
+    "conta": "4.02.005",
+    "nome": "Feiras e Eventos",
+    "linhaPL": "Despesas > Third Party Services & Mkt",
+    "categoria": "Marketing"
+  },
+  {
+    "conta": "4.02.006",
+    "nome": "Despesas com Processos Judiciais",
+    "linhaPL": "Despesas > Third Party Services & Mkt",
+    "categoria": "Jurídico"
+  },
+  {
+    "conta": "4.02.007",
+    "nome": "Despesas com PECLD",
+    "linhaPL": "Despesas > Third Party Services & Mkt",
+    "categoria": "PCLD"
+  },
+  {
+    "conta": "4.02.008",
+    "nome": "Comunicação Satelital - Provedor A",
+    "linhaPL": "Despesas > Third Party Services & Mkt",
+    "categoria": "Custo Variável"
+  },
+  {
+    "conta": "4.02.009",
+    "nome": "Comunicação Satelital - Provedor B",
+    "linhaPL": "Despesas > Third Party Services & Mkt",
+    "categoria": "Custo Variável"
+  },
+  {
+    "conta": "4.03.001",
+    "nome": "Compartilhamento com Provedores de Tecnologia",
+    "linhaPL": "Despesas > Travels/Rental/Generals",
+    "categoria": "Compartilhamento"
+  },
+  {
+    "conta": "4.03.002",
+    "nome": "Aluguéis",
+    "linhaPL": "Despesas > Travels/Rental/Generals",
+    "categoria": "Facilities"
+  },
+  {
+    "conta": "4.03.003",
+    "nome": "Condomínios",
+    "linhaPL": "Despesas > Travels/Rental/Generals",
+    "categoria": "Facilities"
+  },
+  {
+    "conta": "4.03.004",
+    "nome": "Aluguel de Veículos",
+    "linhaPL": "Despesas > Travels/Rental/Generals",
+    "categoria": "Viagens"
+  },
+  {
+    "conta": "4.03.005",
+    "nome": "Estacionamentos - Viagens",
+    "linhaPL": "Despesas > Travels/Rental/Generals",
+    "categoria": "Viagens"
+  },
+  {
+    "conta": "4.04.001",
+    "nome": "Depreciações",
+    "linhaPL": "Despesas > D&A",
+    "categoria": "D&A"
+  },
+  {
+    "conta": "4.04.002",
+    "nome": "Amortizações Intangível",
+    "linhaPL": "Despesas > D&A",
+    "categoria": "D&A"
+  },
+  {
+    "conta": "4.05.001",
+    "nome": "Despesas Bancárias Diversas",
+    "linhaPL": "Despesas > Financial Results",
+    "categoria": "Financial Results"
+  },
+  {
+    "conta": "4.05.002",
+    "nome": "Encargos sobre Empréstimos e Financiamentos",
+    "linhaPL": "Despesas > Financial Results",
+    "categoria": "Financial Results"
+  },
+  {
+    "conta": "4.06.001",
+    "nome": "Baixa de Ativo Imobilizado",
+    "linhaPL": "Despesas > Others Income and Expense",
+    "categoria": "Generals"
+  },
+  {
+    "conta": "1.01.001",
+    "nome": "Benfeitorias em Imóveis de Terceiros",
+    "linhaPL": "Capex",
+    "categoria": "Benfeitorias e Outros"
+  },
+  {
+    "conta": "1.01.002",
+    "nome": "Equipamentos de Informática",
+    "linhaPL": "Capex",
+    "categoria": "Equipamentos"
+  },
+  {
+    "conta": "1.01.003",
+    "nome": "Edificações",
+    "linhaPL": "Capex",
+    "categoria": "Benfeitorias e Outros"
+  },
+  {
+    "conta": "5.01.001",
+    "nome": "Contribuição Social Corrente",
+    "linhaPL": "Despesas > IR/CSLL",
+    "categoria": "Income Tax"
+  },
+  {
+    "conta": "3.01.001",
+    "nome": "Cloud / Infra de Tecnologia",
+    "linhaPL": "Receita > Gross Revenue",
+    "categoria": "Gross Revenue"
+  },
+  {
+    "conta": "3.01.002",
+    "nome": "BPO + Software",
+    "linhaPL": "Receita > Gross Revenue",
+    "categoria": "Gross Revenue"
+  },
+  {
+    "conta": "3.01.003",
+    "nome": "Provisão de Receita Software",
+    "linhaPL": "Receita > Gross Revenue",
+    "categoria": "Gross Revenue"
+  }
 ]
