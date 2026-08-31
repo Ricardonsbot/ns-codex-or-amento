@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Cadastros from './pages/Cadastros'
 import ContasContabeis from './pages/cadastros/ContasContabeis'
 import Indices from './pages/cadastros/Indices'
+import EstruturaOrganizacional from './pages/cadastros/EstruturaOrganizacional'
 import CadastroSimples from './pages/cadastros/CadastroSimples'
 import Receita from './pages/orcamento/Receita'
 import Despesa from './pages/orcamento/Despesa'
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/cadastros" element={<RequireAuth><Cadastros /></RequireAuth>} />
           <Route path="/cadastros/contas" element={<RequireAuth><ContasContabeis /></RequireAuth>} />
           <Route path="/cadastros/indices" element={<RequireAuth><Indices /></RequireAuth>} />
+          <Route path="/cadastros/estrutura-organizacional" element={<RequireAuth><EstruturaOrganizacional /></RequireAuth>} />
           <Route path="/cadastros/:slug" element={<RequireAuth><CadastroSimples /></RequireAuth>} />
           <Route path="/budget-settings" element={<RequireAuth><BudgetSettings /></RequireAuth>} />
         </Routes>

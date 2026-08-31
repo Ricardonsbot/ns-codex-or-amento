@@ -14,19 +14,25 @@ create extension if not exists "pgcrypto";
 
 create table bu (
   id uuid primary key default gen_random_uuid(),
-  nome text not null unique
+  nome text not null unique,
+  codigo text,
+  criado_em timestamptz not null default now()
 );
 
 create table torre (
   id uuid primary key default gen_random_uuid(),
   bu_id uuid not null references bu(id) on delete cascade,
-  nome text not null
+  nome text not null,
+  codigo text,
+  criado_em timestamptz not null default now()
 );
 
 create table sub_torre (
   id uuid primary key default gen_random_uuid(),
   torre_id uuid not null references torre(id) on delete cascade,
-  nome text not null
+  nome text not null,
+  codigo text,
+  criado_em timestamptz not null default now()
 );
 
 create table empresa (
@@ -34,7 +40,9 @@ create table empresa (
   bu_id uuid not null references bu(id) on delete cascade,
   torre_id uuid references torre(id) on delete set null,
   sub_torre_id uuid references sub_torre(id) on delete set null,
-  nome text not null
+  nome text not null,
+  codigo text,
+  criado_em timestamptz not null default now()
 );
 
 -- ---------- Plano de contas ----------

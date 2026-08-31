@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 
 const ITENS = [
+  { label: 'Estrutura Organização', icon: '🗂️', to: '/cadastros/estrutura-organizacional' },
   { label: 'Usuários', icon: '👤', to: '/cadastros/usuarios' },
   { label: 'Contas Contábeis', icon: '📒', to: '/cadastros/contas' },
   { label: 'Centros de Custo', icon: '🏷️', to: '/cadastros/centros-de-custo' },

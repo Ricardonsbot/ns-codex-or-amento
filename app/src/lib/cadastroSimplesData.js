@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient'
 
-export async function fetchAll(tabela) {
-  const { data, error } = await supabase.from(tabela).select('*').order('nome', { nullsFirst: false })
+export async function fetchAll(tabela, ordenarPor = 'nome') {
+  const { data, error } = await supabase.from(tabela).select('*').order(ordenarPor, { nullsFirst: false })
   if (error) throw error
   return data ?? []
 }
