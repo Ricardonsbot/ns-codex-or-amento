@@ -9,6 +9,7 @@ import ContasContabeis from './pages/cadastros/ContasContabeis'
 import Indices from './pages/cadastros/Indices'
 import EstruturaOrganizacional from './pages/cadastros/EstruturaOrganizacional'
 import CadastroSimples from './pages/cadastros/CadastroSimples'
+import PremissasMacro from './pages/cadastros/PremissasMacro'
 import Receita from './pages/orcamento/Receita'
 import Despesa from './pages/orcamento/Despesa'
 import Capex from './pages/orcamento/Capex'
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/cadastros/contas" element={<RequireAuth><ContasContabeis /></RequireAuth>} />
           <Route path="/cadastros/indices" element={<RequireAuth><Indices /></RequireAuth>} />
           <Route path="/cadastros/estrutura-organizacional" element={<RequireAuth><EstruturaOrganizacional /></RequireAuth>} />
+          <Route path="/cadastros/premissas-macro" element={<RequireAuth><PremissasMacro /></RequireAuth>} />
           <Route path="/cadastros/:slug" element={<RequireAuth><CadastroSimples /></RequireAuth>} />
           <Route path="/budget-settings" element={<RequireAuth><BudgetSettings /></RequireAuth>} />
         </Routes>

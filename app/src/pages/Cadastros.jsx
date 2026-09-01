@@ -13,6 +13,7 @@ const ITENS = [
   { label: 'Fornecedores', icon: '🚚', to: '/cadastros/fornecedores' },
   { label: 'Layouts', icon: '🧩', to: '/cadastros/layouts' },
   { label: 'Índices', icon: '📈', to: '/cadastros/indices' },
+  { label: 'Premissas Macro', icon: '🌐', to: '/cadastros/premissas-macro' },
 ]
 
 export default function Cadastros() {

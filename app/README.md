@@ -63,6 +63,44 @@ Hoje isso resulta em **387 contas** carregadas, com 17 duplicatas descartadas e
 2 conflitos reportados. Os nomes ficam como estão no datalake (caixa alta, sem
 acento) — a planilha é a referência, a correção de grafia é feita lá.
 
+## Premissas Macro (índices e câmbio)
+
+Tela em **Cadastros → Premissas Macro** (`/cadastros/premissas-macro`) com a
+projeção mensal de IGP-M, IPCA, INPC, Livre e Dólar em formato de matriz
+(indicador × 12 meses, com acumulado do ano). Os valores saem da aba
+**"Indices Reajuste"** do Template Budget, que é onde FP&A mantém a projeção.
+
+Carregar ou atualizar:
+
+```bash
+cd app
+node --env-file=.env scripts/importar-premissas-macro.mjs "<caminho do Template Budget .xlsb>" --dry-run
+```
+
+O `--dry-run` mostra o que seria carregado sem gravar. Tirando a flag, ele grava
+de verdade: reaproveita o índice de mesmo tipo/ano se já existir e faz upsert por
+`(indice_id, mes)` — reexecutar depois de atualizar a planilha sobrescreve o que
+mudou e não duplica.
+
+O script acha a linha de cabeçalho pela célula "Mês" em vez de assumir posição
+fixa, e converte a variação de decimal (`0,004342`) para pontos percentuais
+(`0,4342`). Linhas sem número no mês são ignoradas — a aba tem comentários no
+meio dos dados.
+
+**Duas limitações conscientes.** Os dados moram nas tabelas `indice` /
+`indice_valor_mensal` que já existiam, para a carga não depender de rodar DDL num
+banco compartilhado. Como consequência:
+
+- `indice_valor_mensal.percentual` é `numeric(6,3)`, então tudo fica com três
+  casas decimais — o IGP-M acumulado sai 4,445% em vez de 4,4439%.
+- Não há coluna de unidade, e o câmbio é **nível em R$**, não variação. O sufixo
+  `(R$/US$)` no nome do índice é o que a tela usa para não compor o acumulado
+  dele. Se um dia a tabela puder ganhar uma coluna `unidade`, é ela que deve
+  substituir essa heurística.
+
+Na carga de 2027: 5 séries, 60 valores mensais. Acumulado no ano — IGP-M 4,445%,
+IPCA 4,365%, INPC 4,186%, Livre 12,995%; Dólar terminando em 5,500.
+
 ## Rodando com Docker
 
 Requer [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando.
