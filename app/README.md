@@ -107,14 +107,6 @@ O cadastro **Cadastros → Centros de Custo** é alimentado pela aba **"Mapa Cen
 de Custo"** do Template Budget, que agrupa cada centro de custo pela área
 responsável (FLGS, CRO, People, Tecnologia...).
 
-Antes da primeira carga, crie a coluna `area` no SQL Editor do Supabase:
-
-```
-app/supabase/migrations/2026-09-01-centro-de-custo-area.sql
-```
-
-Depois:
-
 ```bash
 cd app
 node --env-file=.env scripts/importar-centros-custo.mjs "<caminho do Template Budget .xlsb>" --dry-run
@@ -131,8 +123,20 @@ proteção, ele falha se a linha de rótulos contiver nomes no formato de centro
 custo (`HOLDING - X`, `CSC - X`), que é o sintoma desse escorregamento.
 
 O mapa não tem código numérico: o próprio nome do centro de custo é a chave
-natural, e é ele que aparece nos lançamentos — então `codigo` e `nome` recebem o
-mesmo valor, e `area` recebe o rótulo da área.
+natural, e é ele que aparece em `lancamento.centro_de_custo` — então `codigo`
+recebe o nome limpo, sempre. Prefixar o código quebraria esse vínculo.
+
+**A coluna `area` é opcional.** O script detecta se ela existe:
+
+- **Existe** (criada por `app/supabase/migrations/2026-09-01-centro-de-custo-area.sql`):
+  a área vai em coluna própria, e `nome` fica com o nome limpo.
+- **Não existe**: a área vai embutida no nome, como `FLGS · CSC - FP&A`. Assim a
+  carga não depende de rodar DDL num banco compartilhado, e a ordenação da tela
+  ainda agrupa por área. Rodar de novo depois de criar a coluna migra os
+  registros para o formato limpo.
+
+Preferir a coluna quando der: área embutida em texto não dá para filtrar nem
+agregar sem quebrar string.
 
 Na carga atual: 36 centros de custo em 10 áreas, todos da BU Corporate.
 

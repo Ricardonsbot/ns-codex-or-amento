@@ -16,8 +16,10 @@ export const CADASTROS_SIMPLES = {
     campos: [
       { key: 'codigo', label: 'Código', obrigatorio: true },
       { key: 'nome', label: 'Nome', obrigatorio: true },
-      // Área do mapa de centros de custo do Template Budget (FLGS, CRO, People...).
-      { key: 'area', label: 'Área' },
+      // A área do mapa do Template Budget viria aqui como { key: 'area' }, mas a
+      // coluna não existe na tabela: enquanto isso, o importador embute a área no
+      // próprio nome ("FLGS · CSC - FP&A"). Declarar o campo sem a coluna faria o
+      // formulário enviar `area` e o PostgREST rejeitar a gravação.
     ],
   },
   diretorias: {

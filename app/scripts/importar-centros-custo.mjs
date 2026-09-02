@@ -7,8 +7,11 @@
  *   node --env-file=.env scripts/importar-centros-custo.mjs "<caminho do Template Budget .xlsb>"
  *   node --env-file=.env scripts/importar-centros-custo.mjs "<caminho>" --dry-run
  *
- * Requer a coluna `area`, criada por:
- *   app/supabase/migrations/2026-09-01-centro-de-custo-area.sql
+ * A coluna `area` é opcional. Se existir (criada por
+ * app/supabase/migrations/2026-09-01-centro-de-custo-area.sql), a área vai nela.
+ * Se não existir, vai embutida no nome como "ÁREA · Centro de Custo", para a
+ * carga não depender de rodar DDL num banco compartilhado. Rodar de novo depois
+ * de criar a coluna migra os registros para o formato limpo.
  */
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
@@ -126,12 +129,27 @@ if (!url || !chave) {
 }
 
 const sb = createClient(url, chave)
-const { error } = await sb.from('centro_de_custo').upsert(registros, { onConflict: 'codigo' })
+
+// `codigo` continua sendo o nome limpo do centro de custo: e ele que aparece em
+// `lancamento.centro_de_custo`, entao prefixar ali quebraria o vinculo. Quando
+// nao ha coluna propria, a area vai para o nome — que, com a area na frente,
+// ainda agrupa certo na ordenacao da tela.
+const temColunaArea = !(await sb.from('centro_de_custo').select('area').limit(1)).error
+const SEPARADOR = ' · '
+
+const paraGravar = registros.map(({ codigo, nome, area }) =>
+  temColunaArea ? { codigo, nome, area } : { codigo, nome: area ? `${area}${SEPARADOR}${nome}` : nome }
+)
+
+console.log(
+  temColunaArea
+    ? '\ncoluna `area` ......... existe, a área vai em coluna própria'
+    : '\ncoluna `area` ......... não existe, a área vai embutida no nome ("ÁREA · Centro de Custo")'
+)
+
+const { error } = await sb.from('centro_de_custo').upsert(paraGravar, { onConflict: 'codigo' })
 if (error) {
   console.error(`\nerro ao gravar: ${error.message}`)
-  if (error.message.includes("'area' column")) {
-    console.error('falta a coluna `area` — rode app/supabase/migrations/2026-09-01-centro-de-custo-area.sql no SQL Editor.')
-  }
   process.exit(1)
 }
 
