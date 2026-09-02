@@ -131,7 +131,10 @@ create table usuario (
 create table centro_de_custo (
   id uuid primary key default gen_random_uuid(),
   codigo text not null unique,
-  nome text not null
+  nome text not null,
+  -- Área do mapa do Template Budget (FLGS, CRO, People...). Nullable: centro de
+  -- custo cadastrado à mão, fora do mapa, pode não ter área.
+  area text
 );
 
 create table diretoria (

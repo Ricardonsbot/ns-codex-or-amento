@@ -16,6 +16,8 @@ export const CADASTROS_SIMPLES = {
     campos: [
       { key: 'codigo', label: 'Código', obrigatorio: true },
       { key: 'nome', label: 'Nome', obrigatorio: true },
+      // Área do mapa de centros de custo do Template Budget (FLGS, CRO, People...).
+      { key: 'area', label: 'Área' },
     ],
   },
   diretorias: {

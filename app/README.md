@@ -101,6 +101,41 @@ banco compartilhado. Como consequência:
 Na carga de 2027: 5 séries, 60 valores mensais. Acumulado no ano — IGP-M 4,445%,
 IPCA 4,365%, INPC 4,186%, Livre 12,995%; Dólar terminando em 5,500.
 
+## Mapa de centros de custo
+
+O cadastro **Cadastros → Centros de Custo** é alimentado pela aba **"Mapa Centros
+de Custo"** do Template Budget, que agrupa cada centro de custo pela área
+responsável (FLGS, CRO, People, Tecnologia...).
+
+Antes da primeira carga, crie a coluna `area` no SQL Editor do Supabase:
+
+```
+app/supabase/migrations/2026-09-01-centro-de-custo-area.sql
+```
+
+Depois:
+
+```bash
+cd app
+node --env-file=.env scripts/importar-centros-custo.mjs "<caminho do Template Budget .xlsb>" --dry-run
+```
+
+O `--dry-run` mostra as áreas e a contagem por área sem gravar. Tirando a flag,
+faz upsert por `codigo`.
+
+A aba é um **mapa em cascata**, não uma tabela: cada área ocupa uma coluna, e os
+centros de custo daquela área descem por ela. O script lê as linhas de BU, rótulo
+e chave pelo índice absoluto, e por isso força `range: 0` na leitura — sem isso o
+SheetJS começa na primeira linha não vazia e todos os índices escorregam. Como
+proteção, ele falha se a linha de rótulos contiver nomes no formato de centro de
+custo (`HOLDING - X`, `CSC - X`), que é o sintoma desse escorregamento.
+
+O mapa não tem código numérico: o próprio nome do centro de custo é a chave
+natural, e é ele que aparece nos lançamentos — então `codigo` e `nome` recebem o
+mesmo valor, e `area` recebe o rótulo da área.
+
+Na carga atual: 36 centros de custo em 10 áreas, todos da BU Corporate.
+
 ## Rodando com Docker
 
 Requer [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando.
