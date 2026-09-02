@@ -104,6 +104,41 @@ export default function Dashboard() {
         <div className="panel">
           <div className="panel-header">
             <div>
+              <h2>Acesso Rápido</h2>
+              <p>Navegue pelas funcionalidades do orçamento sem sair do menu</p>
+            </div>
+          </div>
+          <div className="panel-body">
+            <div className="action-strip">
+              <Link to="/orcamento/despesa">
+                <div className="hub-card hub-inserir">
+                  <div className="hub-icon">✎</div>
+                  <h3>Inserir</h3>
+                  <p>Lançar valores de Receita, Despesa e Capex.</p>
+                  <div className="hub-cta">Novo lançamento →</div>
+                </div>
+              </Link>
+              <Link to="/cadastros">
+                <div className="hub-card hub-cadastrar">
+                  <div className="hub-icon">👤</div>
+                  <h3>Cadastrar</h3>
+                  <p>Usuários, contas, índices, layouts e mais.</p>
+                  <div className="hub-cta">Abrir cadastros →</div>
+                </div>
+              </Link>
+              <div className="hub-card hub-exportar" onClick={() => showToast('Exportação simulada gerada', 'info')}>
+                <div className="hub-icon">⭳</div>
+                <h3>Exportar</h3>
+                <p>Baixar o resumo do orçamento do ciclo atual.</p>
+                <div className="hub-cta">Exportar dados →</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel-header">
+            <div>
               <h2>Resumo do Orçamento — Revenue → EBITDA after Capex</h2>
               <p>Ciclo {selectedAno ?? '—'} · dados reais do Supabase (R$ milhões)</p>
             </div>
@@ -154,41 +189,6 @@ export default function Dashboard() {
                 <div className="bridge-value">{formatMi(bridge.ebitdaAfterCapex)}</div>
                 <div className="bridge-track"><div className="bridge-bar final" style={{ bottom: `${bridge.bars.ebitdaAfterCapex.bottom}%`, height: `${bridge.bars.ebitdaAfterCapex.height}%` }} /></div>
                 <div className="bridge-label">EBITDA after Capex</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="panel">
-          <div className="panel-header">
-            <div>
-              <h2>Acesso Rápido</h2>
-              <p>Navegue pelas funcionalidades do orçamento sem sair do menu</p>
-            </div>
-          </div>
-          <div className="panel-body">
-            <div className="action-strip">
-              <Link to="/orcamento/despesa">
-                <div className="hub-card hub-inserir">
-                  <div className="hub-icon">✎</div>
-                  <h3>Inserir</h3>
-                  <p>Lançar valores de Receita, Despesa e Capex.</p>
-                  <div className="hub-cta">Novo lançamento →</div>
-                </div>
-              </Link>
-              <Link to="/cadastros">
-                <div className="hub-card hub-cadastrar">
-                  <div className="hub-icon">👤</div>
-                  <h3>Cadastrar</h3>
-                  <p>Usuários, contas, índices, layouts e mais.</p>
-                  <div className="hub-cta">Abrir cadastros →</div>
-                </div>
-              </Link>
-              <div className="hub-card hub-exportar" onClick={() => showToast('Exportação simulada gerada', 'info')}>
-                <div className="hub-icon">⭳</div>
-                <h3>Exportar</h3>
-                <p>Baixar o resumo do orçamento do ciclo atual.</p>
-                <div className="hub-cta">Exportar dados →</div>
               </div>
             </div>
           </div>
