@@ -136,6 +136,45 @@ mesmo valor, e `area` recebe o rótulo da área.
 
 Na carga atual: 36 centros de custo em 10 áreas, todos da BU Corporate.
 
+## Produtos
+
+O cadastro **Cadastros → Produtos** vem da planilha de Net Revenue
+(`New_Net Revenue - Sync.xlsx`).
+
+```bash
+cd app
+node --env-file=.env scripts/importar-produtos.mjs "<caminho do New_Net Revenue - Sync.xlsx>" --dry-run
+```
+
+O `--dry-run` mostra a contagem por categoria sem gravar. Tirando a flag, faz
+upsert por `codigo`.
+
+**Só a aba "Dados Fechados" tem a lista limpa.** As abas de Dashboard e de Input
+misturam produto com nível de agregação (`Consolidado`, `Total PSL`, `Torre TMS`,
+`SW EMBARCADOR`, `Last Mile`, `BU VGR`...) — importar de lá traria 58 linhas, das
+quais 17 não são produto.
+
+A `categoria` é derivada: a aba "Input Projeções" lista os produtos na ordem da
+árvore, abaixo do grupo a que pertencem, então o grupo de cada produto é o último
+nó que não é folha. Isso não é uma coluna do arquivo, é inferência a partir da
+ordem.
+
+O arquivo não tem código de produto, então `codigo` e `nome` recebem o mesmo
+valor — o nome é a chave natural.
+
+**O script localiza as colunas pelo conteúdo, não por índice.** O `!ref` da aba
+"Dados Fechados" é `B1:CU96`, e o SheetJS indexa a partir do início do intervalo
+e não da coluna A: um índice fixo aponta para a coluna errada, sem erro. A coluna
+de produtos é achada pela célula `Company/Product`; a de hierarquia, por ser a
+que mais casa com os nomes já conhecidos.
+
+A comparação de nomes ignora caixa e acento: a planilha grafa `LogRisk` numa aba
+e `Logrisk` na outra. Com casamento exato, `Logrisk` viraria um nó de
+agrupamento e Onisys e Trafegus seriam pendurados nele em vez de VGR — errado de
+um jeito plausível. O script reporta as grafias divergentes que encontrar.
+
+Na carga atual: 41 produtos em 10 categorias.
+
 ## Rodando com Docker
 
 Requer [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando.
