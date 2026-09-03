@@ -7,6 +7,12 @@
  *   node --env-file=.env scripts/importar-clientes.mjs "<caminho do ... - por Cliente.xlsx>"
  *   node --env-file=.env scripts/importar-clientes.mjs "<caminho>" --dry-run
  *   node --env-file=.env scripts/importar-clientes.mjs "<caminho>" --com-saldo
+ *   node --env-file=.env scripts/importar-clientes.mjs "<caminho>" --sincronizar
+ *
+ * Por padrão o script só insere o que falta. Com `--sincronizar` ele também
+ * APAGA quem está no Supabase e não está mais na planilha — necessário depois
+ * de mudar a canonicalização do processar_pdd.py, que funde clientes e reduz a
+ * lista. Nenhuma tabela referencia `cliente`, então apagar não quebra vínculo.
  *
  * Por padrão entram todos os clientes que aparecem na base. Com `--com-saldo`,
  * só os que têm saldo diferente de zero — a maioria zera no período, por ter
@@ -68,9 +74,10 @@ function ler(caminho) {
 const caminho = process.argv[2]
 const simulacao = process.argv.includes('--dry-run')
 const soComSaldo = process.argv.includes('--com-saldo')
+const sincronizar = process.argv.includes('--sincronizar')
 
 if (!caminho) {
-  console.error('uso: node --env-file=.env scripts/importar-clientes.mjs "<... - por Cliente.xlsx>" [--dry-run] [--com-saldo]')
+  console.error('uso: node --env-file=.env scripts/importar-clientes.mjs "<... - por Cliente.xlsx>" [--dry-run] [--com-saldo] [--sincronizar]')
   process.exit(1)
 }
 
@@ -92,11 +99,8 @@ console.log(`clientes na planilha .. ${todos.length}`)
 if (soComSaldo) console.log(`com saldo ≠ 0 ......... ${selecionados.length}`)
 console.log(`após deduplicar ....... ${nomes.length}`)
 
-if (simulacao) {
-  console.log('\n--dry-run: nada foi gravado no Supabase.')
-  process.exit(0)
-}
-
+// O --dry-run só sai depois de comparar com o banco: num --sincronizar, o que
+// interessa saber de antemão é exatamente o que seria apagado.
 const url = process.env.VITE_SUPABASE_URL
 const chave = process.env.VITE_SUPABASE_ANON_KEY
 if (!url || !chave) {
@@ -108,20 +112,38 @@ const sb = createClient(url, chave)
 
 // Sem unicidade em `nome` não há upsert possível: lê o que já existe e insere
 // só o que falta, para reexecutar não duplicar.
-const existentes = new Set()
+const existentes = new Map() // chave normalizada -> {id, nome}
 for (let de = 0; ; de += 1000) {
-  const { data, error } = await sb.from('cliente').select('nome').range(de, de + 999)
+  const { data, error } = await sb.from('cliente').select('id, nome').range(de, de + 999)
   if (error) {
     console.error(`\nerro ao ler clientes existentes: ${error.message}`)
     process.exit(1)
   }
-  for (const c of data) existentes.add(normalizar(c.nome))
+  for (const c of data) existentes.set(normalizar(c.nome), c)
   if (data.length < 1000) break
 }
 
 const novos = nomes.filter((n) => !existentes.has(normalizar(n)))
+const daPlanilha = new Set(nomes.map(normalizar))
+const sobrando = [...existentes.entries()].filter(([k]) => !daPlanilha.has(k)).map(([, c]) => c)
+
 console.log(`já no Supabase ........ ${existentes.size}`)
 console.log(`a inserir ............. ${novos.length}`)
+
+if (sobrando.length) {
+  console.log(`no Supabase e fora da planilha ... ${sobrando.length}`)
+  if (!sincronizar) {
+    console.log('  (mantidos — use --sincronizar para apagá-los)')
+  } else {
+    console.log('  serão APAGADOS:')
+    for (const c of sobrando) console.log(`    ${c.nome}`)
+  }
+}
+
+if (simulacao) {
+  console.log('\n--dry-run: nada foi gravado no Supabase.')
+  process.exit(0)
+}
 
 let inseridos = 0
 for (let i = 0; i < novos.length; i += LOTE) {
@@ -135,7 +157,27 @@ for (let i = 0; i < novos.length; i += LOTE) {
   process.stdout.write(`\r  inseridos ${inseridos}/${novos.length}`)
 }
 
+let apagados = 0
+if (sincronizar && sobrando.length) {
+  for (let i = 0; i < sobrando.length; i += LOTE) {
+    const ids = sobrando.slice(i, i + LOTE).map((c) => c.id)
+    const { error } = await sb.from('cliente').delete().in('id', ids)
+    if (error) {
+      console.error(`\nerro ao apagar lote ${i}: ${error.message}`)
+      process.exit(1)
+    }
+    apagados += ids.length
+  }
+  console.log(`\n  apagados ${apagados}`)
+}
+
 const { count } = await sb.from('cliente').select('*', { count: 'exact', head: true })
-console.log(`\n\ninseridos ............. ${inseridos}`)
+console.log(`\ninseridos ............. ${inseridos}`)
+if (sincronizar) console.log(`apagados .............. ${apagados}`)
 console.log(`total na tabela ....... ${count}`)
+console.log(`esperado (planilha) ... ${nomes.length}`)
+if (count !== nomes.length) {
+  console.log('\nATENÇÃO: total na tabela difere da planilha.')
+  if (!sincronizar) console.log('Rode com --sincronizar para apagar quem sobrou.')
+}
 console.log('\nA base de PDD não tem CNPJ nem contato — só `nome` foi preenchido.')

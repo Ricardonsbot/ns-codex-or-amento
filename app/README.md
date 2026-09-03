@@ -198,10 +198,17 @@ A tabela `cliente` não tem restrição de unicidade em `nome`, então não há 
 possível: o script lê os nomes já gravados e insere só os que faltam. Reexecutar
 não duplica.
 
+Com `--sincronizar`, ele também **apaga** quem está no Supabase e não está mais
+na planilha. É o que fecha o ciclo depois de mudar a canonicalização do
+`processar_pdd.py`: fundir clientes reduz a lista, e sem isso as grafias antigas
+ficariam para trás. Nenhuma tabela referencia `cliente`, então apagar não quebra
+vínculo. Rode antes com `--dry-run --sincronizar` — a simulação lista nome a nome
+o que seria apagado.
+
 **Só `nome` é preenchido.** A base de PDD é contábil e não carrega CNPJ nem
 contato; `documento` e `contato` ficam vazios e precisam de outra fonte.
 
-Na carga atual: 3.361 clientes, de 20.300 lançamentos em 29 empresas.
+Na carga atual: 3.320 clientes, de 20.300 lançamentos em 29 empresas.
 
 ## Alçadas de Aprovação
 
