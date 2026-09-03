@@ -203,6 +203,42 @@ contato; `documento` e `contato` ficam vazios e precisam de outra fonte.
 
 Na carga atual: 3.361 clientes, de 20.300 lançamentos em 29 empresas.
 
+## Alçadas de Aprovação
+
+Tela em **Cadastros → Alçadas de Aprovação** (`/cadastros/alcadas-aprovacao`):
+organograma de quem executa e quem valida cada pacote do orçamento, vindo da
+planilha **"Quem faz x Quem Valida.xlsx"** (aba `Painel Responsáveis`).
+
+```bash
+cd app
+node scripts/importar-alcadas.mjs "<caminho do Quem faz x Quem Valida.xlsx>" --dry-run
+```
+
+**Este importador não grava no Supabase.** A matriz tem seis campos por bloco e
+nenhuma tabela existente comporta isso; criar tabela exigiria DDL no SQL Editor
+de um banco compartilhado. Os dados ficam versionados em
+`src/data/alcadas-aprovacao.json`, gerados pelo script. Quando a tela precisar
+ser editável, o caminho é criar a tabela e trocar a leitura do JSON por consulta.
+
+A planilha tem **dois blocos lado a lado**: colunas `G/H/I` são a visão **BU** e
+`L/M/N` a visão **Corporate / Enterprise**, com `J` guardando comentários. A tela
+alterna entre as duas visões.
+
+A responsabilidade aparece em **três níveis**, e o script trata os três: na linha
+do item (coluna `E`), na do pacote (`D`) — a maioria dos grupos não desce até
+item — ou na do próprio grupo (`C`).
+
+**O script endereça células por letra de coluna, nunca por índice de array.** O
+`!ref` da aba é `C3:N113`, e o `sheet_to_json` do SheetJS indexa a partir do
+início do intervalo, não da coluna A: com índices, a leitura escorrega duas
+colunas sem dar erro e devolve dados plausíveis e errados.
+
+A tela agrupa as linhas que compartilham exatamente a mesma cadeia — é o que a
+faz ler como organograma em vez de tabela.
+
+Na carga atual: 12 grupos, 59 responsabilidades (25 no item, 28 no pacote, 6 no
+grupo); 54 com visão BU, 32 com Corporate, 10 com comentário.
+
 ## Rodando com Docker
 
 Requer [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando.

@@ -1,0 +1,1013 @@
+{
+  "origem": "Quem faz x Quem Valida.xlsx",
+  "aba": "Painel Responsáveis",
+  "grupos": [
+    "Pessoal",
+    "Tecnologia",
+    "Fornecedores GR (Cadastro, PR, Iscas, Satelital)",
+    "Terceiros e Gerais",
+    "Marketing",
+    "Mundo Logística",
+    "Viagens",
+    "PDD",
+    "Capex",
+    "Impostos",
+    "Resultado Financeiro",
+    "D&A"
+  ],
+  "registros": [
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - COGS",
+      "item": "Monitoramento Interno",
+      "nivel": "item",
+      "titulo": "Monitoramento Interno",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "Diretores Operações / CEOs",
+        "valida2": "Rodrigo/Bortoli"
+      },
+      "corporate": null,
+      "comentario": "FP&A faz planejamento de operações diretamente determinadas por métricas de produtividade",
+      "linha": 9
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - COGS",
+      "item": "PA",
+      "nivel": "item",
+      "titulo": "PA",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "Diretores Operações / CEOs",
+        "valida2": "Rodrigo/Bortoli"
+      },
+      "corporate": null,
+      "comentario": "FP&A faz planejamento de operações diretamente determinadas por métricas de produtividade",
+      "linha": 10
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - COGS",
+      "item": "Monitoramento Externo",
+      "nivel": "item",
+      "titulo": "Monitoramento Externo",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "Diretores Operações / CEOs",
+        "valida2": "Rodrigo/Bortoli"
+      },
+      "corporate": null,
+      "comentario": "FP&A faz planejamento de operações diretamente determinadas por métricas de produtividade",
+      "linha": 11
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - COGS",
+      "item": "N3",
+      "nivel": "item",
+      "titulo": "N3",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "Diretores Operações / CEOs",
+        "valida2": "Rodrigo/Bortoli"
+      },
+      "corporate": null,
+      "comentario": "FP&A faz planejamento de operações diretamente determinadas por métricas de produtividade",
+      "linha": 12
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - COGS",
+      "item": "Operações",
+      "nivel": "item",
+      "titulo": "Operações",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "Diretores Operações / CEOs",
+        "valida2": "Rodrigo/Bortoli"
+      },
+      "corporate": null,
+      "comentario": "FP&A faz planejamento de operações diretamente determinadas por métricas de produtividade",
+      "linha": 13
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - COGS",
+      "item": "BPO",
+      "nivel": "item",
+      "titulo": "BPO",
+      "bu": {
+        "faz": "Head Torre / STO",
+        "valida1": "Rodrigo/Rafa Martins",
+        "valida2": "FP&A BU / COO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 14
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - COGS",
+      "item": "N1N2",
+      "nivel": "item",
+      "titulo": "N1N2",
+      "bu": {
+        "faz": "Head Torre / STO",
+        "valida1": "Aurelio",
+        "valida2": "FP&A BU / COO"
+      },
+      "corporate": {
+        "faz": "Aurelio",
+        "valida1": "",
+        "valida2": null
+      },
+      "comentario": "Aurélio valida guidance com Rogério/Ferraz para instruir a ponta",
+      "linha": 15
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - G&A",
+      "item": "Finanças (transacional)",
+      "nivel": "item",
+      "titulo": "Finanças (transacional)",
+      "bu": {
+        "faz": "Renan",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 18
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - G&A",
+      "item": "CSC Financeiro e DP",
+      "nivel": "item",
+      "titulo": "CSC Financeiro e DP",
+      "bu": {
+        "faz": "Renan / Gláucia",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": {
+        "faz": "Moralez",
+        "valida1": "CFO",
+        "valida2": "CEO"
+      },
+      "comentario": null,
+      "linha": 19
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - G&A",
+      "item": "People",
+      "nivel": "item",
+      "titulo": "People",
+      "bu": {
+        "faz": "HRBP",
+        "valida1": "CHRO / COO",
+        "valida2": null
+      },
+      "corporate": {
+        "faz": "HRBP",
+        "valida1": "CHRO",
+        "valida2": "CEO"
+      },
+      "comentario": null,
+      "linha": 20
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - G&A",
+      "item": "FP&A",
+      "nivel": "item",
+      "titulo": "FP&A",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "FP&A Corp.",
+        "valida2": "CFO"
+      },
+      "corporate": {
+        "faz": "FP&A Corp.",
+        "valida1": "CFO",
+        "valida2": "CEO"
+      },
+      "comentario": null,
+      "linha": 21
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - G&A",
+      "item": "Compras/facilities/finance generalista",
+      "nivel": "item",
+      "titulo": "Compras/facilities/finance generalista",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "FP&A Corp.",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 22
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - G&A",
+      "item": "Legal",
+      "nivel": "item",
+      "titulo": "Legal",
+      "bu": null,
+      "corporate": {
+        "faz": "Head Legal",
+        "valida1": "CFO",
+        "valida2": "CEO"
+      },
+      "comentario": null,
+      "linha": 23
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - G&A",
+      "item": "Liderança",
+      "nivel": "item",
+      "titulo": "Liderança",
+      "bu": {
+        "faz": "COOs (Líderers Torres/CEOs GRs)",
+        "valida1": "CEO",
+        "valida2": null
+      },
+      "corporate": {
+        "faz": "Artur (C-Levels)",
+        "valida1": "CEO (C-Levels)",
+        "valida2": null
+      },
+      "comentario": "Verificar lista com Jô e repensar - talvez manter só c-level e redistribuir o restante (conselheiros)",
+      "linha": 24
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - R&D",
+      "item": "DEVs",
+      "nivel": "item",
+      "titulo": "DEVs",
+      "bu": {
+        "faz": "CTO torres",
+        "valida1": "Head Torre / STO / FP&A BU",
+        "valida2": "CTO / COO / FP&A Corp"
+      },
+      "corporate": {
+        "faz": "Head Engenharia (Vidu)",
+        "valida1": "CTO",
+        "valida2": "CEO"
+      },
+      "comentario": null,
+      "linha": 27
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - R&D",
+      "item": "Produto (ex STO)",
+      "nivel": "item",
+      "titulo": "Produto (ex STO)",
+      "bu": {
+        "faz": "STOs",
+        "valida1": "Head Torre / CPO / FP&A BU",
+        "valida2": "COO / FP&A Corp"
+      },
+      "corporate": {
+        "faz": "CPO",
+        "valida1": "FP&A Corp.",
+        "valida2": "CEO"
+      },
+      "comentario": "confirmar premissa, ou fazer mais centralizado na CPO",
+      "linha": 28
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - R&D",
+      "item": "STOs",
+      "nivel": "item",
+      "titulo": "STOs",
+      "bu": {
+        "faz": "Head Torres",
+        "valida1": "COOs / CPO",
+        "valida2": "CEO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 29
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - R&D",
+      "item": "Infra",
+      "nivel": "item",
+      "titulo": "Infra",
+      "bu": {
+        "faz": "Head Infra (Arnaldo)",
+        "valida1": "CTO torres",
+        "valida2": "CTO"
+      },
+      "corporate": {
+        "faz": "Head Infra (Arnaldo)",
+        "valida1": "CTO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 30
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - R&D",
+      "item": "Arquitetura",
+      "nivel": "item",
+      "titulo": "Arquitetura",
+      "bu": {
+        "faz": "CTO torres",
+        "valida1": "Head Torre / STO / FP&A BU",
+        "valida2": "CTO / COO / FP&A Corp"
+      },
+      "corporate": null,
+      "comentario": "entneder com a Mayara",
+      "linha": 31
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - R&D",
+      "item": "Cyber",
+      "nivel": "item",
+      "titulo": "Cyber",
+      "bu": {
+        "faz": "Head Cyber (Eder)",
+        "valida1": "CTO",
+        "valida2": null
+      },
+      "corporate": {
+        "faz": "Head Cyber (Eder)",
+        "valida1": "CTO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 32
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - S&M",
+      "item": "Comercial (incl comissão de venda)",
+      "nivel": "item",
+      "titulo": "Comercial (incl comissão de venda)",
+      "bu": {
+        "faz": "Comercial Torre / Enterprise",
+        "valida1": "CRO / Revenue Ops",
+        "valida2": "FP&A BU / COO"
+      },
+      "corporate": {
+        "faz": "Conti / Eduardo Oliveira",
+        "valida1": "CRO / Revenue Ops",
+        "valida2": "FP&A BU / COO"
+      },
+      "comentario": null,
+      "linha": 35
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - S&M",
+      "item": "Marketing",
+      "nivel": "item",
+      "titulo": "Marketing",
+      "bu": {
+        "faz": "Marketing Torre",
+        "valida1": "CRO / Priscila",
+        "valida2": "FP&A BU / COO"
+      },
+      "corporate": {
+        "faz": "Priscila",
+        "valida1": "CRO",
+        "valida2": "Diego"
+      },
+      "comentario": null,
+      "linha": 36
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - S&M",
+      "item": "Implantação",
+      "nivel": "item",
+      "titulo": "Implantação",
+      "bu": {
+        "faz": "Lideres implantação BU/Torre",
+        "valida1": "Head Torre / STO",
+        "valida2": "FP&A BU / COO"
+      },
+      "corporate": {
+        "faz": "n/a",
+        "valida1": "",
+        "valida2": null
+      },
+      "comentario": "verificar lider da BU PSL",
+      "linha": 37
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - S&M",
+      "item": "Pre sales (Solution Design)",
+      "nivel": "item",
+      "titulo": "Pre sales (Solution Design)",
+      "bu": {
+        "faz": "Comercial Torre / Enterprise",
+        "valida1": "CRO / Basto",
+        "valida2": "FP&A BU / COO"
+      },
+      "corporate": {
+        "faz": "Basto",
+        "valida1": "CRO",
+        "valida2": "Diego"
+      },
+      "comentario": null,
+      "linha": 38
+    },
+    {
+      "grupo": "Pessoal",
+      "pacote": "Labor - S&M",
+      "item": "Revenue ops",
+      "nivel": "item",
+      "titulo": "Revenue ops",
+      "bu": {
+        "faz": "Revenue Ops (Henrique)",
+        "valida1": "CRO",
+        "valida2": "FP&A BU / COO"
+      },
+      "corporate": {
+        "faz": "Bernardo",
+        "valida1": "CRO",
+        "valida2": "Diego"
+      },
+      "comentario": null,
+      "linha": 39
+    },
+    {
+      "grupo": "Tecnologia",
+      "pacote": "Cloud",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Cloud",
+      "bu": {
+        "faz": "CTO torres",
+        "valida1": "FP&A BU / Arnaldo",
+        "valida2": "CTO / CFO"
+      },
+      "corporate": {
+        "faz": "Arnaldo",
+        "valida1": "CTO / CFO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 44
+    },
+    {
+      "grupo": "Tecnologia",
+      "pacote": "Software",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Software",
+      "bu": {
+        "faz": "CTO torres",
+        "valida1": "FP&A BU / Mayara",
+        "valida2": "CTO / FP&A Corp"
+      },
+      "corporate": {
+        "faz": "Mayara",
+        "valida1": "CTO / CFO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 45
+    },
+    {
+      "grupo": "Tecnologia",
+      "pacote": "Cyber",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Cyber",
+      "bu": {
+        "faz": "Head Cyber (Eder)",
+        "valida1": "FP&A BU / Mayara",
+        "valida2": "CTO"
+      },
+      "corporate": {
+        "faz": "Head Cyber (Eder)",
+        "valida1": "Mayara",
+        "valida2": "CTO"
+      },
+      "comentario": null,
+      "linha": 46
+    },
+    {
+      "grupo": "Tecnologia",
+      "pacote": "Locação Equipamento TI",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Locação Equipamento TI",
+      "bu": {
+        "faz": "Head Infra (Arnaldo)",
+        "valida1": "FP&A",
+        "valida2": "CTO / FP&A Corp"
+      },
+      "corporate": {
+        "faz": "Head Infra (Arnaldo)",
+        "valida1": "CTO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 47
+    },
+    {
+      "grupo": "Tecnologia",
+      "pacote": "Telecomunição",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Telecomunição",
+      "bu": {
+        "faz": "CTO torres",
+        "valida1": "Head Infra (Arnaldo)",
+        "valida2": "CTO"
+      },
+      "corporate": {
+        "faz": "Head Infra (Arnaldo)",
+        "valida1": "CTO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 48
+    },
+    {
+      "grupo": "Fornecedores GR (Cadastro, PR, Iscas, Satelital)",
+      "pacote": "Fonecedores GR",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Fonecedores GR",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "Diretores Operações / CEOs",
+        "valida2": "Rodrigo/Bortoli"
+      },
+      "corporate": {
+        "faz": "n/a",
+        "valida1": "n/a",
+        "valida2": "n/a"
+      },
+      "comentario": null,
+      "linha": 51
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Terceiros",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Terceiros",
+      "bu": {
+        "faz": "Head Torre / STO",
+        "valida1": "FP&A BU / COO",
+        "valida2": "FP&A Corp."
+      },
+      "corporate": {
+        "faz": "Moralez",
+        "valida1": "CFO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 55
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Consultorias",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Consultorias",
+      "bu": {
+        "faz": "Head Torre / STO",
+        "valida1": "FP&A BU / COO",
+        "valida2": "FP&A Corp."
+      },
+      "corporate": {
+        "faz": "FP&A Corp. / Mayara",
+        "valida1": "CTO/CPO",
+        "valida2": "CFO"
+      },
+      "comentario": null,
+      "linha": 56
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Escritórios Contábeis",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Escritórios Contábeis",
+      "bu": null,
+      "corporate": {
+        "faz": "Moralez",
+        "valida1": "CFO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 57
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Auditoria Contábil",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Auditoria Contábil",
+      "bu": null,
+      "corporate": {
+        "faz": "Moralez",
+        "valida1": "CFO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 58
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Cobrança",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Cobrança",
+      "bu": {
+        "faz": "FP&A BUs",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 59
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Finders",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Finders",
+      "bu": {
+        "faz": "Head Torre / STO",
+        "valida1": "CRO",
+        "valida2": null
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 60
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Jurídico",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Jurídico",
+      "bu": null,
+      "corporate": {
+        "faz": "Mariana",
+        "valida1": "CFO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 61
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Seguros",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Seguros",
+      "bu": null,
+      "corporate": {
+        "faz": "Moralez",
+        "valida1": "CFO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 62
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Eventos Internos/Endomarketing/Treinamentos",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Eventos Internos/Endomarketing/Treinamentos",
+      "bu": {
+        "faz": "HRPBs",
+        "valida1": "CHRO",
+        "valida2": "FP&A Corp"
+      },
+      "corporate": {
+        "faz": "CHRO",
+        "valida1": "FP&A Corp",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 63
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Facilities",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Facilities",
+      "bu": {
+        "faz": "FP&A BUs",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": {
+        "faz": "Moralez",
+        "valida1": "CFO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 64
+    },
+    {
+      "grupo": "Terceiros e Gerais",
+      "pacote": "Depesas Gerais",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Depesas Gerais",
+      "bu": {
+        "faz": "FP&A Corp",
+        "valida1": "CFO",
+        "valida2": null
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 65
+    },
+    {
+      "grupo": "Marketing",
+      "pacote": null,
+      "item": null,
+      "nivel": "grupo",
+      "titulo": "Marketing",
+      "bu": {
+        "faz": "Marketing Torre",
+        "valida1": "Priscila",
+        "valida2": "CRO"
+      },
+      "corporate": {
+        "faz": "Priscila",
+        "valida1": "CRO",
+        "valida2": null
+      },
+      "comentario": null,
+      "linha": 88
+    },
+    {
+      "grupo": "Mundo Logística",
+      "pacote": null,
+      "item": null,
+      "nivel": "grupo",
+      "titulo": "Mundo Logística",
+      "bu": {
+        "faz": "Head Torre",
+        "valida1": "CRO",
+        "valida2": "COO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 90
+    },
+    {
+      "grupo": "Viagens",
+      "pacote": null,
+      "item": null,
+      "nivel": "grupo",
+      "titulo": "Viagens",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "COO",
+        "valida2": "FP&A Corp"
+      },
+      "corporate": {
+        "faz": "C-level / Heads",
+        "valida1": "FP&A Corp",
+        "valida2": "CFO"
+      },
+      "comentario": null,
+      "linha": 92
+    },
+    {
+      "grupo": "PDD",
+      "pacote": null,
+      "item": null,
+      "nivel": "grupo",
+      "titulo": "PDD",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "Controller",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 94
+    },
+    {
+      "grupo": "Capex",
+      "pacote": "Benfeitorias",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Benfeitorias",
+      "bu": {
+        "faz": "FP&A BUs",
+        "valida1": "COOs",
+        "valida2": null
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 97
+    },
+    {
+      "grupo": "Capex",
+      "pacote": "Equipamentos",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Equipamentos",
+      "bu": {
+        "faz": "FP&A BUs",
+        "valida1": "CEO Buonny / Head Infra",
+        "valida2": null
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 98
+    },
+    {
+      "grupo": "Capex",
+      "pacote": "SW (labor / non labor)",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "SW (labor / non labor)",
+      "bu": {
+        "faz": "FP&A Corp",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 99
+    },
+    {
+      "grupo": "Impostos",
+      "pacote": "Impostos sobre vendas",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Impostos sobre vendas",
+      "bu": {
+        "faz": "FP&A BU",
+        "valida1": "Pedro",
+        "valida2": "Moralez"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 102
+    },
+    {
+      "grupo": "Impostos",
+      "pacote": "Impostos sobre lucro",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Impostos sobre lucro",
+      "bu": {
+        "faz": "Pedro",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": {
+        "faz": "Pedro",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "comentario": null,
+      "linha": 103
+    },
+    {
+      "grupo": "Resultado Financeiro",
+      "pacote": null,
+      "item": null,
+      "nivel": "grupo",
+      "titulo": "Resultado Financeiro",
+      "bu": {
+        "faz": "Controller",
+        "valida1": "CFO",
+        "valida2": null
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 105
+    },
+    {
+      "grupo": "Resultado Financeiro",
+      "pacote": "Receita de juros",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Receita de juros",
+      "bu": {
+        "faz": "Renan",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 106
+    },
+    {
+      "grupo": "Resultado Financeiro",
+      "pacote": "Juros de dívidas",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Juros de dívidas",
+      "bu": {
+        "faz": "Renan",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 107
+    },
+    {
+      "grupo": "Resultado Financeiro",
+      "pacote": "Outras receitas e despesas financeiras",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Outras receitas e despesas financeiras",
+      "bu": {
+        "faz": "Renan",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 108
+    },
+    {
+      "grupo": "D&A",
+      "pacote": null,
+      "item": null,
+      "nivel": "grupo",
+      "titulo": "D&A",
+      "bu": {
+        "faz": "Controller",
+        "valida1": "CFO",
+        "valida2": null
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 110
+    },
+    {
+      "grupo": "D&A",
+      "pacote": "Amortização de intangível",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Amortização de intangível",
+      "bu": {
+        "faz": "Wagner",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 111
+    },
+    {
+      "grupo": "D&A",
+      "pacote": "Depreciação de ativos fixos",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Depreciação de ativos fixos",
+      "bu": {
+        "faz": "Wagner",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 112
+    },
+    {
+      "grupo": "D&A",
+      "pacote": "Amortização de ágio",
+      "item": null,
+      "nivel": "pacote",
+      "titulo": "Amortização de ágio",
+      "bu": {
+        "faz": "Wagner",
+        "valida1": "Moralez",
+        "valida2": "CFO"
+      },
+      "corporate": null,
+      "comentario": null,
+      "linha": 113
+    }
+  ]
+}
