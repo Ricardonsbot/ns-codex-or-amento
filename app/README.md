@@ -179,6 +179,30 @@ um jeito plausível. O script reporta as grafias divergentes que encontrar.
 
 Na carga atual: 41 produtos em 10 categorias.
 
+## Clientes
+
+O cadastro **Cadastros → Clientes** vem da saída do processador de PDD
+(`Área de Trabalho\PDD\processar_pdd.py`), que identifica o cliente de cada
+lançamento do histórico contábil e consolida por cliente.
+
+```bash
+cd app
+node --env-file=.env scripts/importar-clientes.mjs "<caminho do ... - por Cliente.xlsx>" --dry-run
+```
+
+Lê a aba `Clientes` da saída do PDD. Com `--com-saldo`, entram só os clientes
+com saldo diferente de zero — a maioria zera no período, por ter provisão e
+reversão no mesmo mês.
+
+A tabela `cliente` não tem restrição de unicidade em `nome`, então não há upsert
+possível: o script lê os nomes já gravados e insere só os que faltam. Reexecutar
+não duplica.
+
+**Só `nome` é preenchido.** A base de PDD é contábil e não carrega CNPJ nem
+contato; `documento` e `contato` ficam vazios e precisam de outra fonte.
+
+Na carga atual: 3.361 clientes, de 20.300 lançamentos em 29 empresas.
+
 ## Rodando com Docker
 
 Requer [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando.
