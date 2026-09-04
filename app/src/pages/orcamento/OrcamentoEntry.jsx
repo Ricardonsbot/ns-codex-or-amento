@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Layout from '../../components/Layout'
+import ImportarTemplateReceita from '../../components/ImportarTemplateReceita'
 import { useToast } from '../../components/ToastProvider'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../../lib/dashboardData'
 import { fetchContas } from '../../lib/contasData'
@@ -207,6 +208,9 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
           <h1>{titulo} <span className={`pill ${corClasse}`}>{sinal} {rotulo}</span></h1>
           <p>Selecione BU/Torre/Empresa e edite a grade de {rotulo.toLowerCase()} — os valores são salvos por linha.</p>
         </div>
+        {/* Por ora só Receita tem leitor de template; Despesa e Capex usam abas
+            com outro formato, e um leitor generico leria as tres errado. */}
+        {tipo === 'receita' && <ImportarTemplateReceita onImportado={carregarLinhas} />}
       </header>
 
       <div className="content">

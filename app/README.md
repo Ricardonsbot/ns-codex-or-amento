@@ -332,6 +332,44 @@ de fórmula — a coluna `chave` é o que separa linha real de sobra.
 por tributo (ISS/PIS/COFINS/CPRB, 31 linhas); em PSL vem consolidada (28 linhas).
 A coluna `Total` é a efetiva nos dois casos, e é a única comparável entre BUs.
 
+## Importar o Template Budget na tela de Receita
+
+Em **Orçamento → Receita** há o botão **⭱ Importar Template**: a pessoa sobe o
+Template Budget (`.xlsb`/`.xlsx`) e a ferramenta lê a aba **Receita**.
+
+O fluxo é em **dois passos de propósito**. O botão lê e confere, mostrando linha
+a linha o que casou com empresa e conta e o que não casou; só depois de confirmar
+é que grava. E a confirmação fica **bloqueada enquanto houver pendência** —
+importar só uma parte deixaria o orçamento incompleto sem ninguém perceber.
+
+Cada linha vira um `lancamento` com `tipo='receita'` mais os 12
+`lancamento_valor_mensal`, no ciclo aberto e na versão ativa.
+
+**Entra a receita bruta.** A aba tem cinco blocos de 12 meses encadeados (bruta →
+proporção → após reajuste → deduções → líquida); gravar a líquida perderia a
+dedução, que o P&L trata como linha própria e a ferramenta já sabe calcular pelo
+mapa de alíquotas.
+
+**"Conta Contábil" na planilha não é conta contábil** — é uma lista de 16 tipos
+de receita (`Software SaaS`, `BPO + Software`...). O casamento é por nome contra
+as contas de receita; havendo empate, fica o código mais curto, que é a conta
+base e não a sub-conta de provisão ou reversão. Cinco rótulos não existem no
+plano de contas (`Squad dedicada`, `CS dedicado`, `Locação de hardware`,
+`Consultoria`, `Venda de produto`) e vão aparecer como pendência até serem
+criados ou mapeados.
+
+Produto e cliente vão para `descricao` e `obs`: `lancamento` ainda não tem
+`produto_id` nem `cliente_id`.
+
+**A leitura roda num Web Worker.** O template tem ~9 MB e a aba Receita tem 18
+mil linhas por 101 colunas; o parse leva ~43 s. Na thread principal isso congela
+a tela inteira, sem nem conseguir mostrar "lendo...". Medido: durante os 43 s, um
+timer de 100 ms na thread principal bateu 426 vezes em 42,6 s — ou seja, zero
+bloqueio.
+
+Existe também `scripts/importar-receita.mjs`, com a mesma lógica por linha de
+comando, para carga em lote sem passar pela tela.
+
 ## Rodando com Docker
 
 Requer [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando.
