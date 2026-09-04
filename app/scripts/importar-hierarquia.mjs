@@ -118,7 +118,16 @@ function casar(tabela, atuais, desejados, paiDe) {
   const porChave = new Map(atuais.map((r) => [`${paiDe(r) ?? ''}|${chave(r.nome)}`, r]))
   const usados = new Set()
   for (const d of desejados) {
-    const atual = porChave.get(`${d.pai ?? ''}|${chave(d.nome)}`)
+    // Tenta pelo nome novo e, se não achar, pelos nomes antigos que o mapa
+    // declara na coluna "Empresa Gerencial Antes". Sem isso "Hivecloud" e
+    // "Hive" viram duas empresas em vez de uma renomeada — foi o que aconteceu
+    // na primeira reconstrução.
+    let atual = porChave.get(`${d.pai ?? ''}|${chave(d.nome)}`)
+    for (const alt of d.alternativos ?? []) {
+      if (atual) break
+      const candidato = porChave.get(`${d.pai ?? ''}|${chave(alt)}`)
+      if (candidato && !usados.has(candidato.id)) atual = candidato
+    }
     if (!atual) {
       inserir.push({ tabela, alvo: d })
       continue
@@ -200,6 +209,8 @@ const idSub = new Map(dSubs.map((s) => [`${s.torreChave}|${chave(s.nome)}`, s.id
 // nível 4: Empresa
 const dEmps = unicos((l) => chave(l.empresa), (l) => ({
   nome: l.empresa,
+  // nome antigo declarado no mapa: permite renomear no lugar em vez de duplicar
+  alternativos: l.antes && chave(l.antes) !== chave(l.empresa) ? [l.antes] : [],
   pai: '',
   buChave: chave(l.bu),
   torreChave: `${chave(l.bu)}|${chave(l.torre)}`,

@@ -298,9 +298,20 @@ A normalização ignora acento, caixa e um prefixo `Torre ` — é o que faz
 `ICP Pequeno e Micro` casar com `Torre ICP Pequeno e Micro`, e `Torre Fintech`
 com `Fintech`.
 
-Na reconstrução: 3 renomeações, 52 inserções, 14 reposicionamentos. Ficaram 18
-linhas fora do mapa, não removidas — entre elas as torres `G&A`, `S&M` e `R&D`,
-que no modelo novo viram empresas sob a torre `Corporate`.
+Quando não acha pelo nome novo, o script tenta pelos nomes da coluna
+**"Empresa Gerencial Antes"** — é o que faz `Hivecloud` virar `Hive` por
+renomeação em vez de virar duas empresas. Sem isso, toda troca de nome no mapa
+gera uma duplicata a cada carga.
+
+Na reconstrução: 3 renomeações, 52 inserções, 14 reposicionamentos, e 4
+duplicatas resolvidas pela coluna "Antes" (`Hivecloud`→`Hive`,
+`Onisys`→`TNS Prevencao de acidentes`, `Comprovei`→`TNS Gestao de Entrega`,
+`LogOne`→`Log.One`). Rodar de novo agora não muda nada.
+
+Restaram **14 linhas fora do mapa**, não removidas. Não são renomeações: ou são
+desdobramentos (`KMM` virou três empresas, `e-frete` três, `Trizy` duas) ou
+saíram do modelo (as torres `G&A`, `S&M` e `R&D`, que viraram empresas sob a
+torre `Corporate`). Duas estão presas por lançamento.
 
 ### Alíquotas
 
