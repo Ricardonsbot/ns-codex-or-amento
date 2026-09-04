@@ -270,6 +270,38 @@ produto; `K–M` é uma lista empresa × produto de escopo bem menor (40 pares).
 linhas dos dois não se correspondem — ler como uma tabela só produz dados
 plausíveis e errados.
 
+### Hierarquia BU → Torre → Sub Torre → Empresa
+
+Reconstruída a partir da aba **"Mapa Torres Empresas Gerenciais"**:
+
+```bash
+cd app
+node --env-file=.env scripts/importar-hierarquia.mjs "<Template Budget .xlsb>"
+node --env-file=.env scripts/importar-hierarquia.mjs "<Template Budget .xlsb>" --aplicar
+```
+
+Sem `--aplicar` só planeja e imprime.
+
+**O script é deliberadamente aditivo: renomeia, reposiciona e insere — nunca
+apaga.** `lancamento` tem FK sem `on delete` para as quatro tabelas; uma remoção
+errada levaria lançamento junto. O que sobra é listado no fim, marcando quem está
+referenciado, e a remoção fica como decisão de gente.
+
+Linha que já existe é **casada por nome normalizado dentro do pai** e então
+atualizada no lugar — preservando o `id` e, com ele, os lançamentos que apontam
+para ela. A atualização inclui os pais, não só o nome: casar por nome não
+garante que a posição esteja certa. Sem isso, 14 empresas ficavam onde estavam
+(Buonny sem sub torre, os quatro do VGR em "Núcleo VGR" em vez de "Torre VGR",
+Atua Redes sem torre) e a árvore saía metade nova, metade velha.
+
+A normalização ignora acento, caixa e um prefixo `Torre ` — é o que faz
+`ICP Pequeno e Micro` casar com `Torre ICP Pequeno e Micro`, e `Torre Fintech`
+com `Fintech`.
+
+Na reconstrução: 3 renomeações, 52 inserções, 14 reposicionamentos. Ficaram 18
+linhas fora do mapa, não removidas — entre elas as torres `G&A`, `S&M` e `R&D`,
+que no modelo novo viram empresas sob a torre `Corporate`.
+
 ### Alíquotas
 
 Tela em **Cadastros → Alíquotas** (`/cadastros/aliquotas`), alimentada pela aba
