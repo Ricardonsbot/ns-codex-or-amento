@@ -1,23 +1,40 @@
 import { useRef, useState } from 'react'
 import { useToast } from './ToastProvider'
-import { lerPlanilhaEmWorker, conferir, importar, ABA } from '../lib/importarTemplateReceita'
+import { lerPlanilhaEmWorker, conferir, importar, TEMPLATE } from '../lib/importarTemplateOrcamento'
 
 const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
+/** Nota de rodapé específica de cada aba: o que entra e o que fica de fora. */
+const NOTA = {
+  receita:
+    'Entra a receita bruta do template. A dedução não é gravada aqui: a ferramenta já tem o mapa de ' +
+    'alíquotas, e o P&L trata dedução como linha própria. Produto e cliente vão para a descrição e as ' +
+    'observações, porque a tabela ainda não tem coluna para eles.',
+  despesa:
+    'Entra o bloco de competência. O bloco de caixa que vem depois não é gravado — a ferramenta orça por ' +
+    'competência. Os valores trocam de sinal: o template escreve gasto como negativo e aqui o gasto é ' +
+    'guardado positivo, porque o P&L faz EBITDA = receita − despesa.',
+  capex:
+    'Entra o bloco de competência. O bloco de caixa que vem depois não é gravado. Quantidade e valor ' +
+    'unitário vão para as observações, e os valores trocam de sinal como na Despesa.',
+}
+
 /**
- * Botão de upload do Template Budget na tela de Receita.
+ * Botão de upload do Template Budget nas telas de lançamento.
  *
  * O fluxo é em dois passos de propósito: lê e CONFERE, mostra o que casou e o
  * que não, e só grava depois de confirmar. Importar direto do arquivo criaria
  * lançamentos com empresa ou conta erradas sem ninguém ver.
  */
-export default function ImportarTemplateReceita({ onImportado }) {
+export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onImportado }) {
   const showToast = useToast()
   const inputRef = useRef(null)
   const [lendo, setLendo] = useState(false)
   const [gravando, setGravando] = useState(false)
   const [previa, setPrevia] = useState(null)
   const [arquivo, setArquivo] = useState('')
+
+  const aba = TEMPLATE[tipo]?.aba
 
   async function handleArquivo(e) {
     const file = e.target.files?.[0]
@@ -27,13 +44,13 @@ export default function ImportarTemplateReceita({ onImportado }) {
     setLendo(true)
     setPrevia(null)
     try {
-      const linhas = await lerPlanilhaEmWorker(await file.arrayBuffer())
-      if (!linhas.length) {
-        showToast(`A aba "${ABA}" não tem nenhuma linha preenchida com valor mensal.`, 'warning')
+      const lido = await lerPlanilhaEmWorker(await file.arrayBuffer(), tipo)
+      if (!lido.linhas.length) {
+        showToast(`A aba "${lido.aba}" não tem nenhuma linha preenchida com valor mensal.`, 'warning')
         return
       }
       setArquivo(file.name)
-      setPrevia(await conferir(linhas))
+      setPrevia({ ...(await conferir(lido)), ano: lido.ano })
     } catch (err) {
       showToast(`Não consegui ler a planilha: ${err.message}`, 'error')
     } finally {
@@ -44,8 +61,8 @@ export default function ImportarTemplateReceita({ onImportado }) {
   async function handleConfirmar() {
     setGravando(true)
     try {
-      const n = await importar(previa.prontas, previa.versao.id)
-      showToast(`${n} lançamento(s) de receita importado(s).`, 'success')
+      const n = await importar(previa.prontas, previa.versao.id, tipo)
+      showToast(`${n} lançamento(s) de ${rotulo.toLowerCase()} importado(s).`, 'success')
       setPrevia(null)
       onImportado?.()
     } catch (err) {
@@ -57,6 +74,8 @@ export default function ImportarTemplateReceita({ onImportado }) {
 
   const total = previa?.prontas.reduce((a, p) => a + p.total, 0) ?? 0
   const semVersao = previa && !previa.versao
+  const anoDivergente = previa && anoCiclo && previa.ano !== anoCiclo
+  const temDetalhe = tipo !== 'receita'
 
   return (
     <>
@@ -82,7 +101,7 @@ export default function ImportarTemplateReceita({ onImportado }) {
             <div>
               <h2>Conferência da importação</h2>
               <p>
-                {arquivo} · aba {ABA}
+                {arquivo} · aba {aba}
                 {previa.ciclo && ` · ciclo ${previa.ciclo.ano}`}
                 {previa.versao && ` / versão ${previa.versao.nome}`}
               </p>
@@ -109,6 +128,14 @@ export default function ImportarTemplateReceita({ onImportado }) {
               </div>
             )}
 
+            {anoDivergente && (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ⚠ O cabeçalho da aba {aba} está em {previa.ano} e o ciclo aberto é {anoCiclo}. Os meses entram
+                por posição (1ª coluna = janeiro), então os valores vão para o ciclo {anoCiclo} de qualquer
+                forma — confira se é isso mesmo antes de confirmar.
+              </div>
+            )}
+
             {previa.pendentes.length > 0 && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
                 ⓘ {previa.pendentes.length} linha(s) não puderam ser resolvidas. A importação fica bloqueada até
@@ -123,7 +150,8 @@ export default function ImportarTemplateReceita({ onImportado }) {
                     <th>LINHA</th>
                     <th>EMPRESA</th>
                     <th>CONTA</th>
-                    <th>PRODUTO · TIPO</th>
+                    <th>DESCRIÇÃO</th>
+                    {temDetalhe && <th>C. CUSTO · FORNECEDOR</th>}
                     <th className="text-right">TOTAL ANO</th>
                     <th>SITUAÇÃO</th>
                   </tr>
@@ -135,11 +163,14 @@ export default function ImportarTemplateReceita({ onImportado }) {
                       <td><strong>{p.empresa.nome}</strong></td>
                       <td style={{ fontSize: 12 }}>
                         {p.conta.codigo} {p.conta.nome}
-                        <div style={{ opacity: 0.6 }}>de “{p.contaRotulo}”</div>
+                        <div style={{ opacity: 0.6 }}>de {p.contaCodigo || p.contaRotulo}</div>
                       </td>
-                      <td style={{ fontSize: 12 }}>
-                        {[p.produtoAnalitico || p.produtoSintetico, p.tipoReceita].filter(Boolean).join(' · ')}
-                      </td>
+                      <td style={{ fontSize: 12 }}>{p.descricao || '—'}</td>
+                      {temDetalhe && (
+                        <td style={{ fontSize: 12 }}>
+                          {[p.centroCusto, p.fornecedor].filter(Boolean).join(' · ') || '—'}
+                        </td>
+                      )}
                       <td className="text-right">{brl(p.total)}</td>
                       <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ resolvida</td>
                     </tr>
@@ -148,10 +179,13 @@ export default function ImportarTemplateReceita({ onImportado }) {
                     <tr key={`erro-${p.linha}`} style={{ background: 'var(--color-surface-alt, #fff6f4)' }}>
                       <td>{p.linha}</td>
                       <td>{p.empresa || '—'}</td>
-                      <td style={{ fontSize: 12 }}>{p.contaRotulo || '—'}</td>
-                      <td style={{ fontSize: 12 }}>
-                        {[p.produtoAnalitico || p.produtoSintetico, p.tipoReceita].filter(Boolean).join(' · ')}
-                      </td>
+                      <td style={{ fontSize: 12 }}>{p.contaCodigo || p.contaRotulo || '—'}</td>
+                      <td style={{ fontSize: 12 }}>{p.descricao || '—'}</td>
+                      {temDetalhe && (
+                        <td style={{ fontSize: 12 }}>
+                          {[p.centroCusto, p.fornecedor].filter(Boolean).join(' · ') || '—'}
+                        </td>
+                      )}
                       <td className="text-right">{brl(p.total)}</td>
                       <td style={{ color: 'var(--color-danger, #c0392b)', fontSize: 12 }}>
                         {p.falhas.join(' · ')}
@@ -162,7 +196,7 @@ export default function ImportarTemplateReceita({ onImportado }) {
                 {previa.prontas.length > 0 && (
                   <tfoot>
                     <tr>
-                      <td colSpan={4}><strong>Total a importar</strong></td>
+                      <td colSpan={temDetalhe ? 5 : 4}><strong>Total a importar</strong></td>
                       <td className="text-right"><strong>{brl(total)}</strong></td>
                       <td />
                     </tr>
@@ -171,11 +205,7 @@ export default function ImportarTemplateReceita({ onImportado }) {
               </table>
             </div>
 
-            <p style={{ marginTop: 12, fontSize: 12, opacity: 0.75 }}>
-              Entra a receita <strong>bruta</strong> do template. A dedução não é gravada aqui: a ferramenta já
-              tem o mapa de alíquotas, e o P&amp;L trata dedução como linha própria. Produto e cliente vão para a
-              descrição e as observações do lançamento, porque a tabela ainda não tem coluna para eles.
-            </p>
+            <p style={{ marginTop: 12, fontSize: 12, opacity: 0.75 }}>{NOTA[tipo]}</p>
           </div>
         </div>
       )}

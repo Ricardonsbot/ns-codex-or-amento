@@ -332,34 +332,59 @@ de fórmula — a coluna `chave` é o que separa linha real de sobra.
 por tributo (ISS/PIS/COFINS/CPRB, 31 linhas); em PSL vem consolidada (28 linhas).
 A coluna `Total` é a efetiva nos dois casos, e é a única comparável entre BUs.
 
-## Importar o Template Budget na tela de Receita
+## Importar o Template Budget nas telas de lançamento
 
-Em **Orçamento → Receita** há o botão **⭱ Importar Template**: a pessoa sobe o
-Template Budget (`.xlsb`/`.xlsx`) e a ferramenta lê a aba **Receita**.
+Nas três telas de **Orçamento** há o botão **⭱ Importar Template**: a pessoa sobe
+o Template Budget (`.xlsb`/`.xlsx`) e a ferramenta lê a aba correspondente.
+
+| Tela    | Aba do template | Bloco de meses que entra |
+|---------|-----------------|--------------------------|
+| Receita | `Receita`       | receita bruta digitada    |
+| Despesa | `Base Gastos`   | competência               |
+| Capex   | `Capex`         | competência               |
 
 O fluxo é em **dois passos de propósito**. O botão lê e confere, mostrando linha
 a linha o que casou com empresa e conta e o que não casou; só depois de confirmar
 é que grava. E a confirmação fica **bloqueada enquanto houver pendência** —
 importar só uma parte deixaria o orçamento incompleto sem ninguém perceber.
 
-Cada linha vira um `lancamento` com `tipo='receita'` mais os 12
+Cada linha vira um `lancamento` do tipo da tela mais os 12
 `lancamento_valor_mensal`, no ciclo aberto e na versão ativa.
 
-**Entra a receita bruta.** A aba tem cinco blocos de 12 meses encadeados (bruta →
-proporção → após reajuste → deduções → líquida); gravar a líquida perderia a
-dedução, que o P&L trata como linha própria e a ferramenta já sabe calcular pelo
-mapa de alíquotas.
+**As três abas têm o mesmo esqueleto**: uma faixa de colunas de dimensão seguida
+de blocos de 12 meses. Entra sempre o primeiro bloco. Em Receita vêm cinco
+blocos encadeados (bruta → proporção → após reajuste → deduções → líquida) e
+gravar a líquida perderia a dedução, que o P&L trata como linha própria e a
+ferramenta já calcula pelo mapa de alíquotas. Em Base Gastos e Capex vêm dois
+(competência e caixa) e a ferramenta orça por competência.
 
-**"Conta Contábil" na planilha não é conta contábil** — é uma lista de 16 tipos
-de receita (`Software SaaS`, `BPO + Software`...). O casamento é por nome contra
-as contas de receita; havendo empate, fica o código mais curto, que é a conta
-base e não a sub-conta de provisão ou reversão. Cinco rótulos não existem no
-plano de contas (`Squad dedicada`, `CS dedicado`, `Locação de hardware`,
-`Consultoria`, `Venda de produto`) e vão aparecer como pendência até serem
-criados ou mapeados.
+**Despesa e Capex trocam de sinal.** O template escreve gasto como número
+negativo; aqui o gasto é guardado positivo, porque o P&L faz
+`EBITDA = receita − despesa`. É negação, não valor absoluto — assim um crédito
+lançado no meio dos gastos continua reduzindo a despesa.
 
-Produto e cliente vão para `descricao` e `obs`: `lancamento` ainda não tem
+**O casamento da conta muda por aba.** Base Gastos e Capex trazem o *número* da
+conta, que é chave única: casa por ele, ignorando os pontos (o template escreve
+o mesmo código das duas formas). Dos 280 códigos do plano de contas do template,
+278 existem no Supabase. A conta encontrada ainda precisa ser do tipo da tela —
+um código de Capex digitado na aba de gastos vira pendência, não despesa.
+
+Receita é a exceção: **"Conta Contábil" na planilha não é conta contábil** — é
+uma lista de 16 tipos de receita (`Software SaaS`, `BPO + Software`...). Aí o
+casamento é por nome contra as contas de receita; havendo empate, fica o código
+mais curto, que é a conta base e não a sub-conta de provisão ou reversão. Cinco
+rótulos não existem no plano de contas (`Squad dedicada`, `CS dedicado`,
+`Locação de hardware`, `Consultoria`, `Venda de produto`) e vão aparecer como
+pendência até serem criados ou mapeados.
+
+Centro de custo e fornecedor têm coluna em `lancamento` e são gravados. Produto
+e cliente não: vão para `descricao` e `obs`, porque a tabela ainda não tem
 `produto_id` nem `cliente_id`.
+
+**O cabeçalho da aba Capex está em 2024** enquanto Receita e Base Gastos estão em
+2026. Os meses entram por posição (1ª coluna = janeiro), então isso não muda
+onde o valor cai; a tela avisa quando o ano do cabeçalho difere do ciclo, para
+ninguém importar sem perceber.
 
 **A leitura roda num Web Worker.** O template tem ~9 MB e a aba Receita tem 18
 mil linhas por 101 colunas; o parse leva ~43 s. Na thread principal isso congela
@@ -367,8 +392,10 @@ a tela inteira, sem nem conseguir mostrar "lendo...". Medido: durante os 43 s, u
 timer de 100 ms na thread principal bateu 426 vezes em 42,6 s — ou seja, zero
 bloqueio.
 
-Existe também `scripts/importar-receita.mjs`, com a mesma lógica por linha de
-comando, para carga em lote sem passar pela tela.
+Existe também `scripts/importar-orcamento.mjs <receita|despesa|capex>`, para
+carga em lote sem passar pela tela. Ele importa os mesmos módulos que a tela
+(`src/lib/lerTemplateOrcamento.js` e `casarTemplateOrcamento.js`), para que
+script e botão não possam divergir.
 
 ## Rodando com Docker
 
