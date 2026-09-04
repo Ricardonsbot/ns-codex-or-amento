@@ -1,12 +1,10 @@
 import { lim } from './lerTemplateOrcamento.js'
+import { PREFIXO_PL } from './linhasPl.js'
 
 /**
  * Casamento das linhas do template com os cadastros — puro, sem Supabase, para
  * que a tela e o script de linha de comando usem exatamente a mesma regra.
  */
-
-/** Prefixo da linha do P&L que cada tipo de lançamento pode usar. */
-const PREFIXO_PL = { receita: 'Receita', despesa: 'Despesas', capex: 'Capex' }
 
 /**
  * O template escreve o mesmo código ora com pontos, ora sem. Só zeros conta

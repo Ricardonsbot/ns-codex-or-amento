@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Layout from '../../components/Layout'
 import ImportarTemplateOrcamento from '../../components/ImportarTemplateOrcamento'
 import { useToast } from '../../components/ToastProvider'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../../lib/dashboardData'
 import { fetchContas } from '../../lib/contasData'
+import { contasDoTipo } from '../../lib/linhasPl'
 import {
   fetchVersaoAtual,
   fetchLancamentos,
@@ -87,6 +88,21 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
     }
   }
 
+  // Receita nao pode lancar em conta de capex, nem despesa em conta de receita.
+  // Mesma regra que a importacao do template usa, vinda do mesmo modulo.
+  const contasDisponiveis = useMemo(() => contasDoTipo(contas, tipo), [contas, tipo])
+
+  /**
+   * A conta ja gravada na linha entra na lista mesmo quando e de outro tipo:
+   * filtrar sem isso faria o select cair na primeira opcao e trocar a conta de
+   * um lancamento antigo sem ninguem pedir.
+   */
+  function opcoesDeConta(linha) {
+    const atual = contas.find((c) => c.id === linha.conta_id)
+    if (atual && !contasDisponiveis.some((c) => c.id === atual.id)) return [atual, ...contasDisponiveis]
+    return contasDisponiveis
+  }
+
   const torresDisponiveis = selectedBuId ? torres.filter((t) => t.bu_id === selectedBuId) : torres
   const empresasDisponiveis = selectedTorreId
     ? empresas.filter((e) => e.torre_id === selectedTorreId)
@@ -106,7 +122,10 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
         bu_id: selectedBuId,
         torre_id: selectedTorreId || null,
         empresa_id: selectedEmpresaId || null,
-        conta_id: contas[0]?.id ?? null,
+        // sem conta: pre-selecionar a primeira do plano fazia toda linha nova de
+        // Receita e Despesa nascer apontando para uma conta de capex, porque a
+        // lista vem ordenada por codigo e as de capex comecam com 1.
+        conta_id: null,
       })
       setLinhas((atual) => [...atual, { ...criado, valores: Array(12).fill(0) }])
     } catch (err) {
@@ -134,6 +153,10 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
   }
 
   async function handleSalvarLinha(linha) {
+    if (!linha.conta_id) {
+      showToast('Escolha a conta antes de salvar a linha.', 'warning')
+      return
+    }
     try {
       const contaSelecionada = contas.find((c) => c.id === linha.conta_id)
       const atualizado = await updateLancamento(linha.id, {
@@ -307,9 +330,16 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
                 {linhas.map((linha) => (
                   <tr key={linha.id}>
                     <td style={{ minWidth: 200 }}>
-                      <select value={linha.conta_id ?? ''} onChange={(e) => atualizarCampoLocal(linha.id, 'conta_id', e.target.value)}>
-                        {contas.map((c) => (
-                          <option key={c.id} value={c.id}>{c.codigo} — {c.nome}</option>
+                      <select
+                        value={linha.conta_id ?? ''}
+                        onChange={(e) => atualizarCampoLocal(linha.id, 'conta_id', e.target.value)}
+                      >
+                        <option value="">— escolha a conta —</option>
+                        {opcoesDeConta(linha).map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.codigo} — {c.nome}
+                            {contasDisponiveis.some((d) => d.id === c.id) ? '' : `  (${c.linha_pl}, fora de ${rotulo})`}
+                          </option>
                         ))}
                       </select>
                     </td>
