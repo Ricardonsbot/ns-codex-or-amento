@@ -20,3 +20,13 @@ node_modules/
 *.xlsb
 *.xls
 *.csv
+
+# Saída de compilação do backend .NET. O fonte fica versionado (no branch main),
+# o build não: são ~290 arquivos e 1,5 MB de DLL que o dotnet refaz sozinho.
+# Sem isto eles aparecem como "não rastreados" toda vez que se sai do main.
+backend/**/bin/
+backend/**/obj/
+
+# Config local de desenvolvimento do backend — é onde vão parar connection
+# strings e segredos de quem roda a API na própria máquina.
+backend/**/appsettings.Development.json
