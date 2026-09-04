@@ -15,6 +15,7 @@ const ITENS = [
   { label: 'Índices', icon: '📈', to: '/cadastros/indices' },
   { label: 'Premissas Macro', icon: '🌐', to: '/cadastros/premissas-macro' },
   { label: 'Alçadas de Aprovação', icon: '✅', to: '/cadastros/alcadas-aprovacao' },
+  { label: 'Alíquotas', icon: '🧾', to: '/cadastros/aliquotas' },
 ]
 
 export default function Cadastros() {

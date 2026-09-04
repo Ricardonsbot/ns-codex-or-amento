@@ -11,6 +11,7 @@ import EstruturaOrganizacional from './pages/cadastros/EstruturaOrganizacional'
 import CadastroSimples from './pages/cadastros/CadastroSimples'
 import PremissasMacro from './pages/cadastros/PremissasMacro'
 import AlcadasAprovacao from './pages/cadastros/AlcadasAprovacao'
+import Aliquotas from './pages/cadastros/Aliquotas'
 import Receita from './pages/orcamento/Receita'
 import Despesa from './pages/orcamento/Despesa'
 import Capex from './pages/orcamento/Capex'
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/cadastros/estrutura-organizacional" element={<RequireAuth><EstruturaOrganizacional /></RequireAuth>} />
           <Route path="/cadastros/premissas-macro" element={<RequireAuth><PremissasMacro /></RequireAuth>} />
           <Route path="/cadastros/alcadas-aprovacao" element={<RequireAuth><AlcadasAprovacao /></RequireAuth>} />
+          <Route path="/cadastros/aliquotas" element={<RequireAuth><Aliquotas /></RequireAuth>} />
           <Route path="/cadastros/:slug" element={<RequireAuth><CadastroSimples /></RequireAuth>} />
           <Route path="/budget-settings" element={<RequireAuth><BudgetSettings /></RequireAuth>} />
         </Routes>

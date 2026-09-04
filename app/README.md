@@ -246,6 +246,49 @@ faz ler como organograma em vez de tabela.
 Na carga atual: 12 grupos, 59 responsabilidades (25 no item, 28 no pacote, 6 no
 grupo); 54 com visão BU, 32 com Corporate, 10 com comentário.
 
+## Produtos e Alíquotas (Template Budget v0_1)
+
+A partir do `Template Budget 2026_Torres 2027 - v0_1`, o cadastro de **Produtos**
+deixa de sair do "New_Net Revenue - Sync" e passa a vir da aba
+**"Mapa Produtos_NOVO"**:
+
+```bash
+cd app
+node --env-file=.env scripts/importar-produtos-mapa.mjs "<Template Budget .xlsb>" --dry-run --sincronizar
+```
+
+Por que trocou: o Net Revenue mistura empresa com produto — `BRK`, `Comprovei`,
+`Opentech` e `Onisys` são empresas. O mapa novo tem taxonomia de produto em dois
+níveis: `codigo`/`nome` recebem o **Produto Analítico** (a folha) e `categoria` o
+**Produto Sintético**. São 69 analíticos em 40 sintéticos.
+
+O `--sincronizar` apaga o que não está mais no mapa. Na troca: 53 inseridos,
+25 apagados, 69 no total.
+
+**A aba tem dois blocos independentes lado a lado.** `B–F` é a hierarquia de
+produto; `K–M` é uma lista empresa × produto de escopo bem menor (40 pares). As
+linhas dos dois não se correspondem — ler como uma tabela só produz dados
+plausíveis e errados.
+
+### Alíquotas
+
+Tela em **Cadastros → Alíquotas** (`/cadastros/aliquotas`), alimentada pela aba
+**"Mapa Aliquotas"**:
+
+```bash
+node scripts/importar-aliquotas.mjs "<Template Budget .xlsb>" --dry-run
+```
+
+Como o mapa de alçadas, **não grava no Supabase**: são oito campos por linha e
+nenhuma tabela existente comporta. Fica versionado em `src/data/aliquotas.json`.
+
+São 67 linhas úteis; depois delas a aba tem ~30 linhas só com `Total = 0`, resto
+de fórmula — a coluna `chave` é o que separa linha real de sobra.
+
+**PSL e Embarcador usam métodos diferentes**: em Embarcador a alíquota vem aberta
+por tributo (ISS/PIS/COFINS/CPRB, 31 linhas); em PSL vem consolidada (28 linhas).
+A coluna `Total` é a efetiva nos dois casos, e é a única comparável entre BUs.
+
 ## Rodando com Docker
 
 Requer [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando.
