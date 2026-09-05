@@ -70,7 +70,32 @@ function lerAba(caminho) {
       })
     }
   }
-  return [...series.values()]
+  const resultado = [...series.values()]
+
+  /**
+   * A aba mudou de convencao entre versoes do template: no Torres v0_1 a coluna
+   * trazia a variacao do MES; no Receita v0 passou a trazer o acumulado de 12
+   * meses (o IGP-M de janeiro saiu de 0,43% para 4,19%). A tabela deste projeto
+   * guarda variacao mensal, e a tela soma os doze para chegar ao acumulado —
+   * carregar a serie acumulada aqui produziria um acumulado de ~60%.
+   *
+   * Como nao da para voltar de acumulado para mensal sem o ano anterior, o
+   * script para em vez de converter ou de gravar errado.
+   */
+  for (const serie of resultado) {
+    if (serie.nivel) continue
+    const mediana = [...serie.meses.map((m) => Math.abs(m.valor))].sort((a, b) => a - b)[
+      Math.floor(serie.meses.length / 2)
+    ]
+    if (mediana > 2) {
+      throw new Error(
+        `a serie "${serie.tipo}" tem variacao mensal mediana de ${mediana.toFixed(2)}% — isso e acumulado ` +
+          'de 12 meses, nao variacao do mes. Esta aba do template mudou de convencao; use uma versao que ' +
+          'traga %MoM, ou carregue a serie mensal da fonte primaria.'
+      )
+    }
+  }
+  return resultado
 }
 
 function acumulado(serie) {
