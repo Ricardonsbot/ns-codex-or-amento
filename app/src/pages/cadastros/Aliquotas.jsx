@@ -36,12 +36,12 @@ export default function Aliquotas() {
   function handleExportar() {
     const colunas = [
       { key: 'BU' }, { key: 'Torre' }, { key: 'Subtorre' }, { key: 'Empresa' }, { key: 'Produto' },
-      ...TRIBUTOS.map((t) => ({ key: t.rotulo })), { key: 'Consolidado' }, { key: 'Total' },
+      ...TRIBUTOS.map((t) => ({ key: t.rotulo })), { key: 'Total' },
     ]
     const corpo = linhas.map((r) => ({
       BU: r.bu, Torre: r.torre, Subtorre: r.subtorre, Empresa: r.empresa, Produto: r.produto,
       ...Object.fromEntries(TRIBUTOS.map((t) => [t.rotulo, r[t.chave] ?? ''])),
-      Consolidado: r.consolidado ?? '', Total: r.total ?? '',
+      Total: r.total ?? '',
     }))
     exportarExcel(nomeArquivoExportacao(MODULOS.CADASTROS, 'Aliquotas'), corpo, colunas)
   }
@@ -58,8 +58,9 @@ export default function Aliquotas() {
 
       <div className="content">
         <div className="proto-banner">
-          ⓘ PSL e Embarcador usam métodos diferentes: em Embarcador a alíquota vem aberta por tributo;
-          em PSL vem consolidada. A coluna Total é a efetiva nos dois casos, e é ela que dá para comparar.
+          ⓘ Alíquota efetiva sobre receita, aberta por tributo. Até a versão anterior do template, PSL vinha
+          só com um número consolidado e Embarcador vinha aberto; agora as duas BUs vêm abertas, e a coluna
+          Consolidado deixou de existir.
         </div>
 
         <div className="filter-bar">
@@ -99,7 +100,6 @@ export default function Aliquotas() {
                     {TRIBUTOS.map((t) => (
                       <th key={t.chave} className="text-right">{t.rotulo}</th>
                     ))}
-                    <th className="text-right">CONSOLIDADO</th>
                     <th className="text-right">TOTAL</th>
                   </tr>
                 </thead>
@@ -112,13 +112,12 @@ export default function Aliquotas() {
                       {TRIBUTOS.map((t) => (
                         <td key={t.chave} className="text-right">{pct(r[t.chave])}</td>
                       ))}
-                      <td className="text-right">{pct(r.consolidado)}</td>
                       <td className="text-right"><strong>{pct(r.total)}</strong></td>
                     </tr>
                   ))}
                   {!linhas.length && (
                     <tr>
-                      <td colSpan={10}>Nenhuma linha para este filtro.</td>
+                      <td colSpan={9}>Nenhuma linha para este filtro.</td>
                     </tr>
                   )}
                 </tbody>

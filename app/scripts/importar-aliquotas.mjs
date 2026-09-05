@@ -16,12 +16,13 @@ import * as XLSX from 'xlsx'
 
 const ABA = 'Mapa Aliquotas'
 
-// Endereçamento por letra: abas desta pasta começam fora da coluna A.
-const COL = {
-  chave: 'B', bu: 'C', torre: 'D', subtorre: 'E', empresa: 'F', produto: 'G',
-  iss: 'H', pis: 'I', cofins: 'J', icms: 'K', cprb: 'L', iva: 'M',
-  consolidado: 'N', total: 'O',
-}
+// Endereçamento por letra para as dimensões: abas desta pasta começam fora da
+// coluna A. As colunas de tributo são localizadas pelo TEXTO do cabeçalho, e
+// não por letra, porque elas já andaram uma vez: o mapa tinha "Consolidado" em
+// N e "Total" em O, deixou de ter consolidado e o Total assumiu o N. Por letra,
+// isso teria lido a alíquota errada em silêncio.
+const COL = { chave: 'B', bu: 'C', torre: 'D', subtorre: 'E', empresa: 'F', produto: 'G' }
+const TRIBUTOS = ['ISS', 'PIS', 'COFINS', 'ICMS', 'CPRB', 'IVA']
 
 const SAIDA = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'data', 'aliquotas.json')
 
@@ -57,25 +58,34 @@ function ler(caminho) {
     throw new Error(`não achei o cabeçalho (célula "chave" na coluna ${COL.chave})`)
   })()
 
+  // Mapeia cada tributo (e o Total) para a coluna onde o cabeçalho o nomeia.
+  const porRotulo = {}
+  for (let c = intervalo.s.c; c <= intervalo.e.c; c++) {
+    const letra = XLSX.utils.encode_col(c)
+    const k = texto(cab, letra).toUpperCase()
+    if (k && porRotulo[k] === undefined) porRotulo[k] = letra
+  }
+  const exigidas = [...TRIBUTOS, 'TOTAL']
+  const faltando = exigidas.filter((e) => porRotulo[e] === undefined)
+  if (faltando.length) {
+    throw new Error(`cabeçalho da aba "${ABA}" sem as colunas: ${faltando.join(', ')} — o layout mudou?`)
+  }
+
   const registros = []
   for (let l = cab + 1; l <= intervalo.e.r + 1; l++) {
     // Depois dos dados a aba tem ~30 linhas só com Total=0, resto de fórmula.
     // A chave é o que separa linha real de sobra.
     if (!texto(l, COL.chave)) continue
+    const tributos = {}
+    for (const t of TRIBUTOS) tributos[t.toLowerCase()] = numero(l, porRotulo[t])
     registros.push({
       bu: texto(l, COL.bu),
       torre: texto(l, COL.torre),
       subtorre: texto(l, COL.subtorre),
       empresa: texto(l, COL.empresa),
       produto: texto(l, COL.produto),
-      iss: numero(l, COL.iss),
-      pis: numero(l, COL.pis),
-      cofins: numero(l, COL.cofins),
-      icms: numero(l, COL.icms),
-      cprb: numero(l, COL.cprb),
-      iva: numero(l, COL.iva),
-      consolidado: numero(l, COL.consolidado),
-      total: numero(l, COL.total),
+      ...tributos,
+      total: numero(l, porRotulo.TOTAL),
     })
   }
   return registros
@@ -94,14 +104,13 @@ if (!caminho) {
 const registros = ler(caminho)
 if (!registros.length) throw new Error(`nenhuma linha com chave na aba "${ABA}" — o layout mudou?`)
 
-const detalhado = registros.filter((r) => r.iss !== null)
-const consolidado = registros.filter((r) => r.iss === null && r.consolidado !== null)
+const temTributo = (r) => ['iss', 'pis', 'cofins', 'icms', 'cprb', 'iva'].some((t) => r[t] !== null)
+const abertas = registros.filter(temTributo)
 
 console.log(`aba ................... ${ABA}`)
 console.log(`linhas ................ ${registros.length}`)
-console.log(`  com abertura (ISS…) . ${detalhado.length}`)
-console.log(`  só consolidado ...... ${consolidado.length}`)
-console.log(`  sem nenhum dos dois . ${registros.length - detalhado.length - consolidado.length}`)
+console.log(`  abertas por tributo . ${abertas.length}`)
+console.log(`  sem nenhum tributo .. ${registros.length - abertas.length}`)
 console.log(`empresas .............. ${new Set(registros.map((r) => r.empresa)).size}`)
 console.log(`produtos .............. ${new Set(registros.map((r) => r.produto)).size}`)
 
