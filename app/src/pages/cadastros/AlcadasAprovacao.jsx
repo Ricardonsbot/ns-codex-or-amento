@@ -13,28 +13,34 @@ const VISOES = [
 const NIVEL = { item: 'Item', pacote: 'Pacote', grupo: 'Grupo' }
 
 /**
- * Junta as linhas que têm exatamente a mesma cadeia de aprovação. É o que faz a
- * tela virar organograma em vez de tabela: no Labor - COGS, sete itens seguem
- * três caminhos, e agrupá-los mostra isso de imediato.
+ * Uma entrada por responsabilidade, com o que é aprovado em cima e a cadeia
+ * embaixo. A pergunta que se faz nesta tela é "quem aprova o Labor - COGS?", e
+ * não "quais itens esta cadeia cobre" — então o item vem primeiro.
+ *
+ * A mesma cadeia se repete quando cobre vários itens, e tudo bem: na visão BU,
+ * 35 das 42 cadeias cobrem um item só. Agrupá-las economizava quase nada e
+ * empurrava o nome do que se aprova para debaixo das caixas de aprovador.
  */
-function porCadeia(registros, visao) {
+function porResponsabilidade(registros, visao) {
   const grupos = new Map()
   for (const r of registros) {
     const cadeia = r[visao]
     if (!cadeia) continue
-    if (!grupos.has(r.grupo)) grupos.set(r.grupo, new Map())
-    const chave = `${cadeia.faz}||${cadeia.valida1}||${cadeia.valida2 ?? ''}`
-    const cadeias = grupos.get(r.grupo)
-    if (!cadeias.has(chave)) cadeias.set(chave, { ...cadeia, linhas: [] })
-    cadeias.get(chave).linhas.push(r)
+    if (!grupos.has(r.grupo)) grupos.set(r.grupo, [])
+    grupos.get(r.grupo).push({ ...r, cadeia })
   }
-  return [...grupos].map(([grupo, cadeias]) => ({ grupo, cadeias: [...cadeias.values()] }))
+  return [...grupos].map(([grupo, linhas]) => ({ grupo, linhas }))
+}
+
+/** Quantas cadeias distintas existem — a estatística que o agrupamento dava. */
+function contarCadeias(linhas) {
+  return new Set(linhas.map((l) => `${l.cadeia.faz}||${l.cadeia.valida1}||${l.cadeia.valida2 ?? ''}`)).size
 }
 
 function Etapa({ rotulo, quem, destaque }) {
   return (
-    <div style={{ flex: '1 1 0', minWidth: 150 }}>
-      <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6, marginBottom: 4 }}>
+    <div style={{ flex: '1 1 0', minWidth: 140 }}>
+      <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6, marginBottom: 3 }}>
         {rotulo}
       </div>
       <div
@@ -42,11 +48,11 @@ function Etapa({ rotulo, quem, destaque }) {
           border: '1px solid var(--color-border, #e2e5ea)',
           borderLeft: `3px solid ${destaque}`,
           borderRadius: 6,
-          padding: '8px 10px',
+          padding: '7px 10px',
           background: 'var(--color-surface, #fff)',
           fontWeight: 600,
           fontSize: 13,
-          minHeight: 38,
+          minHeight: 34,
           display: 'flex',
           alignItems: 'center',
         }}
@@ -58,17 +64,17 @@ function Etapa({ rotulo, quem, destaque }) {
 }
 
 const Seta = () => (
-  <div style={{ alignSelf: 'center', paddingTop: 16, opacity: 0.45, fontSize: 18 }} aria-hidden="true">
+  <div style={{ alignSelf: 'center', paddingTop: 15, opacity: 0.45, fontSize: 18 }} aria-hidden="true">
     →
   </div>
 )
 
 export default function AlcadasAprovacao() {
   const [visao, setVisao] = useState('bu')
-  const organograma = useMemo(() => porCadeia(dados.registros, visao), [visao])
+  const organograma = useMemo(() => porResponsabilidade(dados.registros, visao), [visao])
 
-  const totalCadeias = organograma.reduce((a, g) => a + g.cadeias.length, 0)
-  const totalLinhas = organograma.reduce((a, g) => a + g.cadeias.reduce((b, c) => b + c.linhas.length, 0), 0)
+  const totalLinhas = organograma.reduce((a, g) => a + g.linhas.length, 0)
+  const totalCadeias = organograma.reduce((a, g) => a + contarCadeias(g.linhas), 0)
 
   function handleExportar() {
     const colunas = [
@@ -127,55 +133,59 @@ export default function AlcadasAprovacao() {
           </div>
         )}
 
-        {organograma.map(({ grupo, cadeias }) => (
+        {organograma.map(({ grupo, linhas }) => (
           <div className="panel" key={grupo}>
             <div className="panel-header">
               <div>
                 <h2>{grupo}</h2>
                 <p>
-                  {cadeias.reduce((a, c) => a + c.linhas.length, 0)} responsabilidade(s) ·{' '}
-                  {cadeias.length} cadeia(s)
+                  {linhas.length} responsabilidade(s) · {contarCadeias(linhas)} cadeia(s)
                 </p>
               </div>
             </div>
             <div className="panel-body">
-              {cadeias.map((cadeia, i) => (
+              {linhas.map((l, i) => (
                 <div
-                  key={i}
+                  key={l.linha}
                   style={{
                     padding: '14px 0',
                     borderTop: i ? '1px solid var(--color-border, #e2e5ea)' : 'none',
                   }}
                 >
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-                    <Etapa rotulo="Quem faz" quem={cadeia.faz} destaque="#ff3d03" />
-                    <Seta />
-                    <Etapa rotulo="Quem valida 1" quem={cadeia.valida1} destaque="#20242d" />
-                    {cadeia.valida2 && <Seta />}
-                    {cadeia.valida2 && <Etapa rotulo="Quem valida 2" quem={cadeia.valida2} destaque="#8a94a6" />}
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {cadeia.linhas.map((l) => (
+                  {/* O que se aprova vem em cima: e por ele que se procura */}
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                      <strong style={{ fontSize: 14 }}>{l.titulo}</strong>
                       <span
-                        key={`${l.linha}`}
-                        title={
-                          `${NIVEL[l.nivel] ?? l.nivel}` +
-                          (l.pacote && l.item ? ` · ${l.pacote}` : '') +
-                          (l.comentario ? `\n${l.comentario}` : '')
-                        }
                         style={{
-                          fontSize: 12,
-                          padding: '3px 9px',
+                          fontSize: 10,
+                          letterSpacing: '.04em',
+                          textTransform: 'uppercase',
+                          padding: '2px 7px',
                           borderRadius: 999,
                           background: 'var(--color-surface-alt, #f2f4f7)',
                           border: '1px solid var(--color-border, #e2e5ea)',
+                          opacity: 0.8,
                         }}
                       >
-                        {l.titulo}
-                        {l.comentario && <span style={{ opacity: 0.5 }}> ⓘ</span>}
+                        {NIVEL[l.nivel] ?? l.nivel}
                       </span>
-                    ))}
+                      {l.pacote && l.item && (
+                        <span style={{ fontSize: 12, opacity: 0.6 }}>em {l.pacote}</span>
+                      )}
+                    </div>
+                    {l.comentario && (
+                      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 3 }}>ⓘ {l.comentario}</div>
+                    )}
+                  </div>
+
+                  {/* Quem responde por ele, embaixo */}
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <Etapa rotulo="Quem faz" quem={l.cadeia.faz} destaque="#ff3d03" />
+                    <Seta />
+                    <Etapa rotulo="Quem valida 1" quem={l.cadeia.valida1} destaque="#20242d" />
+                    {l.cadeia.valida2 && <Seta />}
+                    {l.cadeia.valida2 && <Etapa rotulo="Quem valida 2" quem={l.cadeia.valida2} destaque="#8a94a6" />}
                   </div>
                 </div>
               ))}
