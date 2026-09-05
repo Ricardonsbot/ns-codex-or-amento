@@ -1,5 +1,5 @@
 /**
- * Carrega os produtos a partir do "Mapa Produtos_NOVO" do Template Budget,
+ * Carrega os produtos a partir do mapa de produtos do Template Budget,
  * substituindo a carga antiga que vinha do Net Revenue.
  *
  * Uso:
@@ -18,16 +18,20 @@ import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import * as XLSX from 'xlsx'
 
-const ABA = 'Mapa Produtos_NOVO'
+// A aba trocou de nome entre versoes do template: era "Mapa Produtos_NOVO" no
+// Torres v0_1 e virou "Mapa Produtos" no Receita v0. Aceita as duas para o
+// script continuar servindo aos dois arquivos.
+const ABAS = ['Mapa Produtos', 'Mapa Produtos_NOVO']
 const LOTE = 500
 
 // Endereçamento por letra de coluna: esta pasta tem abas que começam fora da
 // coluna A, e o sheet_to_json indexa a partir do início do intervalo. Índice de
 // array escorrega sem dar erro.
 //
-// A aba tem DOIS blocos independentes lado a lado. B–F é a hierarquia de
-// produto; K–M é uma lista empresa × produto de escopo menor, que não entra
-// aqui — as linhas dos dois blocos não se correspondem.
+// No template antigo a aba tinha DOIS blocos lado a lado: B–F com a hierarquia
+// de produto e K–M com uma lista empresa × produto de escopo menor, cujas
+// linhas não se correspondiam. O bloco K–M saiu no template de Receita; ler só
+// B–F continua certo nos dois.
 const COL = { bu: 'B', torre: 'C', subtorre: 'D', sintetico: 'E', analitico: 'F' }
 
 const normalizar = (v) =>
@@ -45,8 +49,11 @@ function ler(caminho) {
   }
 
   const wb = XLSX.read(buffer, { type: 'buffer' })
-  const aba = wb.Sheets[ABA]
-  if (!aba) throw new Error(`aba "${ABA}" não encontrada — abas: ${wb.SheetNames.join(', ')}`)
+  const nomeAba = ABAS.find((a) => wb.Sheets[a])
+  if (!nomeAba) {
+    throw new Error(`nenhuma das abas ${ABAS.join(' / ')} foi encontrada — abas: ${wb.SheetNames.join(', ')}`)
+  }
+  const aba = wb.Sheets[nomeAba]
 
   const intervalo = XLSX.utils.decode_range(aba['!ref'])
   const cel = (l, c) => {
@@ -74,7 +81,7 @@ function ler(caminho) {
       analitico,
     })
   }
-  return registros
+  return { nomeAba, registros }
 }
 
 // ---------------------------------------------------------------- main
@@ -88,7 +95,7 @@ if (!caminho) {
   process.exit(1)
 }
 
-const linhas = ler(caminho)
+const { nomeAba, registros: linhas } = ler(caminho)
 
 // Um produto analítico pode aparecer em várias linhas (uma por empresa/torre).
 // Fica a primeira ocorrência; se o sintético divergir entre linhas, avisa.
@@ -104,8 +111,8 @@ for (const l of linhas) {
 }
 const registros = [...porProduto.values()]
 
-console.log(`aba ................... ${ABA}`)
-console.log(`linhas do bloco A ..... ${linhas.length}`)
+console.log(`aba ................... ${nomeAba}`)
+console.log(`linhas lidas .......... ${linhas.length}`)
 console.log(`produtos analíticos ... ${registros.length}`)
 console.log(`produtos sintéticos ... ${new Set(linhas.map((l) => normalizar(l.sintetico))).size}`)
 
@@ -140,37 +147,44 @@ if (sincronizar && sobrando.length) {
   for (const p of sobrando) console.log(`    ${p.codigo}`)
 }
 
+// Daqui para baixo não se usa process.exit(): com os sockets do Supabase ainda
+// abertos ele derruba o Node no Windows antes de terminar de imprimir.
 if (simulacao) {
   console.log('\n--dry-run: nada foi gravado no Supabase.')
-  process.exit(0)
-}
+} else {
+  let inseridos = 0
+  let apagados = 0
+  let falhou = false
 
-let inseridos = 0
-for (let i = 0; i < novos.length; i += LOTE) {
-  const lote = novos.slice(i, i + LOTE)
-  const { error: e } = await sb.from('produto').insert(lote)
-  if (e) {
-    console.error(`\nerro no lote ${i}: ${e.message}`)
-    process.exit(1)
-  }
-  inseridos += lote.length
-}
-
-let apagados = 0
-if (sincronizar && sobrando.length) {
-  for (let i = 0; i < sobrando.length; i += LOTE) {
-    const ids = sobrando.slice(i, i + LOTE).map((p) => p.id)
-    const { error: e } = await sb.from('produto').delete().in('id', ids)
+  for (let i = 0; i < novos.length && !falhou; i += LOTE) {
+    const lote = novos.slice(i, i + LOTE)
+    const { error: e } = await sb.from('produto').insert(lote)
     if (e) {
-      console.error(`\nerro ao apagar lote ${i}: ${e.message}`)
-      process.exit(1)
+      console.error(`\nerro no lote ${i}: ${e.message}`)
+      process.exitCode = 1
+      falhou = true
+    } else {
+      inseridos += lote.length
     }
-    apagados += ids.length
   }
-}
 
-const { count } = await sb.from('produto').select('*', { count: 'exact', head: true })
-console.log(`\ninseridos ............. ${inseridos}`)
-if (sincronizar) console.log(`apagados .............. ${apagados}`)
-console.log(`total na tabela ....... ${count}`)
-console.log(`esperado (mapa) ....... ${registros.length}`)
+  if (sincronizar && sobrando.length && !falhou) {
+    for (let i = 0; i < sobrando.length && !falhou; i += LOTE) {
+      const ids = sobrando.slice(i, i + LOTE).map((p) => p.id)
+      const { error: e } = await sb.from('produto').delete().in('id', ids)
+      if (e) {
+        console.error(`\nerro ao apagar lote ${i}: ${e.message}`)
+        process.exitCode = 1
+        falhou = true
+      } else {
+        apagados += ids.length
+      }
+    }
+  }
+
+  const { count } = await sb.from('produto').select('*', { count: 'exact', head: true })
+  console.log(`\ninseridos ............. ${inseridos}`)
+  if (sincronizar) console.log(`apagados .............. ${apagados}`)
+  console.log(`total na tabela ....... ${count}`)
+  console.log(`esperado (mapa) ....... ${registros.length}`)
+}
