@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Layout from '../../components/Layout'
 import ImportarTemplateOrcamento from '../../components/ImportarTemplateOrcamento'
+import ResumoLancamentos from '../../components/ResumoLancamentos'
 import { useToast } from '../../components/ToastProvider'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../../lib/dashboardData'
 import { fetchContas } from '../../lib/contasData'
@@ -301,6 +302,8 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
             </div>
           </div>
         </div>
+
+        <ResumoLancamentos linhas={linhas} empresas={empresas} rotulo={rotulo} />
 
         <div className="panel">
           <div className="panel-header">
