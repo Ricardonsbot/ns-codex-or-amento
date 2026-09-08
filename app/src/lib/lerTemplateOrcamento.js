@@ -48,6 +48,27 @@ export const TEMPLATE = {
     exigidas: ['TIPO RECEITA', 'CONTA CONTABIL', 'EMPRESA', 'PRODUTO ANALITICO'],
     colEmpresa: 'EMPRESA',
     sinal: 1,
+    // Título do bloco (linha 2) cujos meses entram como valor do lançamento.
+    bloco: 'VALORES BASE',
+    // Demais colunas da linha, capturadas para não se perderem. O rótulo é o
+    // texto do cabeçalho; o nome é como aparece nas observações.
+    extras: [
+      ['MRR', 'MRR'],
+      ['SKU', 'SKU'],
+      ['CNPJ', 'CNPJ'],
+      ['PERSONA', 'Persona'],
+      ['SEGMENTO SINTETICO', 'Segmento sintético'],
+      ['SEGMENTO ANALITICO', 'Segmento analítico'],
+      ['CLASSE DE CLIENTES', 'Classe'],
+      ['PMR', 'PMR'],
+      ['TERMOMETRO DE VENDAS', 'Termômetro'],
+      ['PROJETO', 'Projeto'],
+      ['MES REAJUSTE', 'Mês de reajuste'],
+      ['INDICE PROJETADO', 'Índice'],
+      ['TAXA DE SUCESSO', 'Taxa de sucesso'],
+      ['TAXA EFETIVA', 'Taxa efetiva'],
+      ['PROPORCAO MANUAL', 'Proporção manual'],
+    ],
     monta: (t) => ({
       contaCodigo: '',
       contaRotulo: t('CONTA CONTABIL'),
@@ -65,6 +86,21 @@ export const TEMPLATE = {
     exigidas: ['NUMERO DA CONTA', 'NOME DA CONTA CONTABIL', 'EMPRESA'],
     colEmpresa: 'EMPRESA',
     sinal: -1,
+    bloco: 'GASTOS COMPETENCIA',
+    extras: [
+      ['LINHA P L', 'Linha P&L'],
+      ['GRUPO CAIXA', 'Grupo caixa'],
+      ['DIRETORIA', 'Diretoria'],
+      ['TORRE', 'Torre'],
+      ['PRODUTO SINTETICO', 'Produto sintético'],
+      ['RAZAO SOCIAL CLIENTE', 'Cliente'],
+      ['CNPJ', 'CNPJ'],
+      ['PERSONA', 'Persona'],
+      ['SEGMENTO ANALITICO', 'Segmento analítico'],
+      ['CLASSE DE CLIENTES', 'Classe'],
+      ['FLAG INTERCOMPANY', 'Intercompany'],
+      ['SUBCONTA TECNOLOGIA TERCEIROS', 'Subconta'],
+    ],
     monta: (t) => ({
       contaCodigo: t('NUMERO DA CONTA'),
       contaRotulo: t('NOME DA CONTA CONTABIL'),
@@ -86,6 +122,18 @@ export const TEMPLATE = {
     exigidas: ['NUMERO DA CONTA', 'NOME DA CONTA CONTABIL', 'EMPRESA'],
     colEmpresa: 'EMPRESA',
     sinal: -1,
+    bloco: 'CAPEX COMPETENCIA',
+    extras: [
+      ['LINHA P L', 'Linha P&L'],
+      ['GRUPO CAIXA', 'Grupo caixa'],
+      ['DIRETORIA', 'Diretoria'],
+      ['TORRE', 'Torre'],
+      ['PRODUTO SINTETICO', 'Produto sintético'],
+      ['PRODUTO ANALITICO', 'Produto analítico'],
+      ['RAZAO SOCIAL CLIENTE', 'Cliente'],
+      ['FLAG INTERCOMPANY', 'Intercompany'],
+      ['SUBCONTA TECNOLOGIA TERCEIROS', 'Subconta'],
+    ],
     monta: (t) => ({
       contaCodigo: t('NUMERO DA CONTA'),
       contaRotulo: t('NOME DA CONTA CONTABIL'),
@@ -106,6 +154,24 @@ export const TEMPLATE = {
 /** Serial do Excel para o ano, para conferir contra o ciclo antes de importar. */
 function anoDoSerial(serial) {
   return new Date(Date.UTC(1899, 11, 30) + serial * 86400000).getUTCFullYear()
+}
+
+const eSerial = (v) => typeof v === 'number' && v > 40000 && v < 60000
+
+/**
+ * Como a célula aparece nas observações. Data continua data em vez de virar o
+ * serial cru do Excel, e fração de percentual vira percentual: a planilha
+ * guarda 0,8 onde mostra 80%.
+ */
+function paraTexto(v, rotulo) {
+  if (eSerial(v)) {
+    const d = new Date(Date.UTC(1899, 11, 30) + v * 86400000)
+    return `${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`
+  }
+  if (typeof v === 'number' && /TAXA|PERCENT|PROPORCAO|%/.test(rotulo)) {
+    return `${(v * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
+  }
+  return v == null ? '' : String(v).split(/\s+/).filter(Boolean).join(' ')
 }
 
 export function lerPlanilha(arrayBuffer, tipo) {
@@ -184,7 +250,31 @@ export function lerPlanilha(arrayBuffer, tipo) {
   if (!corridas.length) {
     throw new Error(`Não achei nenhuma coluna de mês no cabeçalho da aba "${cfg.aba}".`)
   }
-  const primeira = corridas[0]
+  // Os títulos dos blocos ficam duas linhas acima do cabeçalho ("Valores Base",
+  // "Valores Reajustados", "Receita Líquida"...). Quando o título esperado
+  // existe, ele é a âncora: diz qual dos cinco blocos entra, em vez de depender
+  // de ser o primeiro. Sem o título, cai na primeira corrida.
+  let primeira = corridas[0]
+  if (cfg.bloco && cab - 2 >= 1) {
+    let inicio = -1
+    for (let c = r.s.c; c <= r.e.c; c++) {
+      if (lim(texto(cab - 2, c)) === cfg.bloco) {
+        inicio = c
+        break
+      }
+    }
+    if (inicio !== -1) {
+      const doTitulo = corridas.find((x) => x[0] === inicio)
+      if (!doTitulo) {
+        throw new Error(
+          `O bloco "${cfg.bloco}" da aba "${cfg.aba}" começa em ` +
+            `${XLSX.utils.encode_col(inicio)}, mas ali não há uma sequência de meses.`
+        )
+      }
+      primeira = doTitulo
+    }
+  }
+
   if (primeira.length !== 12) {
     const onde = XLSX.utils.encode_col(primeira[0])
     throw new Error(
@@ -211,6 +301,17 @@ export function lerPlanilha(arrayBuffer, tipo) {
     const t = (nome) => (col[nome] === undefined ? '' : texto(l, col[nome]))
     const campos = cfg.monta(t)
 
+    // Toda coluna da linha que tem conteúdo, para nada da planilha se perder em
+    // silêncio. O rótulo é a chave normalizada do cabeçalho — "Linha P&L" vira
+    // "LINHA P L", porque o & não é letra nem número.
+    const extras = []
+    for (const [rotulo, nome] of cfg.extras ?? []) {
+      const c = col[rotulo]
+      if (c === undefined) continue
+      const v = paraTexto(bruto(l, c)?.v, rotulo)
+      if (util(v)) extras.push(`${nome}: ${v}`)
+    }
+
     if (!valores.some((v) => v.valor !== 0)) {
       if (util(empresa) || util(campos.contaCodigo) || util(campos.contaRotulo)) ignoradas += 1
       continue
@@ -220,6 +321,8 @@ export function lerPlanilha(arrayBuffer, tipo) {
       linha: l,
       empresa,
       ...campos,
+      extras,
+      obs: [campos.obs, ...extras].filter(Boolean).join(' | '),
       valores,
       total: valores.reduce((a, v) => a + v.valor, 0),
     })
