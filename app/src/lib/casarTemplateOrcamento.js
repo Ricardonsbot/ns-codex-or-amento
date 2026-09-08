@@ -75,6 +75,20 @@ export function casar({ tipo, linhas }, { empresas, contas }) {
   return { prontas, pendentes }
 }
 
+/**
+ * Colunas acrescentadas pela migração 2026-09-08-blocos-derivados.sql. Ficam
+ * listadas aqui porque quem grava precisa saber quais remover enquanto o SQL
+ * não tiver sido rodado — sem isso o PostgREST recusa o insert inteiro.
+ */
+export const EXTRA_LANCAMENTO = ['aliquota', 'taxa_efetiva', 'mes_reajuste', 'indice_reajuste']
+export const EXTRA_MENSAL = ['proporcao', 'valor_ajustado', 'valor_liquido', 'valor_caixa']
+
+/** Serial do Excel para 'aaaa-mm-dd', que é o que a coluna date espera. */
+function dataDoSerial(n) {
+  if (typeof n !== 'number' || n < 1) return null
+  return new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 86400000).toISOString().slice(0, 10)
+}
+
 /** Monta a linha da tabela `lancamento` a partir de uma linha já casada. */
 export function montarLancamento(p, versaoId, tipo) {
   return {
@@ -89,5 +103,25 @@ export function montarLancamento(p, versaoId, tipo) {
     centro_de_custo: p.centroCusto || null,
     fornecedor: p.fornecedor || null,
     obs: p.obs || null,
+    aliquota: p.aliquota ?? null,
+    taxa_efetiva: p.taxaEfetiva ?? null,
+    mes_reajuste: dataDoSerial(p.mesReajuste),
+    indice_reajuste: p.indiceReajuste || null,
   }
+}
+
+/** Monta as 12 linhas de `lancamento_valor_mensal`, com os blocos derivados. */
+export function montarValoresMensais(p, lancamentoId) {
+  return p.valores.map((v) => {
+    const linha = { lancamento_id: lancamentoId, mes: v.mes, valor: v.valor }
+    for (const c of EXTRA_MENSAL) if (v[c] !== undefined) linha[c] = v[c]
+    return linha
+  })
+}
+
+/** Tira as colunas que o banco ainda não tem, para o insert não ser recusado. */
+export function semColunas(linha, colunas) {
+  const copia = { ...linha }
+  for (const c of colunas) delete copia[c]
+  return copia
 }

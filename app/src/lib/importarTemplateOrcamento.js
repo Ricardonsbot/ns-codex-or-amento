@@ -1,6 +1,30 @@
 import { supabase } from './supabaseClient'
 import { TEMPLATE } from './lerTemplateOrcamento'
-import { casar, montarLancamento } from './casarTemplateOrcamento'
+import {
+  casar,
+  montarLancamento,
+  montarValoresMensais,
+  semColunas,
+  EXTRA_LANCAMENTO,
+  EXTRA_MENSAL,
+} from './casarTemplateOrcamento'
+
+/**
+ * Se o banco já tem as colunas dos blocos derivados. Enquanto a migração
+ * 2026-09-08 não for rodada elas não existem, e mandá-las faria o PostgREST
+ * recusar o insert inteiro — a importação pararia de funcionar por causa de um
+ * campo opcional. Pergunta uma vez e guarda.
+ */
+let suporte = null
+export async function colunasDerivadas() {
+  if (suporte) return suporte
+  const [a, b] = await Promise.all([
+    supabase.from('lancamento').select(EXTRA_LANCAMENTO.join(',')).limit(1),
+    supabase.from('lancamento_valor_mensal').select(EXTRA_MENSAL.join(',')).limit(1),
+  ])
+  suporte = { lancamento: !a.error, mensal: !b.error }
+  return suporte
+}
 
 export { TEMPLATE }
 
@@ -82,18 +106,21 @@ export async function apagarDoTipo(versaoId, tipo) {
  * arquivo errado é fácil, e sem isso a correção é apagar linha por linha.
  */
 export async function importar(prontas, versaoId, tipo) {
+  const sup = await colunasDerivadas()
   const ids = []
   for (const p of prontas) {
+    const linha = montarLancamento(p, versaoId, tipo)
     const { data, error } = await supabase
       .from('lancamento')
-      .insert(montarLancamento(p, versaoId, tipo))
+      .insert(sup.lancamento ? linha : semColunas(linha, EXTRA_LANCAMENTO))
       .select('id')
       .single()
     if (error) throw new Error(`linha ${p.linha}: ${error.message}`)
 
+    const mensais = montarValoresMensais(p, data.id)
     const { error: erroMes } = await supabase
       .from('lancamento_valor_mensal')
-      .insert(p.valores.map((v) => ({ lancamento_id: data.id, mes: v.mes, valor: v.valor })))
+      .insert(sup.mensal ? mensais : mensais.map((m) => semColunas(m, EXTRA_MENSAL)))
     if (erroMes) throw new Error(`linha ${p.linha}, valores mensais: ${erroMes.message}`)
 
     ids.push(data.id)

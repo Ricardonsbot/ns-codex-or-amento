@@ -50,6 +50,15 @@ export const TEMPLATE = {
     sinal: 1,
     // Título do bloco (linha 2) cujos meses entram como valor do lançamento.
     bloco: 'VALORES BASE',
+    // Blocos que o template calcula a partir da base. O nome à esquerda é a
+    // coluna de lancamento_valor_mensal que recebe cada um.
+    derivados: [
+      ['proporcao', 'PROPORCAO DE REAJUSTE'],
+      ['valor_ajustado', 'VALORES REAJUSTADOS'],
+      ['valor_liquido', 'RECEITA LIQUIDA'],
+    ],
+    // Valor único da linha, achado pelo rótulo da linha 3.
+    aliquotaRotulo: 'ALIQUOTAS',
     // Demais colunas da linha, capturadas para não se perderem. O rótulo é o
     // texto do cabeçalho; o nome é como aparece nas observações.
     extras: [
@@ -87,6 +96,7 @@ export const TEMPLATE = {
     colEmpresa: 'EMPRESA',
     sinal: -1,
     bloco: 'GASTOS COMPETENCIA',
+    derivados: [['valor_caixa', 'GASTOS CAIXA']],
     extras: [
       ['LINHA P L', 'Linha P&L'],
       ['GRUPO CAIXA', 'Grupo caixa'],
@@ -123,6 +133,7 @@ export const TEMPLATE = {
     colEmpresa: 'EMPRESA',
     sinal: -1,
     bloco: 'CAPEX COMPETENCIA',
+    derivados: [['valor_caixa', 'CAPEX CAIXA']],
     extras: [
       ['LINHA P L', 'Linha P&L'],
       ['GRUPO CAIXA', 'Grupo caixa'],
@@ -254,8 +265,20 @@ export function lerPlanilha(arrayBuffer, tipo) {
   // "Valores Reajustados", "Receita Líquida"...). Quando o título esperado
   // existe, ele é a âncora: diz qual dos cinco blocos entra, em vez de depender
   // de ser o primeiro. Sem o título, cai na primeira corrida.
+  const temTitulos = cab - 2 >= 1
+  /** As 12 colunas do bloco cujo título (linha 2) é `titulo`, ou null. */
+  const blocoPorTitulo = (titulo) => {
+    if (!temTitulos) return null
+    for (let c = r.s.c; c <= r.e.c; c++) {
+      if (lim(texto(cab - 2, c)) !== titulo) continue
+      const corrida = corridas.find((x) => x[0] === c)
+      return corrida && corrida.length === 12 ? corrida : null
+    }
+    return null
+  }
+
   let primeira = corridas[0]
-  if (cfg.bloco && cab - 2 >= 1) {
+  if (cfg.bloco && temTitulos) {
     let inicio = -1
     for (let c = r.s.c; c <= r.e.c; c++) {
       if (lim(texto(cab - 2, c)) === cfg.bloco) {
@@ -272,6 +295,23 @@ export function lerPlanilha(arrayBuffer, tipo) {
         )
       }
       primeira = doTitulo
+    }
+  }
+
+  // Blocos calculados pelo template. Ausentes não são erro: a aba pode estar
+  // numa versão que ainda não os tem, e o lançamento fica sem eles.
+  const derivados = (cfg.derivados ?? [])
+    .map(([campo, titulo]) => [campo, blocoPorTitulo(titulo)])
+    .filter(([, cols]) => cols)
+
+  // Alíquota: valor único da linha, achado pelo rótulo da linha 3.
+  let colAliquota = -1
+  if (cfg.aliquotaRotulo && cab - 1 >= 1) {
+    for (let c = r.s.c; c <= r.e.c; c++) {
+      if (lim(texto(cab - 1, c)) === cfg.aliquotaRotulo) {
+        colAliquota = c
+        break
+      }
     }
   }
 
@@ -317,14 +357,29 @@ export function lerPlanilha(arrayBuffer, tipo) {
       continue
     }
 
+    // Um objeto por mês com o que cada bloco derivado diz. A proporção é
+    // adimensional; os demais são dinheiro e seguem o sinal do tipo.
+    const porMes = valores.map((v) => ({ mes: v.mes, valor: v.valor }))
+    for (const [campo, cols] of derivados) {
+      const escala = campo === 'proporcao' ? 1 : cfg.sinal
+      cols.forEach((c, i) => {
+        const n = numero(l, c)
+        if (n !== null) porMes[i][campo] = n * escala
+      })
+    }
+
     linhas.push({
       linha: l,
       empresa,
       ...campos,
       extras,
       obs: [campos.obs, ...extras].filter(Boolean).join(' | '),
-      valores,
-      total: valores.reduce((a, v) => a + v.valor, 0),
+      aliquota: colAliquota === -1 ? null : numero(l, colAliquota),
+      taxaEfetiva: col['TAXA EFETIVA'] === undefined ? null : numero(l, col['TAXA EFETIVA']),
+      mesReajuste: col['MES REAJUSTE'] === undefined ? null : numero(l, col['MES REAJUSTE']),
+      indiceReajuste: col['INDICE PROJETADO'] === undefined ? '' : texto(l, col['INDICE PROJETADO']),
+      valores: porMes,
+      total: porMes.reduce((a, v) => a + v.valor, 0),
     })
   }
   return { tipo, aba: cfg.aba, ano, linhas, ignoradas }

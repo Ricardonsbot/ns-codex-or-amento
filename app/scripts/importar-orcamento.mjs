@@ -18,7 +18,14 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { lerPlanilha, TEMPLATE } from '../src/lib/lerTemplateOrcamento.js'
-import { casar, montarLancamento } from '../src/lib/casarTemplateOrcamento.js'
+import {
+  casar,
+  montarLancamento,
+  montarValoresMensais,
+  semColunas,
+  EXTRA_LANCAMENTO,
+  EXTRA_MENSAL,
+} from '../src/lib/casarTemplateOrcamento.js'
 
 const tipo = process.argv[2]
 const caminho = process.argv[3]
@@ -110,16 +117,31 @@ if (pendentes.length) {
 } else if (!aplicar) {
   console.log('\nsem --aplicar: nada foi gravado.')
 } else {
+  // Enquanto a migracao 2026-09-08 nao rodar, as colunas dos blocos derivados
+  // nao existem e mandá-las faria o PostgREST recusar o insert inteiro.
+  const [pa, pb] = await Promise.all([
+    sb.from('lancamento').select(EXTRA_LANCAMENTO.join(',')).limit(1),
+    sb.from('lancamento_valor_mensal').select(EXTRA_MENSAL.join(',')).limit(1),
+  ])
+  const sup = { lancamento: !pa.error, mensal: !pb.error }
+  const estado = sup.lancamento && sup.mensal
+    ? 'existem, serão gravadas'
+    : 'ainda não existem — rode supabase/migrations/2026-09-08-blocos-derivados.sql'
+  console.log(`\ncolunas derivadas ..... ${estado}`)
+
   let criados = 0
   for (const p of prontas) {
-    const { data, error } = await sb.from('lancamento').insert(montarLancamento(p, versao.id, tipo)).select('id').single()
+    const linha = montarLancamento(p, versao.id, tipo)
+    const { data, error } = await sb.from('lancamento').insert(sup.lancamento ? linha : semColunas(linha, EXTRA_LANCAMENTO)).select('id').single()
     if (error) {
       console.error(`\nerro ao criar lançamento da linha ${p.linha}: ${error.message}`)
       process.exitCode = 1
       break
     }
-    const mensais = p.valores.map((v) => ({ lancamento_id: data.id, mes: v.mes, valor: v.valor }))
-    const { error: erroMes } = await sb.from('lancamento_valor_mensal').insert(mensais)
+    const mensais = montarValoresMensais(p, data.id)
+    const { error: erroMes } = await sb
+      .from('lancamento_valor_mensal')
+      .insert(sup.mensal ? mensais : mensais.map((m) => semColunas(m, EXTRA_MENSAL)))
     if (erroMes) {
       console.error(`\nerro ao gravar valores mensais da linha ${p.linha}: ${erroMes.message}`)
       process.exitCode = 1
