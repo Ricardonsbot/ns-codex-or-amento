@@ -44,6 +44,9 @@ const lido = lerPlanilha(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffse
 console.log(`aba ................... ${lido.aba}`)
 console.log(`ano no cabeçalho ...... ${lido.ano}`)
 console.log(`linhas com valor ...... ${lido.linhas.length}`)
+if (lido.ignoradas) {
+  console.log(`ignoradas (sem valor)   ${lido.ignoradas}   <- tem dimensao preenchida mas nenhum mes`)
+}
 if (!lido.linhas.length) {
   console.log('\nnada a importar: a aba não tem linha preenchida com valor mensal.')
   process.exit(0)

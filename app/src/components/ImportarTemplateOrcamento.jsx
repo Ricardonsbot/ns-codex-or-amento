@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useToast } from './ToastProvider'
-import { lerPlanilhaEmWorker, conferir, importar, apagarDoTipo, TEMPLATE } from '../lib/importarTemplateOrcamento'
+import {
+  lerPlanilhaEmWorker,
+  conferir,
+  importar,
+  apagarDoTipo,
+  desfazer,
+  TEMPLATE,
+} from '../lib/importarTemplateOrcamento'
 
 const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
@@ -23,6 +30,48 @@ const NOTA = {
   capex:
     'Entra o bloco de competência. O bloco de caixa que vem depois não é gravado. Quantidade e valor ' +
     'unitário vão para as observações, e os valores trocam de sinal como na Despesa.',
+}
+
+const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+
+/**
+ * Os doze meses como barras. O total do ano nao mostra a forma: um valor que
+ * caiu no mes errado passa batido. Doze colunas de numeros nao cabem na tabela,
+ * entao vai o desenho, com os valores no title para quem precisar do numero.
+ *
+ * As barras sao escaladas pelo maior valor absoluto DA LINHA, nao do conjunto:
+ * o que interessa aqui e a distribuicao dentro do contrato, e uma linha de
+ * 264 mil achataria todas as outras.
+ */
+function Meses({ valores }) {
+  const v = valores.map((x) => x.valor)
+  const max = Math.max(...v.map(Math.abs), 1)
+  const temNegativo = v.some((x) => x < 0)
+  const A = 22
+  const base = temNegativo ? A / 2 : A
+  const titulo = v.map((x, i) => `${MES[i]} ${x.toLocaleString('pt-BR')}`).join('\n')
+
+  return (
+    <svg width={12 * 7} height={A} title={titulo} aria-label={titulo} style={{ display: 'block' }}>
+      <title>{titulo}</title>
+      {temNegativo && <line x1="0" y1={base} x2={12 * 7} y2={base} stroke="currentColor" opacity="0.2" />}
+      {v.map((x, i) => {
+        const h = (Math.abs(x) / max) * (temNegativo ? A / 2 : A)
+        return (
+          <rect
+            key={i}
+            x={i * 7}
+            y={x < 0 ? base : base - h}
+            width={5}
+            height={Math.max(h, x === 0 ? 0 : 1)}
+            fill={x < 0 ? 'var(--color-danger, #c0392b)' : 'var(--color-primary, #ff3d03)'}
+            opacity={x === 0 ? 0.15 : 0.85}
+          />
+        )
+      })}
+      {v.every((x) => x === 0) && <rect x="0" y={base - 1} width={12 * 7} height="1" opacity="0.15" />}
+    </svg>
+  )
 }
 
 /** Um numero do resumo, com o rotulo embaixo. */
@@ -61,6 +110,8 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const [arquivo, setArquivo] = useState('')
   const [segundos, setSegundos] = useState(0)
   const [substituir, setSubstituir] = useState(false)
+  const [ultima, setUltima] = useState(null)   // { ids, quantos } da importacao recem-feita
+  const [desfazendo, setDesfazendo] = useState(false)
 
   const aba = TEMPLATE[tipo]?.aba
 
@@ -81,6 +132,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     setLendo(true)
     setPrevia(null)
     setSubstituir(false)
+    setUltima(null)
     try {
       const lido = await lerPlanilhaEmWorker(await file.arrayBuffer(), tipo)
       if (!lido.linhas.length) {
@@ -88,7 +140,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         return
       }
       setArquivo(file.name)
-      setPrevia({ ...(await conferir(lido)), ano: lido.ano })
+      setPrevia({ ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas })
     } catch (err) {
       showToast(`Não consegui ler a planilha: ${err.message}`, 'error')
     } finally {
@@ -101,20 +153,37 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     try {
       let apagados = 0
       if (substituir && previa.jaExistem) apagados = await apagarDoTipo(previa.versao.id, tipo)
-      const n = await importar(previa.prontas, previa.versao.id, tipo)
+      const ids = await importar(previa.prontas, previa.versao.id, tipo)
       const oQue = NOME[tipo] ?? tipo
       showToast(
         apagados
-          ? `${apagados} lançamento(s) de ${oQue} apagado(s) e ${n} importado(s).`
-          : `${n} lançamento(s) de ${oQue} importado(s).`,
+          ? `${apagados} lançamento(s) de ${oQue} apagado(s) e ${ids.length} importado(s).`
+          : `${ids.length} lançamento(s) de ${oQue} importado(s).`,
         'success'
       )
+      // A substituicao apagou linhas que o desfazer nao traz de volta; oferecer
+      // "desfazer" ali seria mentira.
+      setUltima(apagados ? null : { ids, quantos: ids.length })
       setPrevia(null)
       onImportado?.()
     } catch (err) {
       showToast(`Erro ao importar: ${err.message}`, 'error')
     } finally {
       setGravando(false)
+    }
+  }
+
+  async function handleDesfazer() {
+    setDesfazendo(true)
+    try {
+      const n = await desfazer(ultima.ids)
+      showToast(`${n} lançamento(s) desfeito(s).`, 'success')
+      setUltima(null)
+      onImportado?.()
+    } catch (err) {
+      showToast(`Não consegui desfazer: ${err.message}`, 'error')
+    } finally {
+      setDesfazendo(false)
     }
   }
 
@@ -147,6 +216,41 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         style={{ display: 'none' }}
         onChange={handleArquivo}
       />
+
+      {ultima && !previa && (
+        <div
+          className="flex-row"
+          style={{
+            marginTop: 12,
+            padding: '9px 12px',
+            gap: 12,
+            alignItems: 'center',
+            borderRadius: 6,
+            background: 'var(--color-surface-alt, #f2f4f7)',
+            border: '1px solid var(--color-border, #e2e5ea)',
+          }}
+        >
+          <span style={{ fontSize: 13 }}>
+            {ultima.quantos} lançamento(s) importado(s) agora.
+          </span>
+          <button
+            className="btn btn-secondary btn-sm"
+            type="button"
+            onClick={handleDesfazer}
+            disabled={desfazendo}
+          >
+            {desfazendo ? 'Desfazendo…' : '↶ Desfazer'}
+          </button>
+          <button
+            className="btn btn-secondary btn-sm"
+            type="button"
+            onClick={() => setUltima(null)}
+            style={{ marginLeft: 'auto' }}
+          >
+            Dispensar
+          </button>
+        </div>
+      )}
 
       {previa && (
         <div className="panel" style={{ marginTop: 14 }}>
@@ -245,6 +349,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               {previa.pendentes.length > 0 && (
                 <Resumo rotulo="pendentes" valor={previa.pendentes.length} alerta />
               )}
+              {previa.ignoradas > 0 && <Resumo rotulo="ignoradas (sem valor)" valor={previa.ignoradas} />}
             </div>
 
             <div style={{ overflowX: 'auto' }}>
@@ -256,6 +361,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                     <th>CONTA</th>
                     <th>DESCRIÇÃO</th>
                     {temDetalhe && <th>C. CUSTO · FORNECEDOR</th>}
+                    <th>JAN — DEZ</th>
                     <th className="text-right">TOTAL ANO</th>
                     <th>SITUAÇÃO</th>
                   </tr>
@@ -275,6 +381,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                           {[p.centroCusto, p.fornecedor].filter(Boolean).join(' · ') || '—'}
                         </td>
                       )}
+                      <td><Meses valores={p.valores} /></td>
                       <td className="text-right">{brl(p.total)}</td>
                       <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ resolvida</td>
                     </tr>
@@ -290,6 +397,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                           {[p.centroCusto, p.fornecedor].filter(Boolean).join(' · ') || '—'}
                         </td>
                       )}
+                      <td><Meses valores={p.valores} /></td>
                       <td className="text-right">{brl(p.total)}</td>
                       <td style={{ color: 'var(--color-danger, #c0392b)', fontSize: 12 }}>
                         {p.falhas.join(' · ')}
@@ -300,7 +408,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                 {previa.prontas.length > 0 && (
                   <tfoot>
                     <tr>
-                      <td colSpan={temDetalhe ? 5 : 4}><strong>Total a importar</strong></td>
+                      <td colSpan={temDetalhe ? 6 : 5}><strong>Total a importar</strong></td>
                       <td className="text-right"><strong>{brl(total)}</strong></td>
                       <td />
                     </tr>

@@ -25,6 +25,13 @@ export const lim = (v) => semAcento(v).toUpperCase().replace(/[^A-Z0-9]+/g, ' ')
 const junta = (...partes) => partes.filter(Boolean).join(' · ')
 
 /**
+ * Se a célula tem conteúdo de verdade. Zero não conta: as abas do template
+ * arrastam fórmula por milhares de linhas vazias, e elas devolvem 0 — que como
+ * texto vira "0" e passaria por preenchido.
+ */
+const util = (v) => String(v ?? '').replace(/[\s0.,-]/g, '') !== ''
+
+/**
  * `ancora` é a célula que identifica a linha de cabeçalho. `exigidas` são as
  * colunas sem as quais a aba não é reconhecível — se faltarem, é melhor falhar
  * do que ler a planilha errada em silêncio.
@@ -166,22 +173,32 @@ export function lerPlanilha(arrayBuffer, tipo) {
   const ano = anoDoSerial(bruto(cab, meses[0]).v)
 
   const linhas = []
+  // Linhas com dimensão preenchida mas nenhum valor. São contadas para a tela
+  // poder dizer por que apareceram só N: sem isso, quem preencheu a planilha e
+  // esqueceu os meses não tem como saber que a linha foi descartada. As linhas
+  // completamente vazias — a aba tem milhares — não entram nesta conta.
+  let ignoradas = 0
   for (let l = cab + 1; l <= r.e.r + 1; l++) {
     const empresa = texto(l, col[cfg.colEmpresa])
     // "x" e "xx" são as colunas/linhas separadoras do template, não dado
     if (lim(empresa) === 'X') continue
 
     const valores = meses.map((c, i) => ({ mes: i + 1, valor: (numero(l, c) ?? 0) * cfg.sinal }))
-    if (!valores.some((v) => v.valor !== 0)) continue
-
     const t = (nome) => (col[nome] === undefined ? '' : texto(l, col[nome]))
+    const campos = cfg.monta(t)
+
+    if (!valores.some((v) => v.valor !== 0)) {
+      if (util(empresa) || util(campos.contaCodigo) || util(campos.contaRotulo)) ignoradas += 1
+      continue
+    }
+
     linhas.push({
       linha: l,
       empresa,
-      ...cfg.monta(t),
+      ...campos,
       valores,
       total: valores.reduce((a, v) => a + v.valor, 0),
     })
   }
-  return { tipo, aba: cfg.aba, ano, linhas }
+  return { tipo, aba: cfg.aba, ano, linhas, ignoradas }
 }

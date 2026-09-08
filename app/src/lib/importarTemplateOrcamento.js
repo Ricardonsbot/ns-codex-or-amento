@@ -75,9 +75,14 @@ export async function apagarDoTipo(versaoId, tipo) {
   return data?.length ?? 0
 }
 
-/** Grava as linhas já conferidas como lançamentos. */
+/**
+ * Grava as linhas já conferidas como lançamentos.
+ *
+ * Devolve os ids criados para a tela poder oferecer um desfazer: subir o
+ * arquivo errado é fácil, e sem isso a correção é apagar linha por linha.
+ */
 export async function importar(prontas, versaoId, tipo) {
-  let criados = 0
+  const ids = []
   for (const p of prontas) {
     const { data, error } = await supabase
       .from('lancamento')
@@ -91,7 +96,18 @@ export async function importar(prontas, versaoId, tipo) {
       .insert(p.valores.map((v) => ({ lancamento_id: data.id, mes: v.mes, valor: v.valor })))
     if (erroMes) throw new Error(`linha ${p.linha}, valores mensais: ${erroMes.message}`)
 
-    criados += 1
+    ids.push(data.id)
   }
-  return criados
+  return ids
+}
+
+/**
+ * Desfaz uma importação, apagando exatamente os lançamentos que ela criou.
+ * Diferente da substituição, não toca em mais nada da versão.
+ */
+export async function desfazer(ids) {
+  if (!ids?.length) return 0
+  const { data, error } = await supabase.from('lancamento').delete().in('id', ids).select('id')
+  if (error) throw error
+  return data?.length ?? 0
 }
