@@ -29,6 +29,10 @@ export function lerPlanilhaEmWorker(arrayBuffer, tipo) {
 /**
  * Casa cada linha com empresa e conta já cadastradas. Não grava nada — devolve
  * o que resolveu e o que não, para a tela mostrar antes de confirmar.
+ *
+ * Devolve também quantos lançamentos deste tipo a versão já tem. Sem isso,
+ * importar o mesmo arquivo duas vezes dobra o orçamento em silêncio: a
+ * gravação só insere, não procura o que já está lá.
  */
 export async function conferir(lido) {
   const [emps, contas, ciclos] = await Promise.all([
@@ -41,7 +45,34 @@ export async function conferir(lido) {
   const ciclo = ciclos.data.find((c) => c.status !== 'encerrado')
   const versao = ciclo?.versao?.find((v) => v.status === 'ativa')
 
-  return { ciclo, versao, ...casar(lido, { empresas: emps.data, contas: contas.data }) }
+  let jaExistem = 0
+  if (versao) {
+    const { count, error } = await supabase
+      .from('lancamento')
+      .select('*', { count: 'exact', head: true })
+      .eq('versao_id', versao.id)
+      .eq('tipo', lido.tipo)
+    if (error) throw error
+    jaExistem = count ?? 0
+  }
+
+  return { ciclo, versao, jaExistem, ...casar(lido, { empresas: emps.data, contas: contas.data }) }
+}
+
+/**
+ * Apaga os lançamentos deste tipo na versão, para quando a importação
+ * substitui em vez de somar. Os valores mensais vão junto pelo ON DELETE
+ * CASCADE da tabela.
+ */
+export async function apagarDoTipo(versaoId, tipo) {
+  const { data, error } = await supabase
+    .from('lancamento')
+    .delete()
+    .eq('versao_id', versaoId)
+    .eq('tipo', tipo)
+    .select('id')
+  if (error) throw error
+  return data?.length ?? 0
 }
 
 /** Grava as linhas já conferidas como lançamentos. */

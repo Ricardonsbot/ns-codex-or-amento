@@ -1,8 +1,14 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useToast } from './ToastProvider'
-import { lerPlanilhaEmWorker, conferir, importar, TEMPLATE } from '../lib/importarTemplateOrcamento'
+import { lerPlanilhaEmWorker, conferir, importar, apagarDoTipo, TEMPLATE } from '../lib/importarTemplateOrcamento'
 
 const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+/**
+ * Como o tipo se chama nas mensagens. O `rotulo` da tela é "Revenue"/"Expenses",
+ * e usá-lo no meio de uma frase em português dava "10 lançamentos de revenue".
+ */
+const NOME = { receita: 'receita', despesa: 'despesa', capex: 'capex' }
 
 /** Nota de rodapé específica de cada aba: o que entra e o que fica de fora. */
 const NOTA = {
@@ -19,6 +25,26 @@ const NOTA = {
     'unitário vão para as observações, e os valores trocam de sinal como na Despesa.',
 }
 
+/** Um numero do resumo, com o rotulo embaixo. */
+function Resumo({ rotulo, valor, alerta }) {
+  return (
+    <div>
+      <div
+        style={{
+          fontSize: 16,
+          fontWeight: 700,
+          color: alerta ? 'var(--color-danger, #c0392b)' : 'inherit',
+        }}
+      >
+        {valor}
+      </div>
+      <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6 }}>
+        {rotulo}
+      </div>
+    </div>
+  )
+}
+
 /**
  * Botão de upload do Template Budget nas telas de lançamento.
  *
@@ -33,8 +59,19 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const [gravando, setGravando] = useState(false)
   const [previa, setPrevia] = useState(null)
   const [arquivo, setArquivo] = useState('')
+  const [segundos, setSegundos] = useState(0)
+  const [substituir, setSubstituir] = useState(false)
 
   const aba = TEMPLATE[tipo]?.aba
+
+  // Cronometro da leitura. Sao 20 a 45 segundos conforme o tamanho da planilha,
+  // e sem nenhum sinal de progresso a pessoa acha que travou e clica de novo.
+  useEffect(() => {
+    if (!lendo) return undefined
+    setSegundos(0)
+    const t = setInterval(() => setSegundos((n) => n + 1), 1000)
+    return () => clearInterval(t)
+  }, [lendo])
 
   async function handleArquivo(e) {
     const file = e.target.files?.[0]
@@ -43,6 +80,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
 
     setLendo(true)
     setPrevia(null)
+    setSubstituir(false)
     try {
       const lido = await lerPlanilhaEmWorker(await file.arrayBuffer(), tipo)
       if (!lido.linhas.length) {
@@ -61,8 +99,16 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   async function handleConfirmar() {
     setGravando(true)
     try {
+      let apagados = 0
+      if (substituir && previa.jaExistem) apagados = await apagarDoTipo(previa.versao.id, tipo)
       const n = await importar(previa.prontas, previa.versao.id, tipo)
-      showToast(`${n} lançamento(s) de ${rotulo.toLowerCase()} importado(s).`, 'success')
+      const oQue = NOME[tipo] ?? tipo
+      showToast(
+        apagados
+          ? `${apagados} lançamento(s) de ${oQue} apagado(s) e ${n} importado(s).`
+          : `${n} lançamento(s) de ${oQue} importado(s).`,
+        'success'
+      )
       setPrevia(null)
       onImportado?.()
     } catch (err) {
@@ -73,6 +119,8 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   }
 
   const total = previa?.prontas.reduce((a, p) => a + p.total, 0) ?? 0
+  const empresas = previa ? new Set(previa.prontas.map((p) => p.empresa.id)).size : 0
+  const contas = previa ? new Set(previa.prontas.map((p) => p.conta.id)).size : 0
   const semVersao = previa && !previa.versao
   const anoDivergente = previa && anoCiclo && previa.ano !== anoCiclo
   const temDetalhe = tipo !== 'receita'
@@ -85,8 +133,13 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         onClick={() => inputRef.current?.click()}
         disabled={lendo}
       >
-        {lendo ? 'Lendo planilha…' : '⭱ Importar Template'}
+        {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Importar Template'}
       </button>
+      {lendo && (
+        <span style={{ marginLeft: 10, fontSize: 12, opacity: 0.7 }}>
+          a leitura roda em segundo plano — pode continuar usando a tela
+        </span>
+      )}
       <input
         ref={inputRef}
         type="file"
@@ -116,12 +169,40 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                 onClick={handleConfirmar}
                 disabled={gravando || !previa.prontas.length || previa.pendentes.length > 0 || semVersao}
               >
-                {gravando ? 'Importando…' : `Importar ${previa.prontas.length} linha(s)`}
+                {gravando
+                  ? 'Importando…'
+                  : substituir && previa.jaExistem
+                  ? `Substituir ${previa.jaExistem} e importar ${previa.prontas.length}`
+                  : `Importar ${previa.prontas.length} linha(s)`}
               </button>
             </div>
           </div>
 
           <div className="panel-body">
+            {/* O risco silencioso: a gravacao so insere. Importar o mesmo
+                arquivo de novo dobra o orcamento sem nenhum aviso. */}
+            {previa.jaExistem > 0 && (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ⚠ Esta versão já tem <strong>{previa.jaExistem}</strong> lançamento(s) de {NOME[tipo]}.
+                Importar vai <strong>somar</strong> aos que já existem, não substituir.
+                <label style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
+                  <input
+                    type="checkbox"
+                    checked={substituir}
+                    onChange={(e) => setSubstituir(e.target.checked)}
+                    style={{ marginRight: 6 }}
+                  />
+                  Apagar os {previa.jaExistem} antes de importar
+                </label>
+                {substituir && (
+                  <div style={{ marginTop: 6, fontSize: 12 }}>
+                    Vão embora <strong>todos</strong> os lançamentos de {NOME[tipo]} desta versão, inclusive os
+                    lançados à mão. Não há como desfazer.
+                  </div>
+                )}
+              </div>
+            )}
+
             {semVersao && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
                 ⓘ Não há versão ativa num ciclo aberto. Crie uma em Budget-Settings antes de importar.
@@ -142,6 +223,29 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                 que todas casem — importar só uma parte deixaria o orçamento incompleto sem ninguém perceber.
               </div>
             )}
+
+            {/* Resumo antes da tabela: com muitas linhas, o total do rodape
+                fica longe demais para servir de conferencia. */}
+            <div
+              className="flex-row"
+              style={{
+                gap: 20,
+                flexWrap: 'wrap',
+                marginBottom: 12,
+                padding: '10px 12px',
+                borderRadius: 6,
+                background: 'var(--color-surface-alt, #f2f4f7)',
+                border: '1px solid var(--color-border, #e2e5ea)',
+              }}
+            >
+              <Resumo rotulo="linhas" valor={previa.prontas.length} />
+              <Resumo rotulo="total do ano" valor={brl(total)} />
+              <Resumo rotulo="empresas" valor={empresas} />
+              <Resumo rotulo="contas" valor={contas} />
+              {previa.pendentes.length > 0 && (
+                <Resumo rotulo="pendentes" valor={previa.pendentes.length} alerta />
+              )}
+            </div>
 
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
