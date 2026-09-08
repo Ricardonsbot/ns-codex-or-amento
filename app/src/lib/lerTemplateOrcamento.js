@@ -159,17 +159,41 @@ export function lerPlanilha(arrayBuffer, tipo) {
   const faltando = cfg.exigidas.filter((e) => col[e] === undefined)
   if (faltando.length) throw new Error(`Cabeçalho da aba "${cfg.aba}" sem as colunas: ${faltando.join(', ')}.`)
 
-  // Primeiro bloco de 12 meses: a primeira sequência de 12 datas no cabeçalho.
-  let datas = []
+  // Primeiro bloco de meses: a primeira sequência ININTERRUPTA de datas no
+  // cabeçalho, que tem de ter exatamente 12.
+  //
+  // A regra é estrita de propósito. Antes ela era "a primeira sequência de 12",
+  // pulando as incompletas — e aí uma coluna a mais no meio dos meses partia o
+  // bloco em 5 + 7, ambos descartados, e o leitor seguia até achar 12 seguidas
+  // no bloco de PROPORÇÃO DE REAJUSTE. Importava 0,25 por mês no lugar da
+  // receita, sem erro nenhum. Nas quatro abas reais o primeiro bloco tem
+  // exatamente 12 datas seguidas, então exigir isso não custa nada e troca uma
+  // corrupção silenciosa por uma recusa explicada.
+  const corridas = []
+  let atual = []
   for (let c = r.s.c; c <= r.e.c; c++) {
     const x = bruto(cab, c)
-    const eData = typeof x?.v === 'number' && x.v > 40000 && x.v < 60000
-    if (eData) datas.push(c)
-    else if (datas.length >= 12) break
-    else datas = []
+    if (typeof x?.v === 'number' && x.v > 40000 && x.v < 60000) atual.push(c)
+    else if (atual.length) {
+      corridas.push(atual)
+      atual = []
+    }
   }
-  if (datas.length < 12) throw new Error(`Achei ${datas.length} colunas de mês no cabeçalho da aba "${cfg.aba}"; esperava 12.`)
-  const meses = datas.slice(0, 12)
+  if (atual.length) corridas.push(atual)
+
+  if (!corridas.length) {
+    throw new Error(`Não achei nenhuma coluna de mês no cabeçalho da aba "${cfg.aba}".`)
+  }
+  const primeira = corridas[0]
+  if (primeira.length !== 12) {
+    const onde = XLSX.utils.encode_col(primeira[0])
+    throw new Error(
+      `O primeiro bloco de meses da aba "${cfg.aba}" tem ${primeira.length} coluna(s), começando em ${onde}; ` +
+        'esperava exatamente 12. Alguma coluna foi inserida ou removida no meio dos meses — importar assim ' +
+        'leria o bloco errado da planilha.'
+    )
+  }
+  const meses = primeira
   const ano = anoDoSerial(bruto(cab, meses[0]).v)
 
   const linhas = []
