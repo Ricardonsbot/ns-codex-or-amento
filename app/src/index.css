@@ -1709,3 +1709,109 @@ tfoot td {
   color: var(--color-text-muted) !important;
   cursor: not-allowed;
 }
+
+/* ---------- Filtro em botões (no lugar da lista suspensa) ---------- */
+
+.filtro-botoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.filtro-botoes-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+}
+
+.filtro-botoes-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  /* Empresa chega a dezenas de opções; acima disso a lista rola em vez de
+     empurrar a grade para fora da tela. */
+  max-height: 132px;
+  overflow-y: auto;
+}
+
+.filtro-chip {
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 1;
+  padding: 7px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filtro-chip:hover {
+  border-color: var(--color-primary);
+}
+
+.filtro-chip.ativo {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.filtro-chip:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ---------- Grade de lançamento no formato de planilha ---------- */
+/* A célula É o campo: sem margem, sem canto arredondado e sem espaço entre
+   uma caixa e a outra, como no Excel. */
+
+.entry-grid thead th {
+  padding: 7px 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt, #f2f4f7);
+}
+
+.entry-grid tbody td {
+  padding: 0;
+  border: 1px solid var(--color-border);
+}
+
+.entry-grid tbody td > input[type="text"],
+.entry-grid tbody td > input[type="number"],
+.entry-grid tbody td > select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 7px 8px;
+  font-size: 13px;
+}
+
+/* O contorno some para dentro, senão a célula focada empurra as vizinhas. */
+.entry-grid tbody td > input:focus,
+.entry-grid tbody td > select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  background: var(--color-surface);
+}
+
+.entry-grid tbody td.month-col > input[type="number"] {
+  text-align: right;
+  min-width: 72px;
+}
+
+/* A coluna de ações precisa de respiro: ali são botões, não campo. */
+.entry-grid tbody td:last-child,
+.entry-grid tfoot td {
+  padding: 6px 8px;
+}
+
+.entry-grid tbody td.total-cell {
+  padding: 7px 10px;
+}

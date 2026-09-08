@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Layout from '../../components/Layout'
 import ImportarTemplateOrcamento from '../../components/ImportarTemplateOrcamento'
 import ResumoLancamentos from '../../components/ResumoLancamentos'
+import FiltroBotoes from '../../components/FiltroBotoes'
 import { useToast } from '../../components/ToastProvider'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../../lib/dashboardData'
 import { fetchContas } from '../../lib/contasData'
@@ -258,47 +259,35 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
             </div>
           </div>
           <div className="panel-body">
-            <div className="filter-bar" style={{ marginBottom: 0, border: 'none', padding: 0 }}>
-              <div className="filter-field">
-                <label>BU</label>
-                <select
-                  value={selectedBuId}
-                  onChange={(e) => {
-                    setSelectedBuId(e.target.value)
-                    setSelectedTorreId('')
-                    setSelectedEmpresaId('')
-                  }}
-                >
-                  <option value="">Todas as BUs</option>
-                  {bus.map((bu) => (
-                    <option key={bu.id} value={bu.id}>{bu.nome}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="filter-field">
-                <label>Torre</label>
-                <select
-                  value={selectedTorreId}
-                  onChange={(e) => {
-                    setSelectedTorreId(e.target.value)
-                    setSelectedEmpresaId('')
-                  }}
-                >
-                  <option value="">Todas as Torres</option>
-                  {torresDisponiveis.map((t) => (
-                    <option key={t.id} value={t.id}>{t.nome}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="filter-field">
-                <label>Empresa</label>
-                <select value={selectedEmpresaId} onChange={(e) => setSelectedEmpresaId(e.target.value)}>
-                  <option value="">Todas as Empresas</option>
-                  {empresasDisponiveis.map((e) => (
-                    <option key={e.id} value={e.id}>{e.nome}</option>
-                  ))}
-                </select>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <FiltroBotoes
+                label="BU"
+                valor={selectedBuId}
+                rotuloTodas="Todas as BUs"
+                opcoes={bus.map((bu) => ({ valor: bu.id, rotulo: bu.nome }))}
+                onChange={(v) => {
+                  setSelectedBuId(v)
+                  setSelectedTorreId('')
+                  setSelectedEmpresaId('')
+                }}
+              />
+              <FiltroBotoes
+                label="Torre"
+                valor={selectedTorreId}
+                rotuloTodas="Todas as Torres"
+                opcoes={torresDisponiveis.map((t) => ({ valor: t.id, rotulo: t.nome }))}
+                onChange={(v) => {
+                  setSelectedTorreId(v)
+                  setSelectedEmpresaId('')
+                }}
+              />
+              <FiltroBotoes
+                label="Empresa"
+                valor={selectedEmpresaId}
+                rotuloTodas="Todas as Empresas"
+                opcoes={empresasDisponiveis.map((e) => ({ valor: e.id, rotulo: e.nome }))}
+                onChange={setSelectedEmpresaId}
+              />
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import FiltroBotoes from './FiltroBotoes'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
@@ -82,20 +83,27 @@ export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
             {AGRUPAMENTOS.find((a) => a.chave === agrupar).rotulo.toLowerCase()}(s) · total R$ {brl(total)}
           </p>
         </div>
-        <div className="filter-field" style={{ marginBottom: 0 }}>
-          <label>Agrupar por</label>
-          <select value={agrupar} onChange={(e) => setAgrupar(e.target.value)}>
-            {AGRUPAMENTOS.map((a) => (
-              <option key={a.chave} value={a.chave}>{a.rotulo}</option>
-            ))}
-          </select>
-        </div>
+        <FiltroBotoes
+          label="Agrupar por"
+          valor={agrupar}
+          opcoes={AGRUPAMENTOS.map((a) => ({ valor: a.chave, rotulo: a.rotulo }))}
+          onChange={setAgrupar}
+          semTodas
+        />
       </div>
 
       <div className="panel-body">
         {/* Gráfico: um mês por barra, com o valor escrito em cima */}
-        <div style={{ overflowX: 'auto', marginBottom: 18 }}>
-          <svg width={largura} height={ALTURA + 34} role="img" aria-label={`Total por mês de ${rotulo}`}>
+        {/* viewBox no lugar de largura fixa: o desenho acompanha a tela em vez
+            de forcar rolagem lateral. */}
+        <div style={{ marginBottom: 18 }}>
+          <svg
+            viewBox={`0 0 ${largura} ${ALTURA + 34}`}
+            preserveAspectRatio="xMidYMid meet"
+            style={{ width: '100%', height: 'auto', display: 'block', minHeight: 140 }}
+            role="img"
+            aria-label={`Total por mês de ${rotulo}`}
+          >
             <line
               x1="0"
               y1={base}
