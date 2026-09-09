@@ -4,7 +4,15 @@ import FiltroBotoes from '../components/FiltroBotoes'
 import { useToast } from '../components/ToastProvider'
 import { fetchVersaoAtual } from '../lib/lancamentosData'
 import { fetchBUs, fetchTorres } from '../lib/dashboardData'
-import { fetchResultado, fetchVersoesDoCiclo, anual, percentual, variacao } from '../lib/resultadoData'
+import {
+  fetchResultado,
+  fetchVersoesDoCiclo,
+  anual,
+  percentual,
+  variacao,
+  achatar,
+  semaforo,
+} from '../lib/resultadoData'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
@@ -12,6 +20,9 @@ const brl = (v) =>
   Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const milhoes = (v) => `${(Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`
 const pct = (v) => (v === null || !isFinite(v) ? '—' : `${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`)
+/** Percentual curto, do jeito do painel: uma casa e o sinal quando positivo. */
+const pct2 = (v) =>
+  v === null || !isFinite(v) ? '—' : `${v > 0 ? '+' : ''}${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
 
 /**
  * Δ e Δ% contra o comparativo. Verde e vermelho seguem o SENTIDO do indicador,
@@ -28,6 +39,40 @@ function Variacao({ atual, comparado, menorEMelhor }) {
       {brl(delta)}
       {pct !== null && ` (${pct > 0 ? '+' : ''}${pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%)`}
     </span>
+  )
+}
+
+const COR_SEMAFORO = { verde: '#1a7f47', amarelo: '#d99a00', vermelho: '#c0392b' }
+
+/** O ponto colorido do painel: acima do comparativo, perto, ou longe. */
+function Ponto({ pct }) {
+  const cor = COR_SEMAFORO[semaforo(pct)]
+  if (!cor) return <span style={{ opacity: 0.25 }}>·</span>
+  return <span style={{ color: cor, fontSize: 15 }} aria-hidden="true">●</span>
+}
+
+/** Um bloco de medida do painel: Actual, %NR, Budget, Δ, Δ% e o ponto. */
+function Medida({ atual, budget, base, comparando, menorEMelhor, comNR }) {
+  const { delta, pct } = variacao(atual, budget ?? 0)
+  const bom = menorEMelhor ? delta < 0 : delta > 0
+  const cor = delta === 0 ? 'inherit' : bom ? COR_SEMAFORO.verde : COR_SEMAFORO.vermelho
+  return (
+    <>
+      <td className="text-right">{milhoes(atual)}</td>
+      {/* %NR e participacao, nao variacao: vai sem sinal de mais. */}
+      {comNR && <td className="text-right" style={{ opacity: 0.75 }}>{pct(percentual(atual, base))}</td>}
+      {comparando && (
+        <>
+          <td className="text-right" style={{ opacity: 0.75 }}>{milhoes(budget)}</td>
+          <td className="text-right" style={{ color: cor }}>
+            {delta > 0 ? '+' : ''}
+            {milhoes(delta)}
+          </td>
+          <td className="text-right" style={{ color: cor }}>{pct2(pct)}</td>
+          <td className="text-center"><Ponto pct={menorEMelhor && pct !== null ? -pct : pct} /></td>
+        </>
+      )}
+    </>
   )
 }
 
@@ -260,6 +305,85 @@ export default function Resultado() {
               </div>
             )}
 
+            {/* O Painel Resultado, no modelo do P&L Contabil: hierarquia numerada
+                nas linhas, grupos de medida nas colunas. */}
+            <div className="panel">
+              <div className="panel-header">
+                <div>
+                  <h2>Painel Resultado</h2>
+                  <p>
+                    [ BRL M ] · Consolidado → BU → Torre → Sub Torre → Empresa
+                    {comp ? ` · comparando com ${versoes.find((v) => v.id === compararCom)?.nome ?? 'budget'}` : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="panel-body">
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="data-table painel-resultado">
+                    <thead>
+                      <tr>
+                        <th />
+                        <th className="text-center" colSpan={comp ? 5 : 1}>NET REVENUE</th>
+                        <th className="text-center" colSpan={comp ? 6 : 2}>ADJ. EBITDA AFTER CAPEX</th>
+                      </tr>
+                      <tr>
+                        <th>ESTRUTURA</th>
+                        <th className="text-right">ACTUAL</th>
+                        {comp && <th className="text-right">BUDGET</th>}
+                        {comp && <th className="text-right">Δ</th>}
+                        {comp && <th className="text-right">Δ%</th>}
+                        {comp && <th />}
+                        <th className="text-right">ACTUAL</th>
+                        <th className="text-right">%NR</th>
+                        {comp && <th className="text-right">BUDGET</th>}
+                        {comp && <th className="text-right">Δ</th>}
+                        {comp && <th className="text-right">Δ%</th>}
+                        {comp && <th />}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ fontWeight: 700, background: 'var(--color-surface-alt, #f2f4f7)' }}>
+                        <td>= Consolidado</td>
+                        <Medida
+                          atual={base}
+                          budget={comp ? anual(comp.subtotais.receitaLiquida) : 0}
+                          base={base}
+                          comparando={!!comp}
+                        />
+                        <Medida
+                          atual={anual(dados.subtotais.ebitdaAposCapex)}
+                          budget={comp ? anual(comp.subtotais.ebitdaAposCapex) : 0}
+                          base={base}
+                          comparando={!!comp}
+                          comNR
+                        />
+                      </tr>
+                      {achatar(dados.arvore).map((no) => {
+                        const nb = comp?.estrutura.find((x) => x.chave === no.chave)
+                        const rec = anual(no.receita)
+                        const eac = rec - anual(no.despesa) - anual(no.capex)
+                        const recB = anual(nb?.receita ?? [])
+                        const eacB = recB - anual(nb?.despesa ?? []) - anual(nb?.capex ?? [])
+                        return (
+                          <tr key={no.chave} style={no.nivel === 0 ? { fontWeight: 700 } : undefined}>
+                            <td style={{ paddingLeft: 12 + no.nivel * 16, whiteSpace: 'nowrap' }}>
+                              <span style={{ opacity: 0.5, marginRight: 8, fontSize: 11 }}>{no.numero}</span>
+                              {no.nome}
+                            </td>
+                            <Medida atual={rec} budget={recB} base={rec} comparando={!!comp} />
+                            <Medida atual={eac} budget={eacB} base={rec} comparando={!!comp} comNR />
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
+                  O ponto e verde acima do comparativo, amarelo ate 5% abaixo e vermelho abaixo disso. O corte e
+                  uma escolha da ferramenta, nao uma regra contabil — se o FP&amp;A usar outro, e um ajuste.
+                </p>
+              </div>
+            </div>
             {/* O P&L linha a linha */}
             <div className="panel" style={{ marginBottom: 18 }}>
               <div className="panel-header">
@@ -352,48 +476,6 @@ export default function Resultado() {
               </div>
             </div>
 
-            {/* A mesma coisa pela estrutura */}
-            <div className="panel">
-              <div className="panel-header">
-                <div>
-                  <h2>Por estrutura</h2>
-                  <p>BU → Torre → Sub Torre → Empresa</p>
-                </div>
-              </div>
-              <div className="panel-body">
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>ESTRUTURA</th>
-                        <th className="text-right">RECEITA</th>
-                        <th className="text-right">DESPESA</th>
-                        <th className="text-right">EBITDA</th>
-                        <th className="text-right">MARGEM</th>
-                        <th className="text-right">CAPEX</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dados.estrutura.map((no, i) => {
-                        const r = anual(no.receita)
-                        const d = anual(no.despesa)
-                        const e = r - d
-                        return (
-                          <tr key={i} style={no.nivel === 0 ? { fontWeight: 700 } : undefined}>
-                            <td style={{ paddingLeft: 12 + no.nivel * 18 }}>{no.nome}</td>
-                            <td className="text-right">{brl(r)}</td>
-                            <td className="text-right">{brl(d)}</td>
-                            <td className="text-right">{brl(e)}</td>
-                            <td className="text-right">{pct(percentual(e, r))}</td>
-                            <td className="text-right">{brl(anual(no.capex))}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
           </>
         )}
       </div>

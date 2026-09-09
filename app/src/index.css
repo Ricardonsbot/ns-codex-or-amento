@@ -1815,3 +1815,37 @@ tfoot td {
 .entry-grid tbody td.total-cell {
   padding: 7px 10px;
 }
+
+/* ---------- Painel Resultado ---------- */
+/* Muitas colunas numéricas: a tabela fica compacta e os grupos de medida
+   separados por uma borda, como no P&L Contábil que o time usa. */
+
+.painel-resultado {
+  font-size: 12.5px;
+}
+
+.painel-resultado thead tr:first-child th {
+  border-bottom: 1px solid var(--color-border);
+  font-size: 11px;
+  letter-spacing: .06em;
+}
+
+.painel-resultado thead tr:first-child th:not(:first-child) {
+  background: var(--color-surface-alt, #f2f4f7);
+  border-left: 2px solid var(--color-border);
+}
+
+.painel-resultado thead th,
+.painel-resultado tbody td {
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.painel-resultado tbody tr:hover {
+  background: var(--color-surface-alt, #f7f8fa);
+}
+
+.painel-resultado td.text-center,
+.painel-resultado th.text-center {
+  text-align: center;
+}

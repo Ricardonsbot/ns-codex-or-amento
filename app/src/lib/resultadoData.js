@@ -128,8 +128,58 @@ export async function fetchResultado(versaoId, { buId, torreId } = {}) {
     // A chave do caminho volta junto: é ela que casa o mesmo nó entre duas
     // versões na comparação com o Budget.
     estrutura: [...porEstrutura.entries()].map(([chave, no]) => ({ chave, ...no })),
+    arvore: montarArvore(porEstrutura),
     lancamentos: linhas.length,
   }
+}
+
+/**
+ * Aninha os nós pela chave do caminho ("bu|torre|sub|empresa|"): o pai de um nó
+ * é o mesmo caminho sem o último trecho. A lista plana vinha na ordem em que os
+ * lançamentos apareceram, que não é a ordem de leitura do painel.
+ */
+function montarArvore(porEstrutura) {
+  const nos = [...porEstrutura.entries()].map(([chave, no]) => ({ chave, ...no, filhos: [] }))
+  const porChave = new Map(nos.map((n) => [n.chave, n]))
+  const raiz = []
+  for (const n of nos) {
+    const partes = n.chave.split('|').filter(Boolean)
+    const pai = partes.length > 1 ? porChave.get(partes.slice(0, -1).join('|') + '|') : null
+    if (pai) pai.filhos.push(n)
+    else raiz.push(n)
+  }
+  const ordenar = (lista) => {
+    lista.sort((a, b) => anual(b.receita) - anual(a.receita) || a.nome.localeCompare(b.nome))
+    for (const n of lista) ordenar(n.filhos)
+  }
+  ordenar(raiz)
+  return raiz
+}
+
+/**
+ * A árvore em lista, na ordem de leitura e com a numeração do painel — 1, 1.1,
+ * 1.1.1 — como no P&L Contábil que o time usa.
+ */
+export function achatar(arvore, prefixo = '') {
+  const saida = []
+  arvore.forEach((no, i) => {
+    const numero = prefixo ? `${prefixo}.${i + 1}` : `${i + 1}`
+    saida.push({ ...no, numero })
+    saida.push(...achatar(no.filhos, numero))
+  })
+  return saida
+}
+
+/**
+ * Semáforo do painel. O corte é uma escolha, não uma regra contábil: acima do
+ * comparativo é verde, até 5% abaixo é amarelo, abaixo disso é vermelho. Se o
+ * FP&A usar outro corte, é aqui que muda.
+ */
+export function semaforo(pct) {
+  if (pct === null || !isFinite(pct)) return null
+  if (pct >= 0) return 'verde'
+  if (pct >= -5) return 'amarelo'
+  return 'vermelho'
 }
 
 /** As versões do ciclo, para escolher contra qual comparar. */
