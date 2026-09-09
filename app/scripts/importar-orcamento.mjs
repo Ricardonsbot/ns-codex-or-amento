@@ -90,13 +90,19 @@ if (ciclo.ano !== lido.ano) {
   console.log(`AVISO: cabeçalho em ${lido.ano} e ciclo em ${ciclo.ano}. Os meses entram por posição (1ª coluna = janeiro).`)
 }
 
-const { prontas, pendentes } = casar(lido, { empresas: emps.data, contas: contas.data })
+const { prontas, marcadas, fora } = casar(lido, { empresas: emps.data, contas: contas.data })
+const aImportar = [...prontas, ...marcadas]
 
 console.log(`\nresolvidas ............ ${prontas.length}`)
-console.log(`com problema .......... ${pendentes.length}`)
-for (const p of pendentes) console.log(`    linha ${p.linha}: ${p.falhas.join(' | ')}`)
+console.log(`sem conta (marcadas) .. ${marcadas.length}`)
+for (const p of marcadas.slice(0, 8)) console.log(`    linha ${p.linha}: ${p.falhas.join(' | ')}`)
+if (marcadas.length > 8) console.log(`    ... e mais ${marcadas.length - 8}`)
+console.log(`fora (sem empresa) .... ${fora.length}`)
+for (const p of fora.slice(0, 8)) console.log(`    linha ${p.linha}: ${p.falhas.join(' | ')}`)
+if (fora.length > 8) console.log(`    ... e mais ${fora.length - 8}`)
 
-for (const p of prontas) {
+// Só uma amostra: em arquivo real são centenas de linhas.
+for (const p of prontas.slice(0, 5)) {
   console.log(
     `\n  linha ${p.linha}` +
       `\n    empresa .... ${p.empresa.nome}` +
@@ -107,12 +113,13 @@ for (const p of prontas) {
       `\n    total ano .. ${p.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   )
 }
+if (prontas.length > 5) console.log(`\n  ... e mais ${prontas.length - 5} linha(s) resolvida(s)`)
 
 // Daqui para baixo não se usa process.exit(): com os sockets do Supabase ainda
 // abertos ele derruba o Node no Windows antes de terminar de imprimir. Marca-se
 // o código de saída e deixa o módulo acabar sozinho.
-if (pendentes.length) {
-  console.log('\nabortado: resolva as pendências acima antes de importar.')
+if (!aImportar.length) {
+  console.log('\nnada a importar.')
   process.exitCode = 1
 } else if (!aplicar) {
   console.log('\nsem --aplicar: nada foi gravado.')
@@ -130,7 +137,7 @@ if (pendentes.length) {
   console.log(`\ncolunas derivadas ..... ${estado}`)
 
   let criados = 0
-  for (const p of prontas) {
+  for (const p of aImportar) {
     const linha = montarLancamento(p, versao.id, tipo)
     const { data, error } = await sb.from('lancamento').insert(sup.lancamento ? linha : semColunas(linha, EXTRA_LANCAMENTO)).select('id').single()
     if (error) {

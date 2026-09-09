@@ -56,23 +56,37 @@ export function montarResolvedorDeConta(contas, tipo) {
   }
 }
 
-/** Separa o que já dá para gravar do que precisa de cadastro antes. */
+/**
+ * Separa o que dá para gravar do que não dá.
+ *
+ *   prontas    empresa e conta resolvidas
+ *   marcadas   empresa resolvida, conta não — entram SEM conta e sinalizadas,
+ *              para o valor não ficar de fora do orçamento enquanto o plano de
+ *              contas não acompanha a planilha
+ *   fora       sem empresa — não há como gravar: `lancamento.bu_id` é
+ *              obrigatório e a BU vem da empresa
+ */
 export function casar({ tipo, linhas }, { empresas, contas }) {
   const porEmpresa = new Map(empresas.map((e) => [lim(e.nome), e]))
   const acharConta = montarResolvedorDeConta(contas, tipo)
 
   const prontas = []
-  const pendentes = []
+  const marcadas = []
+  const fora = []
   for (const l of linhas) {
     const empresa = porEmpresa.get(lim(l.empresa))
     const { conta, erro } = acharConta(l.contaCodigo, l.contaRotulo)
-    const falhas = []
-    if (!empresa) falhas.push(l.empresa ? `Empresa "${l.empresa}" não está cadastrada` : 'Linha sem empresa')
-    if (erro) falhas.push(erro)
-    if (falhas.length) pendentes.push({ ...l, falhas })
-    else prontas.push({ ...l, empresa, conta })
+
+    if (!empresa) {
+      const motivo = l.empresa ? `Empresa "${l.empresa}" não está cadastrada` : 'Linha sem empresa'
+      fora.push({ ...l, falhas: erro ? [motivo, erro] : [motivo] })
+    } else if (erro) {
+      marcadas.push({ ...l, empresa, conta: null, falhas: [erro] })
+    } else {
+      prontas.push({ ...l, empresa, conta })
+    }
   }
-  return { prontas, pendentes }
+  return { prontas, marcadas, fora, pendentes: fora }
 }
 
 /**
@@ -98,11 +112,13 @@ export function montarLancamento(p, versaoId, tipo) {
     torre_id: p.empresa.torre_id,
     sub_torre_id: p.empresa.sub_torre_id,
     empresa_id: p.empresa.id,
-    conta_id: p.conta.id,
+    conta_id: p.conta?.id ?? null,
     descricao: p.descricao || null,
     centro_de_custo: p.centroCusto || null,
     fornecedor: p.fornecedor || null,
-    obs: p.obs || null,
+    // A marca vai no começo das observações, onde a pessoa vê sem procurar, e
+    // guarda o que a planilha dizia — senão o rótulo original se perde.
+    obs: [p.falhas?.length ? `⚠ ${p.falhas.join(' · ')}` : '', p.obs].filter(Boolean).join(' | ') || null,
     aliquota: p.aliquota ?? null,
     taxa_efetiva: p.taxaEfetiva ?? null,
     mes_reajuste: dataDoSerial(p.mesReajuste),

@@ -153,7 +153,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     try {
       let apagados = 0
       if (substituir && previa.jaExistem) apagados = await apagarDoTipo(previa.versao.id, tipo)
-      const ids = await importar(previa.prontas, previa.versao.id, tipo)
+      const ids = await importar([...previa.prontas, ...previa.marcadas], previa.versao.id, tipo)
       const oQue = NOME[tipo] ?? tipo
       showToast(
         apagados
@@ -187,9 +187,10 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     }
   }
 
-  const total = previa?.prontas.reduce((a, p) => a + p.total, 0) ?? 0
-  const empresas = previa ? new Set(previa.prontas.map((p) => p.empresa.id)).size : 0
-  const contas = previa ? new Set(previa.prontas.map((p) => p.conta.id)).size : 0
+  const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
+  const total = aImportar.reduce((a, p) => a + p.total, 0)
+  const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
+  const contas = new Set(previa?.prontas.map((p) => p.conta.id) ?? []).size
   const semVersao = previa && !previa.versao
   const anoDivergente = previa && anoCiclo && previa.ano !== anoCiclo
   const temDetalhe = tipo !== 'receita'
@@ -271,13 +272,13 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                 className="btn btn-primary btn-sm"
                 type="button"
                 onClick={handleConfirmar}
-                disabled={gravando || !previa.prontas.length || previa.pendentes.length > 0 || semVersao}
+                disabled={gravando || !aImportar.length || semVersao}
               >
                 {gravando
                   ? 'Importando…'
                   : substituir && previa.jaExistem
-                  ? `Substituir ${previa.jaExistem} e importar ${previa.prontas.length}`
-                  : `Importar ${previa.prontas.length} linha(s)`}
+                  ? `Substituir ${previa.jaExistem} e importar ${aImportar.length}`
+                  : `Importar ${aImportar.length} linha(s)`}
               </button>
             </div>
           </div>
@@ -321,10 +322,18 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               </div>
             )}
 
-            {previa.pendentes.length > 0 && (
+            {previa.marcadas.length > 0 && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ⓘ {previa.pendentes.length} linha(s) não puderam ser resolvidas. A importação fica bloqueada até
-                que todas casem — importar só uma parte deixaria o orçamento incompleto sem ninguém perceber.
+                ⚠ {previa.marcadas.length} linha(s) entram <strong>sem conta</strong>, marcadas nas observações
+                com o rótulo que a planilha trazia. O valor não fica de fora do orçamento, mas a linha só pode
+                ser salva na grade depois que alguém escolher a conta.
+              </div>
+            )}
+
+            {previa.fora.length > 0 && (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ⓘ {previa.fora.length} linha(s) <strong>não entram</strong>: sem empresa cadastrada não há como
+                gravar, porque a BU do lançamento vem dela. Cadastre a empresa e importe de novo.
               </div>
             )}
 
@@ -342,12 +351,15 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                 border: '1px solid var(--color-border, #e2e5ea)',
               }}
             >
-              <Resumo rotulo="linhas" valor={previa.prontas.length} />
+              <Resumo rotulo="linhas" valor={aImportar.length} />
               <Resumo rotulo="total do ano" valor={brl(total)} />
               <Resumo rotulo="empresas" valor={empresas} />
               <Resumo rotulo="contas" valor={contas} />
-              {previa.pendentes.length > 0 && (
-                <Resumo rotulo="pendentes" valor={previa.pendentes.length} alerta />
+              {previa.marcadas.length > 0 && (
+                <Resumo rotulo="sem conta (entram marcadas)" valor={previa.marcadas.length} alerta />
+              )}
+              {previa.fora.length > 0 && (
+                <Resumo rotulo="fora (sem empresa)" valor={previa.fora.length} alerta />
               )}
               {previa.ignoradas > 0 && <Resumo rotulo="ignoradas (sem valor)" valor={previa.ignoradas} />}
             </div>
@@ -386,10 +398,10 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                       <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ resolvida</td>
                     </tr>
                   ))}
-                  {previa.pendentes.map((p) => (
+                  {[...previa.marcadas, ...previa.fora].map((p) => (
                     <tr key={`erro-${p.linha}`} style={{ background: 'var(--color-surface-alt, #fff6f4)' }}>
                       <td>{p.linha}</td>
-                      <td>{p.empresa || '—'}</td>
+                      <td>{(typeof p.empresa === 'object' ? p.empresa?.nome : p.empresa) || '—'}</td>
                       <td style={{ fontSize: 12 }}>{p.contaCodigo || p.contaRotulo || '—'}</td>
                       <td style={{ fontSize: 12 }}>{p.descricao || '—'}</td>
                       {temDetalhe && (
@@ -400,6 +412,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                       <td><Meses valores={p.valores} /></td>
                       <td className="text-right">{brl(p.total)}</td>
                       <td style={{ color: 'var(--color-danger, #c0392b)', fontSize: 12 }}>
+                        {p.empresa && typeof p.empresa === 'object' ? '⚠ entra sem conta — ' : '✕ não entra — '}
                         {p.falhas.join(' · ')}
                       </td>
                     </tr>
