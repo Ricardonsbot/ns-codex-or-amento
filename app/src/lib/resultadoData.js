@@ -1,0 +1,136 @@
+import { supabase } from './supabaseClient'
+
+/**
+ * O resultado do que foi lançado, no formato do P&L Contábil.
+ *
+ * A linha do P&L de cada lançamento vem do plano de contas (`conta.linha_pl`),
+ * não do tipo: é o plano que sabe se uma despesa é Pessoal ou D&A. O tipo só
+ * diz o sinal.
+ *
+ * Nada aqui calcula dedução nem reajuste: soma o que está gravado. Se a
+ * dedução não foi lançada, a Receita Líquida sai igual à Bruta — e a tela
+ * mostra isso em vez de esconder.
+ */
+
+/** A ordem do P&L. `chave` casa com conta.linha_pl; `subtotal` é calculado. */
+export const ESTRUTURA = [
+  { chave: 'Receita > Gross Revenue', rotulo: 'Receita Bruta', sinal: 1 },
+  { chave: 'Receita > (-) Deductions', rotulo: '(−) Deduções', sinal: 1 },
+  { subtotal: 'receitaLiquida', rotulo: 'Receita Líquida' },
+
+  { chave: 'Despesas > Personnel Costs', rotulo: '(−) Pessoal', sinal: -1, acimaDoEbitda: true },
+  { chave: 'Despesas > Third Party Services & Mkt', rotulo: '(−) Terceiros e Marketing', sinal: -1, acimaDoEbitda: true },
+  { chave: 'Despesas > Telecomunication / Technology expenses', rotulo: '(−) Tecnologia', sinal: -1, acimaDoEbitda: true },
+  { chave: 'Despesas > Travels/Rental/Generals', rotulo: '(−) Viagens, Aluguéis e Gerais', sinal: -1, acimaDoEbitda: true },
+  { chave: 'Despesas > Shared Services', rotulo: '(−) Shared Services', sinal: -1, acimaDoEbitda: true },
+  { chave: 'Despesas > Holding - Cost Sharing', rotulo: '(−) Holding — Cost Sharing', sinal: -1, acimaDoEbitda: true },
+  { chave: 'Despesas > BU Allocation', rotulo: '(−) BU Allocation', sinal: -1, acimaDoEbitda: true },
+  { subtotal: 'ebitda', rotulo: 'EBITDA' },
+
+  { chave: 'Despesas > D&A', rotulo: '(−) D&A', sinal: -1 },
+  { chave: 'Despesas > M&A Amortization', rotulo: '(−) Amortização M&A', sinal: -1 },
+  { chave: 'Despesas > Financial Results', rotulo: '(−) Resultado Financeiro', sinal: -1 },
+  { chave: 'Despesas > Equivalência Patrimonial', rotulo: '(−) Equivalência Patrimonial', sinal: -1 },
+  { chave: 'Despesas > Others Income and Expense', rotulo: '(−) Outras Receitas e Despesas', sinal: -1 },
+  { chave: 'Despesas > IR/CSLL', rotulo: '(−) IR/CSLL', sinal: -1 },
+  { subtotal: 'netIncome', rotulo: 'Net Income' },
+
+  { chave: 'Capex', rotulo: '(−) Capex', sinal: -1 },
+  { subtotal: 'ebitdaAposCapex', rotulo: 'EBITDA after Capex' },
+]
+
+const CONHECIDAS = new Set(ESTRUTURA.filter((l) => l.chave).map((l) => l.chave))
+const zeros = () => Array(12).fill(0)
+const somar = (a, b) => a.map((v, i) => v + b[i])
+
+export async function fetchResultado(versaoId, { buId, torreId } = {}) {
+  const linhas = []
+  for (let de = 0; ; de += 1000) {
+    let q = supabase
+      .from('lancamento')
+      .select(
+        'tipo, bu_id, bu:bu_id(nome), torre_id, torre:torre_id(nome), sub_torre_id, sub_torre:sub_torre_id(nome), empresa_id, empresa:empresa_id(nome), conta:conta_id(linha_pl), lancamento_valor_mensal(mes, valor)'
+      )
+      .eq('versao_id', versaoId)
+    if (buId) q = q.eq('bu_id', buId)
+    if (torreId) q = q.eq('torre_id', torreId)
+    const { data, error } = await q.range(de, de + 999)
+    if (error) throw error
+    linhas.push(...(data ?? []))
+    if (!data || data.length < 1000) break
+  }
+
+  const porLinha = new Map()   // linha_pl -> 12 meses
+  const porEstrutura = new Map() // "bu|torre|sub|empresa" -> nó
+  let semConta = zeros()
+
+  for (const l of linhas) {
+    const meses = zeros()
+    for (const v of l.lancamento_valor_mensal ?? []) meses[v.mes - 1] += Number(v.valor)
+
+    const chave = l.conta?.linha_pl ?? null
+    if (!chave) semConta = somar(semConta, meses)
+    else porLinha.set(chave, somar(porLinha.get(chave) ?? zeros(), meses))
+
+    // A árvore guarda as três medidas que a abertura mostra.
+    const caminho = [
+      ['bu', l.bu_id, l.bu?.nome ?? 'Sem BU'],
+      ['torre', l.torre_id, l.torre?.nome ?? 'Sem Torre'],
+      ['sub', l.sub_torre_id, l.sub_torre?.nome ?? 'Sem Sub Torre'],
+      ['empresa', l.empresa_id, l.empresa?.nome ?? 'Sem Empresa'],
+    ]
+    let prefixo = ''
+    for (let nivel = 0; nivel < caminho.length; nivel++) {
+      const [, id, nome] = caminho[nivel]
+      prefixo += `${id ?? 'x'}|`
+      if (!porEstrutura.has(prefixo)) {
+        porEstrutura.set(prefixo, { nivel, nome, receita: zeros(), despesa: zeros(), capex: zeros() })
+      }
+      const no = porEstrutura.get(prefixo)
+      no[l.tipo] = somar(no[l.tipo], meses)
+    }
+  }
+
+  // Linhas do plano que existem nos dados mas não estão na estrutura do P&L.
+  const fora = [...porLinha.keys()].filter((k) => !CONHECIDAS.has(k))
+
+  const valorDe = (chave) => porLinha.get(chave) ?? zeros()
+  const receitaBruta = valorDe('Receita > Gross Revenue')
+  const deducoes = valorDe('Receita > (-) Deductions')
+  const receitaLiquida = somar(receitaBruta, deducoes)
+
+  const acima = ESTRUTURA.filter((l) => l.acimaDoEbitda).reduce((a, l) => somar(a, valorDe(l.chave)), zeros())
+  const ebitda = receitaLiquida.map((v, i) => v - acima[i])
+
+  const abaixo = ESTRUTURA.filter((l) => l.chave && l.sinal === -1 && !l.acimaDoEbitda && l.chave !== 'Capex')
+    .reduce((a, l) => somar(a, valorDe(l.chave)), zeros())
+  const netIncome = ebitda.map((v, i) => v - abaixo[i])
+
+  const capex = valorDe('Capex')
+  const ebitdaAposCapex = ebitda.map((v, i) => v - capex[i])
+
+  const subtotais = { receitaLiquida, ebitda, netIncome, ebitdaAposCapex }
+
+  const pl = ESTRUTURA.map((l) =>
+    l.subtotal
+      ? { ...l, valores: subtotais[l.subtotal], eSubtotal: true }
+      : { ...l, valores: valorDe(l.chave) }
+  )
+
+  return {
+    pl,
+    subtotais,
+    receitaBruta,
+    deducoes,
+    capex,
+    semConta,
+    fora: fora.map((k) => ({ chave: k, valores: porLinha.get(k) })),
+    estrutura: [...porEstrutura.entries()].map(([, no]) => no),
+    lancamentos: linhas.length,
+  }
+}
+
+export const anual = (v) => (v ?? []).reduce((a, b) => a + b, 0)
+
+/** Percentual sobre a receita líquida — a base que o P&L da NSTECH usa. */
+export const percentual = (valor, base) => (base ? (valor / base) * 100 : null)

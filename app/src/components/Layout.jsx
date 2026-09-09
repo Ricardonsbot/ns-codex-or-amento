@@ -26,7 +26,10 @@ const NAV_SECTIONS = [
   },
   {
     label: 'Análise',
-    items: [{ to: '/relatorios', icon: '▤', text: 'Relatórios' }],
+    items: [
+      { to: '/resultado', icon: '◱', text: 'Resultado' },
+      { to: '/relatorios', icon: '▤', text: 'Relatórios' },
+    ],
   },
   {
     label: 'Administração',
