@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
+import PainelResultado from '../components/PainelResultado'
 import FiltroBotoes from '../components/FiltroBotoes'
 import { useToast } from '../components/ToastProvider'
 import { fetchVersaoAtual } from '../lib/lancamentosData'
@@ -305,85 +306,28 @@ export default function Resultado() {
               </div>
             )}
 
-            {/* O Painel Resultado, no modelo do P&L Contabil: hierarquia numerada
-                nas linhas, grupos de medida nas colunas. */}
-            <div className="panel">
-              <div className="panel-header">
-                <div>
-                  <h2>Painel Resultado</h2>
-                  <p>
-                    [ BRL M ] · Consolidado → BU → Torre → Sub Torre → Empresa
-                    {comp ? ` · comparando com ${versoes.find((v) => v.id === compararCom)?.nome ?? 'budget'}` : ''}
-                  </p>
-                </div>
-              </div>
-              <div className="panel-body">
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="data-table painel-resultado">
-                    <thead>
-                      <tr>
-                        <th />
-                        <th className="text-center" colSpan={comp ? 5 : 1}>NET REVENUE</th>
-                        <th className="text-center" colSpan={comp ? 6 : 2}>ADJ. EBITDA AFTER CAPEX</th>
-                      </tr>
-                      <tr>
-                        <th>ESTRUTURA</th>
-                        <th className="text-right">ACTUAL</th>
-                        {comp && <th className="text-right">BUDGET</th>}
-                        {comp && <th className="text-right">Δ</th>}
-                        {comp && <th className="text-right">Δ%</th>}
-                        {comp && <th />}
-                        <th className="text-right">ACTUAL</th>
-                        <th className="text-right">%NR</th>
-                        {comp && <th className="text-right">BUDGET</th>}
-                        {comp && <th className="text-right">Δ</th>}
-                        {comp && <th className="text-right">Δ%</th>}
-                        {comp && <th />}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr style={{ fontWeight: 700, background: 'var(--color-surface-alt, #f2f4f7)' }}>
-                        <td>= Consolidado</td>
-                        <Medida
-                          atual={base}
-                          budget={comp ? anual(comp.subtotais.receitaLiquida) : 0}
-                          base={base}
-                          comparando={!!comp}
-                        />
-                        <Medida
-                          atual={anual(dados.subtotais.ebitdaAposCapex)}
-                          budget={comp ? anual(comp.subtotais.ebitdaAposCapex) : 0}
-                          base={base}
-                          comparando={!!comp}
-                          comNR
-                        />
-                      </tr>
-                      {achatar(dados.arvore).map((no) => {
-                        const nb = comp?.estrutura.find((x) => x.chave === no.chave)
-                        const rec = anual(no.receita)
-                        const eac = rec - anual(no.despesa) - anual(no.capex)
-                        const recB = anual(nb?.receita ?? [])
-                        const eacB = recB - anual(nb?.despesa ?? []) - anual(nb?.capex ?? [])
-                        return (
-                          <tr key={no.chave} style={no.nivel === 0 ? { fontWeight: 700 } : undefined}>
-                            <td style={{ paddingLeft: 12 + no.nivel * 16, whiteSpace: 'nowrap' }}>
-                              <span style={{ opacity: 0.5, marginRight: 8, fontSize: 11 }}>{no.numero}</span>
-                              {no.nome}
-                            </td>
-                            <Medida atual={rec} budget={recB} base={rec} comparando={!!comp} />
-                            <Medida atual={eac} budget={eacB} base={rec} comparando={!!comp} comNR />
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <p style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
-                  O ponto e verde acima do comparativo, amarelo ate 5% abaixo e vermelho abaixo disso. O corte e
-                  uma escolha da ferramenta, nao uma regra contabil — se o FP&amp;A usar outro, e um ajuste.
-                </p>
-              </div>
-            </div>
+            <PainelResultado
+              arvore={dados.arvore}
+              consolidado={{
+                receita: base,
+                ebitdaAposCapex: anual(dados.subtotais.ebitdaAposCapex),
+              }}
+              comparacao={
+                comp
+                  ? {
+                      estrutura: comp.estrutura,
+                      consolidado: {
+                        receita: anual(comp.subtotais.receitaLiquida),
+                        ebitdaAposCapex: anual(comp.subtotais.ebitdaAposCapex),
+                      },
+                    }
+                  : null
+              }
+              subtitulo={`[ BRL M ] · Consolidado → BU → Torre → Sub Torre → Empresa${
+                comp ? ` · comparando com ${versoes.find((v) => v.id === compararCom)?.nome ?? 'budget'}` : ''
+              }`}
+            />
+
             {/* O P&L linha a linha */}
             <div className="panel" style={{ marginBottom: 18 }}>
               <div className="panel-header">

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useToast } from './ToastProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
+import PainelResultado from './PainelResultado'
+import { agruparPorEstrutura, anual } from '../lib/resultadoData'
 import { useAuth } from './AuthProvider'
 import {
   lerPlanilhaEmWorker,
@@ -219,6 +221,34 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   }
 
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
+
+  /**
+   * O mesmo painel do Resultado, mas do que AINDA vai entrar. Antes a
+   * conferência mostrava linha a linha e o total; não dava para ver o que o
+   * arquivo faz com o consolidado nem com cada torre — que é a pergunta de quem
+   * aprova a importação.
+   */
+  const painel = (() => {
+    if (!previa || !aImportar.length) return null
+    const h = previa.hierarquia
+    const itens = aImportar.map((p) => ({
+      tipo,
+      meses: p.valores.map((v) => v.valor),
+      bu: { id: p.empresa.bu_id, nome: h?.bu.get(p.empresa.bu_id) },
+      torre: { id: p.empresa.torre_id, nome: h?.torre.get(p.empresa.torre_id) },
+      sub: { id: p.empresa.sub_torre_id, nome: h?.sub.get(p.empresa.sub_torre_id) },
+      empresa: { id: p.empresa.id, nome: p.empresa.nome },
+    }))
+    const { arvore } = agruparPorEstrutura(itens)
+    const soma = arvore.reduce((a, n) => a + anual(n[tipo]), 0)
+    return {
+      arvore,
+      consolidado: {
+        receita: tipo === 'receita' ? soma : 0,
+        ebitdaAposCapex: tipo === 'receita' ? soma : -soma,
+      },
+    }
+  })()
   // Um pedido por RÓTULO: 81 linhas de "CS dedicado" são um cadastro só.
   const aCadastrar = previa ? agruparParaCadastro(previa.marcadas, tipo, arquivo) : []
   const total = aImportar.reduce((a, p) => a + p.total, 0)
@@ -443,6 +473,17 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               )}
               {previa.ignoradas > 0 && <Resumo rotulo="ignoradas (sem valor)" valor={previa.ignoradas} />}
             </div>
+
+            {painel && (
+              <div style={{ marginBottom: 16 }}>
+                <PainelResultado
+                  arvore={painel.arvore}
+                  consolidado={painel.consolidado}
+                  titulo="Como fica o resultado"
+                  subtitulo={`[ BRL M ] · o que estas ${aImportar.length} linha(s) somam por estrutura, antes de gravar`}
+                />
+              </div>
+            )}
 
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">

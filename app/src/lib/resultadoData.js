@@ -43,6 +43,36 @@ const CONHECIDAS = new Set(ESTRUTURA.filter((l) => l.chave).map((l) => l.chave))
 const zeros = () => Array(12).fill(0)
 const somar = (a, b) => a.map((v, i) => v + b[i])
 
+/**
+ * Agrupa itens por BU → Torre → Sub Torre → Empresa.
+ *
+ * Recebe uma forma neutra — { tipo, bu, torre, sub, empresa, meses } — em vez
+ * de linha do banco, porque a conferência da importação precisa do mesmo painel
+ * antes de gravar, quando os dados só existem em memória.
+ */
+export function agruparPorEstrutura(itens) {
+  const mapa = new Map()
+  for (const it of itens) {
+    const caminho = [
+      [it.bu?.id, it.bu?.nome ?? 'Sem BU'],
+      [it.torre?.id, it.torre?.nome ?? 'Sem Torre'],
+      [it.sub?.id, it.sub?.nome ?? 'Sem Sub Torre'],
+      [it.empresa?.id, it.empresa?.nome ?? 'Sem Empresa'],
+    ]
+    let prefixo = ''
+    for (let nivel = 0; nivel < caminho.length; nivel++) {
+      const [id, nome] = caminho[nivel]
+      prefixo += `${id ?? 'x'}|`
+      if (!mapa.has(prefixo)) {
+        mapa.set(prefixo, { nivel, nome, receita: zeros(), despesa: zeros(), capex: zeros() })
+      }
+      const no = mapa.get(prefixo)
+      no[it.tipo] = somar(no[it.tipo], it.meses)
+    }
+  }
+  return { estrutura: [...mapa.entries()].map(([chave, no]) => ({ chave, ...no })), arvore: montarArvore(mapa) }
+}
+
 export async function fetchResultado(versaoId, { buId, torreId } = {}) {
   const linhas = []
   for (let de = 0; ; de += 1000) {
@@ -61,8 +91,8 @@ export async function fetchResultado(versaoId, { buId, torreId } = {}) {
   }
 
   const porLinha = new Map()   // linha_pl -> 12 meses
-  const porEstrutura = new Map() // "bu|torre|sub|empresa" -> nó
   let semConta = zeros()
+  const itens = []
 
   for (const l of linhas) {
     const meses = zeros()
@@ -72,24 +102,17 @@ export async function fetchResultado(versaoId, { buId, torreId } = {}) {
     if (!chave) semConta = somar(semConta, meses)
     else porLinha.set(chave, somar(porLinha.get(chave) ?? zeros(), meses))
 
-    // A árvore guarda as três medidas que a abertura mostra.
-    const caminho = [
-      ['bu', l.bu_id, l.bu?.nome ?? 'Sem BU'],
-      ['torre', l.torre_id, l.torre?.nome ?? 'Sem Torre'],
-      ['sub', l.sub_torre_id, l.sub_torre?.nome ?? 'Sem Sub Torre'],
-      ['empresa', l.empresa_id, l.empresa?.nome ?? 'Sem Empresa'],
-    ]
-    let prefixo = ''
-    for (let nivel = 0; nivel < caminho.length; nivel++) {
-      const [, id, nome] = caminho[nivel]
-      prefixo += `${id ?? 'x'}|`
-      if (!porEstrutura.has(prefixo)) {
-        porEstrutura.set(prefixo, { nivel, nome, receita: zeros(), despesa: zeros(), capex: zeros() })
-      }
-      const no = porEstrutura.get(prefixo)
-      no[l.tipo] = somar(no[l.tipo], meses)
-    }
+    itens.push({
+      tipo: l.tipo,
+      meses,
+      bu: { id: l.bu_id, nome: l.bu?.nome },
+      torre: { id: l.torre_id, nome: l.torre?.nome },
+      sub: { id: l.sub_torre_id, nome: l.sub_torre?.nome },
+      empresa: { id: l.empresa_id, nome: l.empresa?.nome },
+    })
   }
+
+  const agrupado = agruparPorEstrutura(itens)
 
   // Linhas do plano que existem nos dados mas não estão na estrutura do P&L.
   const fora = [...porLinha.keys()].filter((k) => !CONHECIDAS.has(k))
@@ -127,8 +150,8 @@ export async function fetchResultado(versaoId, { buId, torreId } = {}) {
     fora: fora.map((k) => ({ chave: k, valores: porLinha.get(k) })),
     // A chave do caminho volta junto: é ela que casa o mesmo nó entre duas
     // versões na comparação com o Budget.
-    estrutura: [...porEstrutura.entries()].map(([chave, no]) => ({ chave, ...no })),
-    arvore: montarArvore(porEstrutura),
+    estrutura: agrupado.estrutura,
+    arvore: agrupado.arvore,
     lancamentos: linhas.length,
   }
 }
@@ -138,8 +161,8 @@ export async function fetchResultado(versaoId, { buId, torreId } = {}) {
  * é o mesmo caminho sem o último trecho. A lista plana vinha na ordem em que os
  * lançamentos apareceram, que não é a ordem de leitura do painel.
  */
-function montarArvore(porEstrutura) {
-  const nos = [...porEstrutura.entries()].map(([chave, no]) => ({ chave, ...no, filhos: [] }))
+function montarArvore(mapa) {
+  const nos = [...mapa.entries()].map(([chave, no]) => ({ chave, ...no, filhos: [] }))
   const porChave = new Map(nos.map((n) => [n.chave, n]))
   const raiz = []
   for (const n of nos) {

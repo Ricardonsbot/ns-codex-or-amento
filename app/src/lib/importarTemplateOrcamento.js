@@ -59,12 +59,21 @@ export function lerPlanilhaEmWorker(arrayBuffer, tipo) {
  * gravação só insere, não procura o que já está lá.
  */
 export async function conferir(lido) {
-  const [emps, contas, ciclos] = await Promise.all([
+  // A hierarquia vem junto porque a conferência mostra o Painel Resultado antes
+  // de gravar, e ali as linhas precisam do NOME da BU, da torre e da sub torre —
+  // a empresa só guarda os ids.
+  const [emps, contas, ciclos, bus, torres, subs] = await Promise.all([
     supabase.from('empresa').select('id, nome, bu_id, torre_id, sub_torre_id'),
     supabase.from('conta').select('id, codigo, nome, linha_pl'),
     supabase.from('ciclo').select('id, ano, status, versao(id, nome, status)'),
+    supabase.from('bu').select('id, nome'),
+    supabase.from('torre').select('id, nome'),
+    supabase.from('sub_torre').select('id, nome'),
   ])
-  for (const x of [emps, contas, ciclos]) if (x.error) throw x.error
+  for (const x of [emps, contas, ciclos, bus, torres, subs]) if (x.error) throw x.error
+
+  const nomeDe = (lista) => new Map(lista.map((x) => [x.id, x.nome]))
+  const hierarquia = { bu: nomeDe(bus.data), torre: nomeDe(torres.data), sub: nomeDe(subs.data) }
 
   const ciclo = ciclos.data.find((c) => c.status !== 'encerrado')
   const versao = ciclo?.versao?.find((v) => v.status === 'ativa')
@@ -80,7 +89,13 @@ export async function conferir(lido) {
     jaExistem = count ?? 0
   }
 
-  return { ciclo, versao, jaExistem, ...casar(lido, { empresas: emps.data, contas: contas.data }) }
+  return {
+    ciclo,
+    versao,
+    jaExistem,
+    hierarquia,
+    ...casar(lido, { empresas: emps.data, contas: contas.data }),
+  }
 }
 
 /**
