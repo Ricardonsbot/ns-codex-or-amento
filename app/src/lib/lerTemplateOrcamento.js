@@ -81,6 +81,8 @@ export const TEMPLATE = {
     monta: (t) => ({
       contaCodigo: '',
       contaRotulo: t('CONTA CONTABIL'),
+      // A aba Receita não tem "Alocação PnL (Área)": receita é Net Revenue.
+      area: '',
       descricao: junta(t('PRODUTO ANALITICO') || t('PRODUTO SINTETICO'), t('TIPO RECEITA')),
       centroCusto: '',
       fornecedor: '',
@@ -114,12 +116,12 @@ export const TEMPLATE = {
     monta: (t) => ({
       contaCodigo: t('NUMERO DA CONTA'),
       contaRotulo: t('NOME DA CONTA CONTABIL'),
+      area: t('ALOCACAO PNL AREA'),
       descricao: junta(t('DETALHAMENTO'), t('SUBPACOTE')),
       centroCusto: junta(t('CENTRO DE CUSTO'), t('NOME CENTRO DE CUSTO')),
       fornecedor: t('FORNECEDOR'),
       obs: [
         t('PACOTE') && `Pacote: ${t('PACOTE')}`,
-        t('ALOCACAO PNL AREA') && `Área: ${t('ALOCACAO PNL AREA')}`,
         t('PRODUTO ANALITICO') && `Produto: ${t('PRODUTO ANALITICO')}`,
       ]
         .filter(Boolean)
@@ -148,6 +150,7 @@ export const TEMPLATE = {
     monta: (t) => ({
       contaCodigo: t('NUMERO DA CONTA'),
       contaRotulo: t('NOME DA CONTA CONTABIL'),
+      area: t('ALOCACAO PNL AREA') || 'Capex',
       descricao: junta(t('ITEM'), t('DESCRICAO')),
       centroCusto: junta(t('CENTRO DE CUSTO'), t('NOME CENTRO DE CUSTO')),
       fornecedor: t('FORNECEDOR'),

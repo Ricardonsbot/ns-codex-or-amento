@@ -25,6 +25,7 @@ import {
   semColunas,
   EXTRA_LANCAMENTO,
   EXTRA_MENSAL,
+  EXTRA_AREA,
 } from '../src/lib/casarTemplateOrcamento.js'
 
 const tipo = process.argv[2]
@@ -126,11 +127,13 @@ if (!aImportar.length) {
 } else {
   // Enquanto a migracao 2026-09-08 nao rodar, as colunas dos blocos derivados
   // nao existem e mandá-las faria o PostgREST recusar o insert inteiro.
-  const [pa, pb] = await Promise.all([
+  const [pa, pb, pc] = await Promise.all([
     sb.from('lancamento').select(EXTRA_LANCAMENTO.join(',')).limit(1),
     sb.from('lancamento_valor_mensal').select(EXTRA_MENSAL.join(',')).limit(1),
+    sb.from('lancamento').select(EXTRA_AREA.join(',')).limit(1),
   ])
-  const sup = { lancamento: !pa.error, mensal: !pb.error }
+  const sup = { lancamento: !pa.error, mensal: !pb.error, area: !pc.error }
+  console.log(`coluna area ........... ${sup.area ? 'existe' : 'ainda nao existe — rode 2026-09-09-area-do-pl.sql'}`)
   const estado = sup.lancamento && sup.mensal
     ? 'existem, serão gravadas'
     : 'ainda não existem — rode supabase/migrations/2026-09-08-blocos-derivados.sql'
@@ -138,8 +141,10 @@ if (!aImportar.length) {
 
   let criados = 0
   for (const p of aImportar) {
-    const linha = montarLancamento(p, versao.id, tipo)
-    const { data, error } = await sb.from('lancamento').insert(sup.lancamento ? linha : semColunas(linha, EXTRA_LANCAMENTO)).select('id').single()
+    let linha = montarLancamento(p, versao.id, tipo)
+    if (!sup.lancamento) linha = semColunas(linha, EXTRA_LANCAMENTO)
+    if (!sup.area) linha = semColunas(linha, EXTRA_AREA)
+    const { data, error } = await sb.from('lancamento').insert(linha).select('id').single()
     if (error) {
       console.error(`\nerro ao criar lançamento da linha ${p.linha}: ${error.message}`)
       process.exitCode = 1

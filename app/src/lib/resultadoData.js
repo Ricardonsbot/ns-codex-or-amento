@@ -73,17 +73,18 @@ export function agruparPorEstrutura(itens) {
   return { estrutura: [...mapa.entries()].map(([chave, no]) => ({ chave, ...no })), arvore: montarArvore(mapa) }
 }
 
-export async function fetchResultado(versaoId, { buId, torreId } = {}) {
+export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}) {
   const linhas = []
   for (let de = 0; ; de += 1000) {
     let q = supabase
       .from('lancamento')
       .select(
-        'tipo, bu_id, bu:bu_id(nome), torre_id, torre:torre_id(nome), sub_torre_id, sub_torre:sub_torre_id(nome), empresa_id, empresa:empresa_id(nome), conta:conta_id(linha_pl), lancamento_valor_mensal(mes, valor)'
+        'tipo, area, bu_id, bu:bu_id(nome), torre_id, torre:torre_id(nome), sub_torre_id, sub_torre:sub_torre_id(nome), empresa_id, empresa:empresa_id(nome), conta:conta_id(codigo, nome, linha_pl), lancamento_valor_mensal(mes, valor)'
       )
       .eq('versao_id', versaoId)
     if (buId) q = q.eq('bu_id', buId)
     if (torreId) q = q.eq('torre_id', torreId)
+    if (empresaId) q = q.eq('empresa_id', empresaId)
     const { data, error } = await q.range(de, de + 999)
     if (error) throw error
     linhas.push(...(data ?? []))
@@ -91,6 +92,7 @@ export async function fetchResultado(versaoId, { buId, torreId } = {}) {
   }
 
   const porLinha = new Map()   // linha_pl -> 12 meses
+  const porArea = new Map()    // area -> 12 meses
   let semConta = zeros()
   const itens = []
 
@@ -101,6 +103,11 @@ export async function fetchResultado(versaoId, { buId, torreId } = {}) {
     const chave = l.conta?.linha_pl ?? null
     if (!chave) semConta = somar(semConta, meses)
     else porLinha.set(chave, somar(porLinha.get(chave) ?? zeros(), meses))
+
+    if (l.tipo !== 'receita') {
+      const a = l.area || 'Sem área'
+      porArea.set(a, somar(porArea.get(a) ?? zeros(), meses))
+    }
 
     itens.push({
       tipo: l.tipo,
@@ -148,6 +155,9 @@ export async function fetchResultado(versaoId, { buId, torreId } = {}) {
     capex,
     semConta,
     fora: fora.map((k) => ({ chave: k, valores: porLinha.get(k) })),
+    areas: [...porArea.entries()]
+      .map(([nome, valores]) => ({ nome, valores }))
+      .sort((a, b) => anual(b.valores) - anual(a.valores)),
     // A chave do caminho volta junto: é ela que casa o mesmo nó entre duas
     // versões na comparação com o Budget.
     estrutura: agrupado.estrutura,

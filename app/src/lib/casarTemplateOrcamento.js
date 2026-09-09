@@ -95,6 +95,8 @@ export function casar({ tipo, linhas }, { empresas, contas }) {
  * não tiver sido rodado — sem isso o PostgREST recusa o insert inteiro.
  */
 export const EXTRA_LANCAMENTO = ['aliquota', 'taxa_efetiva', 'mes_reajuste', 'indice_reajuste']
+/** Da migração 2026-09-09-area-do-pl.sql, probada à parte das de cima. */
+export const EXTRA_AREA = ['area']
 export const EXTRA_MENSAL = ['proporcao', 'valor_ajustado', 'valor_liquido', 'valor_caixa']
 
 /** Serial do Excel para 'aaaa-mm-dd', que é o que a coluna date espera. */
@@ -119,6 +121,7 @@ export function montarLancamento(p, versaoId, tipo) {
     // A marca vai no começo das observações, onde a pessoa vê sem procurar, e
     // guarda o que a planilha dizia — senão o rótulo original se perde.
     obs: [p.falhas?.length ? `⚠ ${p.falhas.join(' · ')}` : '', p.obs].filter(Boolean).join(' | ') || null,
+    area: p.area || null,
     aliquota: p.aliquota ?? null,
     taxa_efetiva: p.taxaEfetiva ?? null,
     mes_reajuste: dataDoSerial(p.mesReajuste),

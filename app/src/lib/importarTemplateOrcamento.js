@@ -7,6 +7,7 @@ import {
   semColunas,
   EXTRA_LANCAMENTO,
   EXTRA_MENSAL,
+  EXTRA_AREA,
 } from './casarTemplateOrcamento'
 
 /**
@@ -18,11 +19,14 @@ import {
 let suporte = null
 export async function colunasDerivadas() {
   if (suporte) return suporte
-  const [a, b] = await Promise.all([
+  // Cada migração é probada à parte: ter rodado uma e não a outra é normal, e
+  // agrupar faria perder o campo de quem ja tem a coluna.
+  const [a, b, c] = await Promise.all([
     supabase.from('lancamento').select(EXTRA_LANCAMENTO.join(',')).limit(1),
     supabase.from('lancamento_valor_mensal').select(EXTRA_MENSAL.join(',')).limit(1),
+    supabase.from('lancamento').select(EXTRA_AREA.join(',')).limit(1),
   ])
-  suporte = { lancamento: !a.error, mensal: !b.error }
+  suporte = { lancamento: !a.error, mensal: !b.error, area: !c.error }
   return suporte
 }
 
@@ -124,10 +128,12 @@ export async function importar(prontas, versaoId, tipo) {
   const sup = await colunasDerivadas()
   const ids = []
   for (const p of prontas) {
-    const linha = montarLancamento(p, versaoId, tipo)
+    let linha = montarLancamento(p, versaoId, tipo)
+    if (!sup.lancamento) linha = semColunas(linha, EXTRA_LANCAMENTO)
+    if (!sup.area) linha = semColunas(linha, EXTRA_AREA)
     const { data, error } = await supabase
       .from('lancamento')
-      .insert(sup.lancamento ? linha : semColunas(linha, EXTRA_LANCAMENTO))
+      .insert(linha)
       .select('id')
       .single()
     if (error) throw new Error(`linha ${p.linha}: ${error.message}`)

@@ -223,6 +223,34 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
 
   /**
+   * O que cada conta do arquivo representa: a linha do P&L, que vem do plano de
+   * contas, e a área de alocação, que vem da coluna "Alocação PnL (Área)" do
+   * template. São dimensões diferentes — a mesma conta de Pessoal pode ser COGS
+   * numa empresa e G&A em outra — e sem isso ninguém sabe onde o valor cai.
+   */
+  const classificacao = (() => {
+    if (!previa) return []
+    const mapa = new Map()
+    for (const p of aImportar) {
+      const chave = `${p.conta?.codigo ?? '—'}|${p.area || ''}`
+      if (!mapa.has(chave)) {
+        mapa.set(chave, {
+          codigo: p.conta?.codigo ?? null,
+          nome: p.conta?.nome ?? (p.contaRotulo || '(sem conta)'),
+          linhaPl: p.conta?.linha_pl ?? null,
+          area: p.area || null,
+          linhas: 0,
+          valor: 0,
+        })
+      }
+      const c = mapa.get(chave)
+      c.linhas += 1
+      c.valor += p.total
+    }
+    return [...mapa.values()].sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
+  })()
+
+  /**
    * O mesmo painel do Resultado, mas do que AINDA vai entrar. Antes a
    * conferência mostrava linha a linha e o total; não dava para ver o que o
    * arquivo faz com o consolidado nem com cada torre — que é a pergunta de quem
@@ -473,6 +501,65 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               )}
               {previa.ignoradas > 0 && <Resumo rotulo="ignoradas (sem valor)" valor={previa.ignoradas} />}
             </div>
+
+            {classificacao.length > 0 && (
+              <div className="panel" style={{ marginBottom: 16 }}>
+                <div className="panel-header">
+                  <div>
+                    <h2>O que cada conta representa</h2>
+                    <p>
+                      A linha do P&amp;L vem do plano de contas; a área vem da coluna “Alocação PnL (Área)” do
+                      template
+                    </p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>CONTA</th>
+                          <th>LINHA DO P&amp;L</th>
+                          <th>ÁREA</th>
+                          <th className="text-right">LINHAS</th>
+                          <th className="text-right">VALOR</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {classificacao.map((c, i) => (
+                          <tr key={i}>
+                            <td>
+                              <strong>{c.codigo ?? '—'}</strong>
+                              <div style={{ fontSize: 12, opacity: 0.7 }}>{c.nome}</div>
+                            </td>
+                            <td style={{ fontSize: 12 }}>
+                              {c.linhaPl ?? (
+                                <span style={{ color: 'var(--color-danger, #c0392b)' }}>
+                                  conta não cadastrada — fica fora do P&amp;L
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              {c.area ? (
+                                <span className="filtro-chip ativo" style={{ cursor: 'default', fontSize: 11 }}>
+                                  {c.area}
+                                </span>
+                              ) : (
+                                <span style={{ opacity: 0.5, fontSize: 12 }}>
+                                  {tipo === 'receita' ? 'Net Revenue' : 'sem área na planilha'}
+                                </span>
+                              )}
+                            </td>
+                            <td className="text-right">{c.linhas}</td>
+                            <td className="text-right">{brl(c.valor)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {painel && (
               <div style={{ marginBottom: 16 }}>

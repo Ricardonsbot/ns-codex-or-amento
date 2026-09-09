@@ -4,7 +4,7 @@ import PainelResultado from '../components/PainelResultado'
 import FiltroBotoes from '../components/FiltroBotoes'
 import { useToast } from '../components/ToastProvider'
 import { fetchVersaoAtual } from '../lib/lancamentosData'
-import { fetchBUs, fetchTorres } from '../lib/dashboardData'
+import { fetchBUs, fetchTorres, fetchEmpresas } from '../lib/dashboardData'
 import {
   fetchResultado,
   fetchVersoesDoCiclo,
@@ -120,8 +120,10 @@ export default function Resultado() {
   const [versao, setVersao] = useState(null)
   const [bus, setBus] = useState([])
   const [torres, setTorres] = useState([])
+  const [empresas, setEmpresas] = useState([])
   const [buId, setBuId] = useState('')
   const [torreId, setTorreId] = useState('')
+  const [empresaId, setEmpresaId] = useState('')
   const [dados, setDados] = useState(null)
   const [versoes, setVersoes] = useState([])
   const [compararCom, setCompararCom] = useState('')
@@ -132,10 +134,13 @@ export default function Resultado() {
   useEffect(() => {
     ;(async () => {
       try {
-        const [va, b, t] = await Promise.all([fetchVersaoAtual(), fetchBUs(), fetchTorres()])
+        const [va, b, t, e] = await Promise.all([
+          fetchVersaoAtual(), fetchBUs(), fetchTorres(), fetchEmpresas(),
+        ])
         setVersao(va)
         setBus(b)
         setTorres(t)
+        setEmpresas(e)
         if (va?.ciclo) {
           const vs = await fetchVersoesDoCiclo(va.ciclo.id)
           setVersoes(vs.filter((x) => x.id !== va.versao?.id))
@@ -152,7 +157,7 @@ export default function Resultado() {
     ;(async () => {
       setCarregando(true)
       try {
-        const filtros = { buId: buId || null, torreId: torreId || null }
+        const filtros = { buId: buId || null, torreId: torreId || null, empresaId: empresaId || null }
         const [a, b] = await Promise.all([
           fetchResultado(versao.versao.id, filtros),
           compararCom ? fetchResultado(compararCom, filtros) : Promise.resolve(null),
@@ -166,7 +171,7 @@ export default function Resultado() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [versao, buId, torreId, compararCom])
+  }, [versao, buId, torreId, empresaId, compararCom])
 
   if (!versao?.versao) {
     return (
@@ -186,6 +191,18 @@ export default function Resultado() {
   const base = dados ? anual(dados.subtotais.receitaLiquida) : 0
   const custos = dados ? base - anual(dados.subtotais.ebitda) : 0
   const torresDaBu = buId ? torres.filter((t) => t.bu_id === buId) : torres
+  const empresasDisponiveis = torreId
+    ? empresas.filter((e) => e.torre_id === torreId)
+    : buId
+    ? empresas.filter((e) => e.bu_id === buId)
+    : empresas
+  const recorte = empresaId
+    ? empresas.find((e) => e.id === empresaId)?.nome
+    : torreId
+    ? torres.find((t) => t.id === torreId)?.nome
+    : buId
+    ? bus.find((b) => b.id === buId)?.nome
+    : 'Consolidado'
 
   return (
     <Layout>
@@ -193,7 +210,7 @@ export default function Resultado() {
         <div className="topbar-title">
           <h1>Resultado</h1>
           <p>
-            Ciclo {versao.ciclo.ano} · {versao.versao.nome}
+            Ciclo {versao.ciclo.ano} · {versao.versao.nome} · <strong>{recorte}</strong>
             {dados ? ` · ${dados.lancamentos} lançamento(s)` : ''}
           </p>
         </div>
@@ -209,6 +226,7 @@ export default function Resultado() {
             onChange={(v) => {
               setBuId(v)
               setTorreId('')
+              setEmpresaId('')
             }}
           />
           <FiltroBotoes
@@ -216,7 +234,18 @@ export default function Resultado() {
             valor={torreId}
             rotuloTodas="Todas as Torres"
             opcoes={torresDaBu.map((t) => ({ valor: t.id, rotulo: t.nome }))}
-            onChange={setTorreId}
+            onChange={(v) => {
+              setTorreId(v)
+              setEmpresaId('')
+            }}
+          />
+          {/* P&L por empresa: o mesmo demonstrativo, so daquela empresa. */}
+          <FiltroBotoes
+            label="Empresa"
+            valor={empresaId}
+            rotuloTodas="Consolidado"
+            opcoes={empresasDisponiveis.map((e) => ({ valor: e.id, rotulo: e.nome }))}
+            onChange={setEmpresaId}
           />
           <FiltroBotoes
             label="Visão"
@@ -327,6 +356,66 @@ export default function Resultado() {
                 comp ? ` · comparando com ${versoes.find((v) => v.id === compararCom)?.nome ?? 'budget'}` : ''
               }`}
             />
+
+            {/* Por area de alocacao: a segunda dimensao do P&L, que vem do
+                template e nao do plano de contas. */}
+            {dados.areas?.length > 0 && (
+              <div className="panel" style={{ marginBottom: 18 }}>
+                <div className="panel-header">
+                  <div>
+                    <h2>Por área de alocação</h2>
+                    <p>
+                      COGS, G&amp;A, S&amp;M, R&amp;D — vem da coluna “Alocação PnL (Área)” do template. Receita
+                      não tem área: é Net Revenue.
+                    </p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>ÁREA</th>
+                          {mensal === 'mes' && MESES.map((m) => <th key={m} className="text-right">{m.toUpperCase()}</th>)}
+                          <th className="text-right">ANO</th>
+                          <th className="text-right">% NR</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dados.areas.map((a) => (
+                          <tr key={a.nome}>
+                            <td><strong>{a.nome}</strong></td>
+                            {mensal === 'mes' && a.valores.map((x, i) => (
+                              <td key={i} className="text-right" style={{ fontSize: 12, opacity: x === 0 ? 0.3 : 1 }}>
+                                {x === 0 ? '—' : brl(x)}
+                              </td>
+                            ))}
+                            <td className="text-right">{brl(anual(a.valores))}</td>
+                            <td className="text-right">{pct(percentual(anual(a.valores), base))}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td><strong>Total de custos e despesas</strong></td>
+                          {mensal === 'mes' && MESES.map((_, i) => (
+                            <td key={i} className="text-right" style={{ fontSize: 12 }}>
+                              <strong>{brl(dados.areas.reduce((t, a) => t + a.valores[i], 0))}</strong>
+                            </td>
+                          ))}
+                          <td className="text-right">
+                            <strong>{brl(dados.areas.reduce((t, a) => t + anual(a.valores), 0))}</strong>
+                          </td>
+                          <td className="text-right">
+                            <strong>{pct(percentual(dados.areas.reduce((t, a) => t + anual(a.valores), 0), base))}</strong>
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* O P&L linha a linha */}
             <div className="panel" style={{ marginBottom: 18 }}>
