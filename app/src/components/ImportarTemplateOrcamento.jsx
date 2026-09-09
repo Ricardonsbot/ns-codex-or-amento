@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useToast } from './ToastProvider'
+import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
+import { useAuth } from './AuthProvider'
 import {
   lerPlanilhaEmWorker,
   conferir,
@@ -112,6 +115,14 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const [substituir, setSubstituir] = useState(false)
   const [ultima, setUltima] = useState(null)   // { ids, quantos } da importacao recem-feita
   const [desfazendo, setDesfazendo] = useState(false)
+  const [podeSolicitar, setPodeSolicitar] = useState(false)
+  const [enviando, setEnviando] = useState(false)
+  const [enviadas, setEnviadas] = useState(0)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    tabelaDisponivel().then(setPodeSolicitar)
+  }, [])
 
   const aba = TEMPLATE[tipo]?.aba
 
@@ -133,6 +144,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     setPrevia(null)
     setSubstituir(false)
     setUltima(null)
+    setEnviadas(0)
     try {
       const lido = await lerPlanilhaEmWorker(await file.arrayBuffer(), tipo)
       if (!lido.linhas.length) {
@@ -173,6 +185,25 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     }
   }
 
+  async function handleEnviarCadastro() {
+    setEnviando(true)
+    try {
+      const pedidos = agruparParaCadastro(previa.marcadas, tipo, arquivo)
+      const n = await solicitar(pedidos, user?.email)
+      setEnviadas(n || pedidos.length)
+      showToast(
+        n
+          ? `${n} conta(s) enviada(s) para aprovação de cadastro.`
+          : 'Essas contas já estavam na fila de aprovação.',
+        n ? 'success' : 'warning'
+      )
+    } catch (err) {
+      showToast(`Não consegui enviar: ${err.message}`, 'error')
+    } finally {
+      setEnviando(false)
+    }
+  }
+
   async function handleDesfazer() {
     setDesfazendo(true)
     try {
@@ -188,6 +219,8 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   }
 
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
+  // Um pedido por RÓTULO: 81 linhas de "CS dedicado" são um cadastro só.
+  const aCadastrar = previa ? agruparParaCadastro(previa.marcadas, tipo, arquivo) : []
   const total = aImportar.reduce((a, p) => a + p.total, 0)
   const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
   const contas = new Set(previa?.prontas.map((p) => p.conta.id) ?? []).size
@@ -324,9 +357,56 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
 
             {previa.marcadas.length > 0 && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ⚠ {previa.marcadas.length} linha(s) entram <strong>sem conta</strong>, marcadas nas observações
-                com o rótulo que a planilha trazia. O valor não fica de fora do orçamento, mas a linha só pode
-                ser salva na grade depois que alguém escolher a conta.
+                <div style={{ marginBottom: 8 }}>
+                  <strong>Contas não cadastradas</strong> — {previa.marcadas.length} linha(s) entram sem conta,
+                  marcadas nas observações. O valor não fica de fora do orçamento, mas a linha só pode ser
+                  salva na grade depois que a conta existir.
+                </div>
+
+                <table className="data-table" style={{ marginBottom: 10 }}>
+                  <thead>
+                    <tr>
+                      <th>CONTA</th>
+                      <th>DESCRIÇÃO</th>
+                      <th>MOTIVO</th>
+                      <th className="text-right">VALOR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {aCadastrar.map((c) => (
+                      <tr key={c.rotulo}>
+                        <td><strong>{c.rotulo}</strong></td>
+                        <td style={{ fontSize: 12 }}>{c.descricao}</td>
+                        <td style={{ fontSize: 12 }}>{c.motivo}</td>
+                        <td className="text-right">{brl(c.valor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {enviadas > 0 ? (
+                  <div style={{ fontSize: 13 }}>
+                    ✓ {enviadas} conta(s) na fila. Acompanhe em{' '}
+                    <Link to="/pendencia-cadastros">Pendência de Cadastros</Link>.
+                  </div>
+                ) : podeSolicitar ? (
+                  <div className="flex-row" style={{ gap: 10, alignItems: 'center' }}>
+                    <span style={{ fontSize: 13 }}>Deseja enviar para aprovação de cadastro?</span>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      type="button"
+                      onClick={handleEnviarCadastro}
+                      disabled={enviando}
+                    >
+                      {enviando ? 'Enviando…' : `Enviar ${aCadastrar.length} conta(s) para aprovação`}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, opacity: 0.8 }}>
+                    A fila de aprovação ainda não está disponível — falta rodar
+                    supabase/migrations/2026-09-09-pendencia-de-cadastros.sql.
+                  </div>
+                )}
               </div>
             )}
 

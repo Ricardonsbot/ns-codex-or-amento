@@ -19,7 +19,10 @@ const NAV_SECTIONS = [
   },
   {
     label: 'Fluxo',
-    items: [{ to: '/aprovacoes', icon: '✓', text: 'Aprovações' }],
+    items: [
+      { to: '/aprovacoes', icon: '✓', text: 'Aprovações' },
+      { to: '/pendencia-cadastros', icon: '⧗', text: 'Pendência de Cadastros' },
+    ],
   },
   {
     label: 'Análise',
