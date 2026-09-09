@@ -82,8 +82,20 @@ export async function conferir(lido) {
   const ciclo = ciclos.data.find((c) => c.status !== 'encerrado')
   const versao = ciclo?.versao?.find((v) => v.status === 'ativa')
 
+  // Receita já lançada na versão: é a base do %NR quando o arquivo que está
+  // entrando não traz receita — importar só a Base Gastos, por exemplo.
+  let receitaDaVersao = 0
   let jaExistem = 0
   if (versao) {
+    const { data: rec } = await supabase
+      .from('lancamento')
+      .select('lancamento_valor_mensal(valor)')
+      .eq('versao_id', versao.id)
+      .eq('tipo', 'receita')
+    for (const l of rec ?? []) {
+      for (const v of l.lancamento_valor_mensal ?? []) receitaDaVersao += Number(v.valor)
+    }
+
     const { count, error } = await supabase
       .from('lancamento')
       .select('*', { count: 'exact', head: true })
@@ -97,6 +109,7 @@ export async function conferir(lido) {
     ciclo,
     versao,
     jaExistem,
+    receitaDaVersao,
     hierarquia,
     ...casar(lido, { empresas: emps.data, contas: contas.data }),
   }

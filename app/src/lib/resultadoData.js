@@ -167,6 +167,44 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
 }
 
 /**
+ * O demonstrativo a partir de linhas soltas — { linhaPl, meses } —, sem passar
+ * pelo banco. É o que deixa a conferência da importação mostrar o P&L do que
+ * ainda vai entrar, com a mesma ordem e os mesmos subtotais do Resultado.
+ */
+export function montarPL(itens) {
+  const porLinha = new Map()
+  let semConta = zeros()
+  for (const it of itens) {
+    if (!it.linhaPl) semConta = somar(semConta, it.meses)
+    else porLinha.set(it.linhaPl, somar(porLinha.get(it.linhaPl) ?? zeros(), it.meses))
+  }
+
+  const valorDe = (chave) => porLinha.get(chave) ?? zeros()
+  const receitaLiquida = somar(valorDe('Receita > Gross Revenue'), valorDe('Receita > (-) Deductions'))
+  const acima = ESTRUTURA.filter((l) => l.acimaDoEbitda).reduce((a, l) => somar(a, valorDe(l.chave)), zeros())
+  const ebitda = receitaLiquida.map((v, i) => v - acima[i])
+  const abaixo = ESTRUTURA.filter((l) => l.chave && l.sinal === -1 && !l.acimaDoEbitda && l.chave !== 'Capex')
+    .reduce((a, l) => somar(a, valorDe(l.chave)), zeros())
+  const netIncome = ebitda.map((v, i) => v - abaixo[i])
+  const capex = valorDe('Capex')
+  const ebitdaAposCapex = ebitda.map((v, i) => v - capex[i])
+  const subtotais = { receitaLiquida, ebitda, netIncome, ebitdaAposCapex }
+
+  return {
+    pl: ESTRUTURA.map((l) =>
+      l.subtotal
+        ? { ...l, valores: subtotais[l.subtotal], eSubtotal: true }
+        : { ...l, valores: valorDe(l.chave) }
+    ),
+    subtotais,
+    semConta,
+    fora: [...porLinha.keys()]
+      .filter((k) => !CONHECIDAS.has(k))
+      .map((k) => ({ chave: k, valores: porLinha.get(k) })),
+  }
+}
+
+/**
  * Aninha os nós pela chave do caminho ("bu|torre|sub|empresa|"): o pai de um nó
  * é o mesmo caminho sem o último trecho. A lista plana vinha na ordem em que os
  * lançamentos apareceram, que não é a ordem de leitura do painel.

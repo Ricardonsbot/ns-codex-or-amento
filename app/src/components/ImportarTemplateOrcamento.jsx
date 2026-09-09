@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useToast } from './ToastProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import PainelResultado from './PainelResultado'
-import { agruparPorEstrutura, anual } from '../lib/resultadoData'
+import { agruparPorEstrutura, montarPL, anual, percentual } from '../lib/resultadoData'
 import { useAuth } from './AuthProvider'
 import {
   lerPlanilhaEmWorker,
@@ -221,6 +221,16 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   }
 
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
+
+  /** O P&L do que vai entrar, na mesma ordem e com os mesmos subtotais da tela de Resultado. */
+  const pl = previa && aImportar.length
+    ? montarPL(
+        aImportar.map((p) => ({
+          linhaPl: p.conta?.linha_pl ?? null,
+          meses: p.valores.map((v) => v.valor),
+        }))
+      )
+    : null
 
   /**
    * O que cada conta do arquivo representa: a linha do P&L, que vem do plano de
@@ -501,6 +511,73 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               )}
               {previa.ignoradas > 0 && <Resumo rotulo="ignoradas (sem valor)" valor={previa.ignoradas} />}
             </div>
+
+            {pl && (
+              <div className="panel" style={{ marginBottom: 16 }}>
+                <div className="panel-header">
+                  <div>
+                    <h2>Como entra no P&amp;L</h2>
+                    <p>
+                      Só o que este arquivo traz, na ordem do P&amp;L Contábil
+                      {!anual(pl.subtotais.receitaLiquida) && previa.receitaDaVersao
+                        ? ' · o % é sobre a receita já lançada nesta versão, porque o arquivo não traz receita'
+                        : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>LINHA</th>
+                          <th className="text-right">ANO</th>
+                          <th className="text-right">% NR</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          // Arquivo só de gastos não traz receita: a base do %NR
+                          // passa a ser a que já está lançada na versão.
+                          const nr = anual(pl.subtotais.receitaLiquida) || previa.receitaDaVersao || 0
+                          return pl.pl.map((l) => {
+                            const v = anual(l.valores)
+                            if (!l.eSubtotal && v === 0) return null
+                            const p = percentual(v, nr)
+                            return (
+                              <tr
+                                key={l.rotulo}
+                                style={
+                                  l.eSubtotal
+                                    ? { background: 'var(--color-surface-alt, #f2f4f7)', fontWeight: 700 }
+                                    : undefined
+                                }
+                              >
+                                <td>{l.rotulo}</td>
+                                <td className="text-right">{brl(v)}</td>
+                                <td className="text-right">
+                                  {p === null ? '—' : `${p.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}
+                                </td>
+                              </tr>
+                            )
+                          })
+                        })()}
+                        {anual(pl.semConta) !== 0 && (
+                          <tr style={{ background: 'var(--color-surface-alt, #fff6f4)' }}>
+                            <td>
+                              Sem conta{' '}
+                              <span style={{ opacity: 0.65, fontSize: 12 }}>· não entra em linha nenhuma</span>
+                            </td>
+                            <td className="text-right">{brl(anual(pl.semConta))}</td>
+                            <td className="text-right">—</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {classificacao.length > 0 && (
               <div className="panel" style={{ marginBottom: 16 }}>
