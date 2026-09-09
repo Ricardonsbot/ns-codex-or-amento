@@ -357,6 +357,138 @@ export default function Resultado() {
               }`}
             />
 
+            {/* MODULO: resultado de cada empresa, so as tres medidas que se olha
+                primeiro — quanto fatura, quanto sobra e quanto sobra depois do capex. */}
+            {dados.empresas?.length > 0 && (
+              <div className="panel" style={{ marginBottom: 18 }}>
+                <div className="panel-header">
+                  <div>
+                    <h2>Resultados por empresa</h2>
+                    <p>Net Revenue, EBITDA e EBITDA after Capex de cada empresa, com a margem sobre a própria receita</p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="data-table painel-resultado">
+                      <thead>
+                        <tr>
+                          <th />
+                          <th className="text-center" colSpan={1}>NET REVENUE</th>
+                          <th className="text-center" colSpan={2}>EBITDA</th>
+                          <th className="text-center" colSpan={2}>EBITDA AFTER CAPEX</th>
+                        </tr>
+                        <tr>
+                          <th>EMPRESA</th>
+                          <th className="text-right">ANO</th>
+                          <th className="text-right">ANO</th>
+                          <th className="text-right">MARGEM</th>
+                          <th className="text-right">ANO</th>
+                          <th className="text-right">MARGEM</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dados.empresas.map((e) => {
+                          const nr = anual(e.receitaLiquida)
+                          const eb = anual(e.ebitda)
+                          const ec = anual(e.ebitdaAposCapex)
+                          return (
+                            <tr key={e.id ?? e.nome}>
+                              <td><strong>{e.nome}</strong></td>
+                              <td className="text-right">{brl(nr)}</td>
+                              <td className="text-right">{brl(eb)}</td>
+                              <td className="text-right" style={{ opacity: 0.75 }}>{pct(percentual(eb, nr))}</td>
+                              <td className="text-right">{brl(ec)}</td>
+                              <td className="text-right" style={{ opacity: 0.75 }}>{pct(percentual(ec, nr))}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td><strong>Consolidado</strong></td>
+                          <td className="text-right"><strong>{brl(base)}</strong></td>
+                          <td className="text-right"><strong>{brl(anual(dados.subtotais.ebitda))}</strong></td>
+                          <td className="text-right">{pct(percentual(anual(dados.subtotais.ebitda), base))}</td>
+                          <td className="text-right"><strong>{brl(anual(dados.subtotais.ebitdaAposCapex))}</strong></td>
+                          <td className="text-right">{pct(percentual(anual(dados.subtotais.ebitdaAposCapex), base))}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MODULO: o P&L aberto, uma coluna por empresa. E onde se ve QUAL
+                linha de custo pesa em cada uma, que o quadro acima nao mostra. */}
+            {dados.empresas?.length > 0 && (
+              <div className="panel" style={{ marginBottom: 18 }}>
+                <div className="panel-header">
+                  <div>
+                    <h2>P&amp;L por empresa</h2>
+                    <p>As linhas do P&amp;L abertas por empresa — cada coluna é uma, a última é o consolidado</p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="data-table painel-resultado">
+                      <thead>
+                        <tr>
+                          <th style={{ position: 'sticky', left: 0, background: 'var(--color-surface)' }}>LINHA</th>
+                          {dados.empresas.map((e) => (
+                            <th key={e.id ?? e.nome} className="text-right">{e.nome.toUpperCase()}</th>
+                          ))}
+                          <th className="text-right">CONSOLIDADO</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dados.pl.map((l) => {
+                          const total = anual(l.valores)
+                          if (!l.eSubtotal && total === 0) return null
+                          const valorEmp = (e) => {
+                            if (l.subtotal === 'receitaLiquida') return anual(e.receitaLiquida)
+                            if (l.subtotal === 'ebitda') return anual(e.ebitda)
+                            if (l.subtotal === 'ebitdaAposCapex') return anual(e.ebitdaAposCapex)
+                            if (l.subtotal) return null
+                            return anual(e.porLinha.get(l.chave) ?? [])
+                          }
+                          return (
+                            <tr
+                              key={l.rotulo}
+                              style={
+                                l.eSubtotal
+                                  ? { background: 'var(--color-surface-alt, #f2f4f7)', fontWeight: 700 }
+                                  : undefined
+                              }
+                            >
+                              <td style={{ position: 'sticky', left: 0, background: 'inherit' }}>{l.rotulo}</td>
+                              {dados.empresas.map((e) => {
+                                const v = valorEmp(e)
+                                return (
+                                  <td
+                                    key={e.id ?? e.nome}
+                                    className="text-right"
+                                    style={{ opacity: v === 0 || v === null ? 0.3 : 1 }}
+                                  >
+                                    {v === null ? '—' : v === 0 ? '—' : brl(v)}
+                                  </td>
+                                )
+                              })}
+                              <td className="text-right"><strong>{brl(total)}</strong></td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
+                    Net Income não é aberto por empresa: as linhas abaixo do EBITDA — D&amp;A, financeiro,
+                    IR/CSLL — não vêm com empresa em todos os lançamentos, e ratear aqui seria inventar.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Por area de alocacao: a segunda dimensao do P&L, que vem do
                 template e nao do plano de contas. */}
             {dados.areas?.length > 0 && (

@@ -93,6 +93,7 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
 
   const porLinha = new Map()   // linha_pl -> 12 meses
   const porArea = new Map()    // area -> 12 meses
+  const porEmpresa = new Map() // empresa -> { nome, linhas: Map, receita, despesa, capex }
   let semConta = zeros()
   const itens = []
 
@@ -108,6 +109,22 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
       const a = l.area || 'Sem área'
       porArea.set(a, somar(porArea.get(a) ?? zeros(), meses))
     }
+
+    // O mesmo corte por empresa, que é o recorte do P&L gerencial.
+    const eid = l.empresa_id ?? 'sem-empresa'
+    if (!porEmpresa.has(eid)) {
+      porEmpresa.set(eid, {
+        id: l.empresa_id,
+        nome: l.empresa?.nome ?? 'Sem Empresa',
+        linhas: new Map(),
+        receita: zeros(),
+        despesa: zeros(),
+        capex: zeros(),
+      })
+    }
+    const e = porEmpresa.get(eid)
+    e[l.tipo] = somar(e[l.tipo], meses)
+    if (chave) e.linhas.set(chave, somar(e.linhas.get(chave) ?? zeros(), meses))
 
     itens.push({
       tipo: l.tipo,
@@ -155,6 +172,23 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     capex,
     semConta,
     fora: fora.map((k) => ({ chave: k, valores: porLinha.get(k) })),
+    empresas: [...porEmpresa.values()]
+      .map((e) => {
+        const valorDeEmp = (c) => e.linhas.get(c) ?? zeros()
+        const receitaLiquida = somar(valorDeEmp('Receita > Gross Revenue'), valorDeEmp('Receita > (-) Deductions'))
+        const acimaEmp = ESTRUTURA.filter((l) => l.acimaDoEbitda).reduce((a, l) => somar(a, valorDeEmp(l.chave)), zeros())
+        const ebitdaEmp = receitaLiquida.map((v, i) => v - acimaEmp[i])
+        return {
+          id: e.id,
+          nome: e.nome,
+          receitaLiquida,
+          ebitda: ebitdaEmp,
+          ebitdaAposCapex: ebitdaEmp.map((v, i) => v - e.capex[i]),
+          capex: e.capex,
+          porLinha: e.linhas,
+        }
+      })
+      .sort((a, b) => anual(b.receitaLiquida) - anual(a.receitaLiquida) || a.nome.localeCompare(b.nome)),
     areas: [...porArea.entries()]
       .map(([nome, valores]) => ({ nome, valores }))
       .sort((a, b) => anual(b.valores) - anual(a.valores)),
