@@ -4,7 +4,7 @@ import FiltroBotoes from '../components/FiltroBotoes'
 import { useToast } from '../components/ToastProvider'
 import { fetchVersaoAtual } from '../lib/lancamentosData'
 import { fetchBUs, fetchTorres } from '../lib/dashboardData'
-import { fetchResultado, anual, percentual } from '../lib/resultadoData'
+import { fetchResultado, fetchVersoesDoCiclo, anual, percentual, variacao } from '../lib/resultadoData'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
@@ -13,8 +13,26 @@ const brl = (v) =>
 const milhoes = (v) => `${(Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`
 const pct = (v) => (v === null || !isFinite(v) ? '—' : `${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`)
 
+/**
+ * Δ e Δ% contra o comparativo. Verde e vermelho seguem o SENTIDO do indicador,
+ * não o sinal: gastar menos que o budget é bom, faturar menos é ruim.
+ */
+function Variacao({ atual, comparado, menorEMelhor }) {
+  if (comparado === undefined || comparado === null) return null
+  const { delta, pct } = variacao(atual, comparado)
+  const bom = menorEMelhor ? delta < 0 : delta > 0
+  const cor = delta === 0 ? 'inherit' : bom ? 'var(--color-success, #1a7f47)' : 'var(--color-danger, #c0392b)'
+  return (
+    <span style={{ color: cor }}>
+      {delta > 0 ? '+' : ''}
+      {brl(delta)}
+      {pct !== null && ` (${pct > 0 ? '+' : ''}${pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%)`}
+    </span>
+  )
+}
+
 /** Um dos blocos de resposta: "qual minha receita?", "qual meu EBITDA?" */
-function Bloco({ pergunta, valor, base, destaque, negativo }) {
+function Bloco({ pergunta, valor, base, destaque, negativo, comparado, menorEMelhor }) {
   const p = percentual(valor, base)
   return (
     <div
@@ -34,6 +52,12 @@ function Bloco({ pergunta, valor, base, destaque, negativo }) {
       <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>
         {p === null ? 'sem base de receita' : `${pct(p)} da receita líquida`}
       </div>
+      {comparado !== undefined && comparado !== null && (
+        <div style={{ fontSize: 12, marginTop: 4 }}>
+          <Variacao atual={valor} comparado={comparado} menorEMelhor={menorEMelhor} />
+          <span style={{ opacity: 0.55 }}> vs budget</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -53,6 +77,9 @@ export default function Resultado() {
   const [buId, setBuId] = useState('')
   const [torreId, setTorreId] = useState('')
   const [dados, setDados] = useState(null)
+  const [versoes, setVersoes] = useState([])
+  const [compararCom, setCompararCom] = useState('')
+  const [comp, setComp] = useState(null)
   const [mensal, setMensal] = useState('ano')
   const [carregando, setCarregando] = useState(true)
 
@@ -63,6 +90,10 @@ export default function Resultado() {
         setVersao(va)
         setBus(b)
         setTorres(t)
+        if (va?.ciclo) {
+          const vs = await fetchVersoesDoCiclo(va.ciclo.id)
+          setVersoes(vs.filter((x) => x.id !== va.versao?.id))
+        }
       } catch (err) {
         showToast(`Erro ao carregar: ${err.message}`, 'error')
       }
@@ -75,7 +106,13 @@ export default function Resultado() {
     ;(async () => {
       setCarregando(true)
       try {
-        setDados(await fetchResultado(versao.versao.id, { buId: buId || null, torreId: torreId || null }))
+        const filtros = { buId: buId || null, torreId: torreId || null }
+        const [a, b] = await Promise.all([
+          fetchResultado(versao.versao.id, filtros),
+          compararCom ? fetchResultado(compararCom, filtros) : Promise.resolve(null),
+        ])
+        setDados(a)
+        setComp(b)
       } catch (err) {
         showToast(`Erro ao montar o resultado: ${err.message}`, 'error')
       } finally {
@@ -83,7 +120,7 @@ export default function Resultado() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [versao, buId, torreId])
+  }, [versao, buId, torreId, compararCom])
 
   if (!versao?.versao) {
     return (
@@ -142,6 +179,23 @@ export default function Resultado() {
             onChange={setMensal}
             semTodas
           />
+          {versoes.length > 0 ? (
+            <FiltroBotoes
+              label="Comparar com (Budget)"
+              valor={compararCom}
+              rotuloTodas="Sem comparação"
+              opcoes={versoes.map((v) => ({ valor: v.id, rotulo: `${v.nome} (${v.tipo})` }))}
+              onChange={setCompararCom}
+            />
+          ) : (
+            <div className="filtro-botoes">
+              <span className="filtro-botoes-label">Comparar com (Budget)</span>
+              <span style={{ fontSize: 12, opacity: 0.7 }}>
+                O ciclo {versao.ciclo.ano} só tem a versão “{versao.versao.nome}”. Crie uma revisão em
+                Budget - Settings para comparar Δ e Δ%.
+              </span>
+            </div>
+          )}
         </div>
 
         {carregando && <div className="empty-hint">Carregando…</div>}
@@ -150,15 +204,44 @@ export default function Resultado() {
           <>
             {/* As perguntas em bloco */}
             <div className="flex-row" style={{ gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
-              <Bloco pergunta="Qual minha receita?" valor={base} base={base} destaque="#1a7f47" />
-              <Bloco pergunta="Qual meu custo?" valor={custos} base={base} destaque="#c0392b" negativo />
-              <Bloco pergunta="Qual meu EBITDA?" valor={anual(dados.subtotais.ebitda)} base={base} destaque="#ff3d03" />
-              <Bloco pergunta="Qual meu capex?" valor={anual(dados.capex)} base={base} destaque="#8a94a6" negativo />
+              <Bloco
+                pergunta="Qual minha receita?"
+                valor={base}
+                base={base}
+                destaque="#1a7f47"
+                comparado={comp ? anual(comp.subtotais.receitaLiquida) : null}
+              />
+              <Bloco
+                pergunta="Qual meu custo?"
+                valor={custos}
+                base={base}
+                destaque="#c0392b"
+                negativo
+                menorEMelhor
+                comparado={comp ? anual(comp.subtotais.receitaLiquida) - anual(comp.subtotais.ebitda) : null}
+              />
+              <Bloco
+                pergunta="Qual meu EBITDA?"
+                valor={anual(dados.subtotais.ebitda)}
+                base={base}
+                destaque="#ff3d03"
+                comparado={comp ? anual(comp.subtotais.ebitda) : null}
+              />
+              <Bloco
+                pergunta="Qual meu capex?"
+                valor={anual(dados.capex)}
+                base={base}
+                destaque="#8a94a6"
+                negativo
+                menorEMelhor
+                comparado={comp ? anual(comp.capex) : null}
+              />
               <Bloco
                 pergunta="EBITDA after Capex"
                 valor={anual(dados.subtotais.ebitdaAposCapex)}
                 base={base}
                 destaque="#20242d"
+                comparado={comp ? anual(comp.subtotais.ebitdaAposCapex) : null}
               />
             </div>
 
@@ -194,6 +277,13 @@ export default function Resultado() {
                         {mensal === 'mes' && MESES.map((m) => <th key={m} className="text-right">{m.toUpperCase()}</th>)}
                         <th className="text-right">ANO</th>
                         <th className="text-right">% NR</th>
+                        {comp && (
+                          <>
+                            <th className="text-right">BUDGET</th>
+                            <th className="text-right">Δ</th>
+                            <th className="text-right">Δ%</th>
+                          </>
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -218,6 +308,31 @@ export default function Resultado() {
                               ))}
                             <td className="text-right">{brl(v)}</td>
                             <td className="text-right">{pct(percentual(v, base))}</td>
+                            {comp && (() => {
+                              const alvo = comp.pl.find((x) => x.rotulo === l.rotulo)
+                              const b = anual(alvo?.valores)
+                              const { delta, pct: dp } = variacao(v, b)
+                              // Linha de despesa: gastar menos que o budget é bom.
+                              const menor = l.sinal === -1
+                              const bom = menor ? delta < 0 : delta > 0
+                              const cor =
+                                delta === 0
+                                  ? 'inherit'
+                                  : bom
+                                  ? 'var(--color-success, #1a7f47)'
+                                  : 'var(--color-danger, #c0392b)'
+                              return (
+                                <>
+                                  <td className="text-right">{brl(b)}</td>
+                                  <td className="text-right" style={{ color: cor }}>
+                                    {delta > 0 ? '+' : ''}{brl(delta)}
+                                  </td>
+                                  <td className="text-right" style={{ color: cor }}>
+                                    {dp === null ? '—' : `${dp > 0 ? '+' : ''}${dp.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}
+                                  </td>
+                                </>
+                              )
+                            })()}
                           </tr>
                         )
                       })}

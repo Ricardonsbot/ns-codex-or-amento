@@ -125,12 +125,34 @@ export async function fetchResultado(versaoId, { buId, torreId } = {}) {
     capex,
     semConta,
     fora: fora.map((k) => ({ chave: k, valores: porLinha.get(k) })),
-    estrutura: [...porEstrutura.entries()].map(([, no]) => no),
+    // A chave do caminho volta junto: é ela que casa o mesmo nó entre duas
+    // versões na comparação com o Budget.
+    estrutura: [...porEstrutura.entries()].map(([chave, no]) => ({ chave, ...no })),
     lancamentos: linhas.length,
   }
 }
 
+/** As versões do ciclo, para escolher contra qual comparar. */
+export async function fetchVersoesDoCiclo(cicloId) {
+  const { data, error } = await supabase
+    .from('versao')
+    .select('id, nome, tipo, status')
+    .eq('ciclo_id', cicloId)
+    .order('criada_em')
+  if (error) throw error
+  return data ?? []
+}
+
 export const anual = (v) => (v ?? []).reduce((a, b) => a + b, 0)
+
+/**
+ * Variação contra o comparativo. Quando a base é zero não existe percentual —
+ * devolve null em vez de infinito, e a tela mostra travessão.
+ */
+export function variacao(atual, comparado) {
+  const delta = atual - comparado
+  return { delta, pct: comparado ? (delta / Math.abs(comparado)) * 100 : null }
+}
 
 /** Percentual sobre a receita líquida — a base que o P&L da NSTECH usa. */
 export const percentual = (valor, base) => (base ? (valor / base) * 100 : null)
