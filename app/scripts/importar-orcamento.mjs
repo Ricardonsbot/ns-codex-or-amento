@@ -18,15 +18,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { lerPlanilha, TEMPLATE } from '../src/lib/lerTemplateOrcamento.js'
-import {
-  casar,
-  montarLancamento,
-  montarValoresMensais,
-  semColunas,
-  EXTRA_LANCAMENTO,
-  EXTRA_MENSAL,
-  EXTRA_AREA,
-} from '../src/lib/casarTemplateOrcamento.js'
+import { casar, EXTRA_LANCAMENTO, EXTRA_MENSAL, EXTRA_AREA } from '../src/lib/casarTemplateOrcamento.js'
+import { gravarEmLote } from '../src/lib/gravarLancamentos.js'
 
 const tipo = process.argv[2]
 const caminho = process.argv[3]
@@ -140,26 +133,15 @@ if (!aImportar.length) {
   console.log(`\ncolunas derivadas ..... ${estado}`)
 
   let criados = 0
-  for (const p of aImportar) {
-    let linha = montarLancamento(p, versao.id, tipo)
-    if (!sup.lancamento) linha = semColunas(linha, EXTRA_LANCAMENTO)
-    if (!sup.area) linha = semColunas(linha, EXTRA_AREA)
-    const { data, error } = await sb.from('lancamento').insert(linha).select('id').single()
-    if (error) {
-      console.error(`\nerro ao criar lançamento da linha ${p.linha}: ${error.message}`)
-      process.exitCode = 1
-      break
-    }
-    const mensais = montarValoresMensais(p, data.id)
-    const { error: erroMes } = await sb
-      .from('lancamento_valor_mensal')
-      .insert(sup.mensal ? mensais : mensais.map((m) => semColunas(m, EXTRA_MENSAL)))
-    if (erroMes) {
-      console.error(`\nerro ao gravar valores mensais da linha ${p.linha}: ${erroMes.message}`)
-      process.exitCode = 1
-      break
-    }
-    criados += 1
+  try {
+    const ids = await gravarEmLote(sb, aImportar, versao.id, tipo, sup, (feitos, total) => {
+      process.stdout.write(`\r  gravando ... ${feitos}/${total}`)
+    })
+    criados = ids.length
+    process.stdout.write('\n')
+  } catch (e) {
+    console.error(`\n${e.message}`)
+    process.exitCode = 1
   }
 
   const { count } = await sb.from('lancamento').select('*', { count: 'exact', head: true }).eq('tipo', tipo)

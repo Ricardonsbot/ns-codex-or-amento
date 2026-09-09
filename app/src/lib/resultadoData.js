@@ -178,11 +178,17 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
         const receitaLiquida = somar(valorDeEmp('Receita > Gross Revenue'), valorDeEmp('Receita > (-) Deductions'))
         const acimaEmp = ESTRUTURA.filter((l) => l.acimaDoEbitda).reduce((a, l) => somar(a, valorDeEmp(l.chave)), zeros())
         const ebitdaEmp = receitaLiquida.map((v, i) => v - acimaEmp[i])
+        // Net Income por empresa: todo lançamento carrega a empresa, então as
+        // linhas abaixo do EBITDA se somam direto, sem rateio nenhum.
+        const abaixoEmp = ESTRUTURA.filter(
+          (l) => l.chave && l.sinal === -1 && !l.acimaDoEbitda && l.chave !== 'Capex'
+        ).reduce((a, l) => somar(a, valorDeEmp(l.chave)), zeros())
         return {
           id: e.id,
           nome: e.nome,
           receitaLiquida,
           ebitda: ebitdaEmp,
+          netIncome: ebitdaEmp.map((v, i) => v - abaixoEmp[i]),
           ebitdaAposCapex: ebitdaEmp.map((v, i) => v - e.capex[i]),
           capex: e.capex,
           porLinha: e.linhas,

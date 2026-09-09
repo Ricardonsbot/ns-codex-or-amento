@@ -1,14 +1,7 @@
 import { supabase } from './supabaseClient'
 import { TEMPLATE } from './lerTemplateOrcamento'
-import {
-  casar,
-  montarLancamento,
-  montarValoresMensais,
-  semColunas,
-  EXTRA_LANCAMENTO,
-  EXTRA_MENSAL,
-  EXTRA_AREA,
-} from './casarTemplateOrcamento'
+import { casar, EXTRA_LANCAMENTO, EXTRA_MENSAL, EXTRA_AREA } from './casarTemplateOrcamento'
+import { gravarEmLote } from './gravarLancamentos'
 
 /**
  * Se o banco já tem as colunas dos blocos derivados. Enquanto a migração
@@ -137,29 +130,9 @@ export async function apagarDoTipo(versaoId, tipo) {
  * Devolve os ids criados para a tela poder oferecer um desfazer: subir o
  * arquivo errado é fácil, e sem isso a correção é apagar linha por linha.
  */
-export async function importar(prontas, versaoId, tipo) {
+export async function importar(prontas, versaoId, tipo, aoProgredir) {
   const sup = await colunasDerivadas()
-  const ids = []
-  for (const p of prontas) {
-    let linha = montarLancamento(p, versaoId, tipo)
-    if (!sup.lancamento) linha = semColunas(linha, EXTRA_LANCAMENTO)
-    if (!sup.area) linha = semColunas(linha, EXTRA_AREA)
-    const { data, error } = await supabase
-      .from('lancamento')
-      .insert(linha)
-      .select('id')
-      .single()
-    if (error) throw new Error(`linha ${p.linha}: ${error.message}`)
-
-    const mensais = montarValoresMensais(p, data.id)
-    const { error: erroMes } = await supabase
-      .from('lancamento_valor_mensal')
-      .insert(sup.mensal ? mensais : mensais.map((m) => semColunas(m, EXTRA_MENSAL)))
-    if (erroMes) throw new Error(`linha ${p.linha}, valores mensais: ${erroMes.message}`)
-
-    ids.push(data.id)
-  }
-  return ids
+  return gravarEmLote(supabase, prontas, versaoId, tipo, sup, aoProgredir)
 }
 
 /**

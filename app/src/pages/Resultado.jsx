@@ -376,10 +376,13 @@ export default function Resultado() {
                           <th className="text-center" colSpan={1}>NET REVENUE</th>
                           <th className="text-center" colSpan={2}>EBITDA</th>
                           <th className="text-center" colSpan={2}>EBITDA AFTER CAPEX</th>
+                          <th className="text-center" colSpan={2}>NET INCOME</th>
                         </tr>
                         <tr>
                           <th>EMPRESA</th>
                           <th className="text-right">ANO</th>
+                          <th className="text-right">ANO</th>
+                          <th className="text-right">MARGEM</th>
                           <th className="text-right">ANO</th>
                           <th className="text-right">MARGEM</th>
                           <th className="text-right">ANO</th>
@@ -399,6 +402,10 @@ export default function Resultado() {
                               <td className="text-right" style={{ opacity: 0.75 }}>{pct(percentual(eb, nr))}</td>
                               <td className="text-right">{brl(ec)}</td>
                               <td className="text-right" style={{ opacity: 0.75 }}>{pct(percentual(ec, nr))}</td>
+                              <td className="text-right">{brl(anual(e.netIncome))}</td>
+                              <td className="text-right" style={{ opacity: 0.75 }}>
+                                {pct(percentual(anual(e.netIncome), nr))}
+                              </td>
                             </tr>
                           )
                         })}
@@ -411,6 +418,8 @@ export default function Resultado() {
                           <td className="text-right">{pct(percentual(anual(dados.subtotais.ebitda), base))}</td>
                           <td className="text-right"><strong>{brl(anual(dados.subtotais.ebitdaAposCapex))}</strong></td>
                           <td className="text-right">{pct(percentual(anual(dados.subtotais.ebitdaAposCapex), base))}</td>
+                          <td className="text-right"><strong>{brl(anual(dados.subtotais.netIncome))}</strong></td>
+                          <td className="text-right">{pct(percentual(anual(dados.subtotais.netIncome), base))}</td>
                         </tr>
                       </tfoot>
                     </table>
@@ -449,6 +458,7 @@ export default function Resultado() {
                             if (l.subtotal === 'receitaLiquida') return anual(e.receitaLiquida)
                             if (l.subtotal === 'ebitda') return anual(e.ebitda)
                             if (l.subtotal === 'ebitdaAposCapex') return anual(e.ebitdaAposCapex)
+                            if (l.subtotal === 'netIncome') return anual(e.netIncome)
                             if (l.subtotal) return null
                             return anual(e.porLinha.get(l.chave) ?? [])
                           }
@@ -482,8 +492,8 @@ export default function Resultado() {
                     </table>
                   </div>
                   <p style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
-                    Net Income não é aberto por empresa: as linhas abaixo do EBITDA — D&amp;A, financeiro,
-                    IR/CSLL — não vêm com empresa em todos os lançamentos, e ratear aqui seria inventar.
+                    Nada é rateado: cada linha soma os lançamentos daquela empresa. Uma célula com travessão é
+                    empresa sem lançamento naquela linha, não valor escondido.
                   </p>
                 </div>
               </div>
