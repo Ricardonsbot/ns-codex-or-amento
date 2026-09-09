@@ -1816,36 +1816,189 @@ tfoot td {
   padding: 7px 10px;
 }
 
-/* ---------- Painel Resultado ---------- */
-/* Muitas colunas numéricas: a tabela fica compacta e os grupos de medida
-   separados por uma borda, como no P&L Contábil que o time usa. */
+/* ---------- Tabelas do Resultado ---------- */
+/* No formato do P&L que o time lê no Excel: faixa laranja por grupo de medida,
+   sub-cabeçalho claro, linhas densas, número tabular e as somas em faixa. */
 
-.painel-resultado {
+.rolagem-x { overflow-x: auto; }
+
+.tabela-pl {
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 12.5px;
+  font-variant-numeric: tabular-nums;   /* dígitos alinhados coluna a coluna */
 }
 
-.painel-resultado thead tr:first-child th {
-  border-bottom: 1px solid var(--color-border);
-  font-size: 11px;
-  letter-spacing: .06em;
-}
-
-.painel-resultado thead tr:first-child th:not(:first-child) {
-  background: var(--color-surface-alt, #f2f4f7);
-  border-left: 2px solid var(--color-border);
-}
-
-.painel-resultado thead th,
-.painel-resultado tbody td {
+.tabela-pl th,
+.tabela-pl td {
   padding: 6px 10px;
   white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.painel-resultado tbody tr:hover {
-  background: var(--color-surface-alt, #f7f8fa);
-}
-
-.painel-resultado td.text-center,
-.painel-resultado th.text-center {
+/* Faixa do grupo de medida */
+.tabela-pl thead tr.grupo th {
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .1em;
   text-align: center;
+  text-transform: uppercase;
+  border-bottom: none;
+}
+
+/* O canto vazio acima da coluna de nomes: fica opaco porque a coluna e
+   grudada e o resto da tabela passa por baixo dela na rolagem lateral. */
+.tabela-pl thead tr.grupo th.vazio {
+  background: var(--color-surface);
+  border-bottom: none;
+}
+
+/* Sub-cabeçalho com os rótulos das colunas */
+.tabela-pl thead tr.sub th {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  border-bottom: 2px solid var(--color-border);
+}
+
+/* Separador entre grupos de colunas */
+.tabela-pl .divisor { border-left: 2px solid var(--color-border); }
+
+/* Linha de soma do P&L: Receita Líquida, EBITDA, Net Income */
+.tabela-pl tbody tr.soma > td {
+  background: var(--color-bg);
+  font-weight: 700;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Linha do consolidado, no topo ou no rodapé */
+.tabela-pl tbody tr.consolidado > td,
+.tabela-pl tfoot td {
+  background: var(--color-dark);
+  color: #fff;
+  font-weight: 700;
+  border-top: none;
+  border-bottom: none;
+}
+
+/* Primeiro nível da hierarquia (as BUs) */
+.tabela-pl tbody tr.forte > td { font-weight: 700; }
+
+/* Linha que veio do arquivo e não casou com o plano de contas */
+.tabela-pl tbody tr.alerta > td { background: var(--color-danger-bg); }
+
+.tabela-pl tbody tr:not(.soma):not(.consolidado):hover > td {
+  background: var(--color-sidebar-active);
+}
+
+/* A coluna do nome acompanha a rolagem lateral */
+.tabela-pl .fixa {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-surface);
+}
+.tabela-pl thead .fixa { background: var(--color-bg); }
+.tabela-pl tbody tr.soma > td.fixa { background: var(--color-bg); }
+.tabela-pl tbody tr.consolidado > td.fixa,
+.tabela-pl tfoot td.fixa { background: var(--color-dark); }
+.tabela-pl tbody tr.alerta > td.fixa { background: var(--color-danger-bg); }
+.tabela-pl tbody tr:not(.soma):not(.consolidado):hover > td.fixa {
+  background: var(--color-sidebar-active);
+}
+
+/* Numeração 1, 1.1, 1.1.1 antes do nome */
+.tabela-pl .numero {
+  display: inline-block;
+  min-width: 44px;
+  color: var(--color-text-muted);
+  font-size: 10.5px;
+}
+.tabela-pl tr.consolidado .numero { color: rgba(255, 255, 255, .6); }
+
+/* Célula sem valor: fica visível, mas não disputa a leitura */
+.tabela-pl .apagado { color: var(--color-text-muted); opacity: .45; }
+
+/* Etiqueta [ BRL M ] / [ BRL ] no cabeçalho do painel */
+.selo-unidade {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* Ponto do semáforo */
+.ponto {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.ponto-verde { background: var(--color-success); }
+.ponto-amarelo { background: var(--color-warning); }
+.ponto-vermelho { background: var(--color-danger); }
+.ponto-neutro { background: var(--color-border); }
+
+/* Δ e Δ%: verde e vermelho seguem o SENTIDO do indicador, não o sinal */
+.melhor { color: var(--color-success); }
+.pior { color: var(--color-danger); }
+.tabela-pl tr.consolidado .melhor { color: #6ee7b7; }
+.tabela-pl tr.consolidado .pior { color: #fca5a5; }
+
+/* Nota de rodapé de uma tabela: explica o critério, não compete com os números */
+.nota-tabela {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Blocos de resposta do Resultado ---------- */
+/* "Qual minha receita?", "Qual meu EBITDA?" — o cabeçalho do relatório. */
+
+.blocos-kpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.bloco-kpi {
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.bloco-kpi-pergunta {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.bloco-kpi-valor {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.bloco-kpi-nota {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
 }

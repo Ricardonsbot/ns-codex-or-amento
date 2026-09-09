@@ -11,8 +11,6 @@ import {
   anual,
   percentual,
   variacao,
-  achatar,
-  semaforo,
 } from '../lib/resultadoData'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -21,9 +19,6 @@ const brl = (v) =>
   Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const milhoes = (v) => `${(Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`
 const pct = (v) => (v === null || !isFinite(v) ? '—' : `${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`)
-/** Percentual curto, do jeito do painel: uma casa e o sinal quando positivo. */
-const pct2 = (v) =>
-  v === null || !isFinite(v) ? '—' : `${v > 0 ? '+' : ''}${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
 
 /**
  * Δ e Δ% contra o comparativo. Verde e vermelho seguem o SENTIDO do indicador,
@@ -33,9 +28,9 @@ function Variacao({ atual, comparado, menorEMelhor }) {
   if (comparado === undefined || comparado === null) return null
   const { delta, pct } = variacao(atual, comparado)
   const bom = menorEMelhor ? delta < 0 : delta > 0
-  const cor = delta === 0 ? 'inherit' : bom ? 'var(--color-success, #1a7f47)' : 'var(--color-danger, #c0392b)'
+  const cor = delta === 0 ? '' : bom ? 'melhor' : 'pior'
   return (
-    <span style={{ color: cor }}>
+    <span className={cor}>
       {delta > 0 ? '+' : ''}
       {brl(delta)}
       {pct !== null && ` (${pct > 0 ? '+' : ''}${pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%)`}
@@ -43,65 +38,21 @@ function Variacao({ atual, comparado, menorEMelhor }) {
   )
 }
 
-const COR_SEMAFORO = { verde: '#1a7f47', amarelo: '#d99a00', vermelho: '#c0392b' }
-
-/** O ponto colorido do painel: acima do comparativo, perto, ou longe. */
-function Ponto({ pct }) {
-  const cor = COR_SEMAFORO[semaforo(pct)]
-  if (!cor) return <span style={{ opacity: 0.25 }}>·</span>
-  return <span style={{ color: cor, fontSize: 15 }} aria-hidden="true">●</span>
-}
-
-/** Um bloco de medida do painel: Actual, %NR, Budget, Δ, Δ% e o ponto. */
-function Medida({ atual, budget, base, comparando, menorEMelhor, comNR }) {
-  const { delta, pct } = variacao(atual, budget ?? 0)
-  const bom = menorEMelhor ? delta < 0 : delta > 0
-  const cor = delta === 0 ? 'inherit' : bom ? COR_SEMAFORO.verde : COR_SEMAFORO.vermelho
-  return (
-    <>
-      <td className="text-right">{milhoes(atual)}</td>
-      {/* %NR e participacao, nao variacao: vai sem sinal de mais. */}
-      {comNR && <td className="text-right" style={{ opacity: 0.75 }}>{pct(percentual(atual, base))}</td>}
-      {comparando && (
-        <>
-          <td className="text-right" style={{ opacity: 0.75 }}>{milhoes(budget)}</td>
-          <td className="text-right" style={{ color: cor }}>
-            {delta > 0 ? '+' : ''}
-            {milhoes(delta)}
-          </td>
-          <td className="text-right" style={{ color: cor }}>{pct2(pct)}</td>
-          <td className="text-center"><Ponto pct={menorEMelhor && pct !== null ? -pct : pct} /></td>
-        </>
-      )}
-    </>
-  )
-}
-
 /** Um dos blocos de resposta: "qual minha receita?", "qual meu EBITDA?" */
 function Bloco({ pergunta, valor, base, destaque, negativo, comparado, menorEMelhor }) {
   const p = percentual(valor, base)
   return (
-    <div
-      style={{
-        flex: '1 1 190px',
-        padding: '14px 16px',
-        borderRadius: 8,
-        border: '1px solid var(--color-border)',
-        borderLeft: `3px solid ${destaque}`,
-        background: 'var(--color-surface)',
-      }}
-    >
-      <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>{pergunta}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: negativo && valor > 0 ? 'var(--color-danger, #c0392b)' : 'inherit' }}>
+    <div className="bloco-kpi" style={{ borderTopColor: destaque }}>
+      <div className="bloco-kpi-pergunta">{pergunta}</div>
+      <div className="bloco-kpi-valor" style={negativo && valor > 0 ? { color: 'var(--color-danger)' } : undefined}>
         R$ {milhoes(valor)}
       </div>
-      <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>
+      <div className="bloco-kpi-nota">
         {p === null ? 'sem base de receita' : `${pct(p)} da receita líquida`}
       </div>
       {comparado !== undefined && comparado !== null && (
-        <div style={{ fontSize: 12, marginTop: 4 }}>
-          <Variacao atual={valor} comparado={comparado} menorEMelhor={menorEMelhor} />
-          <span style={{ opacity: 0.55 }}> vs budget</span>
+        <div className="bloco-kpi-nota">
+          <Variacao atual={valor} comparado={comparado} menorEMelhor={menorEMelhor} /> vs budget
         </div>
       )}
     </div>
@@ -278,19 +229,19 @@ export default function Resultado() {
         {!carregando && dados && (
           <>
             {/* As perguntas em bloco */}
-            <div className="flex-row" style={{ gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
+            <div className="blocos-kpi">
               <Bloco
                 pergunta="Qual minha receita?"
                 valor={base}
                 base={base}
-                destaque="#1a7f47"
+                destaque="var(--color-success)"
                 comparado={comp ? anual(comp.subtotais.receitaLiquida) : null}
               />
               <Bloco
                 pergunta="Qual meu custo?"
                 valor={custos}
                 base={base}
-                destaque="#c0392b"
+                destaque="var(--color-danger)"
                 negativo
                 menorEMelhor
                 comparado={comp ? anual(comp.subtotais.receitaLiquida) - anual(comp.subtotais.ebitda) : null}
@@ -299,14 +250,14 @@ export default function Resultado() {
                 pergunta="Qual meu EBITDA?"
                 valor={anual(dados.subtotais.ebitda)}
                 base={base}
-                destaque="#ff3d03"
+                destaque="var(--color-primary)"
                 comparado={comp ? anual(comp.subtotais.ebitda) : null}
               />
               <Bloco
                 pergunta="Qual meu capex?"
                 valor={anual(dados.capex)}
                 base={base}
-                destaque="#8a94a6"
+                destaque="var(--color-text-muted)"
                 negativo
                 menorEMelhor
                 comparado={comp ? anual(comp.capex) : null}
@@ -315,7 +266,7 @@ export default function Resultado() {
                 pergunta="EBITDA after Capex"
                 valor={anual(dados.subtotais.ebitdaAposCapex)}
                 base={base}
-                destaque="#20242d"
+                destaque="var(--color-dark)"
                 comparado={comp ? anual(comp.subtotais.ebitdaAposCapex) : null}
               />
             </div>
@@ -352,7 +303,7 @@ export default function Resultado() {
                     }
                   : null
               }
-              subtitulo={`[ BRL M ] · Consolidado → BU → Torre → Sub Torre → Empresa${
+              subtitulo={`Consolidado → BU → Torre → Sub Torre → Empresa${
                 comp ? ` · comparando com ${versoes.find((v) => v.id === compararCom)?.nome ?? 'budget'}` : ''
               }`}
             />
@@ -363,30 +314,33 @@ export default function Resultado() {
               <div className="panel" style={{ marginBottom: 18 }}>
                 <div className="panel-header">
                   <div>
-                    <h2>Resultados por empresa</h2>
+                    <h2>
+                      Resultados por empresa
+                      <span className="selo-unidade">BRL</span>
+                    </h2>
                     <p>Net Revenue, EBITDA e EBITDA after Capex de cada empresa, com a margem sobre a própria receita</p>
                   </div>
                 </div>
                 <div className="panel-body">
-                  <div style={{ overflowX: 'auto' }}>
-                    <table className="data-table painel-resultado">
+                  <div className="rolagem-x">
+                    <table className="data-table tabela-pl">
                       <thead>
-                        <tr>
-                          <th />
-                          <th className="text-center" colSpan={1}>NET REVENUE</th>
-                          <th className="text-center" colSpan={2}>EBITDA</th>
-                          <th className="text-center" colSpan={2}>EBITDA AFTER CAPEX</th>
-                          <th className="text-center" colSpan={2}>NET INCOME</th>
+                        <tr className="grupo">
+                          <th className="vazio fixa" />
+                          <th>Net Revenue</th>
+                          <th colSpan={2} className="divisor">EBITDA</th>
+                          <th colSpan={2} className="divisor">EBITDA after Capex</th>
+                          <th colSpan={2} className="divisor">Net Income</th>
                         </tr>
-                        <tr>
-                          <th>EMPRESA</th>
-                          <th className="text-right">ANO</th>
-                          <th className="text-right">ANO</th>
-                          <th className="text-right">MARGEM</th>
-                          <th className="text-right">ANO</th>
-                          <th className="text-right">MARGEM</th>
-                          <th className="text-right">ANO</th>
-                          <th className="text-right">MARGEM</th>
+                        <tr className="sub">
+                          <th className="fixa">Empresa</th>
+                          <th className="text-right">Ano</th>
+                          <th className="text-right divisor">Ano</th>
+                          <th className="text-right">Margem</th>
+                          <th className="text-right divisor">Ano</th>
+                          <th className="text-right">Margem</th>
+                          <th className="text-right divisor">Ano</th>
+                          <th className="text-right">Margem</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -396,29 +350,27 @@ export default function Resultado() {
                           const ec = anual(e.ebitdaAposCapex)
                           return (
                             <tr key={e.id ?? e.nome}>
-                              <td><strong>{e.nome}</strong></td>
+                              <td className="fixa">{e.nome}</td>
                               <td className="text-right">{brl(nr)}</td>
-                              <td className="text-right">{brl(eb)}</td>
-                              <td className="text-right" style={{ opacity: 0.75 }}>{pct(percentual(eb, nr))}</td>
-                              <td className="text-right">{brl(ec)}</td>
-                              <td className="text-right" style={{ opacity: 0.75 }}>{pct(percentual(ec, nr))}</td>
-                              <td className="text-right">{brl(anual(e.netIncome))}</td>
-                              <td className="text-right" style={{ opacity: 0.75 }}>
-                                {pct(percentual(anual(e.netIncome), nr))}
-                              </td>
+                              <td className="text-right divisor">{brl(eb)}</td>
+                              <td className="text-right apagado">{pct(percentual(eb, nr))}</td>
+                              <td className="text-right divisor">{brl(ec)}</td>
+                              <td className="text-right apagado">{pct(percentual(ec, nr))}</td>
+                              <td className="text-right divisor">{brl(anual(e.netIncome))}</td>
+                              <td className="text-right apagado">{pct(percentual(anual(e.netIncome), nr))}</td>
                             </tr>
                           )
                         })}
                       </tbody>
                       <tfoot>
                         <tr>
-                          <td><strong>Consolidado</strong></td>
-                          <td className="text-right"><strong>{brl(base)}</strong></td>
-                          <td className="text-right"><strong>{brl(anual(dados.subtotais.ebitda))}</strong></td>
+                          <td className="fixa">Consolidado</td>
+                          <td className="text-right">{brl(base)}</td>
+                          <td className="text-right divisor">{brl(anual(dados.subtotais.ebitda))}</td>
                           <td className="text-right">{pct(percentual(anual(dados.subtotais.ebitda), base))}</td>
-                          <td className="text-right"><strong>{brl(anual(dados.subtotais.ebitdaAposCapex))}</strong></td>
+                          <td className="text-right divisor">{brl(anual(dados.subtotais.ebitdaAposCapex))}</td>
                           <td className="text-right">{pct(percentual(anual(dados.subtotais.ebitdaAposCapex), base))}</td>
-                          <td className="text-right"><strong>{brl(anual(dados.subtotais.netIncome))}</strong></td>
+                          <td className="text-right divisor">{brl(anual(dados.subtotais.netIncome))}</td>
                           <td className="text-right">{pct(percentual(anual(dados.subtotais.netIncome), base))}</td>
                         </tr>
                       </tfoot>
@@ -434,20 +386,28 @@ export default function Resultado() {
               <div className="panel" style={{ marginBottom: 18 }}>
                 <div className="panel-header">
                   <div>
-                    <h2>P&amp;L por empresa</h2>
+                    <h2>
+                      P&amp;L por empresa
+                      <span className="selo-unidade">BRL</span>
+                    </h2>
                     <p>As linhas do P&amp;L abertas por empresa — cada coluna é uma, a última é o consolidado</p>
                   </div>
                 </div>
                 <div className="panel-body">
-                  <div style={{ overflowX: 'auto' }}>
-                    <table className="data-table painel-resultado">
+                  <div className="rolagem-x">
+                    <table className="data-table tabela-pl">
                       <thead>
-                        <tr>
-                          <th style={{ position: 'sticky', left: 0, background: 'var(--color-surface)' }}>LINHA</th>
+                        <tr className="grupo">
+                          <th className="vazio fixa" />
+                          <th colSpan={dados.empresas.length}>Empresas</th>
+                          <th className="divisor">Total</th>
+                        </tr>
+                        <tr className="sub">
+                          <th className="fixa">Linha do P&amp;L</th>
                           {dados.empresas.map((e) => (
-                            <th key={e.id ?? e.nome} className="text-right">{e.nome.toUpperCase()}</th>
+                            <th key={e.id ?? e.nome} className="text-right">{e.nome}</th>
                           ))}
-                          <th className="text-right">CONSOLIDADO</th>
+                          <th className="text-right divisor">Consolidado</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -463,35 +423,28 @@ export default function Resultado() {
                             return anual(e.porLinha.get(l.chave) ?? [])
                           }
                           return (
-                            <tr
-                              key={l.rotulo}
-                              style={
-                                l.eSubtotal
-                                  ? { background: 'var(--color-surface-alt, #f2f4f7)', fontWeight: 700 }
-                                  : undefined
-                              }
-                            >
-                              <td style={{ position: 'sticky', left: 0, background: 'inherit' }}>{l.rotulo}</td>
+                            <tr key={l.rotulo} className={l.eSubtotal ? 'soma' : undefined}>
+                              <td className="fixa">{l.rotulo}</td>
                               {dados.empresas.map((e) => {
                                 const v = valorEmp(e)
+                                const vazio = v === null || v === 0
                                 return (
                                   <td
                                     key={e.id ?? e.nome}
-                                    className="text-right"
-                                    style={{ opacity: v === 0 || v === null ? 0.3 : 1 }}
+                                    className={`text-right${vazio ? ' apagado' : ''}`}
                                   >
-                                    {v === null ? '—' : v === 0 ? '—' : brl(v)}
+                                    {vazio ? '—' : brl(v)}
                                   </td>
                                 )
                               })}
-                              <td className="text-right"><strong>{brl(total)}</strong></td>
+                              <td className="text-right divisor"><strong>{brl(total)}</strong></td>
                             </tr>
                           )
                         })}
                       </tbody>
                     </table>
                   </div>
-                  <p style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
+                  <p className="nota-tabela">
                     Nada é rateado: cada linha soma os lançamentos daquela empresa. Uma célula com travessão é
                     empresa sem lançamento naquela linha, não valor escondido.
                   </p>
@@ -513,43 +466,50 @@ export default function Resultado() {
                   </div>
                 </div>
                 <div className="panel-body">
-                  <div style={{ overflowX: 'auto' }}>
-                    <table className="data-table">
+                  <div className="rolagem-x">
+                    <table className="data-table tabela-pl">
                       <thead>
-                        <tr>
-                          <th>ÁREA</th>
-                          {mensal === 'mes' && MESES.map((m) => <th key={m} className="text-right">{m.toUpperCase()}</th>)}
-                          <th className="text-right">ANO</th>
+                        <tr className="grupo">
+                          <th className="vazio fixa" />
+                          {mensal === 'mes' && <th colSpan={12}>Mês a mês</th>}
+                          <th colSpan={2} className={mensal === 'mes' ? 'divisor' : undefined}>Ano</th>
+                        </tr>
+                        <tr className="sub">
+                          <th className="fixa">Área</th>
+                          {mensal === 'mes' && MESES.map((m) => <th key={m} className="text-right">{m}</th>)}
+                          <th className={`text-right${mensal === 'mes' ? ' divisor' : ''}`}>Total</th>
                           <th className="text-right">% NR</th>
                         </tr>
                       </thead>
                       <tbody>
                         {dados.areas.map((a) => (
                           <tr key={a.nome}>
-                            <td><strong>{a.nome}</strong></td>
+                            <td className="fixa">{a.nome}</td>
                             {mensal === 'mes' && a.valores.map((x, i) => (
-                              <td key={i} className="text-right" style={{ fontSize: 12, opacity: x === 0 ? 0.3 : 1 }}>
+                              <td key={i} className={`text-right${x === 0 ? ' apagado' : ''}`}>
                                 {x === 0 ? '—' : brl(x)}
                               </td>
                             ))}
-                            <td className="text-right">{brl(anual(a.valores))}</td>
-                            <td className="text-right">{pct(percentual(anual(a.valores), base))}</td>
+                            <td className={`text-right${mensal === 'mes' ? ' divisor' : ''}`}>
+                              <strong>{brl(anual(a.valores))}</strong>
+                            </td>
+                            <td className="text-right apagado">{pct(percentual(anual(a.valores), base))}</td>
                           </tr>
                         ))}
                       </tbody>
                       <tfoot>
                         <tr>
-                          <td><strong>Total de custos e despesas</strong></td>
+                          <td className="fixa">Total de custos e despesas</td>
                           {mensal === 'mes' && MESES.map((_, i) => (
-                            <td key={i} className="text-right" style={{ fontSize: 12 }}>
-                              <strong>{brl(dados.areas.reduce((t, a) => t + a.valores[i], 0))}</strong>
+                            <td key={i} className="text-right">
+                              {brl(dados.areas.reduce((t, a) => t + a.valores[i], 0))}
                             </td>
                           ))}
-                          <td className="text-right">
-                            <strong>{brl(dados.areas.reduce((t, a) => t + anual(a.valores), 0))}</strong>
+                          <td className={`text-right${mensal === 'mes' ? ' divisor' : ''}`}>
+                            {brl(dados.areas.reduce((t, a) => t + anual(a.valores), 0))}
                           </td>
                           <td className="text-right">
-                            <strong>{pct(percentual(dados.areas.reduce((t, a) => t + anual(a.valores), 0), base))}</strong>
+                            {pct(percentual(dados.areas.reduce((t, a) => t + anual(a.valores), 0), base))}
                           </td>
                         </tr>
                       </tfoot>
@@ -563,22 +523,31 @@ export default function Resultado() {
             <div className="panel" style={{ marginBottom: 18 }}>
               <div className="panel-header">
                 <div>
-                  <h2>P&amp;L Contábil</h2>
+                  <h2>
+                    P&amp;L Contábil
+                    <span className="selo-unidade">BRL</span>
+                  </h2>
                   <p>Cada linha vem do plano de contas; o percentual é sobre a receita líquida</p>
                 </div>
               </div>
               <div className="panel-body">
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="data-table">
+                <div className="rolagem-x">
+                  <table className="data-table tabela-pl">
                     <thead>
-                      <tr>
-                        <th>LINHA</th>
-                        {mensal === 'mes' && MESES.map((m) => <th key={m} className="text-right">{m.toUpperCase()}</th>)}
-                        <th className="text-right">ANO</th>
+                      <tr className="grupo">
+                        <th className="vazio fixa" />
+                        {mensal === 'mes' && <th colSpan={12}>Mês a mês</th>}
+                        <th colSpan={2} className={mensal === 'mes' ? 'divisor' : undefined}>Ano</th>
+                        {comp && <th colSpan={3} className="divisor">Comparativo</th>}
+                      </tr>
+                      <tr className="sub">
+                        <th className="fixa">Linha do P&amp;L</th>
+                        {mensal === 'mes' && MESES.map((m) => <th key={m} className="text-right">{m}</th>)}
+                        <th className={mensal === 'mes' ? 'text-right divisor' : 'text-right'}>Total</th>
                         <th className="text-right">% NR</th>
                         {comp && (
                           <>
-                            <th className="text-right">BUDGET</th>
+                            <th className="text-right divisor">Budget</th>
                             <th className="text-right">Δ</th>
                             <th className="text-right">Δ%</th>
                           </>
@@ -590,23 +559,16 @@ export default function Resultado() {
                         const v = anual(l.valores)
                         if (!l.eSubtotal && v === 0) return null
                         return (
-                          <tr
-                            key={l.rotulo}
-                            style={
-                              l.eSubtotal
-                                ? { background: 'var(--color-surface-alt, #f2f4f7)', fontWeight: 700 }
-                                : undefined
-                            }
-                          >
-                            <td>{l.rotulo}</td>
+                          <tr key={l.rotulo} className={l.eSubtotal ? 'soma' : undefined}>
+                            <td className="fixa">{l.rotulo}</td>
                             {mensal === 'mes' &&
                               l.valores.map((x, i) => (
-                                <td key={i} className="text-right" style={{ fontSize: 12, opacity: x === 0 ? 0.3 : 1 }}>
+                                <td key={i} className={x === 0 ? 'text-right apagado' : 'text-right'}>
                                   {x === 0 ? '—' : brl(x)}
                                 </td>
                               ))}
-                            <td className="text-right">{brl(v)}</td>
-                            <td className="text-right">{pct(percentual(v, base))}</td>
+                            <td className={mensal === 'mes' ? 'text-right divisor' : 'text-right'}>{brl(v)}</td>
+                            <td className="text-right apagado">{pct(percentual(v, base))}</td>
                             {comp && (() => {
                               const alvo = comp.pl.find((x) => x.rotulo === l.rotulo)
                               const b = anual(alvo?.valores)
@@ -614,19 +576,14 @@ export default function Resultado() {
                               // Linha de despesa: gastar menos que o budget é bom.
                               const menor = l.sinal === -1
                               const bom = menor ? delta < 0 : delta > 0
-                              const cor =
-                                delta === 0
-                                  ? 'inherit'
-                                  : bom
-                                  ? 'var(--color-success, #1a7f47)'
-                                  : 'var(--color-danger, #c0392b)'
+                              const cor = delta === 0 ? '' : bom ? 'melhor' : 'pior'
                               return (
                                 <>
-                                  <td className="text-right">{brl(b)}</td>
-                                  <td className="text-right" style={{ color: cor }}>
+                                  <td className="text-right divisor apagado">{brl(b)}</td>
+                                  <td className={'text-right ' + cor}>
                                     {delta > 0 ? '+' : ''}{brl(delta)}
                                   </td>
-                                  <td className="text-right" style={{ color: cor }}>
+                                  <td className={'text-right ' + cor}>
                                     {dp === null ? '—' : `${dp > 0 ? '+' : ''}${dp.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}
                                   </td>
                                 </>
@@ -636,13 +593,19 @@ export default function Resultado() {
                         )
                       })}
                       {dados.fora.map((f) => (
-                        <tr key={f.chave} style={{ background: 'var(--color-surface-alt, #fff6f4)' }}>
-                          <td>{f.chave} <span style={{ opacity: 0.6, fontSize: 12 }}>· fora da estrutura do P&amp;L</span></td>
+                        <tr key={f.chave} className="alerta">
+                          <td className="fixa">
+                            {f.chave} <span className="apagado">· fora da estrutura do P&amp;L</span>
+                          </td>
                           {mensal === 'mes' && f.valores.map((x, i) => (
-                            <td key={i} className="text-right" style={{ fontSize: 12 }}>{x === 0 ? '—' : brl(x)}</td>
+                            <td key={i} className={x === 0 ? 'text-right apagado' : 'text-right'}>
+                              {x === 0 ? '—' : brl(x)}
+                            </td>
                           ))}
-                          <td className="text-right">{brl(anual(f.valores))}</td>
-                          <td className="text-right">{pct(percentual(anual(f.valores), base))}</td>
+                          <td className={mensal === 'mes' ? 'text-right divisor' : 'text-right'}>
+                            {brl(anual(f.valores))}
+                          </td>
+                          <td className="text-right apagado">{pct(percentual(anual(f.valores), base))}</td>
                         </tr>
                       ))}
                     </tbody>

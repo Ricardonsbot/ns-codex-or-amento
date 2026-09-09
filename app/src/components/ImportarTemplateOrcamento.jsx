@@ -516,7 +516,10 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               <div className="panel" style={{ marginBottom: 16 }}>
                 <div className="panel-header">
                   <div>
-                    <h2>Como entra no P&amp;L</h2>
+                    <h2>
+                      Como entra no P&amp;L
+                      <span className="selo-unidade">BRL</span>
+                    </h2>
                     <p>
                       Só o que este arquivo traz, na ordem do P&amp;L Contábil
                       {!anual(pl.subtotais.receitaLiquida) && previa.receitaDaVersao
@@ -526,12 +529,16 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                   </div>
                 </div>
                 <div className="panel-body">
-                  <div style={{ overflowX: 'auto' }}>
-                    <table className="data-table">
+                  <div className="rolagem-x">
+                    <table className="data-table tabela-pl">
                       <thead>
-                        <tr>
-                          <th>LINHA</th>
-                          <th className="text-right">ANO</th>
+                        <tr className="grupo">
+                          <th className="vazio fixa" />
+                          <th colSpan={2}>Este arquivo</th>
+                        </tr>
+                        <tr className="sub">
+                          <th className="fixa">Linha do P&amp;L</th>
+                          <th className="text-right">Ano</th>
                           <th className="text-right">% NR</th>
                         </tr>
                       </thead>
@@ -545,17 +552,10 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                             if (!l.eSubtotal && v === 0) return null
                             const p = percentual(v, nr)
                             return (
-                              <tr
-                                key={l.rotulo}
-                                style={
-                                  l.eSubtotal
-                                    ? { background: 'var(--color-surface-alt, #f2f4f7)', fontWeight: 700 }
-                                    : undefined
-                                }
-                              >
-                                <td>{l.rotulo}</td>
+                              <tr key={l.rotulo} className={l.eSubtotal ? 'soma' : undefined}>
+                                <td className="fixa">{l.rotulo}</td>
                                 <td className="text-right">{brl(v)}</td>
-                                <td className="text-right">
+                                <td className="text-right apagado">
                                   {p === null ? '—' : `${p.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}
                                 </td>
                               </tr>
@@ -563,13 +563,12 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                           })
                         })()}
                         {anual(pl.semConta) !== 0 && (
-                          <tr style={{ background: 'var(--color-surface-alt, #fff6f4)' }}>
-                            <td>
-                              Sem conta{' '}
-                              <span style={{ opacity: 0.65, fontSize: 12 }}>· não entra em linha nenhuma</span>
+                          <tr className="alerta">
+                            <td className="fixa">
+                              Sem conta <span className="apagado">· não entra em linha nenhuma</span>
                             </td>
                             <td className="text-right">{brl(anual(pl.semConta))}</td>
-                            <td className="text-right">—</td>
+                            <td className="text-right apagado">—</td>
                           </tr>
                         )}
                       </tbody>
@@ -591,29 +590,32 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                   </div>
                 </div>
                 <div className="panel-body">
-                  <div style={{ overflowX: 'auto' }}>
-                    <table className="data-table">
+                  <div className="rolagem-x">
+                    <table className="data-table tabela-pl">
                       <thead>
-                        <tr>
-                          <th>CONTA</th>
-                          <th>LINHA DO P&amp;L</th>
-                          <th>ÁREA</th>
-                          <th className="text-right">LINHAS</th>
-                          <th className="text-right">VALOR</th>
+                        <tr className="grupo">
+                          <th className="vazio fixa" />
+                          <th colSpan={2}>Classificação</th>
+                          <th colSpan={2} className="divisor">Neste arquivo</th>
+                        </tr>
+                        <tr className="sub">
+                          <th className="fixa">Conta</th>
+                          <th>Linha do P&amp;L</th>
+                          <th>Área</th>
+                          <th className="text-right divisor">Linhas</th>
+                          <th className="text-right">Valor</th>
                         </tr>
                       </thead>
                       <tbody>
                         {classificacao.map((c, i) => (
-                          <tr key={i}>
-                            <td>
+                          <tr key={i} className={c.linhaPl ? undefined : 'alerta'}>
+                            <td className="fixa">
                               <strong>{c.codigo ?? '—'}</strong>
-                              <div style={{ fontSize: 12, opacity: 0.7 }}>{c.nome}</div>
+                              <div className="apagado">{c.nome}</div>
                             </td>
-                            <td style={{ fontSize: 12 }}>
+                            <td>
                               {c.linhaPl ?? (
-                                <span style={{ color: 'var(--color-danger, #c0392b)' }}>
-                                  conta não cadastrada — fica fora do P&amp;L
-                                </span>
+                                <span className="pior">conta não cadastrada — fica fora do P&amp;L</span>
                               )}
                             </td>
                             <td>
@@ -622,12 +624,12 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                                   {c.area}
                                 </span>
                               ) : (
-                                <span style={{ opacity: 0.5, fontSize: 12 }}>
+                                <span className="apagado">
                                   {tipo === 'receita' ? 'Net Revenue' : 'sem área na planilha'}
                                 </span>
                               )}
                             </td>
-                            <td className="text-right">{c.linhas}</td>
+                            <td className="text-right divisor">{c.linhas}</td>
                             <td className="text-right">{brl(c.valor)}</td>
                           </tr>
                         ))}
@@ -644,7 +646,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                   arvore={painel.arvore}
                   consolidado={painel.consolidado}
                   titulo="Como fica o resultado"
-                  subtitulo={`[ BRL M ] · o que estas ${aImportar.length} linha(s) somam por estrutura, antes de gravar`}
+                  subtitulo={`O que estas ${aImportar.length} linha(s) somam por estrutura, antes de gravar`}
                 />
               </div>
             )}
