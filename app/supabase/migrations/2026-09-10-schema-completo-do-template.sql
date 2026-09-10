@@ -1,31 +1,50 @@
--- Todas as colunas do Template Budget, de uma vez so.
+-- Ferramenta Orcamentaria — schema completo do Template Budget
+-- ============================================================================
 --
--- Ate aqui cada campo novo do template virava uma migracao — area, blocos
--- derivados, pacote/subpacote — e o que nao tinha coluna era jogado dentro de
--- `obs` como texto ("Pacote: X | Produto: Y"), onde da para ler mas nao da
--- para somar nem filtrar.
+-- O QUE FAZ
+--   Cria em `lancamento` e em `lancamento_valor_mensal` uma coluna para cada
+--   informacao que o Template Budget traz nas abas Receita, Base Gastos e
+--   Capex. Ate agora so parte delas tinha coluna; o resto era gravado como
+--   texto dentro de `obs` ("Pacote: X | Produto: Y"), de onde da para ler mas
+--   nao da para somar nem filtrar num relatorio.
 --
--- Este arquivo cria de uma vez as colunas das tres abas (Receita, Base Gastos
--- e Capex), levantadas do proprio template com
--- scripts/listar-colunas-template.mjs.
+--   Cria tambem `extras`, uma coluna jsonb que recebe qualquer coluna da
+--   planilha que ainda nao tenha lugar proprio — inclusive as que forem
+--   criadas no futuro. E o que evita ter de rodar um SQL novo a cada campo
+--   que o time acrescenta ao template.
 --
--- A ultima coluna e a que responde ao "nao ter que rodar toda hora": `extras`
--- e um jsonb que recebe qualquer coluna do template que ainda nao tenha lugar
--- proprio, inclusive as que forem criadas depois. Coluna nova na planilha
--- passa a entrar sozinha, sem DDL nenhum. Quando uma delas virar dimensao de
--- relatorio, ai sim ganha coluna e indice — mas o dado ja estava guardado
--- desde a primeira importacao.
+-- O QUE NAO FAZ
+--   Nao apaga nem altera nenhum dado existente. Nao remove coluna, nao muda
+--   tipo de coluna que ja exista, nao mexe em RLS nem em permissao. Toda
+--   instrucao e `if not exists`: rodar duas vezes nao da erro e nao tem
+--   efeito na segunda.
 --
--- Rode no SQL Editor do Supabase (Project -> SQL Editor -> New query -> Run).
--- O banco e compartilhado — avise o time antes, conforme o COLABORACAO.md.
+--   Os lancamentos que ja estao gravados nao sao preenchidos retroativamente
+--   — as colunas novas nascem nulas e passam a ser preenchidas nas proximas
+--   importacoes.
 --
--- Substitui, e repete por inteiro, estas tres:
---   2026-09-08-blocos-derivados.sql
---   2026-09-09-area-do-pl.sql
---   2026-09-10-pacote-e-subpacote.sql
--- e traz junto a tabela de 2026-09-09-pendencia-de-cadastros.sql, de modo que
--- num banco novo rodar so este arquivo basta. Tudo com `if not exists`: rodar
--- de novo nao da erro e nao apaga nada.
+-- IMPACTO
+--   `add column` sem default nao reescreve a tabela: e instantaneo, em
+--   qualquer volume. Os `create index` do fim travam escrita em `lancamento`
+--   enquanto rodam; com a ordem de grandeza atual (~7 mil linhas) e questao
+--   de milissegundos.
+--
+-- COMO RODAR
+--   Supabase -> Project -> SQL Editor -> New query -> colar tudo -> Run.
+--   O banco e compartilhado: avise o time antes, conforme o COLABORACAO.md.
+--
+-- SUBSTITUI
+--   Repete por inteiro estas tres, que nao precisam mais ser rodadas:
+--     2026-09-08-blocos-derivados.sql
+--     2026-09-09-area-do-pl.sql
+--     2026-09-09-pendencia-de-cadastros.sql
+--   Num banco novo, rodar so este arquivo basta.
+--
+-- PROCEDENCIA
+--   A lista de colunas nao foi escrita de memoria: saiu do proprio template,
+--   com app/scripts/listar-colunas-template.mjs. O comentario ao lado de cada
+--   coluna diz de qual cabecalho da planilha ela vem.
+-- ============================================================================
 
 -- ---------------------------------------------------------------------------
 -- lancamento: as dimensoes da linha
