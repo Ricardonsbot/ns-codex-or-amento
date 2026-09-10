@@ -15,6 +15,9 @@ import {
 } from '../lib/importarTemplateOrcamento'
 
 const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+/** R$ M com uma casa: o formato #,##0.0 das tabelas do Master Resultado. */
+const mi = (v) =>
+  (Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 /**
  * Como o tipo se chama nas mensagens. O `rotulo` da tela é "Revenue"/"Expenses",
@@ -516,10 +519,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               <div className="panel" style={{ marginBottom: 16 }}>
                 <div className="panel-header">
                   <div>
-                    <h2>
-                      Como entra no P&amp;L
-                      <span className="selo-unidade">BRL</span>
-                    </h2>
+                    <h2>Como entra no P&amp;L</h2>
                     <p>
                       Só o que este arquivo traz, na ordem do P&amp;L Contábil
                       {!anual(pl.subtotais.receitaLiquida) && previa.receitaDaVersao
@@ -530,16 +530,18 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                 </div>
                 <div className="panel-body">
                   <div className="rolagem-x">
-                    <table className="data-table tabela-pl">
+                    <table className="tabela-xl sem-indice">
                       <thead>
-                        <tr className="grupo">
-                          <th className="vazio fixa" />
+                        <tr className="faixa">
+                          <th className="canto fixa-2">(R$ M)</th>
+                          <th className="vao" />
                           <th colSpan={2}>Este arquivo</th>
                         </tr>
-                        <tr className="sub">
-                          <th className="fixa">Linha do P&amp;L</th>
-                          <th className="text-right">Ano</th>
-                          <th className="text-right">% NR</th>
+                        <tr className="rotulos">
+                          <th className="rotulo fixa-2">Linha do P&amp;L</th>
+                          <th className="vao" />
+                          <th className="atual">Actual</th>
+                          <th>%NR</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -552,11 +554,14 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                             if (!l.eSubtotal && v === 0) return null
                             const p = percentual(v, nr)
                             return (
-                              <tr key={l.rotulo} className={l.eSubtotal ? 'soma' : undefined}>
-                                <td className="fixa">{l.rotulo}</td>
-                                <td className="text-right">{brl(v)}</td>
-                                <td className="text-right apagado">
-                                  {p === null ? '—' : `${p.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}
+                              <tr key={l.rotulo} className={l.eSubtotal ? 'faixa-soma' : 'detalhe'}>
+                                <td className="rotulo fixa-2">{l.eSubtotal ? `= ${l.rotulo}` : l.rotulo}</td>
+                                <td className="vao" />
+                                <td className="valor">{mi(v)}</td>
+                                <td>
+                                  {p === null
+                                    ? '—'
+                                    : `${p.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
                                 </td>
                               </tr>
                             )
@@ -564,11 +569,10 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                         })()}
                         {anual(pl.semConta) !== 0 && (
                           <tr className="alerta">
-                            <td className="fixa">
-                              Sem conta <span className="apagado">· não entra em linha nenhuma</span>
-                            </td>
-                            <td className="text-right">{brl(anual(pl.semConta))}</td>
-                            <td className="text-right apagado">—</td>
+                            <td className="rotulo fixa-2">Sem conta · não entra em linha nenhuma</td>
+                            <td className="vao" />
+                            <td className="valor">{mi(anual(pl.semConta))}</td>
+                            <td className="apagado">—</td>
                           </tr>
                         )}
                       </tbody>
@@ -591,46 +595,42 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                 </div>
                 <div className="panel-body">
                   <div className="rolagem-x">
-                    <table className="data-table tabela-pl">
+                    <table className="tabela-xl sem-indice">
                       <thead>
-                        <tr className="grupo">
-                          <th className="vazio fixa" />
+                        <tr className="faixa">
+                          <th className="canto fixa-2">(R$ M)</th>
+                          <th className="vao" />
                           <th colSpan={2}>Classificação</th>
-                          <th colSpan={2} className="divisor">Neste arquivo</th>
+                          <th className="vao" />
+                          <th colSpan={2}>Neste arquivo</th>
                         </tr>
-                        <tr className="sub">
-                          <th className="fixa">Conta</th>
-                          <th>Linha do P&amp;L</th>
+                        <tr className="rotulos">
+                          <th className="rotulo fixa-2">Conta</th>
+                          <th className="vao" />
+                          <th className="rotulo">Linha do P&amp;L</th>
                           <th>Área</th>
-                          <th className="text-right divisor">Linhas</th>
-                          <th className="text-right">Valor</th>
+                          <th className="vao" />
+                          <th>Linhas</th>
+                          <th className="atual">Valor</th>
                         </tr>
                       </thead>
                       <tbody>
                         {classificacao.map((c, i) => (
-                          <tr key={i} className={c.linhaPl ? undefined : 'alerta'}>
-                            <td className="fixa">
+                          <tr key={i} className={c.linhaPl ? 'detalhe' : 'alerta'}>
+                            <td className="rotulo fixa-2">
                               <strong>{c.codigo ?? '—'}</strong>
                               <div className="apagado">{c.nome}</div>
                             </td>
-                            <td>
-                              {c.linhaPl ?? (
-                                <span className="pior">conta não cadastrada — fica fora do P&amp;L</span>
-                              )}
+                            <td className="vao" />
+                            <td className="rotulo">
+                              {c.linhaPl ?? 'conta não cadastrada — fica fora do P&L'}
                             </td>
                             <td>
-                              {c.area ? (
-                                <span className="filtro-chip ativo" style={{ cursor: 'default', fontSize: 11 }}>
-                                  {c.area}
-                                </span>
-                              ) : (
-                                <span className="apagado">
-                                  {tipo === 'receita' ? 'Net Revenue' : 'sem área na planilha'}
-                                </span>
-                              )}
+                              {c.area ?? (tipo === 'receita' ? 'Net Revenue' : '—')}
                             </td>
-                            <td className="text-right divisor">{c.linhas}</td>
-                            <td className="text-right">{brl(c.valor)}</td>
+                            <td className="vao" />
+                            <td>{c.linhas}</td>
+                            <td className="valor">{mi(c.valor)}</td>
                           </tr>
                         ))}
                       </tbody>

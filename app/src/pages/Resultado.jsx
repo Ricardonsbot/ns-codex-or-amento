@@ -18,7 +18,13 @@ const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'O
 const brl = (v) =>
   Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const milhoes = (v) => `${(Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`
-const pct = (v) => (v === null || !isFinite(v) ? '—' : `${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`)
+/** R$ M com uma casa: o formato #,##0.0 que o Master Resultado usa nas tabelas. */
+const mi = (v) =>
+  (Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+const pct = (v) =>
+  v === null || !isFinite(v)
+    ? '—'
+    : `${v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
 
 /**
  * Δ e Δ% contra o comparativo. Verde e vermelho seguem o SENTIDO do indicador,
@@ -314,33 +320,38 @@ export default function Resultado() {
               <div className="panel" style={{ marginBottom: 18 }}>
                 <div className="panel-header">
                   <div>
-                    <h2>
-                      Resultados por empresa
-                      <span className="selo-unidade">BRL</span>
-                    </h2>
+                    <h2>Resultados por empresa</h2>
                     <p>Net Revenue, EBITDA e EBITDA after Capex de cada empresa, com a margem sobre a própria receita</p>
                   </div>
                 </div>
                 <div className="panel-body">
                   <div className="rolagem-x">
-                    <table className="data-table tabela-pl">
+                    <table className="tabela-xl sem-indice">
                       <thead>
-                        <tr className="grupo">
-                          <th className="vazio fixa" />
+                        <tr className="faixa">
+                          <th className="canto fixa-2">(R$ M)</th>
+                          <th className="vao" />
                           <th>Net Revenue</th>
-                          <th colSpan={2} className="divisor">EBITDA</th>
-                          <th colSpan={2} className="divisor">EBITDA after Capex</th>
-                          <th colSpan={2} className="divisor">Net Income</th>
+                          <th className="vao" />
+                          <th colSpan={2}>EBITDA</th>
+                          <th className="vao" />
+                          <th colSpan={2}>Adj. Ebitda After Capex</th>
+                          <th className="vao" />
+                          <th colSpan={2}>Net Income</th>
                         </tr>
-                        <tr className="sub">
-                          <th className="fixa">Empresa</th>
-                          <th className="text-right">Ano</th>
-                          <th className="text-right divisor">Ano</th>
-                          <th className="text-right">Margem</th>
-                          <th className="text-right divisor">Ano</th>
-                          <th className="text-right">Margem</th>
-                          <th className="text-right divisor">Ano</th>
-                          <th className="text-right">Margem</th>
+                        <tr className="rotulos">
+                          <th className="rotulo fixa-2">Empresa</th>
+                          <th className="vao" />
+                          <th className="atual">Actual</th>
+                          <th className="vao" />
+                          <th className="atual">Actual</th>
+                          <th>%NR</th>
+                          <th className="vao" />
+                          <th className="atual">Actual</th>
+                          <th>%NR</th>
+                          <th className="vao" />
+                          <th className="atual">Actual</th>
+                          <th>%NR</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -348,32 +359,42 @@ export default function Resultado() {
                           const nr = anual(e.receitaLiquida)
                           const eb = anual(e.ebitda)
                           const ec = anual(e.ebitdaAposCapex)
+                          const ni = anual(e.netIncome)
                           return (
                             <tr key={e.id ?? e.nome}>
-                              <td className="fixa">{e.nome}</td>
-                              <td className="text-right">{brl(nr)}</td>
-                              <td className="text-right divisor">{brl(eb)}</td>
-                              <td className="text-right apagado">{pct(percentual(eb, nr))}</td>
-                              <td className="text-right divisor">{brl(ec)}</td>
-                              <td className="text-right apagado">{pct(percentual(ec, nr))}</td>
-                              <td className="text-right divisor">{brl(anual(e.netIncome))}</td>
-                              <td className="text-right apagado">{pct(percentual(anual(e.netIncome), nr))}</td>
+                              <td className="rotulo fixa-2">{e.nome}</td>
+                              <td className="vao" />
+                              <td className="valor">{mi(nr)}</td>
+                              <td className="vao" />
+                              <td className="valor">{mi(eb)}</td>
+                              <td>{pct(percentual(eb, nr))}</td>
+                              <td className="vao" />
+                              <td className="valor">{mi(ec)}</td>
+                              <td>{pct(percentual(ec, nr))}</td>
+                              <td className="vao" />
+                              <td className="valor">{mi(ni)}</td>
+                              <td>{pct(percentual(ni, nr))}</td>
                             </tr>
                           )
                         })}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td className="fixa">Consolidado</td>
-                          <td className="text-right">{brl(base)}</td>
-                          <td className="text-right divisor">{brl(anual(dados.subtotais.ebitda))}</td>
-                          <td className="text-right">{pct(percentual(anual(dados.subtotais.ebitda), base))}</td>
-                          <td className="text-right divisor">{brl(anual(dados.subtotais.ebitdaAposCapex))}</td>
-                          <td className="text-right">{pct(percentual(anual(dados.subtotais.ebitdaAposCapex), base))}</td>
-                          <td className="text-right divisor">{brl(anual(dados.subtotais.netIncome))}</td>
-                          <td className="text-right">{pct(percentual(anual(dados.subtotais.netIncome), base))}</td>
+                        <tr className="respiro">
+                          <td colSpan={13} />
                         </tr>
-                      </tfoot>
+                        <tr className="consolidado">
+                          <td className="rotulo fixa-2">Consolidado</td>
+                          <td className="vao" />
+                          <td className="valor">{mi(base)}</td>
+                          <td className="vao" />
+                          <td className="valor">{mi(anual(dados.subtotais.ebitda))}</td>
+                          <td>{pct(percentual(anual(dados.subtotais.ebitda), base))}</td>
+                          <td className="vao" />
+                          <td className="valor">{mi(anual(dados.subtotais.ebitdaAposCapex))}</td>
+                          <td>{pct(percentual(anual(dados.subtotais.ebitdaAposCapex), base))}</td>
+                          <td className="vao" />
+                          <td className="valor">{mi(anual(dados.subtotais.netIncome))}</td>
+                          <td>{pct(percentual(anual(dados.subtotais.netIncome), base))}</td>
+                        </tr>
+                      </tbody>
                     </table>
                   </div>
                 </div>
@@ -386,28 +407,29 @@ export default function Resultado() {
               <div className="panel" style={{ marginBottom: 18 }}>
                 <div className="panel-header">
                   <div>
-                    <h2>
-                      P&amp;L por empresa
-                      <span className="selo-unidade">BRL</span>
-                    </h2>
+                    <h2>P&amp;L por empresa</h2>
                     <p>As linhas do P&amp;L abertas por empresa — cada coluna é uma, a última é o consolidado</p>
                   </div>
                 </div>
                 <div className="panel-body">
                   <div className="rolagem-x">
-                    <table className="data-table tabela-pl">
+                    <table className="tabela-xl sem-indice">
                       <thead>
-                        <tr className="grupo">
-                          <th className="vazio fixa" />
+                        <tr className="faixa">
+                          <th className="canto fixa-2">(R$ M)</th>
+                          <th className="vao" />
                           <th colSpan={dados.empresas.length}>Empresas</th>
-                          <th className="divisor">Total</th>
+                          <th className="vao" />
+                          <th>Consolidado</th>
                         </tr>
-                        <tr className="sub">
-                          <th className="fixa">Linha do P&amp;L</th>
+                        <tr className="rotulos">
+                          <th className="rotulo fixa-2">Linha do P&amp;L</th>
+                          <th className="vao" />
                           {dados.empresas.map((e) => (
-                            <th key={e.id ?? e.nome} className="text-right">{e.nome}</th>
+                            <th key={e.id ?? e.nome}>{e.nome}</th>
                           ))}
-                          <th className="text-right divisor">Consolidado</th>
+                          <th className="vao" />
+                          <th className="atual">Actual</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -423,21 +445,22 @@ export default function Resultado() {
                             return anual(e.porLinha.get(l.chave) ?? [])
                           }
                           return (
-                            <tr key={l.rotulo} className={l.eSubtotal ? 'soma' : undefined}>
-                              <td className="fixa">{l.rotulo}</td>
+                            <tr key={l.rotulo} className={l.eSubtotal ? 'faixa-soma' : 'detalhe'}>
+                              <td className="rotulo fixa-2">
+                                {l.eSubtotal ? `= ${l.rotulo}` : l.rotulo}
+                              </td>
+                              <td className="vao" />
                               {dados.empresas.map((e) => {
                                 const v = valorEmp(e)
                                 const vazio = v === null || v === 0
                                 return (
-                                  <td
-                                    key={e.id ?? e.nome}
-                                    className={`text-right${vazio ? ' apagado' : ''}`}
-                                  >
-                                    {vazio ? '—' : brl(v)}
+                                  <td key={e.id ?? e.nome} className={vazio ? 'apagado' : undefined}>
+                                    {vazio ? '—' : mi(v)}
                                   </td>
                                 )
                               })}
-                              <td className="text-right divisor"><strong>{brl(total)}</strong></td>
+                              <td className="vao" />
+                              <td className="valor">{mi(total)}</td>
                             </tr>
                           )
                         })}
@@ -467,52 +490,50 @@ export default function Resultado() {
                 </div>
                 <div className="panel-body">
                   <div className="rolagem-x">
-                    <table className="data-table tabela-pl">
+                    <table className="tabela-xl sem-indice">
                       <thead>
-                        <tr className="grupo">
-                          <th className="vazio fixa" />
+                        <tr className="faixa">
+                          <th className="canto fixa-2">(R$ M)</th>
+                          {mensal === 'mes' && <th className="vao" />}
                           {mensal === 'mes' && <th colSpan={12}>Mês a mês</th>}
-                          <th colSpan={2} className={mensal === 'mes' ? 'divisor' : undefined}>Ano</th>
+                          <th className="vao" />
+                          <th colSpan={2}>Ano</th>
                         </tr>
-                        <tr className="sub">
-                          <th className="fixa">Área</th>
-                          {mensal === 'mes' && MESES.map((m) => <th key={m} className="text-right">{m}</th>)}
-                          <th className={`text-right${mensal === 'mes' ? ' divisor' : ''}`}>Total</th>
-                          <th className="text-right">% NR</th>
+                        <tr className="rotulos">
+                          <th className="rotulo fixa-2">Área</th>
+                          {mensal === 'mes' && <th className="vao" />}
+                          {mensal === 'mes' && MESES.map((m) => <th key={m}>{m}</th>)}
+                          <th className="vao" />
+                          <th className="atual">Actual</th>
+                          <th>%NR</th>
                         </tr>
                       </thead>
                       <tbody>
                         {dados.areas.map((a) => (
-                          <tr key={a.nome}>
-                            <td className="fixa">{a.nome}</td>
+                          <tr key={a.nome} className="detalhe">
+                            <td className="rotulo fixa-2">{a.nome}</td>
+                            {mensal === 'mes' && <td className="vao" />}
                             {mensal === 'mes' && a.valores.map((x, i) => (
-                              <td key={i} className={`text-right${x === 0 ? ' apagado' : ''}`}>
-                                {x === 0 ? '—' : brl(x)}
+                              <td key={i} className={x === 0 ? 'apagado' : undefined}>
+                                {x === 0 ? '—' : mi(x)}
                               </td>
                             ))}
-                            <td className={`text-right${mensal === 'mes' ? ' divisor' : ''}`}>
-                              <strong>{brl(anual(a.valores))}</strong>
-                            </td>
-                            <td className="text-right apagado">{pct(percentual(anual(a.valores), base))}</td>
+                            <td className="vao" />
+                            <td className="valor">{mi(anual(a.valores))}</td>
+                            <td>{pct(percentual(anual(a.valores), base))}</td>
                           </tr>
                         ))}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td className="fixa">Total de custos e despesas</td>
+                        <tr className="faixa-soma">
+                          <td className="rotulo fixa-2">= Total de custos e despesas</td>
+                          {mensal === 'mes' && <td className="vao" />}
                           {mensal === 'mes' && MESES.map((_, i) => (
-                            <td key={i} className="text-right">
-                              {brl(dados.areas.reduce((t, a) => t + a.valores[i], 0))}
-                            </td>
+                            <td key={i}>{mi(dados.areas.reduce((t, a) => t + a.valores[i], 0))}</td>
                           ))}
-                          <td className={`text-right${mensal === 'mes' ? ' divisor' : ''}`}>
-                            {brl(dados.areas.reduce((t, a) => t + anual(a.valores), 0))}
-                          </td>
-                          <td className="text-right">
-                            {pct(percentual(dados.areas.reduce((t, a) => t + anual(a.valores), 0), base))}
-                          </td>
+                          <td className="vao" />
+                          <td className="valor">{mi(dados.areas.reduce((t, a) => t + anual(a.valores), 0))}</td>
+                          <td>{pct(percentual(dados.areas.reduce((t, a) => t + anual(a.valores), 0), base))}</td>
                         </tr>
-                      </tfoot>
+                      </tbody>
                     </table>
                   </div>
                 </div>
@@ -523,33 +544,36 @@ export default function Resultado() {
             <div className="panel" style={{ marginBottom: 18 }}>
               <div className="panel-header">
                 <div>
-                  <h2>
-                    P&amp;L Contábil
-                    <span className="selo-unidade">BRL</span>
-                  </h2>
+                  <h2>P&amp;L Contábil</h2>
                   <p>Cada linha vem do plano de contas; o percentual é sobre a receita líquida</p>
                 </div>
               </div>
               <div className="panel-body">
                 <div className="rolagem-x">
-                  <table className="data-table tabela-pl">
+                  <table className="tabela-xl sem-indice">
                     <thead>
-                      <tr className="grupo">
-                        <th className="vazio fixa" />
+                      <tr className="faixa">
+                        <th className="canto fixa-2">(R$ M)</th>
+                        {mensal === 'mes' && <th className="vao" />}
                         {mensal === 'mes' && <th colSpan={12}>Mês a mês</th>}
-                        <th colSpan={2} className={mensal === 'mes' ? 'divisor' : undefined}>Ano</th>
-                        {comp && <th colSpan={3} className="divisor">Comparativo</th>}
+                        <th className="vao" />
+                        <th colSpan={2}>Ano</th>
+                        {comp && <th className="vao" />}
+                        {comp && <th colSpan={3}>Budget</th>}
                       </tr>
-                      <tr className="sub">
-                        <th className="fixa">Linha do P&amp;L</th>
-                        {mensal === 'mes' && MESES.map((m) => <th key={m} className="text-right">{m}</th>)}
-                        <th className={mensal === 'mes' ? 'text-right divisor' : 'text-right'}>Total</th>
-                        <th className="text-right">% NR</th>
+                      <tr className="rotulos">
+                        <th className="rotulo fixa-2">Linha do P&amp;L</th>
+                        {mensal === 'mes' && <th className="vao" />}
+                        {mensal === 'mes' && MESES.map((m) => <th key={m}>{m}</th>)}
+                        <th className="vao" />
+                        <th className="atual">Actual</th>
+                        <th>%NR</th>
                         {comp && (
                           <>
-                            <th className="text-right divisor">Budget</th>
-                            <th className="text-right">Δ</th>
-                            <th className="text-right">Δ%</th>
+                            <th className="vao" />
+                            <th className="orcado">Budget</th>
+                            <th>Δ</th>
+                            <th>Δ%</th>
                           </>
                         )}
                       </tr>
@@ -559,32 +583,33 @@ export default function Resultado() {
                         const v = anual(l.valores)
                         if (!l.eSubtotal && v === 0) return null
                         return (
-                          <tr key={l.rotulo} className={l.eSubtotal ? 'soma' : undefined}>
-                            <td className="fixa">{l.rotulo}</td>
+                          <tr key={l.rotulo} className={l.eSubtotal ? 'faixa-soma' : 'detalhe'}>
+                            <td className="rotulo fixa-2">{l.eSubtotal ? `= ${l.rotulo}` : l.rotulo}</td>
+                            {mensal === 'mes' && <td className="vao" />}
                             {mensal === 'mes' &&
                               l.valores.map((x, i) => (
-                                <td key={i} className={x === 0 ? 'text-right apagado' : 'text-right'}>
-                                  {x === 0 ? '—' : brl(x)}
+                                <td key={i} className={x === 0 ? 'apagado' : undefined}>
+                                  {x === 0 ? '—' : mi(x)}
                                 </td>
                               ))}
-                            <td className={mensal === 'mes' ? 'text-right divisor' : 'text-right'}>{brl(v)}</td>
-                            <td className="text-right apagado">{pct(percentual(v, base))}</td>
+                            <td className="vao" />
+                            <td className="valor">{mi(v)}</td>
+                            <td>{pct(percentual(v, base))}</td>
                             {comp && (() => {
                               const alvo = comp.pl.find((x) => x.rotulo === l.rotulo)
                               const b = anual(alvo?.valores)
                               const { delta, pct: dp } = variacao(v, b)
-                              // Linha de despesa: gastar menos que o budget é bom.
-                              const menor = l.sinal === -1
-                              const bom = menor ? delta < 0 : delta > 0
-                              const cor = delta === 0 ? '' : bom ? 'melhor' : 'pior'
                               return (
                                 <>
-                                  <td className="text-right divisor apagado">{brl(b)}</td>
-                                  <td className={'text-right ' + cor}>
-                                    {delta > 0 ? '+' : ''}{brl(delta)}
+                                  <td className="vao" />
+                                  <td className="valor">{mi(b)}</td>
+                                  <td>
+                                    {delta > 0 ? '+' : ''}{mi(delta)}
                                   </td>
-                                  <td className={'text-right ' + cor}>
-                                    {dp === null ? '—' : `${dp > 0 ? '+' : ''}${dp.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}
+                                  <td>
+                                    {dp === null
+                                      ? '—'
+                                      : `${dp > 0 ? '+' : ''}${dp.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
                                   </td>
                                 </>
                               )
@@ -594,18 +619,26 @@ export default function Resultado() {
                       })}
                       {dados.fora.map((f) => (
                         <tr key={f.chave} className="alerta">
-                          <td className="fixa">
-                            {f.chave} <span className="apagado">· fora da estrutura do P&amp;L</span>
+                          <td className="rotulo fixa-2">
+                            {f.chave} · fora da estrutura do P&amp;L
                           </td>
+                          {mensal === 'mes' && <td className="vao" />}
                           {mensal === 'mes' && f.valores.map((x, i) => (
-                            <td key={i} className={x === 0 ? 'text-right apagado' : 'text-right'}>
-                              {x === 0 ? '—' : brl(x)}
+                            <td key={i} className={x === 0 ? 'apagado' : undefined}>
+                              {x === 0 ? '—' : mi(x)}
                             </td>
                           ))}
-                          <td className={mensal === 'mes' ? 'text-right divisor' : 'text-right'}>
-                            {brl(anual(f.valores))}
-                          </td>
-                          <td className="text-right apagado">{pct(percentual(anual(f.valores), base))}</td>
+                          <td className="vao" />
+                          <td className="valor">{mi(anual(f.valores))}</td>
+                          <td>{pct(percentual(anual(f.valores), base))}</td>
+                          {comp && (
+                            <>
+                              <td className="vao" />
+                              <td className="valor apagado">—</td>
+                              <td className="apagado">—</td>
+                              <td className="apagado">—</td>
+                            </>
+                          )}
                         </tr>
                       ))}
                     </tbody>

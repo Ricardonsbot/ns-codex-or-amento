@@ -288,8 +288,10 @@ export function achatar(arvore, prefixo = '') {
  */
 export function semaforo(pct) {
   if (pct === null || !isFinite(pct)) return null
-  if (pct >= 0) return 'verde'
-  if (pct >= -5) return 'amarelo'
+  // Os cortes sao os mesmos do icone do Master Resultado: verde acima de +3%,
+  // vermelho abaixo de -3%, amarelo no meio.
+  if (pct >= 3) return 'verde'
+  if (pct >= -3) return 'amarelo'
   return 'vermelho'
 }
 

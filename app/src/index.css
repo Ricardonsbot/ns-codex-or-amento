@@ -1816,147 +1816,230 @@ tfoot td {
   padding: 7px 10px;
 }
 
-/* ---------- Tabelas do Resultado ---------- */
-/* No formato do P&L que o time lê no Excel: faixa laranja por grupo de medida,
-   sub-cabeçalho claro, linhas densas, número tabular e as somas em faixa. */
+/* ---------- Tabelas do Resultado, no formato do Master Resultado ----------
+   As medidas e as cores abaixo saem do proprio arquivo (aba "Painel Resultado
+   (MTD)" e "P&L Contabil"): faixa #FF6600 do grupo, celula Actual em pessego
+   com texto laranja, vao branco separando os grupos, numeros centralizados com
+   uma casa em R$ M, linha do consolidado em #404040 e das BUs em #808080,
+   hairline #D9D9D9 abrindo cada nivel e o semaforo em -3% / +3%.
+   Trocar qualquer um desses valores afasta a tela do que o time le no Excel. */
+
+:root {
+  --xl-laranja: #ff6600;        /* faixa do grupo de medida */
+  --xl-pessego: #fbe5d6;        /* fundo da coluna Actual no cabecalho */
+  --xl-pessego-forte: #f4b183;  /* faixa de cabecalho do P&L Contabil */
+  --xl-escuro: #404040;         /* linha do consolidado */
+  --xl-medio: #808080;          /* linha de BU e texto descritivo */
+  --xl-banda: #a6a6a6;          /* subtotal "=" do P&L */
+  --xl-rotulo: #595959;         /* rotulo Budget / LY */
+  --xl-linha: #d9d9d9;          /* hairline entre niveis */
+  --xl-texto: #262626;          /* linha de detalhe do P&L */
+  --xl-verde: #63be7b;
+  --xl-amarelo: #ffd666;
+  --xl-vermelho: #f8696b;
+}
 
 .rolagem-x { overflow-x: auto; }
 
-.tabela-pl {
+.tabela-xl {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 12.5px;
-  font-variant-numeric: tabular-nums;   /* dígitos alinhados coluna a coluna */
+  width: auto;
+  min-width: 100%;
+  font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: #000;
+  background: #fff;
 }
 
-.tabela-pl th,
-.tabela-pl td {
-  padding: 6px 10px;
+/* As regras genericas de thead deixam o cabecalho em caixa alta, cinza e
+   espacado; aqui ele volta a ser o do Excel: caixa mista, preto, sem tracking. */
+.tabela-xl th,
+.tabela-xl td {
+  padding: 3px 6px;
+  border: none;
   white-space: nowrap;
-  border-bottom: 1px solid var(--color-border);
-}
-
-/* Faixa do grupo de medida */
-.tabela-pl thead tr.grupo th {
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: .1em;
   text-align: center;
-  text-transform: uppercase;
-  border-bottom: none;
+  vertical-align: middle;
+  line-height: 1.5;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: inherit;
 }
 
-/* O canto vazio acima da coluna de nomes: fica opaco porque a coluna e
-   grudada e o resto da tabela passa por baixo dela na rolagem lateral. */
-.tabela-pl thead tr.grupo th.vazio {
-  background: var(--color-surface);
-  border-bottom: none;
+/* ---- vao branco entre grupos de medida (coluna de largura 0,71 no Excel) ---- */
+.tabela-xl .vao {
+  width: 10px;
+  min-width: 10px;
+  padding: 0;
+  background: #fff;
 }
 
-/* Sub-cabeçalho com os rótulos das colunas */
-.tabela-pl thead tr.sub th {
-  background: var(--color-bg);
-  color: var(--color-text-muted);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  border-bottom: 2px solid var(--color-border);
-}
-
-/* Separador entre grupos de colunas */
-.tabela-pl .divisor { border-left: 2px solid var(--color-border); }
-
-/* Linha de soma do P&L: Receita Líquida, EBITDA, Net Income */
-.tabela-pl tbody tr.soma > td {
-  background: var(--color-bg);
-  font-weight: 700;
-  border-top: 1px solid var(--color-border);
-}
-
-/* Linha do consolidado, no topo ou no rodapé */
-.tabela-pl tbody tr.consolidado > td,
-.tabela-pl tfoot td {
-  background: var(--color-dark);
+/* ---- faixa laranja do grupo ---- */
+.tabela-xl thead tr.faixa th {
+  background: var(--xl-laranja);
   color: #fff;
   font-weight: 700;
-  border-top: none;
-  border-bottom: none;
+  padding: 4px 6px;
 }
 
-/* Primeiro nível da hierarquia (as BUs) */
-.tabela-pl tbody tr.forte > td { font-weight: 700; }
-
-/* Linha que veio do arquivo e não casou com o plano de contas */
-.tabela-pl tbody tr.alerta > td { background: var(--color-danger-bg); }
-
-.tabela-pl tbody tr:not(.soma):not(.consolidado):hover > td {
-  background: var(--color-sidebar-active);
+/* o canto da faixa nao e laranja: leva so a unidade, em cinza italico.
+   O vao tambem fura a faixa - no Excel a tarja laranja de cada grupo comeca e
+   termina nele, e sem isso as quatro medidas viram uma tarja so. */
+.tabela-xl thead tr.faixa th.canto {
+  background: #fff;
+  color: var(--xl-medio);
+  font-style: italic;
 }
 
-/* A coluna do nome acompanha a rolagem lateral */
-.tabela-pl .fixa {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: var(--color-surface);
-}
-.tabela-pl thead .fixa { background: var(--color-bg); }
-.tabela-pl tbody tr.soma > td.fixa { background: var(--color-bg); }
-.tabela-pl tbody tr.consolidado > td.fixa,
-.tabela-pl tfoot td.fixa { background: var(--color-dark); }
-.tabela-pl tbody tr.alerta > td.fixa { background: var(--color-danger-bg); }
-.tabela-pl tbody tr:not(.soma):not(.consolidado):hover > td.fixa {
-  background: var(--color-sidebar-active);
-}
+.tabela-xl thead tr.faixa th.vao { background: #fff; }
 
-/* Numeração 1, 1.1, 1.1.1 antes do nome */
-.tabela-pl .numero {
-  display: inline-block;
-  min-width: 44px;
-  color: var(--color-text-muted);
-  font-size: 10.5px;
-}
-.tabela-pl tr.consolidado .numero { color: rgba(255, 255, 255, .6); }
-
-/* Célula sem valor: fica visível, mas não disputa a leitura */
-.tabela-pl .apagado { color: var(--color-text-muted); opacity: .45; }
-
-/* Etiqueta [ BRL M ] / [ BRL ] no cabeçalho do painel */
-.selo-unidade {
-  display: inline-block;
-  font-size: 10.5px;
+/* ---- linha dos rotulos de coluna ---- */
+.tabela-xl thead tr.rotulos th {
   font-weight: 700;
-  letter-spacing: .08em;
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 2px 8px;
-  margin-left: 8px;
-  vertical-align: middle;
+  background: #fff;
+  padding: 4px 6px;
 }
 
-/* Ponto do semáforo */
+/* Actual e a coluna que se le primeiro: pessego com o texto na cor da faixa */
+.tabela-xl thead tr.rotulos th.atual {
+  background: var(--xl-pessego);
+  color: var(--xl-laranja);
+  border-left: 1px solid var(--xl-linha);
+  border-right: 1px solid var(--xl-linha);
+}
+
+.tabela-xl thead tr.rotulos th.orcado {
+  color: var(--xl-rotulo);
+  border-left: 1px solid var(--xl-linha);
+  border-right: 1px solid var(--xl-linha);
+}
+
+/* ---- corpo ---- */
+/* As colunas de valor (Actual, Budget) levam fio dos dois lados; Delta e
+   Delta% ficam soltos, como na planilha. */
+.tabela-xl td.valor {
+  border-left: 1px solid var(--xl-linha);
+  border-right: 1px solid var(--xl-linha);
+}
+
+.tabela-xl td.rotulo,
+.tabela-xl th.rotulo {
+  text-align: left;
+}
+
+.tabela-xl td.indice {
+  text-align: left;
+  color: var(--xl-medio);
+}
+
+/* Consolidado e BU: faixas cheias, texto branco */
+.tabela-xl tr.consolidado > td {
+  background: var(--xl-escuro);
+  color: #fff;
+  font-weight: 700;
+}
+
+.tabela-xl tr.bu > td {
+  background: var(--xl-medio);
+  color: #fff;
+  font-weight: 700;
+}
+
+.tabela-xl tr.consolidado > td.indice,
+.tabela-xl tr.bu > td.indice { color: rgba(255, 255, 255, .8); }
+
+/* O vao continua branco mesmo dentro das faixas escuras */
+.tabela-xl tr > td.vao { background: #fff; }
+
+/* Cada nivel abaixo da BU abre com um fio, como no Excel */
+.tabela-xl tr.torre > td { border-top: 1px solid var(--xl-linha); }
+.tabela-xl tr.sub > td {
+  border-top: 1px solid var(--xl-linha);
+  border-bottom: 1px solid var(--xl-linha);
+}
+
+/* linha em branco depois do consolidado */
+.tabela-xl tr.respiro td {
+  height: 7px;
+  padding: 0;
+  background: #fff;
+}
+
+/* ---- P&L: detalhe, subtotal e subtotal de faixa ---- */
+.tabela-xl tr.detalhe > td { color: var(--xl-texto); }
+.tabela-xl tr.detalhe > td.rotulo { padding-left: 26px; }
+
+.tabela-xl tr.soma > td {
+  font-weight: 700;
+  color: #000;
+}
+
+.tabela-xl tr.faixa-soma > td {
+  background: var(--xl-banda);
+  color: #fff;
+  font-weight: 700;
+}
+
+.tabela-xl tr.secao > td {
+  font-weight: 700;
+  border-bottom: 1px solid var(--xl-medio);
+}
+
+/* linha do arquivo que nao casou com o plano de contas */
+.tabela-xl tr.alerta > td {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* ---- colunas grudadas na esquerda ---- */
+.tabela-xl .fixa-1,
+.tabela-xl .fixa-2 {
+  position: sticky;
+  z-index: 2;
+  background: #fff;
+}
+.tabela-xl .fixa-1 { left: 0; width: 58px; min-width: 58px; }
+.tabela-xl .fixa-2 { left: 58px; min-width: 190px; }
+
+/* dentro das faixas escuras a coluna grudada acompanha a cor da linha */
+.tabela-xl tr.consolidado > .fixa-1,
+.tabela-xl tr.consolidado > .fixa-2 { background: var(--xl-escuro); }
+.tabela-xl tr.bu > .fixa-1,
+.tabela-xl tr.bu > .fixa-2 { background: var(--xl-medio); }
+.tabela-xl tr.faixa-soma > .fixa-1,
+.tabela-xl tr.faixa-soma > .fixa-2 { background: var(--xl-banda); }
+.tabela-xl tr.alerta > .fixa-1,
+.tabela-xl tr.alerta > .fixa-2 { background: var(--color-danger-bg); }
+.tabela-xl thead .fixa-1,
+.tabela-xl thead .fixa-2 { z-index: 3; }
+
+/* ---- semaforo: o icone do Excel, verde acima de +3%, vermelho abaixo de -3% ---- */
+.tabela-xl td.icone { width: 26px; min-width: 26px; padding: 3px 2px; }
+
 .ponto {
   display: inline-block;
-  width: 9px;
-  height: 9px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   vertical-align: middle;
 }
-.ponto-verde { background: var(--color-success); }
-.ponto-amarelo { background: var(--color-warning); }
-.ponto-vermelho { background: var(--color-danger); }
-.ponto-neutro { background: var(--color-border); }
+.ponto-verde { background: var(--xl-verde); }
+.ponto-amarelo { background: var(--xl-amarelo); }
+.ponto-vermelho { background: var(--xl-vermelho); }
+.ponto-neutro { background: #e8e8e8; }
 
-/* Δ e Δ%: verde e vermelho seguem o SENTIDO do indicador, não o sinal */
+/* celula sem valor */
+.tabela-xl .apagado { color: #b0b0b0; }
+
+/* Delta e Delta% saem sem cor, como na planilha: quem sinaliza e o semaforo.
+   Fora do painel, onde nao ha semaforo, a cor volta. */
 .melhor { color: var(--color-success); }
 .pior { color: var(--color-danger); }
-.tabela-pl tr.consolidado .melhor { color: #6ee7b7; }
-.tabela-pl tr.consolidado .pior { color: #fca5a5; }
 
-/* Nota de rodapé de uma tabela: explica o critério, não compete com os números */
+/* Nota de rodape de uma tabela: explica o criterio, nao compete com os numeros */
 .nota-tabela {
   margin-top: 10px;
   font-size: 11.5px;
@@ -1964,7 +2047,7 @@ tfoot td {
 }
 
 /* ---------- Blocos de resposta do Resultado ---------- */
-/* "Qual minha receita?", "Qual meu EBITDA?" — o cabeçalho do relatório. */
+/* "Qual minha receita?", "Qual meu EBITDA?" - o cabecalho do relatorio. */
 
 .blocos-kpi {
   display: grid;
@@ -2002,3 +2085,6 @@ tfoot td {
   color: var(--color-text-muted);
   margin-top: 4px;
 }
+
+/* Tabela sem a coluna de índice: o nome já é a primeira coluna grudada. */
+.tabela-xl.sem-indice .fixa-2 { left: 0; }
