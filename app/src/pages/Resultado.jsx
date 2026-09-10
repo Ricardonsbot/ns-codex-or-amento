@@ -16,6 +16,23 @@ import {
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
+/**
+ * As visões do Resultado, uma por aba.
+ *
+ * Antes vinham empilhadas numa rolagem só, e chegar no P&L custava passar por
+ * quatro tabelas. Os filtros ficam acima das abas de propósito: o recorte —
+ * BU, torre, empresa, comparativo — vale para todas, e trocar de aba não pode
+ * perdê-lo nem voltar ao banco.
+ */
+const ABAS = [
+  { valor: 'painel', rotulo: 'Painel Resultado' },
+  { valor: 'empresas', rotulo: 'Resultados por empresa' },
+  { valor: 'pl', rotulo: 'P&L' },
+  { valor: 'plEmpresa', rotulo: 'P&L por empresa' },
+  { valor: 'pacotes', rotulo: 'Gastos por pacote' },
+  { valor: 'areas', rotulo: 'Por área' },
+]
+
 const brl = (v) =>
   Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const milhoes = (v) => `${(Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`
@@ -97,6 +114,7 @@ export default function Resultado() {
   const [mensal, setMensal] = useState('ano')
   // Qual abertura do P&L: linha contabil, area (COGS/G&A/S&M/R&D) ou pacote.
   const [visao, setVisao] = useState('conta')
+  const [aba, setAba] = useState('painel')
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
@@ -308,6 +326,21 @@ export default function Resultado() {
               </div>
             )}
 
+            <nav className="abas" aria-label="Visões do resultado">
+              {ABAS.map((a) => (
+                <button
+                  key={a.valor}
+                  type="button"
+                  className={`aba${aba === a.valor ? ' ativa' : ''}`}
+                  aria-current={aba === a.valor ? 'page' : undefined}
+                  onClick={() => setAba(a.valor)}
+                >
+                  {a.rotulo}
+                </button>
+              ))}
+            </nav>
+
+            {aba === 'painel' && (
             <PainelResultado
               arvore={dados.arvore}
               consolidado={{
@@ -329,10 +362,11 @@ export default function Resultado() {
                 comp ? ` · comparando com ${versoes.find((v) => v.id === compararCom)?.nome ?? 'budget'}` : ''
               }`}
             />
+            )}
 
             {/* MODULO: resultado de cada empresa, so as tres medidas que se olha
                 primeiro — quanto fatura, quanto sobra e quanto sobra depois do capex. */}
-            {dados.empresas?.length > 0 && (
+            {aba === 'empresas' && dados.empresas?.length > 0 && (
               <div className="panel" style={{ marginBottom: 18 }}>
                 <div className="panel-header">
                   <div>
@@ -419,7 +453,7 @@ export default function Resultado() {
 
             {/* MODULO: o P&L aberto, uma coluna por empresa. E onde se ve QUAL
                 linha de custo pesa em cada uma, que o quadro acima nao mostra. */}
-            {dados.empresas?.length > 0 && (
+            {aba === 'plEmpresa' && dados.empresas?.length > 0 && (
               <div className="panel" style={{ marginBottom: 18 }}>
                 <div className="panel-header">
                   <div>
@@ -503,7 +537,7 @@ export default function Resultado() {
                 receita liquida. E um quadro proprio, e nao uma visao do P&L:
                 o que se olha aqui e a composicao do gasto, nao o caminho ate
                 o EBITDA. */}
-            {dados.pacotes?.length > 0 && (
+            {aba === 'pacotes' && dados.pacotes?.length > 0 && (
               <div className="panel" style={{ marginBottom: 18 }}>
                 <div className="panel-header">
                   <div>
@@ -587,7 +621,7 @@ export default function Resultado() {
 
             {/* Por area de alocacao: a segunda dimensao do P&L, que vem do
                 template e nao do plano de contas. */}
-            {dados.areas?.length > 0 && (
+            {aba === 'areas' && dados.areas?.length > 0 && (
               <div className="panel" style={{ marginBottom: 18 }}>
                 <div className="panel-header">
                   <div>
@@ -651,6 +685,7 @@ export default function Resultado() {
             )}
 
             {/* O P&L linha a linha */}
+            {aba === 'pl' && (
             <div className="panel" style={{ marginBottom: 18 }}>
               <div className="panel-header">
                 <div>
@@ -784,6 +819,7 @@ export default function Resultado() {
                 </div>
               </div>
             </div>
+            )}
 
           </>
         )}

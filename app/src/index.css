@@ -2245,3 +2245,46 @@ tfoot td {
   font-weight: 700;
   color: #000;
 }
+
+/* ---------- Abas do Resultado ----------
+   As visoes vinham empilhadas numa rolagem so e chegar no P&L custava passar
+   por quatro tabelas. Sem laranja aqui de proposito: aba e navegacao, e o
+   orcamento de cor da tela e todo do dado. */
+
+.abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-bottom: 2px solid var(--xl-linha);
+  margin-bottom: 18px;
+}
+
+.aba {
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--xl-rotulo);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;   /* o fio da aba ativa cobre o da faixa */
+  padding: 8px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.aba:hover {
+  color: #000;
+  background: var(--color-bg);
+}
+
+.aba.ativa {
+  color: #000;
+  font-weight: 700;
+  border-bottom-color: var(--xl-escuro);
+  background: none;
+}
+
+.aba:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
