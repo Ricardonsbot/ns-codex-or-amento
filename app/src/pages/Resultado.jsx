@@ -11,6 +11,7 @@ import {
   anual,
   percentual,
   variacao,
+  VISOES,
 } from '../lib/resultadoData'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -94,6 +95,8 @@ export default function Resultado() {
   // opcao vazia antes do primeiro numero.
   const [comDado, setComDado] = useState(null)
   const [mensal, setMensal] = useState('ano')
+  // Qual abertura do P&L: linha contabil, area (COGS/G&A/S&M/R&D) ou pacote.
+  const [visao, setVisao] = useState('conta')
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
@@ -446,19 +449,28 @@ export default function Resultado() {
                         </tr>
                       </thead>
                       <tbody>
-                        {dados.pl.map((l) => {
+                        {(dados.pls?.[visao] ?? dados.pl).map((l) => {
                           const total = anual(l.valores)
-                          if (!l.eSubtotal && total === 0) return null
-                          const valorEmp = (e) => {
-                            if (l.subtotal === 'receitaLiquida') return anual(e.receitaLiquida)
-                            if (l.subtotal === 'ebitda') return anual(e.ebitda)
-                            if (l.subtotal === 'ebitdaAposCapex') return anual(e.ebitdaAposCapex)
-                            if (l.subtotal === 'netIncome') return anual(e.netIncome)
-                            if (l.subtotal) return null
-                            return anual(e.porLinha.get(l.chave) ?? [])
+                          if (l.eSecao) {
+                            return (
+                              <tr key={l.rotulo} className="secao">
+                                <td className="rotulo fixa-2">{l.rotulo}</td>
+                                <td colSpan={99} />
+                              </tr>
+                            )
                           }
+                          if (!l.eSubtotal && total === 0) return null
+                          // Cada empresa carrega os mesmos subtotais do
+                          // consolidado, calculados pela mesma função.
+                          const valorEmp = (e) => {
+                            if (l.subtotal) return e[l.subtotal] ? anual(e[l.subtotal]) : null
+                            if (l.area) return anual(e.porArea?.get(l.area) ?? [])
+                            if (l.eSubpacote) return null // subpacote não é aberto por empresa
+                            return anual(e.porLinha.get(l.linha) ?? [])
+                          }
+                          const classe = l.eSubtotal ? 'faixa-soma' : l.eSubpacote ? 'subpacote' : 'detalhe'
                           return (
-                            <tr key={l.rotulo} className={l.eSubtotal ? 'faixa-soma' : 'detalhe'}>
+                            <tr key={l.rotulo} className={classe}>
                               <td className="rotulo fixa-2">
                                 {l.eSubtotal ? `= ${l.rotulo}` : l.rotulo}
                               </td>
@@ -557,9 +569,22 @@ export default function Resultado() {
             <div className="panel" style={{ marginBottom: 18 }}>
               <div className="panel-header">
                 <div>
-                  <h2>P&amp;L Contábil</h2>
-                  <p>Cada linha vem do plano de contas; o percentual é sobre a receita líquida</p>
+                  <h2>P&amp;L</h2>
+                  <p>
+                    Na ordem do Master Resultado, de Gross Revenue a Adjusted EBITDA After Capex.
+                    {' '}As três visões abrem o mesmo bloco de despesa de jeitos diferentes e somam o mesmo total.
+                  </p>
                 </div>
+                <FiltroBotoes
+                  label="Visão"
+                  valor={visao}
+                  opcoes={(dados.pls ? VISOES.filter((v) => dados.pls[v.valor]) : VISOES).map((v) => ({
+                    valor: v.valor,
+                    rotulo: v.rotulo,
+                  }))}
+                  onChange={setVisao}
+                  semTodas
+                />
               </div>
               <div className="panel-body">
                 <div className="rolagem-x">
@@ -592,11 +617,24 @@ export default function Resultado() {
                       </tr>
                     </thead>
                     <tbody>
-                      {dados.pl.map((l) => {
+                      {(dados.pls?.[visao] ?? dados.pl).map((l) => {
                         const v = anual(l.valores)
-                        if (!l.eSubtotal && v === 0) return null
+                        // Cabeçalho de seção não tem valor; linha zerada que não
+                        // é subtotal só ocupa espaço.
+                        if (l.eSecao) {
+                          return (
+                            <tr key={l.rotulo} className="secao">
+                              <td className="rotulo fixa-2">{l.rotulo}</td>
+                              <td colSpan={99} />
+                            </tr>
+                          )
+                        }
+                        // O esqueleto sai inteiro, mesmo zerado: e assim que o
+                        // Master mostra, e uma linha ausente e ambigua — nao da
+                        // para saber se e zero ou se a ferramenta nao tem.
+                        const classe = l.eSubtotal ? 'faixa-soma' : l.eSubpacote ? 'subpacote' : 'detalhe'
                         return (
-                          <tr key={l.rotulo} className={l.eSubtotal ? 'faixa-soma' : 'detalhe'}>
+                          <tr key={l.rotulo} className={classe}>
                             <td className="rotulo fixa-2">{l.eSubtotal ? `= ${l.rotulo}` : l.rotulo}</td>
                             {mensal === 'mes' && <td className="vao" />}
                             {mensal === 'mes' &&
@@ -606,10 +644,12 @@ export default function Resultado() {
                                 </td>
                               ))}
                             <td className="vao" />
-                            <td className="valor">{mi(v)}</td>
-                            <td>{pct(percentual(v, base))}</td>
+                            <td className={v === 0 ? 'valor apagado' : 'valor'}>{v === 0 ? '—' : mi(v)}</td>
+                            <td className={v === 0 ? 'apagado' : undefined}>
+                              {v === 0 ? '—' : pct(percentual(v, base))}
+                            </td>
                             {comp && (() => {
-                              const alvo = comp.pl.find((x) => x.rotulo === l.rotulo)
+                              const alvo = (comp.pls?.[visao] ?? comp.pl).find((x) => x.rotulo === l.rotulo)
                               const b = anual(alvo?.valores)
                               const { delta, pct: dp } = variacao(v, b)
                               return (

@@ -97,6 +97,8 @@ export function casar({ tipo, linhas }, { empresas, contas }) {
 export const EXTRA_LANCAMENTO = ['aliquota', 'taxa_efetiva', 'mes_reajuste', 'indice_reajuste']
 /** Da migração 2026-09-09-area-do-pl.sql, probada à parte das de cima. */
 export const EXTRA_AREA = ['area']
+/** Da migração 2026-09-10-pacote-e-subpacote.sql, também probada à parte. */
+export const EXTRA_PACOTE = ['pacote', 'subpacote']
 export const EXTRA_MENSAL = ['proporcao', 'valor_ajustado', 'valor_liquido', 'valor_caixa']
 
 /** Serial do Excel para 'aaaa-mm-dd', que é o que a coluna date espera. */
@@ -122,6 +124,8 @@ export function montarLancamento(p, versaoId, tipo) {
     // guarda o que a planilha dizia — senão o rótulo original se perde.
     obs: [p.falhas?.length ? `⚠ ${p.falhas.join(' · ')}` : '', p.obs].filter(Boolean).join(' | ') || null,
     area: p.area || null,
+    pacote: p.pacote || null,
+    subpacote: p.subpacote || null,
     aliquota: p.aliquota ?? null,
     taxa_efetiva: p.taxaEfetiva ?? null,
     mes_reajuste: dataDoSerial(p.mesReajuste),

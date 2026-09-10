@@ -2233,3 +2233,7 @@ tfoot td {
   font-size: 11.5px;
   color: var(--xl-rotulo);
 }
+
+/* Subpacote: um nivel abaixo do pacote, recuado e mais leve. */
+.tabela-xl tr.subpacote > td { color: var(--xl-medio); }
+.tabela-xl tr.subpacote > td.rotulo { padding-left: 44px; }

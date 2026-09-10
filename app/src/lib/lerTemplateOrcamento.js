@@ -117,6 +117,11 @@ export const TEMPLATE = {
       contaCodigo: t('NUMERO DA CONTA'),
       contaRotulo: t('NOME DA CONTA CONTABIL'),
       area: t('ALOCACAO PNL AREA'),
+      // Pacote e subpacote saem como campo proprio: sao as duas dimensoes do
+      // P&L aberto por natureza. Continuam tambem em descricao/obs porque e
+      // por ali que a tela de lancamentos mostra a linha.
+      pacote: t('PACOTE'),
+      subpacote: t('SUBPACOTE'),
       descricao: junta(t('DETALHAMENTO'), t('SUBPACOTE')),
       centroCusto: junta(t('CENTRO DE CUSTO'), t('NOME CENTRO DE CUSTO')),
       fornecedor: t('FORNECEDOR'),

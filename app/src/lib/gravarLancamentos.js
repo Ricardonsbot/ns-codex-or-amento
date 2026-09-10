@@ -5,6 +5,7 @@ import {
   EXTRA_LANCAMENTO,
   EXTRA_MENSAL,
   EXTRA_AREA,
+  EXTRA_PACOTE,
 } from './casarTemplateOrcamento.js'
 
 /**
@@ -33,6 +34,7 @@ export async function gravarEmLote(client, linhas, versaoId, tipo, suporte, aoPr
       let linha = montarLancamento(p, versaoId, tipo)
       if (!suporte.lancamento) linha = semColunas(linha, EXTRA_LANCAMENTO)
       if (!suporte.area) linha = semColunas(linha, EXTRA_AREA)
+      if (!suporte.pacote) linha = semColunas(linha, EXTRA_PACOTE)
       return linha
     })
 

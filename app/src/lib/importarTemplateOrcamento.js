@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient'
 import { TEMPLATE } from './lerTemplateOrcamento'
-import { casar, EXTRA_LANCAMENTO, EXTRA_MENSAL, EXTRA_AREA } from './casarTemplateOrcamento'
+import { casar, EXTRA_LANCAMENTO, EXTRA_MENSAL, EXTRA_AREA, EXTRA_PACOTE } from './casarTemplateOrcamento'
 import { gravarEmLote } from './gravarLancamentos'
 
 /**
@@ -14,12 +14,13 @@ export async function colunasDerivadas() {
   if (suporte) return suporte
   // Cada migração é probada à parte: ter rodado uma e não a outra é normal, e
   // agrupar faria perder o campo de quem ja tem a coluna.
-  const [a, b, c] = await Promise.all([
+  const [a, b, c, d] = await Promise.all([
     supabase.from('lancamento').select(EXTRA_LANCAMENTO.join(',')).limit(1),
     supabase.from('lancamento_valor_mensal').select(EXTRA_MENSAL.join(',')).limit(1),
     supabase.from('lancamento').select(EXTRA_AREA.join(',')).limit(1),
+    supabase.from('lancamento').select(EXTRA_PACOTE.join(',')).limit(1),
   ])
-  suporte = { lancamento: !a.error, mensal: !b.error, area: !c.error }
+  suporte = { lancamento: !a.error, mensal: !b.error, area: !c.error, pacote: !d.error }
   return suporte
 }
 
