@@ -1844,8 +1844,11 @@ tfoot td {
 .tabela-xl {
   border-collapse: separate;
   border-spacing: 0;
+  /* Larga o que precisar e nada mais. Com min-width:100% a tabela era
+     esticada ate a largura do painel e a folga toda ia para a coluna de
+     nomes, abrindo um vao de 350px entre o rotulo e o numero. */
   width: auto;
-  min-width: 100%;
+  min-width: 0;
   font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
@@ -1891,7 +1894,8 @@ tfoot td {
 .tabela-xl thead tr.faixa th.canto {
   background: #fff;
   color: var(--xl-medio);
-  font-style: italic;
+  font-weight: 700;
+  text-align: left;
 }
 
 .tabela-xl thead tr.faixa th.vao { background: #fff; }
@@ -2088,3 +2092,144 @@ tfoot td {
 
 /* Tabela sem a coluna de índice: o nome já é a primeira coluna grudada. */
 .tabela-xl.sem-indice .fixa-2 { left: 0; }
+
+/* ---------- A folha do Resultado ----------
+   O FP&A olhou a tela e disse que ela estava "meio quadrada" e colorida demais,
+   com a cor puxando a atencao para o que nao tem valor de analise. E verdade:
+   eram cartoes brancos com borda e sombra sobre fundo cinza, mais dezenas de
+   botoes de filtro em laranja solido — a maior mancha de cor da pagina estava
+   num controle.
+
+   Aqui a pagina vira uma folha continua, como a planilha: fundo branco, secao
+   marcada por titulo e fio, sem caixa. E o orcamento de cor fica todo com o
+   dado — a faixa do grupo, a coluna Actual e o semaforo. Nada mais e laranja. */
+
+.folha {
+  background: #fff;
+  margin: -24px -28px -60px;
+  padding: 22px 28px 60px;
+}
+
+.folha .panel {
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 26px;
+}
+
+.folha .panel-header {
+  padding: 0 0 5px;
+  border-bottom: 2px solid var(--xl-linha);
+  margin-bottom: 12px;
+}
+
+.folha .panel-header h2 {
+  font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.folha .panel-header p {
+  font-size: 11.5px;
+  color: var(--xl-medio);
+}
+
+.folha .panel-body { padding: 0; }
+
+/* ---- filtros: controle e controle, nao destaque ---- */
+.folha .filter-bar {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--xl-linha);
+  border-radius: 0;
+  padding: 0 0 14px;
+  margin-bottom: 18px;
+}
+
+.folha .filtro-botoes-label {
+  color: var(--xl-medio);
+  font-size: 10px;
+}
+
+.folha .filtro-chip {
+  border-color: transparent;
+  border-radius: 3px;
+  background: none;
+  color: var(--xl-rotulo);
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.folha .filtro-chip:hover {
+  border-color: transparent;
+  background: var(--color-bg);
+  color: #000;
+}
+
+/* O selecionado usa o cinza escuro da linha do consolidado, nao o laranja:
+   assim o unico laranja da tela continua sendo o do cabecalho das tabelas. */
+.folha .filtro-chip.ativo {
+  background: var(--xl-escuro);
+  border-color: var(--xl-escuro);
+  color: #fff;
+  font-weight: 600;
+}
+
+.folha .filtro-chip.mais {
+  color: var(--xl-medio);
+  font-style: italic;
+}
+
+/* ---- os numeros de abertura, no lugar dos cartoes ---- */
+.folha .blocos-kpi {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--xl-linha);
+  margin-bottom: 22px;
+  padding-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.folha .bloco-kpi {
+  flex: 1 1 150px;
+  border: none;
+  border-left: 1px solid var(--xl-linha);
+  border-radius: 0;
+  background: none;
+  padding: 2px 18px;
+}
+
+.folha .bloco-kpi:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+
+.folha .bloco-kpi-pergunta {
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: var(--xl-medio);
+  margin-bottom: 4px;
+}
+
+.folha .bloco-kpi-valor {
+  font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
+  font-size: 26px;
+  color: #000;
+}
+
+.folha .bloco-kpi-nota {
+  font-size: 11px;
+  color: var(--xl-medio);
+}
+
+/* Os avisos tambem perdem a tarja: viram nota de rodape com um fio a esquerda. */
+.folha .proto-banner {
+  background: none;
+  border: none;
+  border-left: 3px solid var(--color-warning);
+  border-radius: 0;
+  padding: 2px 0 2px 10px;
+  font-size: 11.5px;
+  color: var(--xl-rotulo);
+}

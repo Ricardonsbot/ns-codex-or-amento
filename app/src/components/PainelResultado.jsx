@@ -100,7 +100,7 @@ export default function PainelResultado({ arvore, consolidado, comparacao, titul
             <thead>
               <tr className="faixa">
                 <th className="canto fixa-1" />
-                <th className="canto fixa-2">(R$ M)</th>
+                <th className="canto fixa-2">[ BRL M ]</th>
                 <th className="vao" />
                 <th colSpan={colsNR - 1}>Net Revenue</th>
                 <th className="vao" />

@@ -533,7 +533,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                     <table className="tabela-xl sem-indice">
                       <thead>
                         <tr className="faixa">
-                          <th className="canto fixa-2">(R$ M)</th>
+                          <th className="canto fixa-2">[ BRL M ]</th>
                           <th className="vao" />
                           <th colSpan={2}>Este arquivo</th>
                         </tr>
@@ -598,7 +598,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                     <table className="tabela-xl sem-indice">
                       <thead>
                         <tr className="faixa">
-                          <th className="canto fixa-2">(R$ M)</th>
+                          <th className="canto fixa-2">[ BRL M ]</th>
                           <th className="vao" />
                           <th colSpan={2}>Classificação</th>
                           <th className="vao" />

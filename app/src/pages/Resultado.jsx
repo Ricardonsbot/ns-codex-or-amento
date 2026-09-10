@@ -44,15 +44,19 @@ function Variacao({ atual, comparado, menorEMelhor }) {
   )
 }
 
-/** Um dos blocos de resposta: "qual minha receita?", "qual meu EBITDA?" */
-function Bloco({ pergunta, valor, base, destaque, negativo, comparado, menorEMelhor }) {
+/**
+ * Um dos blocos de resposta: "qual minha receita?", "qual meu EBITDA?"
+ *
+ * O valor sai sem cor. Custo alto nao e desvio — e custo; pintar de vermelho
+ * so porque a linha e de despesa gastava a cor no lugar errado, que foi o que
+ * o FP&A apontou. Vermelho e verde ficam para o Delta contra o budget.
+ */
+function Bloco({ pergunta, valor, base, comparado, menorEMelhor }) {
   const p = percentual(valor, base)
   return (
-    <div className="bloco-kpi" style={{ borderTopColor: destaque }}>
+    <div className="bloco-kpi">
       <div className="bloco-kpi-pergunta">{pergunta}</div>
-      <div className="bloco-kpi-valor" style={negativo && valor > 0 ? { color: 'var(--color-danger)' } : undefined}>
-        R$ {milhoes(valor)}
-      </div>
+      <div className="bloco-kpi-valor">R$ {milhoes(valor)}</div>
       <div className="bloco-kpi-nota">
         {p === null ? 'sem base de receita' : `${pct(p)} da receita líquida`}
       </div>
@@ -85,6 +89,10 @@ export default function Resultado() {
   const [versoes, setVersoes] = useState([])
   const [compararCom, setCompararCom] = useState('')
   const [comp, setComp] = useState(null)
+  // Quais empresas tem lancamento nesta versao. O cadastro tem 60 e so um
+  // punhado aparece no resultado; listar as 60 em botao enchia a tela de
+  // opcao vazia antes do primeiro numero.
+  const [comDado, setComDado] = useState(null)
   const [mensal, setMensal] = useState('ano')
   const [carregando, setCarregando] = useState(true)
 
@@ -121,6 +129,11 @@ export default function Resultado() {
         ])
         setDados(a)
         setComp(b)
+        // So a carga sem recorte enxerga todas: com filtro aplicado a lista
+        // encolhe para o proprio filtro e nao serviria para trocar de empresa.
+        if (!buId && !torreId && !empresaId) {
+          setComDado(new Set(a.empresas.map((e) => e.id).filter(Boolean)))
+        }
       } catch (err) {
         showToast(`Erro ao montar o resultado: ${err.message}`, 'error')
       } finally {
@@ -136,7 +149,7 @@ export default function Resultado() {
         <header className="topbar">
           <div className="topbar-title"><h1>Resultado</h1></div>
         </header>
-        <div className="content">
+        <div className="content folha">
           <div className="empty-hint">
             Nenhum ciclo com versão ativa. Crie um em Budget - Settings.
           </div>
@@ -148,11 +161,16 @@ export default function Resultado() {
   const base = dados ? anual(dados.subtotais.receitaLiquida) : 0
   const custos = dados ? base - anual(dados.subtotais.ebitda) : 0
   const torresDaBu = buId ? torres.filter((t) => t.bu_id === buId) : torres
-  const empresasDisponiveis = torreId
+  const noRecorte = torreId
     ? empresas.filter((e) => e.torre_id === torreId)
     : buId
     ? empresas.filter((e) => e.bu_id === buId)
     : empresas
+  // Primeiro as que tem lancamento; o resto continua acessivel atras do "+ N".
+  const comLancamento = comDado ? noRecorte.filter((e) => comDado.has(e.id)) : []
+  const empresasDisponiveis = comDado
+    ? [...comLancamento, ...noRecorte.filter((e) => !comDado.has(e.id))]
+    : noRecorte
   const recorte = empresaId
     ? empresas.find((e) => e.id === empresaId)?.nome
     : torreId
@@ -173,7 +191,7 @@ export default function Resultado() {
         </div>
       </header>
 
-      <div className="content">
+      <div className="content folha">
         <div className="filter-bar" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 14 }}>
           <FiltroBotoes
             label="BU"
@@ -191,6 +209,7 @@ export default function Resultado() {
             valor={torreId}
             rotuloTodas="Todas as Torres"
             opcoes={torresDaBu.map((t) => ({ valor: t.id, rotulo: t.nome }))}
+            limite={10}
             onChange={(v) => {
               setTorreId(v)
               setEmpresaId('')
@@ -203,6 +222,7 @@ export default function Resultado() {
             rotuloTodas="Consolidado"
             opcoes={empresasDisponiveis.map((e) => ({ valor: e.id, rotulo: e.nome }))}
             onChange={setEmpresaId}
+            limite={comLancamento.length || 12}
           />
           <FiltroBotoes
             label="Visão"
@@ -240,15 +260,12 @@ export default function Resultado() {
                 pergunta="Qual minha receita?"
                 valor={base}
                 base={base}
-                destaque="var(--color-success)"
                 comparado={comp ? anual(comp.subtotais.receitaLiquida) : null}
               />
               <Bloco
                 pergunta="Qual meu custo?"
                 valor={custos}
                 base={base}
-                destaque="var(--color-danger)"
-                negativo
                 menorEMelhor
                 comparado={comp ? anual(comp.subtotais.receitaLiquida) - anual(comp.subtotais.ebitda) : null}
               />
@@ -256,15 +273,12 @@ export default function Resultado() {
                 pergunta="Qual meu EBITDA?"
                 valor={anual(dados.subtotais.ebitda)}
                 base={base}
-                destaque="var(--color-primary)"
                 comparado={comp ? anual(comp.subtotais.ebitda) : null}
               />
               <Bloco
                 pergunta="Qual meu capex?"
                 valor={anual(dados.capex)}
                 base={base}
-                destaque="var(--color-text-muted)"
-                negativo
                 menorEMelhor
                 comparado={comp ? anual(comp.capex) : null}
               />
@@ -272,7 +286,6 @@ export default function Resultado() {
                 pergunta="EBITDA after Capex"
                 valor={anual(dados.subtotais.ebitdaAposCapex)}
                 base={base}
-                destaque="var(--color-dark)"
                 comparado={comp ? anual(comp.subtotais.ebitdaAposCapex) : null}
               />
             </div>
@@ -329,7 +342,7 @@ export default function Resultado() {
                     <table className="tabela-xl sem-indice">
                       <thead>
                         <tr className="faixa">
-                          <th className="canto fixa-2">(R$ M)</th>
+                          <th className="canto fixa-2">[ BRL M ]</th>
                           <th className="vao" />
                           <th>Net Revenue</th>
                           <th className="vao" />
@@ -416,7 +429,7 @@ export default function Resultado() {
                     <table className="tabela-xl sem-indice">
                       <thead>
                         <tr className="faixa">
-                          <th className="canto fixa-2">(R$ M)</th>
+                          <th className="canto fixa-2">[ BRL M ]</th>
                           <th className="vao" />
                           <th colSpan={dados.empresas.length}>Empresas</th>
                           <th className="vao" />
@@ -493,7 +506,7 @@ export default function Resultado() {
                     <table className="tabela-xl sem-indice">
                       <thead>
                         <tr className="faixa">
-                          <th className="canto fixa-2">(R$ M)</th>
+                          <th className="canto fixa-2">[ BRL M ]</th>
                           {mensal === 'mes' && <th className="vao" />}
                           {mensal === 'mes' && <th colSpan={12}>Mês a mês</th>}
                           <th className="vao" />
@@ -553,7 +566,7 @@ export default function Resultado() {
                   <table className="tabela-xl sem-indice">
                     <thead>
                       <tr className="faixa">
-                        <th className="canto fixa-2">(R$ M)</th>
+                        <th className="canto fixa-2">[ BRL M ]</th>
                         {mensal === 'mes' && <th className="vao" />}
                         {mensal === 'mes' && <th colSpan={12}>Mês a mês</th>}
                         <th className="vao" />
