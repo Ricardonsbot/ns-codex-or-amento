@@ -6,6 +6,8 @@ import {
   EXTRA_MENSAL,
   EXTRA_AREA,
   EXTRA_PACOTE,
+  EXTRA_TEMPLATE,
+  EXTRA_MENSAL_NOVO,
 } from './casarTemplateOrcamento.js'
 
 /**
@@ -35,6 +37,7 @@ export async function gravarEmLote(client, linhas, versaoId, tipo, suporte, aoPr
       if (!suporte.lancamento) linha = semColunas(linha, EXTRA_LANCAMENTO)
       if (!suporte.area) linha = semColunas(linha, EXTRA_AREA)
       if (!suporte.pacote) linha = semColunas(linha, EXTRA_PACOTE)
+      if (!suporte.template) linha = semColunas(linha, EXTRA_TEMPLATE)
       return linha
     })
 
@@ -53,7 +56,9 @@ export async function gravarEmLote(client, linhas, versaoId, tipo, suporte, aoPr
   const mensais = []
   linhas.forEach((p, i) => {
     const linha = montarValoresMensais(p, ids[i])
-    mensais.push(...(suporte.mensal ? linha : linha.map((m) => semColunas(m, EXTRA_MENSAL))))
+    let mes = suporte.mensal ? linha : linha.map((m) => semColunas(m, EXTRA_MENSAL))
+    if (!suporte.template) mes = mes.map((m) => semColunas(m, EXTRA_MENSAL_NOVO))
+    mensais.push(...mes)
   })
 
   for (let i = 0; i < mensais.length; i += LOTE_MENSAL) {

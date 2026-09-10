@@ -18,7 +18,14 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { lerPlanilha, TEMPLATE } from '../src/lib/lerTemplateOrcamento.js'
-import { casar, EXTRA_LANCAMENTO, EXTRA_MENSAL, EXTRA_AREA, EXTRA_PACOTE } from '../src/lib/casarTemplateOrcamento.js'
+import {
+  casar,
+  EXTRA_LANCAMENTO,
+  EXTRA_MENSAL,
+  EXTRA_AREA,
+  EXTRA_PACOTE,
+  EXTRA_TEMPLATE,
+} from '../src/lib/casarTemplateOrcamento.js'
 import { gravarEmLote } from '../src/lib/gravarLancamentos.js'
 
 const tipo = process.argv[2]
@@ -120,15 +127,22 @@ if (!aImportar.length) {
 } else {
   // Enquanto a migracao 2026-09-08 nao rodar, as colunas dos blocos derivados
   // nao existem e mandá-las faria o PostgREST recusar o insert inteiro.
-  const [pa, pb, pc, pd] = await Promise.all([
+  const [pa, pb, pc, pd, pe] = await Promise.all([
     sb.from('lancamento').select(EXTRA_LANCAMENTO.join(',')).limit(1),
     sb.from('lancamento_valor_mensal').select(EXTRA_MENSAL.join(',')).limit(1),
     sb.from('lancamento').select(EXTRA_AREA.join(',')).limit(1),
     sb.from('lancamento').select(EXTRA_PACOTE.join(',')).limit(1),
+    sb.from('lancamento').select(EXTRA_TEMPLATE.join(',')).limit(1),
   ])
-  const sup = { lancamento: !pa.error, mensal: !pb.error, area: !pc.error, pacote: !pd.error }
+  const sup = {
+    lancamento: !pa.error,
+    mensal: !pb.error,
+    area: !pc.error,
+    pacote: !pd.error,
+    template: !pe.error,
+  }
   console.log(`coluna area ........... ${sup.area ? 'existe' : 'ainda nao existe — rode 2026-09-09-area-do-pl.sql'}`)
-  console.log(`pacote/subpacote ...... ${sup.pacote ? 'existem' : 'ainda nao existem — rode 2026-09-10-pacote-e-subpacote.sql'}`)
+  console.log(`schema do template .... ${sup.template ? 'completo' : 'incompleto — rode 2026-09-10-schema-completo-do-template.sql'}`)
   const estado = sup.lancamento && sup.mensal
     ? 'existem, serão gravadas'
     : 'ainda não existem — rode supabase/migrations/2026-09-08-blocos-derivados.sql'

@@ -39,7 +39,7 @@ const sb = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE
 
 const { error: semColuna } = await sb.from('lancamento').select('pacote, subpacote').limit(1)
 if (semColuna) {
-  console.error('as colunas pacote/subpacote ainda não existem — rode supabase/migrations/2026-09-10-pacote-e-subpacote.sql')
+  console.error('as colunas pacote/subpacote ainda não existem — rode supabase/migrations/2026-09-10-schema-completo-do-template.sql')
   process.exitCode = 1
   // Sem as colunas nao ha o que preencher; seguir so gastaria minutos lendo
   // os templates para falhar no update no fim.

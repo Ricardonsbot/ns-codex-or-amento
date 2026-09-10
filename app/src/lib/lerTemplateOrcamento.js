@@ -41,6 +41,92 @@ const util = (v) => String(v ?? '').replace(/[\s0.,-]/g, '') !== ''
  * (`ebitda = receita - despesa`). É negação, e não valor absoluto, para que um
  * crédito lançado no meio dos gastos continue reduzindo a despesa.
  */
+/**
+ * De qual coluna do template sai cada coluna do banco.
+ *
+ * A chave e o cabecalho normalizado — sem acento, maiusculo, so letras e
+ * digitos —, por isso "Linha P&L" aparece como "LINHA P L": o & vira
+ * separador. O mapa e um so para as tres abas porque os cabecalhos repetem;
+ * coluna que so existe numa aba simplesmente nao e encontrada nas outras.
+ *
+ * O que nao esta aqui nao se perde: vai para `extras`, o jsonb da tabela.
+ * Quando uma dessas virar dimensao de relatorio, ganha linha neste mapa e
+ * coluna no banco — e o dado ja vai estar guardado desde a primeira
+ * importacao.
+ */
+export const MAPA_COLUNAS = {
+  // classificacao gerencial
+  PACOTE: 'pacote',
+  SUBPACOTE: 'subpacote',
+  'LINHA P L': 'linha_pl_template',
+  'LINHA P L AJUSTADA': 'linha_pl_ajustada',
+  'GRUPO CAIXA': 'grupo_caixa',
+  'ALOCACAO PNL AREA': 'area',
+  'ALOCACAO PNL AJUSTADO AREA': 'area_ajustada',
+
+  // estrutura, como a planilha escreveu
+  EMPRESA: 'empresa_texto',
+  TORRE: 'torre_texto',
+  DIRETORIA: 'diretoria',
+  'NOME CENTRO DE CUSTO': 'centro_custo_nome',
+
+  // produto e cliente
+  'TIPO RECEITA': 'tipo_receita',
+  'CONTA CONTABIL': 'conta_contabil_texto',
+  'PRODUTO SINTETICO': 'produto_sintetico',
+  'PRODUTO ANALITICO': 'produto_analitico',
+  SKU: 'sku',
+  'RAZAO SOCIAL CLIENTE': 'cliente',
+  CNPJ: 'cnpj',
+  PERSONA: 'persona',
+  'SEGMENTO SINTETICO': 'segmento_sintetico',
+  'SEGMENTO ANALITICO': 'segmento_analitico',
+  'CLASSE DE CLIENTES': 'classe_cliente',
+  'FLAG INTERCOMPANY': 'intercompany',
+  MRR: 'mrr',
+  CANETADA: 'canetada',
+  PMR: 'pmr',
+  'TERMOMETRO DE VENDAS': 'termometro',
+  PROJETO: 'projeto',
+
+  // detalhe da despesa
+  'AUXILIAR CONTA': 'auxiliar_conta',
+  'SUBCONTA TECNOLOGIA TERCEIROS': 'subconta',
+  DETALHAMENTO: 'detalhamento',
+
+  // capex
+  ITEM: 'item',
+  'INDICE PROJETADO': 'indice_reajuste',
+  'PROPORCAO MANUAL': 'proporcao_manual',
+}
+
+/** As que entram como numero, nao como texto. */
+export const MAPA_NUMEROS = {
+  QUANT: 'quantidade',
+  'VALOR UNITARIO': 'valor_unitario',
+  'TAXA EFETIVA': 'taxa_efetiva',
+  'TAXA DE SUCESSO': 'taxa_sucesso',
+}
+
+/**
+ * Cabecalhos que nao sao dado: os separadores do template e a coluna de total
+ * do ano que fecha cada bloco de meses.
+ */
+const NAO_E_DADO = (k) => k === '' || k === 'X' || k === 'XX' || /^ANO \d{4}$/.test(k)
+
+/**
+ * Colunas que ja tem lugar no banco com outro nome — a conta virou conta_id, o
+ * fornecedor e o centro de custo tem coluna propria. Sem esta lista elas
+ * cairiam tambem no curinga, e o jsonb guardaria copia do que ja esta gravado.
+ */
+const JA_TEM_LUGAR = new Set([
+  'NUMERO DA CONTA',
+  'NOME DA CONTA CONTABIL',
+  'FORNECEDOR',
+  'CENTRO DE CUSTO',
+  'OBS',
+])
+
 export const TEMPLATE = {
   receita: {
     aba: 'Receita',
@@ -55,6 +141,9 @@ export const TEMPLATE = {
     derivados: [
       ['proporcao', 'PROPORCAO DE REAJUSTE'],
       ['valor_ajustado', 'VALORES REAJUSTADOS'],
+      ['valor_reajuste', 'REAJUSTE'],
+      // Só os templates mais antigos têm este bloco; nos novos ele não existe
+      // e a coluna fica nula, sem erro.
       ['valor_liquido', 'RECEITA LIQUIDA'],
     ],
     // Valor único da linha, achado pelo rótulo da linha 3.
@@ -237,10 +326,25 @@ export function lerPlanilha(arrayBuffer, tipo) {
   }
 
   const col = {}
+  // O rótulo como está escrito na planilha, para virar chave legível no jsonb:
+  // "Segmento Sintético", não "SEGMENTO SINTETICO".
+  const rotuloDe = {}
   for (let c = r.s.c; c <= r.e.c; c++) {
     const k = lim(texto(cab, c))
-    if (k && col[k] === undefined) col[k] = c
+    if (k && col[k] === undefined) {
+      col[k] = c
+      rotuloDe[k] = texto(cab, c)
+    }
   }
+  // Toda coluna cujo cabeçalho é uma data: são os meses de todos os blocos —
+  // base, proporção, reajustado, caixa. Ficam de fora do curinga porque já
+  // entram como valor mensal, e sozinhas encheriam o jsonb de números soltos.
+  const mesesUsados = new Set()
+  for (let c = r.s.c; c <= r.e.c; c++) {
+    const x = bruto(cab, c)
+    if (typeof x?.v === 'number' && x.v > 40000 && x.v < 60000) mesesUsados.add(c)
+  }
+
   const faltando = cfg.exigidas.filter((e) => col[e] === undefined)
   if (faltando.length) throw new Error(`Cabeçalho da aba "${cfg.aba}" sem as colunas: ${faltando.join(', ')}.`)
 
@@ -360,6 +464,26 @@ export function lerPlanilha(arrayBuffer, tipo) {
       if (util(v)) extras.push(`${nome}: ${v}`)
     }
 
+    // As colunas do template que têm coluna própria no banco, e o resto no
+    // curinga. Percorre o cabeçalho inteiro, não uma lista: coluna nova na
+    // planilha entra sozinha, sem mexer no código nem no schema.
+    const doBanco = {}
+    const curinga = {}
+    for (const [k, c] of Object.entries(col)) {
+      if (NAO_E_DADO(k) || mesesUsados.has(c) || JA_TEM_LUGAR.has(k)) continue
+      const alvoTexto = MAPA_COLUNAS[k]
+      const alvoNumero = MAPA_NUMEROS[k]
+      if (alvoNumero) {
+        const n = numero(l, c)
+        if (n !== null) doBanco[alvoNumero] = n
+        continue
+      }
+      const v = texto(l, c)
+      if (!util(v)) continue
+      if (alvoTexto) doBanco[alvoTexto] = v
+      else curinga[rotuloDe[k] ?? k] = paraTexto(bruto(l, c)?.v, k)
+    }
+
     if (!valores.some((v) => v.valor !== 0)) {
       if (util(empresa) || util(campos.contaCodigo) || util(campos.contaRotulo)) ignoradas += 1
       continue
@@ -380,6 +504,10 @@ export function lerPlanilha(arrayBuffer, tipo) {
       linha: l,
       empresa,
       ...campos,
+      // Depois de `campos` de propósito: o que veio direto da planilha manda
+      // sobre o que `monta` compôs, quando os dois escrevem o mesmo nome.
+      ...doBanco,
+      curinga: Object.keys(curinga).length ? curinga : null,
       extras,
       obs: [campos.obs, ...extras].filter(Boolean).join(' | '),
       aliquota: colAliquota === -1 ? null : numero(l, colAliquota),

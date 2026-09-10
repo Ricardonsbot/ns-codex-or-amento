@@ -97,9 +97,52 @@ export function casar({ tipo, linhas }, { empresas, contas }) {
 export const EXTRA_LANCAMENTO = ['aliquota', 'taxa_efetiva', 'mes_reajuste', 'indice_reajuste']
 /** Da migração 2026-09-09-area-do-pl.sql, probada à parte das de cima. */
 export const EXTRA_AREA = ['area']
-/** Da migração 2026-09-10-pacote-e-subpacote.sql, também probada à parte. */
+/** Da migração 2026-09-10-schema-completo-do-template.sql, também probada à parte. */
 export const EXTRA_PACOTE = ['pacote', 'subpacote']
 export const EXTRA_MENSAL = ['proporcao', 'valor_ajustado', 'valor_liquido', 'valor_caixa']
+
+/**
+ * As colunas de 2026-09-10-schema-completo-do-template.sql. Probadas juntas,
+ * porque vêm todas do mesmo arquivo: ou ele rodou, ou não rodou.
+ */
+export const EXTRA_TEMPLATE = [
+  'linha_pl_template',
+  'linha_pl_ajustada',
+  'grupo_caixa',
+  'area_ajustada',
+  'empresa_texto',
+  'torre_texto',
+  'diretoria',
+  'centro_custo_nome',
+  'tipo_receita',
+  'conta_contabil_texto',
+  'produto_sintetico',
+  'produto_analitico',
+  'sku',
+  'cliente',
+  'cnpj',
+  'persona',
+  'segmento_sintetico',
+  'segmento_analitico',
+  'classe_cliente',
+  'intercompany',
+  'mrr',
+  'canetada',
+  'pmr',
+  'termometro',
+  'projeto',
+  'auxiliar_conta',
+  'subconta',
+  'detalhamento',
+  'item',
+  'quantidade',
+  'valor_unitario',
+  'taxa_sucesso',
+  'proporcao_manual',
+  'extras',
+]
+/** O bloco "Reajuste" da aba Receita, do mesmo arquivo. */
+export const EXTRA_MENSAL_NOVO = ['valor_reajuste']
 
 /** Serial do Excel para 'aaaa-mm-dd', que é o que a coluna date espera. */
 function dataDoSerial(n) {
@@ -130,6 +173,10 @@ export function montarLancamento(p, versaoId, tipo) {
     taxa_efetiva: p.taxaEfetiva ?? null,
     mes_reajuste: dataDoSerial(p.mesReajuste),
     indice_reajuste: p.indiceReajuste || null,
+    // O resto do que a planilha trouxe. Os nomes já vêm no formato do banco,
+    // do MAPA_COLUNAS do leitor, e o que não tem coluna própria vai no jsonb.
+    ...Object.fromEntries(EXTRA_TEMPLATE.filter((c) => c !== 'extras').map((c) => [c, p[c] ?? null])),
+    extras: p.curinga ?? null,
   }
 }
 
