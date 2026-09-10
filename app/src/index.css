@@ -2236,4 +2236,12 @@ tfoot td {
 
 /* Subpacote: um nivel abaixo do pacote, recuado e mais leve. */
 .tabela-xl tr.subpacote > td { color: var(--xl-medio); }
-.tabela-xl tr.subpacote > td.rotulo { padding-left: 44px; }
+.tabela-xl tr.subpacote > td.rotulo { padding-left: 26px; }
+
+/* Pacote e subpacote: o pai do grupo em destaque e os filhos recuados e mais
+   leves — o mesmo tratamento que o Master da a "(-) D&A" e a "(+/-) Financial
+   Results". Sem isso o bloco lia como uma lista chapada. */
+.tabela-xl tr.pai > td {
+  font-weight: 700;
+  color: #000;
+}

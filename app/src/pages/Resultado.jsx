@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import PainelResultado from '../components/PainelResultado'
 import FiltroBotoes from '../components/FiltroBotoes'
@@ -465,10 +465,9 @@ export default function Resultado() {
                           const valorEmp = (e) => {
                             if (l.subtotal) return e[l.subtotal] ? anual(e[l.subtotal]) : null
                             if (l.area) return anual(e.porArea?.get(l.area) ?? [])
-                            if (l.eSubpacote) return null // subpacote não é aberto por empresa
                             return anual(e.porLinha.get(l.linha) ?? [])
                           }
-                          const classe = l.eSubtotal ? 'faixa-soma' : l.eSubpacote ? 'subpacote' : 'detalhe'
+                          const classe = l.eSubtotal ? 'faixa-soma' : 'detalhe'
                           return (
                             <tr key={l.rotulo} className={classe}>
                               <td className="rotulo fixa-2">
@@ -495,6 +494,92 @@ export default function Resultado() {
                   <p className="nota-tabela">
                     Nada é rateado: cada linha soma os lançamentos daquela empresa. Uma célula com travessão é
                     empresa sem lançamento naquela linha, não valor escondido.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* MODULO: o gasto aberto em pacote e subpacote, com o % sobre a
+                receita liquida. E um quadro proprio, e nao uma visao do P&L:
+                o que se olha aqui e a composicao do gasto, nao o caminho ate
+                o EBITDA. */}
+            {dados.pacotes?.length > 0 && (
+              <div className="panel" style={{ marginBottom: 18 }}>
+                <div className="panel-header">
+                  <div>
+                    <h2>Gastos por pacote</h2>
+                    <p>
+                      Cada pacote aberto nos seus subpacotes, com o percentual sobre a receita líquida
+                    </p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div className="rolagem-x">
+                    <table className="tabela-xl sem-indice">
+                      <thead>
+                        <tr className="faixa">
+                          <th className="canto fixa-2">[ BRL M ]</th>
+                          <th className="vao" />
+                          <th colSpan={2}>Gastos</th>
+                        </tr>
+                        <tr className="rotulos">
+                          <th className="rotulo fixa-2">Pacote</th>
+                          <th className="vao" />
+                          <th className="atual">Actual</th>
+                          <th>% RoL</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dados.pacotes.map((p, i) => {
+                          const total = anual(p.valores)
+                          return (
+                            <Fragment key={p.nome}>
+                              {i > 0 && (
+                                <tr className="respiro">
+                                  <td colSpan={4} />
+                                </tr>
+                              )}
+                              <tr className="pai">
+                                <td className="rotulo fixa-2">{p.nome}</td>
+                                <td className="vao" />
+                                <td className="valor">{mi(total)}</td>
+                                <td>{pct(percentual(total, base))}</td>
+                              </tr>
+                              {p.subpacotes.map((sub) => {
+                                const v = anual(sub.valores)
+                                return (
+                                  <tr key={sub.nome} className="subpacote">
+                                    <td className="rotulo fixa-2">{sub.nome}</td>
+                                    <td className="vao" />
+                                    <td className="valor">{mi(v)}</td>
+                                    <td>{pct(percentual(v, base))}</td>
+                                  </tr>
+                                )
+                              })}
+                            </Fragment>
+                          )
+                        })}
+                        <tr className="respiro">
+                          <td colSpan={4} />
+                        </tr>
+                        {(() => {
+                          const t = dados.pacotes.reduce((a, p) => a + anual(p.valores), 0)
+                          return (
+                            <tr className="faixa-soma">
+                              <td className="rotulo fixa-2">= Total de gastos</td>
+                              <td className="vao" />
+                              <td className="valor">{mi(t)}</td>
+                              <td>{pct(percentual(t, base))}</td>
+                            </tr>
+                          )
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="nota-tabela">
+                    O pacote vem da coluna “Pacote” do template, não do plano de contas. Por isso este total
+                    inclui os lançamentos cuja conta ainda não está cadastrada, que o P&amp;L deixa de fora — a
+                    diferença entre os dois é exatamente esse valor.
                   </p>
                 </div>
               </div>
@@ -632,7 +717,7 @@ export default function Resultado() {
                         // O esqueleto sai inteiro, mesmo zerado: e assim que o
                         // Master mostra, e uma linha ausente e ambigua — nao da
                         // para saber se e zero ou se a ferramenta nao tem.
-                        const classe = l.eSubtotal ? 'faixa-soma' : l.eSubpacote ? 'subpacote' : 'detalhe'
+                        const classe = l.eSubtotal ? 'faixa-soma' : 'detalhe'
                         return (
                           <tr key={l.rotulo} className={classe}>
                             <td className="rotulo fixa-2">{l.eSubtotal ? `= ${l.rotulo}` : l.rotulo}</td>

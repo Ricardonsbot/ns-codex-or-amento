@@ -21,10 +21,13 @@ import { supabase } from './supabaseClient'
  *
  *   conta   as quatro linhas de natureza do plano de contas (Pessoal,
  *           Terceiros, Tecnologia, Viagens) — é o P&L linha a linha;
- *   funcao  COGS, G&A, S&M, R&D — vem da coluna "Alocação PnL (Área)";
- *   pacote  o mesmo pacote da visão conta, aberto em subpacote.
+ *   funcao  COGS, G&A, S&M, R&D — vem da coluna "Alocação PnL (Área)".
  *
- * As três somam o mesmo total porque partem do mesmo conjunto de lançamentos:
+ * Pacote e subpacote não são uma visão daqui: viraram quadro próprio, em
+ * `pacotes`, mais abaixo. O que o FP&A quer ver ali é a abertura do gasto em
+ * dois níveis com o % sobre a receita líquida — não uma linha no meio do P&L.
+ *
+ * As duas somam o mesmo total porque partem do mesmo conjunto de lançamentos:
  * os que caem em NATUREZA_OPERACIONAL. Conferido contra o banco — 293,3 mi por
  * natureza e 293,3 mi por área, sem sobra.
  *
@@ -55,9 +58,6 @@ const BLOCO = {
     { area: 'R&D', rotulo: '(−) Research & Development', sinal: -1 },
     { area: 'Bad Debts Provision', rotulo: '(−) Bad Debts Provision', sinal: -1 },
   ],
-
-  // Os subpacotes entram em tempo de montagem, sob o pacote a que pertencem.
-  pacote: NATUREZA_OPERACIONAL.map((l) => ({ ...l, sinal: -1, abrePacote: true })),
 }
 
 /** Do Adjusted EBITDA para baixo é igual nas três visões. */
@@ -91,7 +91,6 @@ export const esqueleto = (visao = 'conta') => [...ACIMA, ...(BLOCO[visao] ?? BLO
 export const VISOES = [
   { valor: 'conta', rotulo: 'Linha contábil' },
   { valor: 'funcao', rotulo: 'COGS / G&A / S&M / R&D' },
-  { valor: 'pacote', rotulo: 'Pacote e subpacote' },
 ]
 
 /**
@@ -160,14 +159,8 @@ function calcularSubtotais(valorDe, valorArea) {
   }
 }
 
-/**
- * O esqueleto de uma visão preenchido com os valores.
- *
- * `subpacotesDe` devolve os pares [nome, meses] de um pacote; quando a coluna
- * de subpacote ainda não existe no banco ele devolve lista vazia e a visão de
- * pacote fica igual à de linha contábil, sem quebrar.
- */
-function montarLinhas(visao, subtotais, valorDe, valorArea, subpacotesDe) {
+/** O esqueleto de uma visão preenchido com os valores. */
+function montarLinhas(visao, subtotais, valorDe, valorArea) {
   const saida = []
   for (const l of esqueleto(visao)) {
     if (l.subtotal) {
@@ -185,11 +178,6 @@ function montarLinhas(visao, subtotais, valorDe, valorArea, subpacotesDe) {
       continue
     }
     saida.push({ ...l, valores: valorDe(l.linha) })
-    if (l.abrePacote && subpacotesDe) {
-      for (const [nome, valores] of subpacotesDe(l.linha)) {
-        saida.push({ rotulo: nome, valores, eSubpacote: true, sinal: -1 })
-      }
-    }
   }
   return saida
 }
@@ -262,8 +250,7 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
 
   const porLinha = new Map()      // linha_pl -> 12 meses
   const porArea = new Map()       // area -> 12 meses (só do bloco operacional)
-  const porSubpacote = new Map()  // linha_pl -> Map(subpacote -> 12 meses)
-  const semSubpacote = new Map()  // linha_pl -> 12 meses das linhas sem subpacote
+  const porPacote = new Map()     // pacote -> { total, subs: Map(subpacote -> meses) }
   const porEmpresa = new Map()    // empresa -> { nome, linhas, areas, ... }
   let semConta = zeros()
   const itens = []
@@ -283,17 +270,18 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     if (noBloco) {
       const a = l.area || 'Sem área'
       porArea.set(a, somar(porArea.get(a) ?? zeros(), meses))
-      const sp = l.subpacote
-      if (sp) {
-        if (!porSubpacote.has(chave)) porSubpacote.set(chave, new Map())
-        const m = porSubpacote.get(chave)
-        m.set(sp, somar(m.get(sp) ?? zeros(), meses))
-      } else {
-        // O que sobra sem subpacote e somado a parte para virar linha propria.
-        // Sem isso ele sumia: os subpacotes somavam menos que o pacote e a
-        // diferenca ficava sem explicacao nenhuma na tela.
-        semSubpacote.set(chave, somar(semSubpacote.get(chave) ?? zeros(), meses))
-      }
+    }
+
+    // O quadro de pacotes vem da coluna `pacote` do template, nao da linha do
+    // plano de contas. Ele inclui tambem o que ainda nao tem conta cadastrada,
+    // que no P&L fica de fora — por isso os dois totais nao batem, e a
+    // diferenca e exatamente o `semConta`. A tela diz isso.
+    if (l.tipo !== 'receita' && l.pacote) {
+      if (!porPacote.has(l.pacote)) porPacote.set(l.pacote, { total: zeros(), subs: new Map() })
+      const g = porPacote.get(l.pacote)
+      g.total = somar(g.total, meses)
+      const sp = l.subpacote || 'Sem subpacote'
+      g.subs.set(sp, somar(g.subs.get(sp) ?? zeros(), meses))
     }
 
     // O mesmo corte por empresa, que é o recorte do P&L gerencial.
@@ -334,27 +322,12 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
 
   const valorDe = (chave) => porLinha.get(chave) ?? zeros()
   const valorArea = (a) => porArea.get(a) ?? zeros()
-  const subpacotesDe = (linha) => {
-    const reais = [...(porSubpacote.get(linha) ?? new Map()).entries()].sort(
-      (a, b) => anual(b[1]) - anual(a[1])
-    )
-    // O resto so aparece quando ha subpacote de verdade naquele pacote: se
-    // nenhum tem, a abertura inteira seria uma linha "(sem subpacote)" igual
-    // ao pacote, que nao diz nada.
-    const resto = semSubpacote.get(linha)
-    if (reais.length && resto && anual(resto) !== 0) reais.push(['(sem subpacote)', resto])
-    return reais
-  }
-
   const subtotais = calcularSubtotais(valorDe, valorArea)
   const { receitaBruta, deducoes, capex } = subtotais
 
-  // As três visões, prontas: trocar de visão na tela não volta ao banco.
+  // As duas visões, prontas: trocar de visão na tela não volta ao banco.
   const pls = Object.fromEntries(
-    VISOES.filter((v) => v.valor !== 'pacote' || porSubpacote.size > 0).map((v) => [
-      v.valor,
-      montarLinhas(v.valor, subtotais, valorDe, valorArea, subpacotesDe),
-    ])
+    VISOES.map((v) => [v.valor, montarLinhas(v.valor, subtotais, valorDe, valorArea)])
   )
   const pl = pls.conta
 
@@ -389,6 +362,17 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
         }
       })
       .sort((a, b) => anual(b.receitaLiquida) - anual(a.receitaLiquida) || a.nome.localeCompare(b.nome)),
+    // Pacote com os seus subpacotes, do maior para o menor: o quadro que o
+    // FP&A pediu, o gasto aberto em dois niveis.
+    pacotes: [...porPacote.entries()]
+      .map(([nome, g]) => ({
+        nome,
+        valores: g.total,
+        subpacotes: [...g.subs.entries()]
+          .map(([sub, valores]) => ({ nome: sub, valores }))
+          .sort((a, b) => anual(b.valores) - anual(a.valores)),
+      }))
+      .sort((a, b) => anual(b.valores) - anual(a.valores)),
     areas: [...porArea.entries()]
       .map(([nome, valores]) => ({ nome, valores }))
       .sort((a, b) => anual(b.valores) - anual(a.valores)),
@@ -422,14 +406,9 @@ export function montarPL(itens) {
   const subtotais = calcularSubtotais(valorDe, valorArea)
 
   return {
-    pl: montarLinhas('conta', subtotais, valorDe, valorArea, null),
-    // Sem a visão de pacote: ela só faz sentido aberta em subpacote, e o que
-    // está em memória ainda não passou pela gravação que separa os dois.
+    pl: montarLinhas('conta', subtotais, valorDe, valorArea),
     pls: Object.fromEntries(
-      VISOES.filter((v) => v.valor !== 'pacote').map((v) => [
-        v.valor,
-        montarLinhas(v.valor, subtotais, valorDe, valorArea, null),
-      ])
+      VISOES.map((v) => [v.valor, montarLinhas(v.valor, subtotais, valorDe, valorArea)])
     ),
     subtotais,
     semConta,
