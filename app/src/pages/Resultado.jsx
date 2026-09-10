@@ -224,7 +224,9 @@ export default function Resultado() {
             </div>
           </div>
           <div className="panel-body">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* BU, Torre e Empresa ocupam a linha toda porque as listas sao
+                longas; Visao e Comparar sao curtos e dividem a ultima. */}
+            <div className="recorte-grupos">
           <FiltroBotoes
             label="BU"
             valor={buId}
@@ -241,7 +243,7 @@ export default function Resultado() {
             valor={torreId}
             rotuloTodas="Todas as Torres"
             opcoes={torresDaBu.map((t) => ({ valor: t.id, rotulo: t.nome }))}
-            limite={10}
+            limite={8}
             onChange={(v) => {
               setTorreId(v)
               setEmpresaId('')
@@ -256,6 +258,7 @@ export default function Resultado() {
             onChange={setEmpresaId}
             limite={comLancamento.length || 12}
           />
+          <div className="recorte-dupla">
           <FiltroBotoes
             label="Visão"
             valor={mensal}
@@ -280,6 +283,7 @@ export default function Resultado() {
               </span>
             </div>
           )}
+          </div>
             </div>
           </div>
         </div>

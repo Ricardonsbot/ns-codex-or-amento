@@ -2106,7 +2106,10 @@ tfoot td {
 
 .folha {
   background: #fff;
-  margin: -24px -28px -60px;
+  /* Sem recuo no topo: os laterais e o de baixo servem para o branco alcancar
+     a borda do conteudo, mas puxar o topo fazia a folha subir 24px por cima da
+     topbar e cobrir metade do subtitulo. */
+  margin: 0 -28px -60px;
   padding: 22px 28px 60px;
 }
 
@@ -2269,3 +2272,20 @@ tfoot td {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
 }
+
+/* Os grupos de filtro do Recorte. Visao e Comparar sao curtos e dividem a
+   ultima linha: empilhar os cinco fazia o cartao passar de 400px e empurrar a
+   primeira tabela para fora da tela. */
+.recorte-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recorte-dupla {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+}
+
+.recorte-dupla > .filtro-botoes { flex: 1 1 240px; }
