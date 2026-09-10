@@ -70,13 +70,40 @@ for (const arquivo of arquivos) {
 }
 
 const mapa = new Map()
+const subpacotesConhecidos = new Set()
 let ambiguas = 0
 for (const [d, sub] of candidatos) {
+  for (const x of sub) subpacotesConhecidos.add(x)
   if (sub.size === 1) mapa.set(d, [...sub][0])
   else ambiguas += 1
 }
 console.log(`\ndescrições mapeadas ... ${mapa.size}`)
 console.log(`ambíguas (ignoradas) .. ${ambiguas}`)
+console.log(`subpacotes conhecidos . ${subpacotesConhecidos.size}`)
+
+/**
+ * O subpacote de uma descrição.
+ *
+ * Primeiro pelo mapa exato. Se a linha veio de um arquivo que não está nesta
+ * pasta — foi o caso da BRK, gravada de uma versão anterior do template —, a
+ * combinação não consta do mapa, mas a descrição continua sendo
+ * "DETALHAMENTO · SUBPACOTE": basta pegar o último trecho.
+ *
+ * Só que "Facilities" sozinho pode ser detalhamento ou subpacote, e aí
+ * adivinhar erraria. Por isso o trecho só é aceito quando é um subpacote que
+ * apareceu em algum template — a lista montada acima. Fora disso, fica nulo.
+ */
+function subpacoteDe(descricao) {
+  const d = descricao ?? ''
+  const exato = mapa.get(d)
+  if (exato) return { valor: exato, via: 'mapa' }
+  const partes = d.split(' · ')
+  if (partes.length > 1) {
+    const ultimo = partes[partes.length - 1].trim()
+    if (subpacotesConhecidos.has(ultimo)) return { valor: ultimo, via: 'sufixo' }
+  }
+  return { valor: null, via: 'nenhum' }
+}
 
 // ---- lê o que está gravado --------------------------------------------------
 const linhas = []
@@ -100,10 +127,13 @@ const SEP = String.fromCharCode(0)
 const porPar = new Map() // `pacote${SEP}subpacote` -> [ids]
 let semPacote = 0
 let semSubpacote = 0
+const via = { mapa: 0, sufixo: 0, nenhum: 0 }
 for (const l of linhas) {
   const m = /Pacote:\s*([^|]+)/.exec(l.obs ?? '')
   const pacote = m ? m[1].trim() : null
-  const subpacote = mapa.get(l.descricao ?? '') ?? null
+  const achado = subpacoteDe(l.descricao)
+  const subpacote = achado.valor
+  via[achado.via] += 1
   if (!pacote) semPacote += 1
   if (!subpacote) semSubpacote += 1
   if (!pacote && !subpacote) continue
@@ -114,7 +144,9 @@ for (const l of linhas) {
 }
 
 console.log(`\nsem pacote no obs ...... ${semPacote}`)
-console.log(`sem subpacote no mapa .. ${semSubpacote}`)
+console.log(`subpacote pelo mapa .... ${via.mapa}`)
+console.log(`subpacote pelo sufixo .. ${via.sufixo}`)
+console.log(`sem subpacote .......... ${semSubpacote}`)
 console.log(`pares distintos ........ ${porPar.size}`)
 for (const [chave, ids] of [...porPar].sort((a, b) => b[1].length - a[1].length).slice(0, 15)) {
   const [p, s] = chave.split(SEP)

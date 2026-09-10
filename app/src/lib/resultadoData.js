@@ -263,6 +263,7 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
   const porLinha = new Map()      // linha_pl -> 12 meses
   const porArea = new Map()       // area -> 12 meses (só do bloco operacional)
   const porSubpacote = new Map()  // linha_pl -> Map(subpacote -> 12 meses)
+  const semSubpacote = new Map()  // linha_pl -> 12 meses das linhas sem subpacote
   const porEmpresa = new Map()    // empresa -> { nome, linhas, areas, ... }
   let semConta = zeros()
   const itens = []
@@ -287,6 +288,11 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
         if (!porSubpacote.has(chave)) porSubpacote.set(chave, new Map())
         const m = porSubpacote.get(chave)
         m.set(sp, somar(m.get(sp) ?? zeros(), meses))
+      } else {
+        // O que sobra sem subpacote e somado a parte para virar linha propria.
+        // Sem isso ele sumia: os subpacotes somavam menos que o pacote e a
+        // diferenca ficava sem explicacao nenhuma na tela.
+        semSubpacote.set(chave, somar(semSubpacote.get(chave) ?? zeros(), meses))
       }
     }
 
@@ -328,8 +334,17 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
 
   const valorDe = (chave) => porLinha.get(chave) ?? zeros()
   const valorArea = (a) => porArea.get(a) ?? zeros()
-  const subpacotesDe = (linha) =>
-    [...(porSubpacote.get(linha) ?? new Map()).entries()].sort((a, b) => anual(b[1]) - anual(a[1]))
+  const subpacotesDe = (linha) => {
+    const reais = [...(porSubpacote.get(linha) ?? new Map()).entries()].sort(
+      (a, b) => anual(b[1]) - anual(a[1])
+    )
+    // O resto so aparece quando ha subpacote de verdade naquele pacote: se
+    // nenhum tem, a abertura inteira seria uma linha "(sem subpacote)" igual
+    // ao pacote, que nao diz nada.
+    const resto = semSubpacote.get(linha)
+    if (reais.length && resto && anual(resto) !== 0) reais.push(['(sem subpacote)', resto])
+    return reais
+  }
 
   const subtotais = calcularSubtotais(valorDe, valorArea)
   const { receitaBruta, deducoes, capex } = subtotais
