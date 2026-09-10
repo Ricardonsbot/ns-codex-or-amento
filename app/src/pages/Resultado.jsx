@@ -213,7 +213,18 @@ export default function Resultado() {
       </header>
 
       <div className="content folha">
-        <div className="filter-bar" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 14 }}>
+        {/* Mesmo formato do "Contexto do Lançamento" no módulo de Revenue:
+            painel com cabeçalho e os chips no estilo padrão. Sem o painel, os
+            filtros ficavam soltos no topo da folha e pareciam inacabados. */}
+        <div className="panel recorte">
+          <div className="panel-header">
+            <div>
+              <h2>Recorte</h2>
+              <p>BU, Torre e Empresa — vale para todas as visões abaixo</p>
+            </div>
+          </div>
+          <div className="panel-body">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <FiltroBotoes
             label="BU"
             valor={buId}
@@ -269,6 +280,8 @@ export default function Resultado() {
               </span>
             </div>
           )}
+            </div>
+          </div>
         </div>
 
         {carregando && <div className="empty-hint">Carregando…</div>}

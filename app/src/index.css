@@ -2137,47 +2137,28 @@ tfoot td {
 
 .folha .panel-body { padding: 0; }
 
-/* ---- filtros: controle e controle, nao destaque ---- */
-.folha .filter-bar {
-  background: none;
-  border: none;
-  border-bottom: 1px solid var(--xl-linha);
-  border-radius: 0;
-  padding: 0 0 14px;
-  margin-bottom: 18px;
+/* ---- o painel do recorte mantem o cartao ----
+   O resto da folha perdeu borda e sombra de proposito, mas os filtros nao: sem
+   o cartao eles ficavam soltos no topo e pareciam inacabados. E o mesmo
+   formato do "Contexto do Lancamento" no modulo de Revenue. */
+.folha .panel.recorte {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 20px;
 }
 
-.folha .filtro-botoes-label {
-  color: var(--xl-medio);
-  font-size: 10px;
+.folha .panel.recorte .panel-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 0;
 }
 
-.folha .filtro-chip {
-  border-color: transparent;
-  border-radius: 3px;
-  background: none;
-  color: var(--xl-rotulo);
-  font-size: 12px;
-  padding: 4px 8px;
-}
-
-.folha .filtro-chip:hover {
-  border-color: transparent;
-  background: var(--color-bg);
-  color: #000;
-}
-
-/* O selecionado usa o cinza escuro da linha do consolidado, nao o laranja:
-   assim o unico laranja da tela continua sendo o do cabecalho das tabelas. */
-.folha .filtro-chip.ativo {
-  background: var(--xl-escuro);
-  border-color: var(--xl-escuro);
-  color: #fff;
-  font-weight: 600;
-}
+.folha .panel.recorte .panel-body { padding: 16px 18px; }
 
 .folha .filtro-chip.mais {
-  color: var(--xl-medio);
+  color: var(--color-text-muted);
   font-style: italic;
 }
 
