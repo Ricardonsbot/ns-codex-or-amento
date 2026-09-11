@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../../components/Layout'
+import SeletorColunas from '../../components/SeletorColunas'
 import { exportarExcel } from '../../lib/excelUtils'
 import { nomeArquivoExportacao, MODULOS } from '../../lib/modulos'
 import dados from '../../data/aliquotas.json'
@@ -20,6 +21,7 @@ const pct = (v) =>
     : `${(v * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
 
 export default function Aliquotas() {
+  const [exportacao, setExportacao] = useState(null)
   const [bu, setBu] = useState('')
   const [busca, setBusca] = useState('')
 
@@ -33,7 +35,8 @@ export default function Aliquotas() {
       .sort((a, b) => a.empresa.localeCompare(b.empresa) || a.produto.localeCompare(b.produto))
   }, [bu, busca])
 
-  function handleExportar() {
+  // Monta o que sairia; quem grava o arquivo e o seletor de colunas.
+  function montarExportacao() {
     const colunas = [
       { key: 'BU' }, { key: 'Torre' }, { key: 'Subtorre' }, { key: 'Empresa' }, { key: 'Produto' },
       ...TRIBUTOS.map((t) => ({ key: t.rotulo })), { key: 'Total' },
@@ -43,7 +46,7 @@ export default function Aliquotas() {
       ...Object.fromEntries(TRIBUTOS.map((t) => [t.rotulo, r[t.chave] ?? ''])),
       Total: r.total ?? '',
     }))
-    exportarExcel(nomeArquivoExportacao(MODULOS.CADASTROS, 'Aliquotas'), corpo, colunas)
+    return { nomeArquivo: nomeArquivoExportacao(MODULOS.CADASTROS, 'Aliquotas'), linhas: corpo, colunas }
   }
 
   return (
@@ -83,7 +86,7 @@ export default function Aliquotas() {
             />
           </div>
           <span className="text-muted">{linhas.length} de {dados.registros.length}</span>
-          <button className="btn btn-secondary btn-sm" type="button" onClick={handleExportar} style={{ marginLeft: 'auto' }}>
+          <button className="btn btn-secondary btn-sm" type="button" onClick={() => setExportacao(montarExportacao())} style={{ marginLeft: 'auto' }}>
             ⭳ Exportar
           </button>
         </div>
@@ -126,6 +129,17 @@ export default function Aliquotas() {
           </div>
         </div>
       </div>
+      {exportacao && (
+        <SeletorColunas
+          nomeArquivo={exportacao.nomeArquivo}
+          colunas={exportacao.colunas}
+          onCancelar={() => setExportacao(null)}
+          onConfirmar={(escolhidas) => {
+            exportarExcel(exportacao.nomeArquivo, exportacao.linhas, escolhidas)
+            setExportacao(null)
+          }}
+        />
+      )}
     </Layout>
   )
 }

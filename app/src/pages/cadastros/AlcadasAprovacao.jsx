@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../../components/Layout'
+import SeletorColunas from '../../components/SeletorColunas'
 import { exportarExcel } from '../../lib/excelUtils'
 import { nomeArquivoExportacao, MODULOS } from '../../lib/modulos'
 import dados from '../../data/alcadas-aprovacao.json'
@@ -70,13 +71,15 @@ const Seta = () => (
 )
 
 export default function AlcadasAprovacao() {
+  const [exportacao, setExportacao] = useState(null)
   const [visao, setVisao] = useState('bu')
   const organograma = useMemo(() => porResponsabilidade(dados.registros, visao), [visao])
 
   const totalLinhas = organograma.reduce((a, g) => a + g.linhas.length, 0)
   const totalCadeias = organograma.reduce((a, g) => a + contarCadeias(g.linhas), 0)
 
-  function handleExportar() {
+  // Monta o que sairia; quem grava o arquivo e o seletor de colunas.
+  function montarExportacao() {
     const colunas = [
       { key: 'Grupo' }, { key: 'Pacote' }, { key: 'Item' }, { key: 'Nível' },
       { key: 'Quem faz' }, { key: 'Quem valida 1' }, { key: 'Quem valida 2' }, { key: 'Comentário' },
@@ -94,7 +97,7 @@ export default function AlcadasAprovacao() {
         'Comentário': r.comentario ?? '',
       }))
     const sufixo = visao === 'bu' ? 'BU' : 'Corporate'
-    exportarExcel(nomeArquivoExportacao(MODULOS.CADASTROS, `AlcadasAprovacao${sufixo}`), linhas, colunas)
+    return { nomeArquivo: nomeArquivoExportacao(MODULOS.CADASTROS, `AlcadasAprovacao${sufixo}`), linhas, colunas }
   }
 
   return (
@@ -120,7 +123,7 @@ export default function AlcadasAprovacao() {
           <span className="text-muted">
             {totalLinhas} responsabilidade(s) em {totalCadeias} cadeia(s) distinta(s)
           </span>
-          <button className="btn btn-secondary btn-sm" type="button" onClick={handleExportar} style={{ marginLeft: 'auto' }}>
+          <button className="btn btn-secondary btn-sm" type="button" onClick={() => setExportacao(montarExportacao())} style={{ marginLeft: 'auto' }}>
             ⭳ Exportar
           </button>
         </div>
@@ -193,6 +196,17 @@ export default function AlcadasAprovacao() {
           </div>
         ))}
       </div>
+      {exportacao && (
+        <SeletorColunas
+          nomeArquivo={exportacao.nomeArquivo}
+          colunas={exportacao.colunas}
+          onCancelar={() => setExportacao(null)}
+          onConfirmar={(escolhidas) => {
+            exportarExcel(exportacao.nomeArquivo, exportacao.linhas, escolhidas)
+            setExportacao(null)
+          }}
+        />
+      )}
     </Layout>
   )
 }

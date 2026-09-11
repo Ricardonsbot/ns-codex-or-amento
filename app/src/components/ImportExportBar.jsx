@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { exportarExcel, lerArquivoExcel } from '../lib/excelUtils'
+import SeletorColunas from './SeletorColunas'
 
 // Componente genérico de Exportar/Importar Excel, reutilizado por todas as telas de
 // Cadastro. As colunas exportadas/esperadas na importação vêm de `colunas`
@@ -9,10 +10,7 @@ import { exportarExcel, lerArquivoExcel } from '../lib/excelUtils'
 export default function ImportExportBar({ nomeArquivo, colunas, dados, onImportarLinha, onImportConcluido, showToast }) {
   const inputRef = useRef(null)
   const [importando, setImportando] = useState(false)
-
-  function handleExportar() {
-    exportarExcel(nomeArquivo, dados, colunas)
-  }
+  const [escolhendo, setEscolhendo] = useState(false)
 
   async function handleArquivoSelecionado(e) {
     const file = e.target.files?.[0]
@@ -51,11 +49,22 @@ export default function ImportExportBar({ nomeArquivo, colunas, dados, onImporta
 
   return (
     <div className="flex-row" style={{ gap: 6 }}>
-      <button className="btn btn-secondary btn-sm" type="button" onClick={handleExportar}>⭳ Exportar</button>
+      <button className="btn btn-secondary btn-sm" type="button" onClick={() => setEscolhendo(true)}>⭳ Exportar</button>
       <button className="btn btn-secondary btn-sm" type="button" onClick={() => inputRef.current?.click()} disabled={importando}>
         {importando ? 'Importando…' : '⭱ Importar'}
       </button>
       <input ref={inputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleArquivoSelecionado} />
+      {escolhendo && (
+      <SeletorColunas
+        nomeArquivo={nomeArquivo}
+        colunas={colunas}
+        onCancelar={() => setEscolhendo(false)}
+        onConfirmar={(escolhidas) => {
+          setEscolhendo(false)
+          exportarExcel(nomeArquivo, dados, escolhidas)
+        }}
+      />
+      )}
     </div>
   )
 }

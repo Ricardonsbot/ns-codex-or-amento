@@ -2168,3 +2168,54 @@ tfoot td {
   margin-top: 4px;
   line-height: 1.35;
 }
+
+/* ---------- Seletor de colunas da exportacao ---------- */
+
+.seletor-colunas-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Duas colunas: a lista passa de vinte itens em alguns cadastros, e numa
+   coluna so a caixa virava uma rolagem longa. */
+.seletor-colunas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 2px 16px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.seletor-colunas label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.seletor-colunas label:hover { background: var(--color-bg); }
+
+.seletor-colunas label.fixa {
+  cursor: default;
+  color: var(--color-text-muted);
+}
+
+.seletor-colunas input { flex: none; }
+
+.seletor-colunas-nota {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}

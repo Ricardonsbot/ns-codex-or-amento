@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../../components/Layout'
+import SeletorColunas from '../../components/SeletorColunas'
 import { useToast } from '../../components/ToastProvider'
 import { exportarExcel } from '../../lib/excelUtils'
 import { nomeArquivoExportacao, MODULOS } from '../../lib/modulos'
 import { MESES, fetchAnos, fetchPremissas, salvarValor, acumular, formatar } from '../../lib/premissasData'
 
 export default function PremissasMacro() {
+  const [exportacao, setExportacao] = useState(null)
   const showToast = useToast()
   const [anos, setAnos] = useState([])
   const [ano, setAno] = useState(null)
@@ -66,7 +68,8 @@ export default function PremissasMacro() {
     }
   }
 
-  function handleExportar() {
+  // Monta o que sairia; quem grava o arquivo e o seletor de colunas.
+  function montarExportacao() {
     const colunas = [{ key: 'Indicador' }, { key: 'Unidade' }, ...MESES.map((m) => ({ key: m })), { key: 'Acumulado' }]
     const dados = linhas.map((l) => {
       const linha = { Indicador: l.indicador, Unidade: l.unidade }
@@ -76,7 +79,7 @@ export default function PremissasMacro() {
       linha.Acumulado = acumular(l) ?? ''
       return linha
     })
-    exportarExcel(nomeArquivoExportacao(MODULOS.CADASTROS, `PremissasMacro${ano ?? ''}`), dados, colunas)
+    return { nomeArquivo: nomeArquivoExportacao(MODULOS.CADASTROS, `PremissasMacro${ano ?? ''}`), linhas: dados, colunas }
   }
 
   return (
@@ -108,7 +111,7 @@ export default function PremissasMacro() {
                   ))}
                 </select>
               )}
-              <button className="btn btn-secondary btn-sm" type="button" onClick={handleExportar} disabled={!linhas.length}>
+              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setExportacao(montarExportacao())} disabled={!linhas.length}>
                 ⭳ Exportar
               </button>
             </div>
@@ -181,6 +184,17 @@ export default function PremissasMacro() {
           </div>
         </div>
       </div>
+      {exportacao && (
+        <SeletorColunas
+          nomeArquivo={exportacao.nomeArquivo}
+          colunas={exportacao.colunas}
+          onCancelar={() => setExportacao(null)}
+          onConfirmar={(escolhidas) => {
+            exportarExcel(exportacao.nomeArquivo, exportacao.linhas, escolhidas)
+            setExportacao(null)
+          }}
+        />
+      )}
     </Layout>
   )
 }
