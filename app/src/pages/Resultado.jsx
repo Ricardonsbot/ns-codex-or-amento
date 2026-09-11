@@ -12,6 +12,7 @@ import {
   percentual,
   variacao,
   VISOES,
+  montarIndicadores,
 } from '../lib/resultadoData'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -39,50 +40,43 @@ const milhoes = (v) => `${(Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { maxim
 /** R$ M com uma casa: o formato #,##0.0 que o Master Resultado usa nas tabelas. */
 const mi = (v) =>
   (Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+/** Percentual com sinal, para o delta contra o comparativo. */
+const pct2 = (v) =>
+  v === null || !isFinite(v)
+    ? '—'
+    : `${v > 0 ? '+' : ''}${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
 const pct = (v) =>
   v === null || !isFinite(v)
     ? '—'
     : `${v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
 
 /**
- * Δ e Δ% contra o comparativo. Verde e vermelho seguem o SENTIDO do indicador,
- * não o sinal: gastar menos que o budget é bom, faturar menos é ruim.
- */
-function Variacao({ atual, comparado, menorEMelhor }) {
-  if (comparado === undefined || comparado === null) return null
-  const { delta, pct } = variacao(atual, comparado)
-  const bom = menorEMelhor ? delta < 0 : delta > 0
-  const cor = delta === 0 ? '' : bom ? 'melhor' : 'pior'
-  return (
-    <span className={cor}>
-      {delta > 0 ? '+' : ''}
-      {brl(delta)}
-      {pct !== null && ` (${pct > 0 ? '+' : ''}${pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%)`}
-    </span>
-  )
-}
-
-/**
- * Um dos blocos de resposta: "qual minha receita?", "qual meu EBITDA?"
+ * Um indicador em destaque.
  *
- * O valor sai sem cor. Custo alto nao e desvio — e custo; pintar de vermelho
- * so porque a linha e de despesa gastava a cor no lugar errado, que foi o que
- * o FP&A apontou. Vermelho e verde ficam para o Delta contra o budget.
+ * O valor sai sem cor: aqui nada e "bom" ou "ruim" por si so — 47% de COGS e
+ * otimo num negocio e inviavel noutro, e pintar de vermelho seria a ferramenta
+ * dando um parecer que ela nao tem como dar. A cor fica so no delta contra o
+ * comparativo, que e a unica coisa com sentido definido.
  */
-function Bloco({ pergunta, valor, base, comparado, menorEMelhor }) {
-  const p = percentual(valor, base)
+function Indicador({ rotulo, valor, nota, delta, deltaPp }) {
   return (
-    <div className="bloco-kpi">
-      <div className="bloco-kpi-pergunta">{pergunta}</div>
-      <div className="bloco-kpi-valor">R$ {milhoes(valor)}</div>
-      <div className="bloco-kpi-nota">
-        {p === null ? 'sem base de receita' : `${pct(p)} da receita líquida`}
-      </div>
-      {comparado !== undefined && comparado !== null && (
-        <div className="bloco-kpi-nota">
-          <Variacao atual={valor} comparado={comparado} menorEMelhor={menorEMelhor} /> vs budget
+    <div className="indicador">
+      <div className="indicador-rotulo">{rotulo}</div>
+      <div className="indicador-valor">{valor}</div>
+      {delta && (
+        <div className={`indicador-delta ${delta.valor >= 0 ? 'melhor' : 'pior'}`}>
+          {delta.valor > 0 ? '+' : ''}
+          {milhoes(delta.valor)} vs budget
+          {delta.base ? ` (${pct2((delta.valor / Math.abs(delta.base)) * 100)})` : ''}
         </div>
       )}
+      {deltaPp !== null && deltaPp !== undefined && (
+        <div className={`indicador-delta ${deltaPp >= 0 ? 'melhor' : 'pior'}`}>
+          {deltaPp > 0 ? '+' : ''}
+          {deltaPp.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p. vs budget
+        </div>
+      )}
+      <div className="indicador-nota">{nota}</div>
     </div>
   )
 }
@@ -180,7 +174,6 @@ export default function Resultado() {
   }
 
   const base = dados ? anual(dados.subtotais.receitaLiquida) : 0
-  const custos = dados ? base - anual(dados.subtotais.ebitda) : 0
   const torresDaBu = buId ? torres.filter((t) => t.bu_id === buId) : torres
   const noRecorte = torreId
     ? empresas.filter((e) => e.torre_id === torreId)
@@ -292,40 +285,11 @@ export default function Resultado() {
 
         {!carregando && dados && (
           <>
-            {/* As perguntas em bloco */}
-            <div className="blocos-kpi">
-              <Bloco
-                pergunta="Qual minha receita?"
-                valor={base}
-                base={base}
-                comparado={comp ? anual(comp.subtotais.receitaLiquida) : null}
-              />
-              <Bloco
-                pergunta="Qual meu custo?"
-                valor={custos}
-                base={base}
-                menorEMelhor
-                comparado={comp ? anual(comp.subtotais.receitaLiquida) - anual(comp.subtotais.ebitda) : null}
-              />
-              <Bloco
-                pergunta="Qual meu EBITDA?"
-                valor={anual(dados.subtotais.ebitda)}
-                base={base}
-                comparado={comp ? anual(comp.subtotais.ebitda) : null}
-              />
-              <Bloco
-                pergunta="Qual meu capex?"
-                valor={anual(dados.capex)}
-                base={base}
-                menorEMelhor
-                comparado={comp ? anual(comp.capex) : null}
-              />
-              <Bloco
-                pergunta="EBITDA after Capex"
-                valor={anual(dados.subtotais.ebitdaAposCapex)}
-                base={base}
-                comparado={comp ? anual(comp.subtotais.ebitdaAposCapex) : null}
-              />
+            {/* Os indicadores de revisao, acima das tabelas e abaixo dos filtros */}
+            <div className="indicadores">
+              {montarIndicadores(dados, comp).map((i) => (
+                <Indicador key={i.chave} {...i} />
+              ))}
             </div>
 
             {anual(dados.semConta) !== 0 && (

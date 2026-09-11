@@ -2050,194 +2050,6 @@ tfoot td {
   color: var(--color-text-muted);
 }
 
-/* ---------- Blocos de resposta do Resultado ---------- */
-/* "Qual minha receita?", "Qual meu EBITDA?" - o cabecalho do relatorio. */
-
-.blocos-kpi {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.bloco-kpi {
-  padding: 14px 16px;
-  border: 1px solid var(--color-border);
-  border-top: 3px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-}
-
-.bloco-kpi-pergunta {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-bottom: 8px;
-}
-
-.bloco-kpi-valor {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.bloco-kpi-nota {
-  font-size: 11.5px;
-  color: var(--color-text-muted);
-  margin-top: 4px;
-}
-
-/* Tabela sem a coluna de índice: o nome já é a primeira coluna grudada. */
-.tabela-xl.sem-indice .fixa-2 { left: 0; }
-
-/* ---------- A folha do Resultado ----------
-   O FP&A olhou a tela e disse que ela estava "meio quadrada" e colorida demais,
-   com a cor puxando a atencao para o que nao tem valor de analise. E verdade:
-   eram cartoes brancos com borda e sombra sobre fundo cinza, mais dezenas de
-   botoes de filtro em laranja solido — a maior mancha de cor da pagina estava
-   num controle.
-
-   Aqui a pagina vira uma folha continua, como a planilha: fundo branco, secao
-   marcada por titulo e fio, sem caixa. E o orcamento de cor fica todo com o
-   dado — a faixa do grupo, a coluna Actual e o semaforo. Nada mais e laranja. */
-
-/* A folha NAO pinta o fundo da pagina.
-   Ela chegou a pintar, e deu dois problemas: com recuo negativo o branco
-   passava por baixo da barra lateral e comia o fio que separa o menu do
-   modulo; sem o recuo, ficava branco contra branco e a separacao virava um fio
-   de 1px. O resto do app resolve isso com o cinza do body atras de blocos
-   brancos — o Resultado era a unica tela fora do padrao.
-
-   Entao o fundo volta a ser o cinza de sempre e cada quadro e um bloco branco.
-   O que fica de Emerson e a ausencia de borda e sombra: bloco de papel sobre a
-   mesa, nao cartao com moldura. */
-.folha .panel {
-  background: var(--color-surface);
-  border: none;
-  border-radius: var(--radius-lg);
-  box-shadow: none;
-  padding: 6px 20px 18px;
-  margin-bottom: 20px;
-}
-
-.folha .panel-header {
-  padding: 0 0 5px;
-  border-bottom: 2px solid var(--xl-linha);
-  margin-bottom: 12px;
-}
-
-.folha .panel-header h2 {
-  font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.folha .panel-header p {
-  font-size: 11.5px;
-  color: var(--xl-medio);
-}
-
-.folha .panel-body { padding: 0; }
-
-/* ---- o painel do recorte mantem o cartao ----
-   O resto da folha perdeu borda e sombra de proposito, mas os filtros nao: sem
-   o cartao eles ficavam soltos no topo e pareciam inacabados. E o mesmo
-   formato do "Contexto do Lancamento" no modulo de Revenue. */
-.folha .panel.recorte {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  margin-bottom: 20px;
-}
-
-/* O padding externo e zerado aqui porque o cabecalho e o corpo deste cartao
-   tem o seu proprio: somados, o conteudo do Recorte comecava 19px mais para
-   dentro que o dos outros paineis e as duas caixas nao alinhavam. */
-.folha .panel.recorte { padding: 0; }
-
-.folha .panel.recorte .panel-header {
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 0;
-}
-
-.folha .panel.recorte .panel-body { padding: 16px 20px; }
-
-.folha .filtro-chip.mais {
-  color: var(--color-text-muted);
-  font-style: italic;
-}
-
-/* ---- os numeros de abertura, no lugar dos cartoes ---- */
-.folha .blocos-kpi {
-  display: flex;
-  gap: 0;
-  flex-wrap: wrap;
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: 16px 20px;
-  margin-bottom: 18px;
-}
-
-.folha .bloco-kpi {
-  flex: 1 1 150px;
-  border: none;
-  border-left: 1px solid var(--xl-linha);
-  border-radius: 0;
-  background: none;
-  padding: 2px 18px;
-}
-
-.folha .bloco-kpi:first-child {
-  border-left: none;
-  padding-left: 0;
-}
-
-.folha .bloco-kpi-pergunta {
-  font-size: 10px;
-  letter-spacing: .08em;
-  color: var(--xl-medio);
-  margin-bottom: 4px;
-}
-
-.folha .bloco-kpi-valor {
-  font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
-  font-size: 26px;
-  color: #000;
-}
-
-.folha .bloco-kpi-nota {
-  font-size: 11px;
-  color: var(--xl-medio);
-}
-
-/* Os avisos tambem perdem a tarja: viram nota de rodape com um fio a esquerda. */
-.folha .proto-banner {
-  background: none;
-  border: none;
-  border-left: 3px solid var(--color-warning);
-  border-radius: 0;
-  padding: 2px 0 2px 10px;
-  font-size: 11.5px;
-  color: var(--xl-rotulo);
-}
-
-/* Subpacote: um nivel abaixo do pacote, recuado e mais leve. */
-.tabela-xl tr.subpacote > td { color: var(--xl-medio); }
-.tabela-xl tr.subpacote > td.rotulo { padding-left: 26px; }
-
-/* Pacote e subpacote: o pai do grupo em destaque e os filhos recuados e mais
-   leves — o mesmo tratamento que o Master da a "(-) D&A" e a "(+/-) Financial
-   Results". Sem isso o bloco lia como uma lista chapada. */
-.tabela-xl tr.pai > td {
-  font-weight: 700;
-  color: #000;
-}
-
 /* ---------- Abas do Resultado ----------
    As visoes vinham empilhadas numa rolagem so e chegar no P&L custava passar
    por quatro tabelas. Sem laranja aqui de proposito: aba e navegacao, e o
@@ -2297,3 +2109,62 @@ tfoot td {
 }
 
 .recorte-dupla > .filtro-botoes { flex: 1 1 240px; }
+
+/* ---------- Indicadores de revisao do budget ----------
+   Ficam entre os filtros e as tabelas: sao a leitura que se faz antes de abrir
+   qualquer quadro. Um bloco branco so, dividido por fios, para nao virar seis
+   cartoes disputando atencao. */
+
+.indicadores {
+  display: flex;
+  flex-wrap: wrap;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 18px;
+}
+
+.indicador {
+  flex: 1 1 190px;
+  min-width: 0;
+  padding: 2px 18px;
+  border-left: 1px solid var(--xl-linha);
+}
+
+.indicador:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+
+.indicador-rotulo {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--xl-medio);
+  margin-bottom: 6px;
+}
+
+.indicador-valor {
+  font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #000;
+  font-variant-numeric: tabular-nums;
+}
+
+.indicador-delta {
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A nota e o que evita o numero solto: diz do que ele e feito. */
+.indicador-nota {
+  font-size: 11px;
+  color: var(--xl-medio);
+  margin-top: 4px;
+  line-height: 1.35;
+}

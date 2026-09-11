@@ -469,6 +469,105 @@ export function semaforo(pct) {
   return 'vermelho'
 }
 
+/**
+ * Os indicadores que se olha primeiro quando um budget chega para revisao.
+ *
+ * Nenhum numero novo nasce aqui: todos saem dos mesmos subtotais do P&L. O que
+ * muda e o recorte. Os blocos antigos respondiam "quanto" — receita, custo,
+ * EBITDA —, que a propria tabela logo abaixo ja diz. Estes respondem "quanto
+ * por real de receita", "quanto disso ja estava no ano passado do orcamento" e
+ * "quanto depende de uma empresa so", que e o que faz uma revisao parar em
+ * cima de uma linha.
+ *
+ * `comp` e a versao comparativa, quando escolhida. O delta das margens vai em
+ * ponto percentual, nao em porcentagem de porcentagem.
+ */
+export function montarIndicadores(dados, comp) {
+  if (!dados) return []
+
+  const nr = anual(dados.subtotais.receitaLiquida)
+  const mb = dados.subtotais.margemBruta ? anual(dados.subtotais.margemBruta) : null
+  const eb = anual(dados.subtotais.ebitda)
+  const capex = anual(dados.capex)
+  const pessoal = anual(
+    dados.pl.find((l) => l.linha === 'Despesas > Personnel Costs')?.valores ?? []
+  )
+
+  // O quanto o ano sobe de dentro para fora. Um budget que so fecha porque o
+  // segundo semestre cresce muito e um budget com risco concentrado no fim.
+  const mensal = dados.subtotais.receitaLiquida ?? []
+  const tri = (de) => mensal.slice(de, de + 3).reduce((a, b) => a + b, 0)
+  const t1 = tri(0)
+  const rampa = t1 ? (tri(9) / t1 - 1) * 100 : null
+
+  // Concentracao: quanto da receita esta na maior empresa, e quantas empresas
+  // fecham o ano com EBITDA negativo.
+  const empresas = [...(dados.empresas ?? [])]
+    .map((e) => ({ nome: e.nome, receita: anual(e.receitaLiquida), ebitda: anual(e.ebitda) }))
+    .sort((a, b) => b.receita - a.receita)
+  const maior = empresas[0]
+  const top2 = empresas.slice(0, 2).reduce((a, e) => a + e.receita, 0)
+  const negativas = empresas.filter((e) => e.ebitda < 0)
+
+  const cNr = comp ? anual(comp.subtotais.receitaLiquida) : null
+  const pp = (atual, base, compAtual, compBase) =>
+    comp && base && compBase ? (atual / base - compAtual / compBase) * 100 : null
+
+  return [
+    {
+      chave: 'nr',
+      rotulo: 'Net Revenue',
+      valor: `R$ ${milhoesCurto(nr)} mi`,
+      nota:
+        rampa === null
+          ? 'sem receita mensal para comparar os trimestres'
+          : `4º tri ${rampa >= 0 ? '+' : ''}${umaCasa(rampa)}% sobre o 1º`,
+      delta: cNr === null ? null : { valor: nr - cNr, base: cNr, dinheiro: true },
+    },
+    {
+      chave: 'mb',
+      rotulo: 'Margem Bruta',
+      valor: mb === null ? '—' : `${umaCasa((mb / nr) * 100)}%`,
+      nota: mb === null ? 'depende da área para separar o COGS' : `COGS consome ${umaCasa(((nr - mb) / nr) * 100)}% da receita`,
+      deltaPp: pp(mb ?? 0, nr, comp?.subtotais.margemBruta ? anual(comp.subtotais.margemBruta) : 0, cNr),
+    },
+    {
+      chave: 'ebitda',
+      rotulo: 'Margem EBITDA',
+      valor: `${umaCasa((eb / nr) * 100)}%`,
+      nota: `R$ ${milhoesCurto(eb)} mi de EBITDA`,
+      deltaPp: pp(eb, nr, comp ? anual(comp.subtotais.ebitda) : 0, cNr),
+    },
+    {
+      chave: 'pessoal',
+      rotulo: 'Pessoal / Receita',
+      valor: `${umaCasa((pessoal / nr) * 100)}%`,
+      nota: `R$ ${milhoesCurto(pessoal)} mi — a maior linha de custo`,
+    },
+    {
+      chave: 'concentracao',
+      rotulo: 'Concentração',
+      valor: maior ? `${umaCasa((maior.receita / nr) * 100)}%` : '—',
+      nota: maior
+        ? `${maior.nome} · top 2 = ${umaCasa((top2 / nr) * 100)}%` +
+          (negativas.length
+            ? ` · ${negativas.length} de ${empresas.length} com EBITDA negativo`
+            : '')
+        : 'sem empresa no recorte',
+    },
+    {
+      chave: 'capex',
+      rotulo: 'Capex / Receita',
+      valor: `${umaCasa((capex / nr) * 100)}%`,
+      nota: capex === 0 ? 'nenhum capex orçado neste recorte' : `R$ ${milhoesCurto(capex)} mi`,
+    },
+  ]
+}
+
+const umaCasa = (v) =>
+  !isFinite(v) ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+const milhoesCurto = (v) => umaCasa(Number(v ?? 0) / 1e6)
+
 /** As versões do ciclo, para escolher contra qual comparar. */
 export async function fetchVersoesDoCiclo(cicloId) {
   const { data, error } = await supabase
