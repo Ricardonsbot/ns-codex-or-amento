@@ -23,6 +23,19 @@ const mi = (v) =>
  * Como o tipo se chama nas mensagens. O `rotulo` da tela é "Revenue"/"Expenses",
  * e usá-lo no meio de uma frase em português dava "10 lançamentos de revenue".
  */
+/**
+ * A linha vai para aprovacao de cadastro so quando a conta nao existe no plano.
+ *
+ * A regra do FP&A e "se nao tiver cadastro mas tem dados, enviar para
+ * aprovacao". Conta que existe com outra classificacao — uma de Capex vindo na
+ * aba de gastos — tem cadastro: o problema e de classificacao, e um pedido de
+ * cadastro para ela so criaria duplicata no plano. Linha sem numero nem nome de
+ * conta tambem fica de fora, porque nao ha o que cadastrar.
+ */
+const semCadastro = (m) =>
+  Boolean((m.contaCodigo || m.contaRotulo || '').trim()) &&
+  !(m.falhas ?? []).some((f) => f.includes('está no plano como'))
+
 const NOME = { receita: 'receita', despesa: 'despesa', capex: 'capex' }
 
 /** Nota de rodapé específica de cada aba: o que entra e o que fica de fora. */
@@ -121,8 +134,6 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const [ultima, setUltima] = useState(null)   // { ids, quantos } da importacao recem-feita
   const [desfazendo, setDesfazendo] = useState(false)
   const [podeSolicitar, setPodeSolicitar] = useState(false)
-  const [enviando, setEnviando] = useState(false)
-  const [enviadas, setEnviadas] = useState(0)
   const { user } = useAuth()
 
   useEffect(() => {
@@ -149,7 +160,6 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     setPrevia(null)
     setSubstituir(false)
     setUltima(null)
-    setEnviadas(0)
     try {
       const lido = await lerPlanilhaEmWorker(await file.arrayBuffer(), tipo)
       if (!lido.linhas.length) {
@@ -172,40 +182,41 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
       if (substituir && previa.jaExistem) apagados = await apagarDoTipo(previa.versao.id, tipo)
       const ids = await importar([...previa.prontas, ...previa.marcadas], previa.versao.id, tipo)
       const oQue = NOME[tipo] ?? tipo
+
+      // Conta sem cadastro que tem dado vai para aprovacao sozinha, sem
+      // perguntar — regra do FP&A. O envio acontece aqui, na confirmacao, e nao
+      // na conferencia: se a pessoa desistir de gravar, nao fica pedido aberto
+      // para um dado que nao entrou. E vai num try proprio: a importacao ja foi
+      // gravada, e uma falha no envio nao pode ser anunciada como falha dela.
+      let enviadas = 0
+      let erroEnvio = null
+      const paraEnviar = previa.marcadas.filter(semCadastro)
+      if (paraEnviar.length && podeSolicitar) {
+        try {
+          enviadas = await solicitar(agruparParaCadastro(paraEnviar, tipo, arquivo), user?.email)
+        } catch (err) {
+          erroEnvio = err.message
+        }
+      }
+
       showToast(
-        apagados
+        (apagados
           ? `${apagados} lançamento(s) de ${oQue} apagado(s) e ${ids.length} importado(s).`
-          : `${ids.length} lançamento(s) de ${oQue} importado(s).`,
-        'success'
+          : `${ids.length} lançamento(s) de ${oQue} importado(s).`) +
+          (enviadas ? ` ${enviadas} conta(s) enviada(s) para aprovação de cadastro.` : ''),
+        erroEnvio ? 'warning' : 'success'
       )
+      if (erroEnvio) showToast(`As linhas entraram, mas não consegui enviar as contas para aprovação: ${erroEnvio}`, 'error')
+
       // A substituicao apagou linhas que o desfazer nao traz de volta; oferecer
-      // "desfazer" ali seria mentira.
-      setUltima(apagados ? null : { ids, quantos: ids.length })
+      // "desfazer" ali seria mentira. O aviso das contas enviadas aparece nos dois casos.
+      setUltima({ ids: apagados ? null : ids, quantos: ids.length, enviadas })
       setPrevia(null)
       onImportado?.()
     } catch (err) {
       showToast(`Erro ao importar: ${err.message}`, 'error')
     } finally {
       setGravando(false)
-    }
-  }
-
-  async function handleEnviarCadastro() {
-    setEnviando(true)
-    try {
-      const pedidos = agruparParaCadastro(previa.marcadas, tipo, arquivo)
-      const n = await solicitar(pedidos, user?.email)
-      setEnviadas(n || pedidos.length)
-      showToast(
-        n
-          ? `${n} conta(s) enviada(s) para aprovação de cadastro.`
-          : 'Essas contas já estavam na fila de aprovação.',
-        n ? 'success' : 'warning'
-      )
-    } catch (err) {
-      showToast(`Não consegui enviar: ${err.message}`, 'error')
-    } finally {
-      setEnviando(false)
     }
   }
 
@@ -292,6 +303,10 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   })()
   // Um pedido por RÓTULO: 81 linhas de "CS dedicado" são um cadastro só.
   const aCadastrar = previa ? agruparParaCadastro(previa.marcadas, tipo, arquivo) : []
+  // O que de fato vai para a fila. A tabela mostra todas as contas com
+  // problema; a frase abaixo dela diz quantas serao enviadas.
+  const paraAprovacao = previa ? agruparParaCadastro(previa.marcadas.filter(semCadastro), tipo, arquivo) : []
+  const comOutraClassificacao = aCadastrar.length - paraAprovacao.length
   const total = aImportar.reduce((a, p) => a + p.total, 0)
   const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
   const contas = new Set(previa?.prontas.map((p) => p.conta.id) ?? []).size
@@ -337,15 +352,23 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         >
           <span style={{ fontSize: 13 }}>
             {ultima.quantos} lançamento(s) importado(s) agora.
+            {ultima.enviadas > 0 && (
+              <>
+                {' '}{ultima.enviadas} conta(s) enviada(s) para aprovação — acompanhe em{' '}
+                <Link to="/pendencia-cadastros">Pendência de Cadastros</Link>.
+              </>
+            )}
           </span>
-          <button
-            className="btn btn-secondary btn-sm"
-            type="button"
-            onClick={handleDesfazer}
-            disabled={desfazendo}
-          >
-            {desfazendo ? 'Desfazendo…' : '↶ Desfazer'}
-          </button>
+          {ultima.ids && (
+            <button
+              className="btn btn-secondary btn-sm"
+              type="button"
+              onClick={handleDesfazer}
+              disabled={desfazendo}
+            >
+              {desfazendo ? 'Desfazendo…' : '↶ Desfazer'}
+            </button>
+          )}
           <button
             className="btn btn-secondary btn-sm"
             type="button"
@@ -455,27 +478,29 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                   </tbody>
                 </table>
 
-                {enviadas > 0 ? (
+                {podeSolicitar ? (
                   <div style={{ fontSize: 13 }}>
-                    ✓ {enviadas} conta(s) na fila. Acompanhe em{' '}
-                    <Link to="/pendencia-cadastros">Pendência de Cadastros</Link>.
-                  </div>
-                ) : podeSolicitar ? (
-                  <div className="flex-row" style={{ gap: 10, alignItems: 'center' }}>
-                    <span style={{ fontSize: 13 }}>Deseja enviar para aprovação de cadastro?</span>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      type="button"
-                      onClick={handleEnviarCadastro}
-                      disabled={enviando}
-                    >
-                      {enviando ? 'Enviando…' : `Enviar ${aCadastrar.length} conta(s) para aprovação`}
-                    </button>
+                    {paraAprovacao.length > 0 && (
+                      <>
+                        Ao confirmar a importação,{' '}
+                        {paraAprovacao.length === 1
+                          ? '1 conta sem cadastro será enviada'
+                          : `${paraAprovacao.length} contas sem cadastro serão enviadas`}{' '}
+                        automaticamente para aprovação de cadastro.{' '}
+                      </>
+                    )}
+                    {comOutraClassificacao > 0 && (
+                      <>
+                        {comOutraClassificacao === 1 ? '1 conta já existe' : `${comOutraClassificacao} contas já existem`} no
+                        plano com outra classificação e não {comOutraClassificacao === 1 ? 'vai' : 'vão'} para aprovação —
+                        a correção é na classificação, não no cadastro.
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div style={{ fontSize: 12, opacity: 0.8 }}>
                     A fila de aprovação ainda não está disponível — falta rodar
-                    supabase/migrations/2026-09-09-pendencia-de-cadastros.sql.
+                    supabase/migrations/2026-09-10-schema-completo-do-template.sql.
                   </div>
                 )}
               </div>
