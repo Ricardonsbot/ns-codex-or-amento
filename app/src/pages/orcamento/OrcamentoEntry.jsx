@@ -3,6 +3,9 @@ import Layout from '../../components/Layout'
 import ImportarTemplateOrcamento from '../../components/ImportarTemplateOrcamento'
 import ResumoLancamentos from '../../components/ResumoLancamentos'
 import FiltroBotoes from '../../components/FiltroBotoes'
+import SeletorColunas from '../../components/SeletorColunas'
+import { exportarExcel } from '../../lib/excelUtils'
+import { montarExportacaoReceita } from '../../lib/exportarResultado'
 import { useToast } from '../../components/ToastProvider'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../../lib/dashboardData'
 import { fetchContas } from '../../lib/contasData'
@@ -15,6 +18,7 @@ import {
   deleteLancamento,
   salvarValoresMensais,
   duplicarLancamento,
+  fetchLancamentosParaExportar,
 } from '../../lib/lancamentosData'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -43,6 +47,8 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
 
   const [linhas, setLinhas] = useState([])
   const [loading, setLoading] = useState(true)
+  const [exportacao, setExportacao] = useState(null)
+  const [preparando, setPreparando] = useState(false)
 
   useEffect(() => {
     async function carregarBase() {
@@ -199,6 +205,41 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
     }
   }
 
+  /**
+   * Exporta os lançamentos do recorte. Busca de novo no banco em vez de usar a
+   * grade: a grade só tem o valor base, e o arquivo leva também o reajustado,
+   * o líquido e as colunas do template. Por isso o que foi editado e ainda não
+   * salvo não sai — o arquivo é o que está gravado.
+   */
+  async function handleExportar() {
+    setPreparando(true)
+    try {
+      const dados = await fetchLancamentosParaExportar({
+        tipo,
+        versaoId: versaoAtual.versao.id,
+        buId: selectedBuId || null,
+        torreId: selectedTorreId || null,
+        empresaId: selectedEmpresaId || null,
+      })
+      if (!dados.length) {
+        showToast('Nenhum lançamento gravado nesse recorte para exportar.', 'warning')
+        return
+      }
+      const recorte = selectedEmpresaId
+        ? empresas.find((e) => e.id === selectedEmpresaId)?.nome
+        : selectedTorreId
+        ? torres.find((t) => t.id === selectedTorreId)?.nome
+        : selectedBuId
+        ? bus.find((b) => b.id === selectedBuId)?.nome
+        : 'Todas'
+      setExportacao(montarExportacaoReceita(dados, { bus, torres, empresas, recorte }))
+    } catch (err) {
+      showToast(`Erro ao preparar a exportação: ${err.message}`, 'error')
+    } finally {
+      setPreparando(false)
+    }
+  }
+
   const totalGeral = linhas.reduce((acc, l) => acc + l.valores.reduce((a, v) => a + v, 0), 0)
 
   if (loading) {
@@ -300,7 +341,14 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
               <h2>Lançamento de {rotulo}</h2>
               <p>Valores mensais em R$. Clique em 💾 para salvar a linha após editar.</p>
             </div>
-            <button className="btn btn-primary btn-sm" onClick={handleAdicionarLinha}>+ Adicionar Conta</button>
+            <div className="flex-row" style={{ gap: 8 }}>
+              {tipo === 'receita' && (
+                <button className="btn btn-secondary btn-sm" type="button" onClick={handleExportar} disabled={preparando}>
+                  {preparando ? 'Preparando…' : '⭳ Exportar'}
+                </button>
+              )}
+              <button className="btn btn-primary btn-sm" onClick={handleAdicionarLinha}>+ Adicionar Conta</button>
+            </div>
           </div>
           <div className="panel-body table-wrap">
             <table className="entry-grid">
@@ -370,6 +418,19 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
           </div>
         </div>
       </div>
+
+      {exportacao && (
+        <SeletorColunas
+          nomeArquivo={exportacao.nomeArquivo}
+          chavePreferencia={exportacao.chavePreferencia}
+          colunas={exportacao.colunas}
+          onCancelar={() => setExportacao(null)}
+          onConfirmar={(escolhidas) => {
+            exportarExcel(exportacao.nomeArquivo, exportacao.linhas, escolhidas)
+            setExportacao(null)
+          }}
+        />
+      )}
     </Layout>
   )
 }

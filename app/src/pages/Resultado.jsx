@@ -2,6 +2,9 @@ import { Fragment, useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import PainelResultado from '../components/PainelResultado'
 import FiltroBotoes from '../components/FiltroBotoes'
+import SeletorColunas from '../components/SeletorColunas'
+import { exportarExcel } from '../lib/excelUtils'
+import { montarExportacaoResultado } from '../lib/exportarResultado'
 import { useToast } from '../components/ToastProvider'
 import { fetchVersaoAtual } from '../lib/lancamentosData'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../lib/dashboardData'
@@ -109,6 +112,9 @@ export default function Resultado() {
   // Qual abertura do P&L: linha contabil, area (COGS/G&A/S&M/R&D) ou pacote.
   const [visao, setVisao] = useState('conta')
   const [aba, setAba] = useState('painel')
+  // O que o seletor de colunas vai gravar: montado no clique, com a aba e o
+  // recorte daquele momento.
+  const [exportacao, setExportacao] = useState(null)
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
@@ -319,6 +325,28 @@ export default function Resultado() {
                   {a.rotulo}
                 </button>
               ))}
+              {/* Exporta a aba aberta, no recorte aberto — o que está na tela. */}
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm abas-exportar"
+                onClick={() => {
+                  try {
+                    setExportacao(
+                      montarExportacaoResultado(aba, {
+                        dados,
+                        comp,
+                        visao,
+                        recorte,
+                        abaRotulo: ABAS.find((a) => a.valor === aba)?.rotulo,
+                      })
+                    )
+                  } catch (err) {
+                    showToast(err.message, 'error')
+                  }
+                }}
+              >
+                ⭳ Exportar
+              </button>
             </nav>
 
             {aba === 'painel' && (
@@ -805,6 +833,19 @@ export default function Resultado() {
           </>
         )}
       </div>
+
+      {exportacao && (
+        <SeletorColunas
+          nomeArquivo={exportacao.nomeArquivo}
+          chavePreferencia={exportacao.chavePreferencia}
+          colunas={exportacao.colunas}
+          onCancelar={() => setExportacao(null)}
+          onConfirmar={(escolhidas) => {
+            exportarExcel(exportacao.nomeArquivo, exportacao.linhas, escolhidas)
+            setExportacao(null)
+          }}
+        />
+      )}
     </Layout>
   )
 }

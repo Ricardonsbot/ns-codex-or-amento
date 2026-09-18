@@ -68,7 +68,27 @@ guardado.set('colunas-exportacao:Contas', JSON.stringify(['codigo', 'nome']))
 ok(render().includes('2 de 4 coluna(s)'), 'arquivo "Contas" com 2')
 ok(render({ nomeArquivo: 'Outro' }).includes('4 de 4 coluna(s)'), 'arquivo "Outro" nao herda a escolha')
 
-// 7. sem localStorage
+// 7. a chave de preferencia vale acima do nome do arquivo: o nome muda com o
+//    recorte (Resultado_PL_BRK, Resultado_PL_Onisys) e a escolha nao pode mudar
+guardado.set('colunas-exportacao:Resultado_PL', JSON.stringify(['codigo', 'nome', 'linha_pl']))
+ok(
+  render({ nomeArquivo: 'Resultado_PL_BRK', chavePreferencia: 'Resultado_PL' }).includes('3 de 4 coluna(s)'),
+  'recorte diferente, mesma chave: mesma escolha'
+)
+
+// 8. colunas com grupo saem em blocos, cada um com o seu contador e botao
+const COM_GRUPO = [
+  { key: 'Empresa', grupo: 'Identificação', obrigatorio: true },
+  { key: 'Conta', grupo: 'Identificação' },
+  ...['Jan', 'Fev', 'Mar'].map((m) => ({ key: m, grupo: 'Valores base' })),
+]
+const g = render({ nomeArquivo: 'Grupos', colunas: COM_GRUPO })
+ok(g.includes('Identificação') && g.includes('Valores base'), 'mostra o titulo de cada grupo')
+ok(g.includes('3 de 3') && g.includes('2 de 2'), 'contador por grupo')
+ok((g.match(/grupo<\/button>/g) ?? []).length === 2, 'um botao de grupo em cada bloco')
+ok(!render().includes('seletor-colunas-grupo'), 'sem grupo, continua a lista simples')
+
+// 9. sem localStorage
 delete globalThis.localStorage
 ok(render().includes('4 de 4 coluna(s)'), 'sem localStorage, cai para todas em vez de quebrar')
 

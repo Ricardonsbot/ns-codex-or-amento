@@ -46,13 +46,35 @@ function escolhaInicial(nomeArquivo, colunas, obrigatorias) {
   return new Set([...inicial, ...obrigatorias])
 }
 
-export default function SeletorColunas({ nomeArquivo, colunas, onCancelar, onConfirmar }) {
+/**
+ * Colunas com `grupo` saem em blocos, cada um com o seu marcar/desmarcar. É o
+ * que deixa uma exportação de 70 colunas — três blocos de doze meses — ser
+ * escolhida em três cliques em vez de trinta e seis.
+ */
+function agrupar(colunas) {
+  const grupos = []
+  for (const c of colunas) {
+    const nome = c.grupo ?? ''
+    let g = grupos.find((x) => x.nome === nome)
+    if (!g) grupos.push((g = { nome, colunas: [] }))
+    g.colunas.push(c)
+  }
+  return grupos
+}
+
+/**
+ * `chavePreferencia` é onde a escolha fica lembrada; sem ela, vale o nome do
+ * arquivo. Serve para quando o nome muda com o recorte — Resultado_PL_BRK e
+ * Resultado_PL_Onisys — e a escolha deve ser a mesma.
+ */
+export default function SeletorColunas({ nomeArquivo, chavePreferencia, colunas, onCancelar, onConfirmar }) {
+  const chave = chavePreferencia ?? nomeArquivo
   const obrigatorias = useMemo(
     () => colunas.filter((c) => c.obrigatorio).map((c) => c.key),
     [colunas]
   )
 
-  const [marcadas, setMarcadas] = useState(() => escolhaInicial(nomeArquivo, colunas, obrigatorias))
+  const [marcadas, setMarcadas] = useState(() => escolhaInicial(chave, colunas, obrigatorias))
 
   const alternar = (key) => {
     if (obrigatorias.includes(key)) return
@@ -64,10 +86,44 @@ export default function SeletorColunas({ nomeArquivo, colunas, onCancelar, onCon
     })
   }
 
+  const alternarGrupo = (grupo) => {
+    const livres = grupo.colunas.map((c) => c.key).filter((k) => !obrigatorias.includes(k))
+    setMarcadas((atual) => {
+      const novo = new Set(atual)
+      const todasMarcadas = livres.every((k) => novo.has(k))
+      for (const k of livres) {
+        if (todasMarcadas) novo.delete(k)
+        else novo.add(k)
+      }
+      return novo
+    })
+  }
+
+  const grupos = agrupar(colunas)
+  const comGrupos = grupos.some((g) => g.nome)
+
+  const item = (c) => {
+    const fixa = obrigatorias.includes(c.key)
+    return (
+      <li key={c.key}>
+        <label className={fixa ? 'fixa' : undefined}>
+          <input
+            type="checkbox"
+            checked={marcadas.has(c.key)}
+            disabled={fixa}
+            onChange={() => alternar(c.key)}
+          />
+          <span>{c.label ?? c.key}</span>
+          {fixa && <span className="seletor-colunas-nota">sempre incluída</span>}
+        </label>
+      </li>
+    )
+  }
+
   const confirmar = () => {
     const escolhidas = colunas.filter((c) => marcadas.has(c.key))
     try {
-      globalThis.localStorage?.setItem(chaveSalva(nomeArquivo), JSON.stringify(escolhidas.map((c) => c.key)))
+      globalThis.localStorage?.setItem(chaveSalva(chave), JSON.stringify(escolhidas.map((c) => c.key)))
     } catch {
       // Não poder lembrar a escolha não é motivo para não exportar.
     }
@@ -107,25 +163,31 @@ export default function SeletorColunas({ nomeArquivo, colunas, onCancelar, onCon
             </div>
           </div>
 
-          <ul className="seletor-colunas">
-            {colunas.map((c) => {
-              const fixa = obrigatorias.includes(c.key)
-              return (
-                <li key={c.key}>
-                  <label className={fixa ? 'fixa' : undefined}>
-                    <input
-                      type="checkbox"
-                      checked={marcadas.has(c.key)}
-                      disabled={fixa}
-                      onChange={() => alternar(c.key)}
-                    />
-                    <span>{c.label ?? c.key}</span>
-                    {fixa && <span className="seletor-colunas-nota">sempre incluída</span>}
-                  </label>
-                </li>
-              )
-            })}
-          </ul>
+          {comGrupos ? (
+            <div className="seletor-colunas-grupos">
+              {grupos.map((g) => {
+                const marcadasNoGrupo = g.colunas.filter((c) => marcadas.has(c.key)).length
+                return (
+                  <section key={g.nome || '—'} className="seletor-colunas-grupo">
+                    <header>
+                      <strong>{g.nome || 'Outras'}</strong>
+                      <span>
+                        {marcadasNoGrupo} de {g.colunas.length}
+                      </span>
+                      {g.colunas.some((c) => !obrigatorias.includes(c.key)) && (
+                        <button className="btn btn-ghost btn-sm" type="button" onClick={() => alternarGrupo(g)}>
+                          {g.colunas.every((c) => marcadas.has(c.key)) ? 'Desmarcar' : 'Marcar'} grupo
+                        </button>
+                      )}
+                    </header>
+                    <ul className="seletor-colunas">{g.colunas.map(item)}</ul>
+                  </section>
+                )
+              })}
+            </div>
+          ) : (
+            <ul className="seletor-colunas">{colunas.map(item)}</ul>
+          )}
 
           {obrigatorias.length > 0 && (
             <p className="nota-tabela">

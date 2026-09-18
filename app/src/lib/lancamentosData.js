@@ -31,6 +31,33 @@ export async function fetchLancamentos({ tipo, versaoId, buId, torreId, empresaI
   return data ?? []
 }
 
+/**
+ * Os lançamentos do recorte com tudo o que tem no banco, para exportar.
+ *
+ * Difere do fetchLancamentos em duas coisas: traz todas as colunas do mês
+ * (reajustado e líquido, não só o valor base) e pagina. A grade da tela não
+ * precisa de nenhuma das duas; um arquivo sem os blocos do template, ou cortado
+ * nas primeiras mil linhas sem aviso, precisaria.
+ */
+export async function fetchLancamentosParaExportar({ tipo, versaoId, buId, torreId, empresaId }) {
+  const todos = []
+  for (let de = 0; ; de += 1000) {
+    let query = supabase
+      .from('lancamento')
+      .select('*, conta:conta_id(codigo, nome, linha_pl), lancamento_valor_mensal(*)')
+      .eq('tipo', tipo)
+      .eq('versao_id', versaoId)
+    if (buId) query = query.eq('bu_id', buId)
+    if (torreId) query = query.eq('torre_id', torreId)
+    if (empresaId) query = query.eq('empresa_id', empresaId)
+    const { data, error } = await query.order('criado_em').order('id').range(de, de + 999)
+    if (error) throw error
+    todos.push(...(data ?? []))
+    if (!data || data.length < 1000) break
+  }
+  return todos
+}
+
 export async function createLancamento(fields) {
   const { data, error } = await supabase.from('lancamento').insert(fields).select(SELECT_LANCAMENTO).single()
   if (error) throw error
