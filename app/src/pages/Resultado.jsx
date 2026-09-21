@@ -49,8 +49,8 @@ const pct = (v) =>
     : `${v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
 
 /**
- * Um big number: o nome, o valor em destaque e, embaixo, o percentual sobre a
- * receita — no mesmo bloco branco com divisórias do resto da folha.
+ * Um big number: o nome e, na mesma linha, o valor em destaque e o percentual
+ * sobre a receita separados por uma barra ("R$ 60,0 mi | 60,0% RoL").
  *
  * O valor sai sem cor: aqui nada e "bom" ou "ruim" por si so. A cor fica so no
  * delta contra o comparativo, que e a unica coisa com sentido definido.
@@ -59,8 +59,15 @@ function Indicador({ rotulo, valor, pct, delta, deltaPp }) {
   return (
     <div className="indicador">
       <div className="indicador-rotulo">{rotulo}</div>
-      <div className="indicador-valor">{valor}</div>
-      {pct && <div className="indicador-pct">{pct}</div>}
+      <div className="indicador-linha">
+        <span className="indicador-valor">{valor}</span>
+        {pct && (
+          <>
+            <span className="indicador-barra" aria-hidden="true">|</span>
+            <span className="indicador-pct">{pct}</span>
+          </>
+        )}
+      </div>
       {delta && (
         <div className={`indicador-delta ${delta.valor >= 0 ? 'melhor' : 'pior'}`}>
           {delta.valor > 0 ? '+' : ''}

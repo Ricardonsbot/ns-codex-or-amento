@@ -2165,6 +2165,23 @@ tfoot td {
   border: 1.5px solid var(--color-border-forte);
   border-radius: var(--radius-md);
   background: var(--color-surface);
+  text-align: center;
+}
+
+/* Valor e % RoL na mesma linha, centralizados, separados pela barra. Quebra
+   para baixo so quando a caixa fica estreita demais. */
+.indicador-linha {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  column-gap: 8px;
+}
+
+.indicador-barra {
+  color: var(--color-border-forte);
+  font-size: 20px;
+  font-weight: 300;
 }
 
 .indicador-rotulo {
@@ -2178,7 +2195,10 @@ tfoot td {
 
 .indicador-valor {
   font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
-  font-size: 26px;
+  /* 22 e nao 26: com o % ao lado, seis caixas por linha precisam caber em
+     ~180px cada numa tela de notebook. */
+  font-size: 22px;
+  white-space: nowrap;
   font-weight: 700;
   line-height: 1.1;
   color: #000;
@@ -2186,11 +2206,11 @@ tfoot td {
 }
 
 .indicador-pct {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--xl-rotulo);
-  margin-top: 4px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .indicador-delta {
