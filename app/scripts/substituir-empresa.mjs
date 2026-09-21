@@ -5,9 +5,10 @@
  * arquivo atual e outro — foi o caso da BRK, gravada de uma versao que nao
  * estava na pasta e que divergia em milhares de linhas.
  *
- * Apaga e reimporta, nesta ordem, e so dentro do recorte (versao ativa +
- * empresa): nao encosta em outras empresas nem em outras versoes. Os valores
- * mensais saem junto pelo `on delete cascade`.
+ * Apaga e reimporta, nesta ordem, e so dentro do recorte (versao de
+ * referencia do ciclo do ANO DO TEMPLATE + empresa): nao encosta em outras
+ * empresas, versoes nem anos. Os valores mensais saem junto pelo `on delete
+ * cascade`.
  *
  * Uso:
  *   cd app
@@ -28,6 +29,7 @@ import {
   EXTRA_TEMPLATE,
 } from '../src/lib/casarTemplateOrcamento.js'
 import { gravarEmLote } from '../src/lib/gravarLancamentos.js'
+import { cicloDoAno, versaoReferencia } from '../src/lib/cicloRegra.js'
 
 const nomeEmpresa = process.argv[2]
 const caminho = process.argv[3]
@@ -46,11 +48,28 @@ const { data: empresa, error: e1 } = await sb
   .single()
 if (e1) throw new Error(`empresa "${nomeEmpresa}": ${e1.message}`)
 
-const { data: ciclos, error: e2 } = await sb.from('ciclo').select('id, ano, status, versao(id, nome, status)')
+// O arquivo e lido antes de escolher o ciclo: e o ano do cabecalho dele que diz
+// para qual ciclo os dados vao.
+const buf = readFileSync(caminho)
+const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+const lidos = {}
+for (const tipo of Object.keys(TEMPLATE)) {
+  try {
+    lidos[tipo] = lerPlanilha(ab, tipo)
+  } catch (err) {
+    lidos[tipo] = err
+  }
+}
+const ano = Object.values(lidos).find((l) => !(l instanceof Error))?.ano
+if (!ano) throw new Error('nenhuma aba do arquivo pôde ser lida')
+
+const { data: ciclos, error: e2 } = await sb
+  .from('ciclo')
+  .select('id, ano, status, versao(id, nome, tipo, status, criada_em)')
 if (e2) throw new Error(e2.message)
-const ciclo = ciclos.find((c) => c.status !== 'encerrado')
-const versao = ciclo?.versao?.find((v) => v.status === 'ativa')
-if (!versao) throw new Error('não há versão ativa num ciclo aberto')
+const ciclo = cicloDoAno(ciclos, ano)
+const versao = versaoReferencia(ciclo)
+if (!versao) throw new Error(`não há ciclo ${ano} com versão — crie o ciclo ${ano} em Budget Settings`)
 
 console.log(`empresa ............... ${empresa.nome}`)
 console.log(`ciclo/versão .......... ${ciclo.ano} / ${versao.nome}`)
@@ -85,8 +104,6 @@ for (const [t, x] of Object.entries(resumo(atuais))) {
 if (!atuais.length) console.log('   (nada)')
 
 // ---- o que entra ------------------------------------------------------------
-const buf = readFileSync(caminho)
-const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
 
 const [emps, contas] = await Promise.all([
   sb.from('empresa').select('id, nome, bu_id, torre_id, sub_torre_id'),
@@ -96,11 +113,9 @@ const [emps, contas] = await Promise.all([
 const aGravar = []
 console.log('\nentra (o arquivo):')
 for (const tipo of Object.keys(TEMPLATE)) {
-  let lido
-  try {
-    lido = lerPlanilha(ab, tipo)
-  } catch (err) {
-    console.log(`   ${tipo.padEnd(9)} erro: ${err.message}`)
+  const lido = lidos[tipo]
+  if (lido instanceof Error) {
+    console.log(`   ${tipo.padEnd(9)} erro: ${lido.message}`)
     continue
   }
   const { prontas, marcadas, fora } = casar(lido, { empresas: emps.data, contas: contas.data })

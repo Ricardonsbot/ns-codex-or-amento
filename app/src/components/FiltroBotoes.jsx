@@ -35,9 +35,11 @@ function quantosMostrar(total) {
   return 12
 }
 
-export default function FiltroBotoes({ label, valor, opcoes, onChange, rotuloTodas = 'Todas', semTodas }) {
+export default function FiltroBotoes({ label, valor, opcoes, onChange, rotuloTodas = 'Todas', semTodas, semCorte }) {
   const [abertoTudo, setAbertoTudo] = useState(false)
-  const limite = quantosMostrar(opcoes.length)
+  // `semCorte` é para lista de domínio fixo e curto, como os 12 meses: ali
+  // esconder março atrás de um "+ 4" só atrapalha.
+  const limite = semCorte ? opcoes.length : quantosMostrar(opcoes.length)
   const cortavel = opcoes.length > limite
   const visiveis =
     cortavel && !abertoTudo

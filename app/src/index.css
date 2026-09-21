@@ -1922,6 +1922,18 @@ tfoot td {
   border-right: 1px solid var(--xl-linha);
 }
 
+/* Last Year: o budget do ano anterior, no lugar do LY da Master. Mesmo peso
+   do Budget — e comparativo, nao o numero do ano. */
+.tabela-xl thead tr.rotulos th.ly {
+  color: var(--xl-rotulo);
+  font-style: italic;
+  border-left: 1px solid var(--xl-linha);
+  border-right: 1px solid var(--xl-linha);
+}
+
+/* Linha "% NR" do Budget mes a mes e margens do Painel Resumo. */
+.tabela-xl tr.pct > td { color: var(--xl-medio); font-style: italic; }
+
 /* ---- corpo ---- */
 /* As colunas de valor (Actual, Budget) levam fio dos dois lados; Delta e
    Delta% ficam soltos, como na planilha. */
@@ -2427,4 +2439,66 @@ tfoot td {
   font-size: 10.5px;
   color: var(--color-text-muted);
   white-space: nowrap;
+}
+
+/* ---------- Performance Overview ----------
+   A Master desenha em think-cell: barras de Actual, Budget e Last Year por
+   medida, no mes e no YTD. Aqui sao barras simples, na paleta da folha. */
+.performance {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1000px) {
+  .performance { grid-template-columns: minmax(0, 1fr); }
+}
+
+.performance-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.performance-card h3 {
+  font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+
+.performance-periodo {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--xl-medio);
+  margin: 10px 0 4px;
+}
+
+.performance-barra {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin: 3px 0;
+}
+
+.performance-trilho {
+  height: 12px;
+  background: #f2f2f2;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.performance-trilho > span { display: block; height: 100%; border-radius: 3px; }
+.performance-trilho > span.atual { background: var(--xl-laranja); }
+.performance-trilho > span.orcado { background: var(--xl-medio); }
+.performance-trilho > span.ly { background: var(--xl-banda); }
+.performance-trilho > span.negativo { opacity: .45; }
+
+.performance-valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--xl-texto);
 }

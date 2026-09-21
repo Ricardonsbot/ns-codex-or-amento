@@ -9,6 +9,7 @@ import {
   EXTRA_TEMPLATE,
 } from './casarTemplateOrcamento'
 import { gravarEmLote } from './gravarLancamentos'
+import { cicloDoAno, versaoReferencia } from './cicloRegra'
 
 /**
  * Se o banco já tem as colunas dos blocos derivados. Enquanto a migração
@@ -77,7 +78,7 @@ export async function conferir(lido) {
   const [emps, contas, ciclos, bus, torres, subs] = await Promise.all([
     supabase.from('empresa').select('id, nome, bu_id, torre_id, sub_torre_id'),
     supabase.from('conta').select('id, codigo, nome, linha_pl'),
-    supabase.from('ciclo').select('id, ano, status, versao(id, nome, status)'),
+    supabase.from('ciclo').select('id, ano, status, versao(id, nome, tipo, status, criada_em)'),
     supabase.from('bu').select('id, nome'),
     supabase.from('torre').select('id, nome'),
     supabase.from('sub_torre').select('id, nome'),
@@ -87,8 +88,11 @@ export async function conferir(lido) {
   const nomeDe = (lista) => new Map(lista.map((x) => [x.id, x.nome]))
   const hierarquia = { bu: nomeDe(bus.data), torre: nomeDe(torres.data), sub: nomeDe(subs.data) }
 
-  const ciclo = ciclos.data.find((c) => c.status !== 'encerrado')
-  const versao = ciclo?.versao?.find((v) => v.status === 'ativa')
+  // O destino é o ciclo do ANO DO CABEÇALHO do template, não o ciclo aberto:
+  // é assim que o budget de outros anos entra no próprio ano e vira o Last
+  // Year do seguinte. Sem esse ciclo a tela oferece criá-lo.
+  const ciclo = cicloDoAno(ciclos.data, lido.ano)
+  const versao = versaoReferencia(ciclo)
 
   // Receita já lançada na versão: é a base do %NR quando o arquivo que está
   // entrando não traz receita — importar só a Base Gastos, por exemplo.
@@ -116,6 +120,7 @@ export async function conferir(lido) {
   return {
     ciclo,
     versao,
+    cicloFaltando: ciclo ? null : lido.ano,
     jaExistem,
     receitaDaVersao,
     hierarquia,

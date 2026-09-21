@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useToast } from './ToastProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
-import PainelResultado from './PainelResultado'
-import { agruparPorEstrutura, montarPL, anual, percentual } from '../lib/resultadoData'
+import TabelaQuadro from './TabelaQuadro'
+import { agruparPorEstrutura } from '../lib/resultadoData'
+import { classificar } from '../lib/demonstrativo'
+import { quadrosDoArquivo } from '../lib/quadrosResultado'
 import { useAuth } from './AuthProvider'
+import { createCiclo } from '../lib/ciclosData'
 import {
   lerPlanilhaEmWorker,
   conferir,
@@ -128,6 +131,9 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const showToast = useToast()
   const inputRef = useRef(null)
   const [lendo, setLendo] = useState(false)
+  const [criandoCiclo, setCriandoCiclo] = useState(false)
+  // O arquivo já lido, para conferir de novo depois de criar o ciclo do ano.
+  const lidoRef = useRef(null)
   const [gravando, setGravando] = useState(false)
   const [previa, setPrevia] = useState(null)
   const [arquivo, setArquivo] = useState('')
@@ -169,6 +175,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         return
       }
       setArquivo(file.name)
+      lidoRef.current = lido
       setPrevia({ ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas })
     } catch (err) {
       showToast(`Não consegui ler a planilha: ${err.message}`, 'error')
@@ -238,72 +245,28 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
 
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
 
-  /** O P&L do que vai entrar, na mesma ordem e com os mesmos subtotais da tela de Resultado. */
-  const pl = previa && aImportar.length
-    ? montarPL(
-        aImportar.map((p) => ({
-          // Capex é Capex no P&L mesmo quando a conta é de pessoal (salário
-          // ativado): quem manda é o módulo, não a natureza da conta.
-          linhaPl: tipo === 'capex' ? 'Capex' : p.conta?.linha_pl ?? null,
-          meses: p.valores.map((v) => v.valor),
-        }))
-      )
-    : null
-
   /**
-   * O que cada conta do arquivo representa: a linha do P&L, que vem do plano de
-   * contas, e a área de alocação, que vem da coluna "Alocação PnL (Área)" do
-   * template. São dimensões diferentes — a mesma conta de Pessoal pode ser COGS
-   * numa empresa e G&A em outra — e sem isso ninguém sabe onde o valor cai.
+   * O que o arquivo faz com o P&L e com a estrutura, antes de gravar, nos
+   * mesmos quadros da Master que o Resultado usa (P&L Contábil e Painel).
    */
-  const classificacao = (() => {
-    if (!previa) return []
-    const mapa = new Map()
-    for (const p of aImportar) {
-      const chave = `${p.conta?.codigo ?? '—'}|${p.area || ''}`
-      if (!mapa.has(chave)) {
-        mapa.set(chave, {
-          codigo: p.conta?.codigo ?? null,
-          nome: p.conta?.nome ?? (p.contaRotulo || '(sem conta)'),
-          linhaPl: p.conta?.linha_pl ?? null,
-          area: p.area || null,
-          linhas: 0,
-          valor: 0,
-        })
-      }
-      const c = mapa.get(chave)
-      c.linhas += 1
-      c.valor += p.total
-    }
-    return [...mapa.values()].sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
-  })()
-
-  /**
-   * O mesmo painel do Resultado, mas do que AINDA vai entrar. Antes a
-   * conferência mostrava linha a linha e o total; não dava para ver o que o
-   * arquivo faz com o consolidado nem com cada torre — que é a pergunta de quem
-   * aprova a importação.
-   */
-  const painel = (() => {
+  const quadros = (() => {
     if (!previa || !aImportar.length) return null
     const h = previa.hierarquia
-    const itens = aImportar.map((p) => ({
-      tipo,
-      meses: p.valores.map((v) => v.valor),
-      bu: { id: p.empresa.bu_id, nome: h?.bu.get(p.empresa.bu_id) },
-      torre: { id: p.empresa.torre_id, nome: h?.torre.get(p.empresa.torre_id) },
-      sub: { id: p.empresa.sub_torre_id, nome: h?.sub.get(p.empresa.sub_torre_id) },
-      empresa: { id: p.empresa.id, nome: p.empresa.nome },
-    }))
-    const { arvore } = agruparPorEstrutura(itens)
-    const soma = arvore.reduce((a, n) => a + anual(n[tipo]), 0)
-    return {
-      arvore,
-      consolidado: {
-        receita: tipo === 'receita' ? soma : 0,
-        ebitdaAposCapex: tipo === 'receita' ? soma : -soma,
-      },
-    }
+    const itens = aImportar.map((p) => {
+      const it = {
+        tipo,
+        conta: p.conta,
+        area: p.area,
+        area_ajustada: p.area_ajustada,
+        meses: p.valores.map((v) => v.valor),
+        bu: { id: p.empresa.bu_id, nome: h?.bu.get(p.empresa.bu_id) },
+        torre: { id: p.empresa.torre_id, nome: h?.torre.get(p.empresa.torre_id) },
+        sub: { id: p.empresa.sub_torre_id, nome: h?.sub.get(p.empresa.sub_torre_id) },
+        empresa: { id: p.empresa.id, nome: p.empresa.nome },
+      }
+      return { ...it, chave: classificar(it) }
+    })
+    return quadrosDoArquivo({ itens, agrupado: agruparPorEstrutura(itens), receitaDaVersao: previa.receitaDaVersao })
   })()
   // Um pedido por RÓTULO: 81 linhas de "CS dedicado" são um cadastro só.
   const aCadastrar = previa ? agruparParaCadastro(previa.marcadas, tipo, arquivo) : []
@@ -315,7 +278,24 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
   const contas = new Set(previa?.prontas.map((p) => p.conta.id) ?? []).size
   const semVersao = previa && !previa.versao
-  const anoDivergente = previa && anoCiclo && previa.ano !== anoCiclo
+  // O template vai para o ciclo do seu próprio ano. Quando ele é outro que não
+  // o aberto na tela, a pessoa precisa saber — e quando ele não existe, pode
+  // criá-lo aqui mesmo, sem sair da importação.
+  const outroAno = previa && anoCiclo && previa.ano !== anoCiclo && !previa.cicloFaltando
+
+  async function handleCriarCiclo() {
+    setCriandoCiclo(true)
+    try {
+      await createCiclo(previa.cicloFaltando)
+      const lido = lidoRef.current
+      setPrevia({ ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas })
+      showToast(`Ciclo ${lido.ano} criado com a versão Original.`, 'success')
+    } catch (err) {
+      showToast(`Não consegui criar o ciclo: ${err.message}`, 'error')
+    } finally {
+      setCriandoCiclo(false)
+    }
+  }
   const temDetalhe = tipo !== 'receita'
 
   return (
@@ -439,17 +419,28 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               </div>
             )}
 
-            {semVersao && (
+            {previa.cicloFaltando ? (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ⓘ Não há versão ativa num ciclo aberto. Crie uma em Budget-Settings antes de importar.
+                ⓘ Este template é de <strong>{previa.cicloFaltando}</strong> e ainda não existe o ciclo{' '}
+                {previa.cicloFaltando}. Cada ano entra no seu próprio ciclo — é assim que ele aparece como
+                Last Year no ano seguinte.{' '}
+                <button className="btn btn-primary btn-sm" type="button" onClick={handleCriarCiclo} disabled={criandoCiclo}>
+                  {criandoCiclo ? 'Criando…' : `Criar ciclo ${previa.cicloFaltando}`}
+                </button>
               </div>
+            ) : (
+              semVersao && (
+                <div className="proto-banner" style={{ marginBottom: 12 }}>
+                  ⓘ O ciclo {previa.ano} não tem versão. Crie uma em Budget-Settings antes de importar.
+                </div>
+              )
             )}
 
-            {anoDivergente && (
+            {outroAno && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ⚠ O cabeçalho da aba {aba} está em {previa.ano} e o ciclo aberto é {anoCiclo}. Os meses entram
-                por posição (1ª coluna = janeiro), então os valores vão para o ciclo {anoCiclo} de qualquer
-                forma — confira se é isso mesmo antes de confirmar.
+                ⓘ O template é de {previa.ano}: as linhas vão para o ciclo {previa.ano} (versão{' '}
+                {previa.versao?.nome}), não para o {anoCiclo} aberto nesta tela. No Resultado, escolha o ano{' '}
+                {previa.ano} para ver — e o {previa.ano} vira o Last Year do {previa.ano + 1}.
               </div>
             )}
 
@@ -559,69 +550,19 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               )}
             </div>
 
-            {pl && (
+            {quadros && (
               <div className="panel" style={{ marginBottom: 16 }}>
                 <div className="panel-header">
                   <div>
                     <h2>Como entra no P&amp;L</h2>
                     <p>
-                      Só o que este arquivo traz, na ordem do P&amp;L Contábil
-                      {!anual(pl.subtotais.receitaLiquida) && previa.receitaDaVersao
-                        ? ' · o % é sobre a receita já lançada nesta versão, porque o arquivo não traz receita'
-                        : ''}
+                      Só o que este arquivo traz, nas linhas do P&amp;L Contábil da Master
+                      {quadros.semNR ? ' · o % é sobre a receita já lançada nesta versão, porque o arquivo não traz receita' : ''}
                     </p>
                   </div>
                 </div>
                 <div className="panel-body">
-                  <div className="rolagem-x">
-                    <table className="tabela-xl sem-indice">
-                      <thead>
-                        <tr className="faixa">
-                          <th className="canto fixa-2">[ BRL M ]</th>
-                          <th className="vao" />
-                          <th colSpan={2}>Este arquivo</th>
-                        </tr>
-                        <tr className="rotulos">
-                          <th className="rotulo fixa-2">Linha do P&amp;L</th>
-                          <th className="vao" />
-                          <th className="atual">Actual</th>
-                          <th>%NR</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(() => {
-                          // Arquivo só de gastos não traz receita: a base do %NR
-                          // passa a ser a que já está lançada na versão.
-                          const nr = anual(pl.subtotais.receitaLiquida) || previa.receitaDaVersao || 0
-                          return pl.pl.map((l) => {
-                            const v = anual(l.valores)
-                            if (!l.eSubtotal && v === 0) return null
-                            const p = percentual(v, nr)
-                            return (
-                              <tr key={l.rotulo} className={l.eSubtotal ? 'faixa-soma' : 'detalhe'}>
-                                <td className="rotulo fixa-2">{l.eSubtotal ? `= ${l.rotulo}` : l.rotulo}</td>
-                                <td className="vao" />
-                                <td className="valor">{mi(v)}</td>
-                                <td>
-                                  {p === null
-                                    ? '—'
-                                    : `${p.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
-                                </td>
-                              </tr>
-                            )
-                          })
-                        })()}
-                        {anual(pl.semConta) !== 0 && (
-                          <tr className="alerta">
-                            <td className="rotulo fixa-2">Sem conta · não entra em linha nenhuma</td>
-                            <td className="vao" />
-                            <td className="valor">{mi(anual(pl.semConta))}</td>
-                            <td className="apagado">—</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                  <TabelaQuadro quadro={quadros.pl} />
                 </div>
               </div>
             )}
@@ -684,14 +625,17 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               </div>
             )}
 
-            {painel && (
-              <div style={{ marginBottom: 16 }}>
-                <PainelResultado
-                  arvore={painel.arvore}
-                  consolidado={painel.consolidado}
-                  titulo="Como fica o resultado"
-                  subtitulo={`O que estas ${aImportar.length} linha(s) somam por estrutura, antes de gravar`}
-                />
+            {quadros && (
+              <div className="panel" style={{ marginBottom: 16 }}>
+                <div className="panel-header">
+                  <div>
+                    <h2>Como fica o resultado</h2>
+                    <p>O que estas {aImportar.length} linha(s) somam por estrutura, antes de gravar</p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <TabelaQuadro quadro={quadros.painel} />
+                </div>
               </div>
             )}
 

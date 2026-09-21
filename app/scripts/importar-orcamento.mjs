@@ -27,6 +27,7 @@ import {
   EXTRA_TEMPLATE,
 } from '../src/lib/casarTemplateOrcamento.js'
 import { gravarEmLote } from '../src/lib/gravarLancamentos.js'
+import { cicloDoAno, versaoReferencia } from '../src/lib/cicloRegra.js'
 
 const tipo = process.argv[2]
 const caminho = process.argv[3]
@@ -71,7 +72,7 @@ const sb = createClient(url, anon)
 const [emps, contas, ciclos] = await Promise.all([
   sb.from('empresa').select('id, nome, bu_id, torre_id, sub_torre_id'),
   sb.from('conta').select('id, codigo, nome, linha_pl'),
-  sb.from('ciclo').select('id, ano, status, versao(id, nome, status)'),
+  sb.from('ciclo').select('id, ano, status, versao(id, nome, tipo, status, criada_em)'),
 ])
 for (const x of [emps, contas, ciclos]) {
   if (x.error) {
@@ -80,16 +81,15 @@ for (const x of [emps, contas, ciclos]) {
   }
 }
 
-const ciclo = ciclos.data.find((c) => c.status !== 'encerrado')
-const versao = ciclo?.versao?.find((v) => v.status === 'ativa')
+// O ciclo e o do ANO DO CABECALHO do template: assim o budget de outros anos
+// entra no proprio ano e vira o Last Year do seguinte.
+const ciclo = cicloDoAno(ciclos.data, lido.ano)
+const versao = versaoReferencia(ciclo)
 if (!versao) {
-  console.error('não há versão ativa num ciclo aberto — crie em Budget Settings antes de importar.')
+  console.error(`não há ciclo ${lido.ano} — crie o ciclo ${lido.ano} em Budget Settings antes de importar este template.`)
   process.exit(1)
 }
 console.log(`ciclo/versão .......... ${ciclo.ano} / ${versao.nome}`)
-if (ciclo.ano !== lido.ano) {
-  console.log(`AVISO: cabeçalho em ${lido.ano} e ciclo em ${ciclo.ano}. Os meses entram por posição (1ª coluna = janeiro).`)
-}
 
 const { prontas, marcadas, fora, outroModulo } = casar(lido, { empresas: emps.data, contas: contas.data })
 const aImportar = [...prontas, ...marcadas]

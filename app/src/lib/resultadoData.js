@@ -1,186 +1,23 @@
 import { supabase } from './supabaseClient'
+import {
+  classificar,
+  demonstrativo,
+  acumular,
+  zeros,
+  somar,
+  CHAVES_EXPENSES,
+  NATUREZAS_OPERACIONAIS,
+} from './demonstrativo'
 
 /**
- * O resultado do que foi lançado, no formato do P&L Contábil.
+ * Os dados do Resultado: busca os lançamentos de uma versão e soma nas
+ * dimensões que os quadros usam. Nenhuma linha de P&L é calculada aqui — isso
+ * mora em demonstrativo.js, num lugar só. Aqui cada lançamento vira uma chave
+ * base (classificar) e é somado no consolidado, em cada empresa e em cada nó
+ * da estrutura BU → Torre → Sub Torre → Empresa.
  *
- * A linha do P&L de cada lançamento vem do plano de contas (`conta.linha_pl`),
- * não do tipo: é o plano que sabe se uma despesa é Pessoal ou D&A. O tipo só
- * diz o sinal.
- *
- * Nada aqui calcula dedução nem reajuste: soma o que está gravado. Se a
- * dedução não foi lançada, a Receita Líquida sai igual à Bruta — e a tela
- * mostra isso em vez de esconder.
+ * Nada calcula dedução nem reajuste: soma o que está gravado.
  */
-
-/**
- * O esqueleto do P&L, na ordem da aba "P&L Contábil" do Master Resultado: vai
- * de Gross Revenue até Adjusted EBITDA After Capex com todas as linhas.
- *
- * As três visões compartilham este esqueleto e diferem em UM trecho — o bloco
- * operacional, entre a Receita Líquida e o Adjusted EBITDA:
- *
- *   conta   as quatro linhas de natureza do plano de contas (Pessoal,
- *           Terceiros, Tecnologia, Viagens) — é o P&L linha a linha;
- *   funcao  COGS, G&A, S&M, R&D — vem da coluna "Alocação PnL (Área)".
- *
- * Pacote e subpacote não são uma visão daqui: viraram quadro próprio, em
- * `pacotes`, mais abaixo. O que o FP&A quer ver ali é a abertura do gasto em
- * dois níveis com o % sobre a receita líquida — não uma linha no meio do P&L.
- *
- * As duas somam o mesmo total porque partem do mesmo conjunto de lançamentos:
- * os que caem em NATUREZA_OPERACIONAL. Conferido contra o banco — 293,3 mi por
- * natureza e 293,3 mi por área, sem sobra.
- *
- * Linha com `linha` casa com conta.linha_pl; com `area`, com lancamento.area;
- * com `pacote`, com lancamento.pacote. `subtotal` é calculado.
- */
-
-/** As linhas do plano que formam o bloco operacional (acima do EBITDA). */
-export const NATUREZA_OPERACIONAL = [
-  { linha: 'Despesas > Personnel Costs', rotulo: '(−) Pessoal' },
-  { linha: 'Despesas > Third Party Services & Mkt', rotulo: '(−) Terceiros e Marketing' },
-  { linha: 'Despesas > Telecomunication / Technology expenses', rotulo: '(−) Tecnologia' },
-  { linha: 'Despesas > Travels/Rental/Generals', rotulo: '(−) Viagens, Aluguéis e Gerais' },
-]
-
-const OPERACIONAL = new Set(NATUREZA_OPERACIONAL.map((l) => l.linha))
-
-/** O bloco operacional de cada visão. */
-const BLOCO = {
-  conta: NATUREZA_OPERACIONAL.map((l) => ({ ...l, sinal: -1 })),
-
-  funcao: [
-    { area: 'COGS', rotulo: '(−) COGS', sinal: -1 },
-    { subtotal: 'margemBruta', rotulo: 'Gross Margin', forte: true },
-    { secao: true, rotulo: '(−) Expenses' },
-    { area: 'G&A', rotulo: '(−) General & Administrative', sinal: -1 },
-    { area: 'S&M', rotulo: '(−) Sales & Marketing', sinal: -1 },
-    { area: 'R&D', rotulo: '(−) Research & Development', sinal: -1 },
-    { area: 'Bad Debts Provision', rotulo: '(−) Bad Debts Provision', sinal: -1 },
-  ],
-}
-
-/** Do Adjusted EBITDA para baixo é igual nas três visões. */
-const ABAIXO = [
-  { linha: 'Despesas > Others Income and Expense', rotulo: '(+/−) Others Income & Exp.', sinal: -1 },
-  { subtotal: 'ebitdaAjustado', rotulo: 'Adjusted EBITDA', forte: true },
-  { linha: 'Despesas > BU Allocation', rotulo: '(+/−) BU Allocation', sinal: -1 },
-  { linha: 'Despesas > Shared Services', rotulo: '(+/−) Shared Services', sinal: -1 },
-  { linha: 'Despesas > Holding - Cost Sharing', rotulo: '(−) Holding - Cost Sharing', sinal: -1 },
-  { subtotal: 'ebitda', rotulo: 'EBITDA', forte: true },
-  { secao: true, rotulo: '(−) D&A' },
-  { linha: 'Despesas > D&A', rotulo: '(−) D&A Operating Assets', sinal: -1 },
-  { linha: 'Despesas > M&A Amortization', rotulo: '(−) M&A Amortization', sinal: -1 },
-  { linha: 'Despesas > Financial Results', rotulo: '(+/−) Financial Results', sinal: -1 },
-  { linha: 'Despesas > Equivalência Patrimonial', rotulo: '(+/−) Equivalência Patrimonial', sinal: -1 },
-  { linha: 'Despesas > IR/CSLL', rotulo: '(−) Income Tax', sinal: -1 },
-  { subtotal: 'netIncome', rotulo: 'Net Income', forte: true },
-  { linha: 'Capex', rotulo: '(−) Capex', sinal: -1 },
-  { subtotal: 'ebitdaAposCapex', rotulo: 'Adjusted EBITDA After Capex', forte: true },
-]
-
-const ACIMA = [
-  { linha: 'Receita > Gross Revenue', rotulo: 'Gross Revenue', sinal: 1 },
-  { linha: 'Receita > (-) Deductions', rotulo: '(−) Deductions', sinal: 1 },
-  { subtotal: 'receitaLiquida', rotulo: 'Net Revenue', forte: true },
-]
-
-/** O esqueleto inteiro de uma visão. */
-export const esqueleto = (visao = 'conta') => [...ACIMA, ...(BLOCO[visao] ?? BLOCO.conta), ...ABAIXO]
-
-export const VISOES = [
-  { valor: 'conta', rotulo: 'Linha contábil' },
-  { valor: 'funcao', rotulo: 'COGS / G&A / S&M / R&D' },
-]
-
-/**
- * A ESTRUTURA que o resto da ferramenta já usava. Continua sendo a visão por
- * linha contábil, para o painel e a conferência não mudarem de significado.
- */
-export const ESTRUTURA = esqueleto('conta')
-
-const CONHECIDAS = new Set(
-  [...ACIMA, ...BLOCO.conta, ...ABAIXO].filter((l) => l.linha).map((l) => l.linha)
-)
-
-const zeros = () => Array(12).fill(0)
-const somar = (a, b) => a.map((v, i) => v + b[i])
-
-/**
- * Os subtotais do P&L a partir de uma função que devolve os 12 meses de uma
- * linha do plano. Uma só implementação serve ao consolidado, a cada empresa e à
- * conferência da importação — antes a mesma conta estava escrita três vezes e
- * era só questão de tempo até divergirem.
- *
- * `valorArea` é opcional e só serve à Margem Bruta, que precisa do COGS: a
- * conferência da importação não tem área por linha e recebe null ali.
- */
-function calcularSubtotais(valorDe, valorArea) {
-  const receitaBruta = valorDe('Receita > Gross Revenue')
-  const deducoes = valorDe('Receita > (-) Deductions')
-  const receitaLiquida = somar(receitaBruta, deducoes)
-
-  const operacional = NATUREZA_OPERACIONAL.reduce((a, l) => somar(a, valorDe(l.linha)), zeros())
-  // O Master lança Others Income & Exp. acima do Adjusted EBITDA, não abaixo.
-  const outras = valorDe('Despesas > Others Income and Expense')
-  const ebitdaAjustado = receitaLiquida.map((v, i) => v - operacional[i] - outras[i])
-
-  const alocacoes = ['Despesas > BU Allocation', 'Despesas > Shared Services', 'Despesas > Holding - Cost Sharing']
-    .reduce((a, c) => somar(a, valorDe(c)), zeros())
-  const ebitda = ebitdaAjustado.map((v, i) => v - alocacoes[i])
-
-  const abaixoDoEbitda = [
-    'Despesas > D&A',
-    'Despesas > M&A Amortization',
-    'Despesas > Financial Results',
-    'Despesas > Equivalência Patrimonial',
-    'Despesas > IR/CSLL',
-  ].reduce((a, c) => somar(a, valorDe(c)), zeros())
-  const netIncome = ebitda.map((v, i) => v - abaixoDoEbitda[i])
-
-  const capex = valorDe('Capex')
-  const ebitdaAposCapex = ebitda.map((v, i) => v - capex[i])
-
-  // Sem área não dá para separar o COGS do resto, e Margem Bruta fica de fora.
-  const margemBruta = valorArea
-    ? receitaLiquida.map((v, i) => v - valorArea('COGS')[i])
-    : null
-
-  return {
-    receitaBruta,
-    deducoes,
-    receitaLiquida,
-    margemBruta,
-    ebitdaAjustado,
-    ebitda,
-    netIncome,
-    capex,
-    ebitdaAposCapex,
-  }
-}
-
-/** O esqueleto de uma visão preenchido com os valores. */
-function montarLinhas(visao, subtotais, valorDe, valorArea) {
-  const saida = []
-  for (const l of esqueleto(visao)) {
-    if (l.subtotal) {
-      const valores = subtotais[l.subtotal]
-      if (!valores) continue // Margem Bruta sem área: a linha some, não zera
-      saida.push({ ...l, valores, eSubtotal: true })
-      continue
-    }
-    if (l.secao) {
-      saida.push({ ...l, valores: null, eSecao: true })
-      continue
-    }
-    if (l.area) {
-      saida.push({ ...l, valores: valorArea ? valorArea(l.area) : zeros() })
-      continue
-    }
-    saida.push({ ...l, valores: valorDe(l.linha) })
-  }
-  return saida
-}
 
 /**
  * Agrupa itens por BU → Torre → Sub Torre → Empresa.
@@ -203,10 +40,13 @@ export function agruparPorEstrutura(itens) {
       const [id, nome] = caminho[nivel]
       prefixo += `${id ?? 'x'}|`
       if (!mapa.has(prefixo)) {
-        mapa.set(prefixo, { nivel, nome, receita: zeros(), despesa: zeros(), capex: zeros() })
+        mapa.set(prefixo, { nivel, nome, receita: zeros(), despesa: zeros(), capex: zeros(), base: new Map() })
       }
       const no = mapa.get(prefixo)
       no[it.tipo] = somar(no[it.tipo], it.meses)
+      // A chave base do demonstrativo, quando o item tem: é dela que saem as
+      // colunas dos painéis por estrutura, com as mesmas fórmulas do P&L.
+      if (it.chave) acumular(no.base, it.chave, it.meses)
     }
   }
   return { estrutura: [...mapa.entries()].map(([chave, no]) => ({ chave, ...no })), arvore: montarArvore(mapa) }
@@ -221,7 +61,10 @@ export function agruparPorEstrutura(itens) {
 let temSubpacote = null
 async function sondarSubpacote() {
   if (temSubpacote !== null) return temSubpacote
-  const { error } = await supabase.from('lancamento').select('pacote, subpacote, linha_pl_template').limit(1)
+  const { error } = await supabase
+    .from('lancamento')
+    .select('pacote, subpacote, linha_pl_template, area_ajustada')
+    .limit(1)
   temSubpacote = !error
   return temSubpacote
 }
@@ -244,27 +87,20 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     'tipo, area, bu_id, bu:bu_id(nome), torre_id, torre:torre_id(nome), sub_torre_id, ' +
     'sub_torre:sub_torre_id(nome), empresa_id, empresa:empresa_id(nome), ' +
     'conta:conta_id(codigo, nome, linha_pl), lancamento_valor_mensal(mes, valor)' +
-    (comSubpacote ? ', pacote, subpacote, linha_pl_template' : '')
-  // O cadastro inteiro do recorte, para o painel mostrar toda empresa — com
-  // lançamento ou não. Sem isso o painel só listava quem já subiu template, e
-  // uma empresa zerada sumia em vez de aparecer como zero, que é justamente o
-  // que se quer ver durante o ciclo: quem ainda não mandou.
-  const cadastroQ = (() => {
-    let q = supabase
-      .from('empresa')
-      .select('id, nome, bu_id, torre_id, sub_torre_id, bu:bu_id(nome), torre:torre_id(nome), sub_torre:sub_torre_id(nome)')
-    if (buId) q = q.eq('bu_id', buId)
-    if (torreId) q = q.eq('torre_id', torreId)
-    if (empresaId) q = q.eq('id', empresaId)
-    return q
-  })()
+    (comSubpacote ? ', pacote, subpacote, linha_pl_template, area_ajustada' : '')
+
+  // O cadastro inteiro do recorte: toda empresa aparece, com ou sem
+  // lançamento, e zero só quando ela não lançou nada.
+  let cadastroQ = supabase
+    .from('empresa')
+    .select('id, nome, bu_id, torre_id, sub_torre_id, bu:bu_id(nome), torre:torre_id(nome), sub_torre:sub_torre_id(nome)')
+  if (buId) cadastroQ = cadastroQ.eq('bu_id', buId)
+  if (torreId) cadastroQ = cadastroQ.eq('torre_id', torreId)
+  if (empresaId) cadastroQ = cadastroQ.eq('id', empresaId)
 
   const linhas = []
   for (let de = 0; ; de += 1000) {
-    let q = supabase
-      .from('lancamento')
-      .select(campos)
-      .eq('versao_id', versaoId)
+    let q = supabase.from('lancamento').select(campos).eq('versao_id', versaoId)
     if (buId) q = q.eq('bu_id', buId)
     if (torreId) q = q.eq('torre_id', torreId)
     if (empresaId) q = q.eq('empresa_id', empresaId)
@@ -273,92 +109,51 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     linhas.push(...(data ?? []))
     if (!data || data.length < 1000) break
   }
-
-  const porLinha = new Map()      // linha_pl -> 12 meses
-  const porArea = new Map()       // area -> 12 meses (só do bloco operacional)
-  const porPacote = new Map()     // pacote -> { total, subs: Map(subpacote -> meses) }
-  const porEmpresa = new Map()    // empresa -> { nome, linhas, areas, ... }
-  // Toda empresa do recorte entra, com ou sem lançamento: as abas por empresa
-  // mostram o cadastro inteiro, e zero só quando a empresa não lançou nada.
   const { data: cadastro, error: erroCadastro } = await cadastroQ
   if (erroCadastro) throw erroCadastro
-  for (const e of cadastro ?? []) {
-    porEmpresa.set(e.id, {
-      id: e.id,
-      nome: e.nome,
-      linhas: new Map(),
-      areas: new Map(),
-      receita: zeros(),
-      despesa: zeros(),
-      capex: zeros(),
-    })
-  }
 
+  const novaEmpresa = (id, nome) => ({ id, nome, base: new Map(), temLancamento: false })
+  const porEmpresa = new Map((cadastro ?? []).map((e) => [e.id, novaEmpresa(e.id, e.nome)]))
+  const base = new Map() // chave do demonstrativo -> 12 meses
+  const baseLabor = new Map() // a parte Labor de cada chave de Expenses
+  const porArea = new Map() // área -> 12 meses, só do bloco operacional
+  const porPacote = new Map() // pacote -> { total, subs: Map(subpacote -> meses) }
   let semConta = zeros()
-  // O gasto que forma o Adjusted EBITDA, e a parte dele que é Labor.
-  let gastoOperacional = zeros()
-  let labor = zeros()
   const itens = []
 
   for (const l of linhas) {
     const meses = zeros()
     for (const v of l.lancamento_valor_mensal ?? []) meses[v.mes - 1] += Number(v.valor)
 
-    // Lançamento do módulo Capex é Capex no P&L, mesmo com conta de pessoal:
-    // é o salário ativado, que a Base Gastos marca pela área e não pela conta.
-    const chave = l.tipo === 'capex' ? 'Capex' : l.conta?.linha_pl ?? null
-    if (chave && (OPERACIONAL.has(chave) || chave === 'Despesas > Others Income and Expense')) {
-      gastoOperacional = somar(gastoOperacional, meses)
-      if (ehLabor(l.linha_pl_template)) labor = somar(labor, meses)
-    }
-    if (!chave) semConta = somar(semConta, meses)
-    else porLinha.set(chave, somar(porLinha.get(chave) ?? zeros(), meses))
+    const k = classificar(l)
+    if (k) acumular(base, k, meses)
+    else semConta = somar(semConta, meses)
+    if (k && CHAVES_EXPENSES.includes(k) && ehLabor(l.linha_pl_template)) acumular(baseLabor, k, meses)
 
-    // A área só é somada dentro do bloco operacional. Fora dele — Capex, D&A,
-    // rateios — a coluna existe mas não pertence a nenhuma linha de Expenses,
-    // e somá-la faria a visão por área não bater com a por natureza.
-    const noBloco = chave ? OPERACIONAL.has(chave) : false
-    if (noBloco) {
-      const a = l.area || 'Sem área'
-      porArea.set(a, somar(porArea.get(a) ?? zeros(), meses))
+    // A área só conta dentro do bloco operacional: fora dele — capex, D&A,
+    // rateios — a coluna existe mas não pertence a nenhuma linha de gasto.
+    if (l.tipo !== 'capex' && NATUREZAS_OPERACIONAIS.has(l.conta?.linha_pl)) {
+      acumular(porArea, l.area_ajustada || l.area || 'Sem área', meses)
     }
 
-    // O quadro de pacotes vem da coluna `pacote` do template, nao da linha do
-    // plano de contas. Ele inclui tambem o que ainda nao tem conta cadastrada,
-    // que no P&L fica de fora — por isso os dois totais nao batem, e a
-    // diferenca e exatamente o `semConta`. A tela diz isso.
+    // O quadro de pacotes vem da coluna Pacote do template, não do plano de
+    // contas: inclui o que ainda não tem conta cadastrada.
     if (l.tipo !== 'receita' && l.pacote) {
       if (!porPacote.has(l.pacote)) porPacote.set(l.pacote, { total: zeros(), subs: new Map() })
       const g = porPacote.get(l.pacote)
       g.total = somar(g.total, meses)
-      const sp = l.subpacote || 'Sem subpacote'
-      g.subs.set(sp, somar(g.subs.get(sp) ?? zeros(), meses))
+      acumular(g.subs, l.subpacote || 'Sem subpacote', meses)
     }
 
-    // O mesmo corte por empresa, que é o recorte do P&L gerencial.
     const eid = l.empresa_id ?? 'sem-empresa'
-    if (!porEmpresa.has(eid)) {
-      porEmpresa.set(eid, {
-        id: l.empresa_id,
-        nome: l.empresa?.nome ?? 'Sem Empresa',
-        linhas: new Map(),
-        areas: new Map(),
-        receita: zeros(),
-        despesa: zeros(),
-        capex: zeros(),
-      })
-    }
+    if (!porEmpresa.has(eid)) porEmpresa.set(eid, novaEmpresa(l.empresa_id, l.empresa?.nome ?? 'Sem Empresa'))
     const e = porEmpresa.get(eid)
     e.temLancamento = true
-    e[l.tipo] = somar(e[l.tipo], meses)
-    if (chave) e.linhas.set(chave, somar(e.linhas.get(chave) ?? zeros(), meses))
-    if (noBloco) {
-      const a = l.area || 'Sem área'
-      e.areas.set(a, somar(e.areas.get(a) ?? zeros(), meses))
-    }
+    if (k) acumular(e.base, k, meses)
 
     itens.push({
       tipo: l.tipo,
+      chave: k,
       meses,
       bu: { id: l.bu_id, nome: l.bu?.nome },
       torre: { id: l.torre_id, nome: l.torre?.nome },
@@ -367,9 +162,8 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     })
   }
 
-  // Entram zeradas e antes dos lançamentos: somar zero não muda nada, e a
-  // chave do caminho é a mesma que o lançamento gera (ele herda BU, torre e
-  // sub torre da empresa na importação).
+  // As empresas do cadastro entram zeradas, antes dos lançamentos: somar zero
+  // não muda nada, e a chave do caminho é a mesma que o lançamento gera.
   const vazias = (cadastro ?? []).map((e) => ({
     tipo: 'receita',
     meses: zeros(),
@@ -380,109 +174,40 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
   }))
   const agrupado = agruparPorEstrutura([...vazias, ...itens])
 
-  // Linhas do plano que existem nos dados mas não estão na estrutura do P&L.
-  const fora = [...porLinha.keys()].filter((k) => !CONHECIDAS.has(k))
-
-  const valorDe = (chave) => porLinha.get(chave) ?? zeros()
-  const valorArea = (a) => porArea.get(a) ?? zeros()
-  const subtotais = calcularSubtotais(valorDe, valorArea)
-  const { receitaBruta, deducoes, capex } = subtotais
-
-  // As duas visões, prontas: trocar de visão na tela não volta ao banco.
-  const pls = Object.fromEntries(
-    VISOES.map((v) => [v.valor, montarLinhas(v.valor, subtotais, valorDe, valorArea)])
-  )
-  const pl = pls.conta
+  const doMapa = (m) => (c) => m.get(c)
 
   return {
-    pl,
-    pls,
-    subtotais,
-    receitaBruta,
-    deducoes,
-    capex,
+    base,
+    demo: demonstrativo(doMapa(base)),
+    // Labor do "(-) Expenses": a soma do que é Labor nas chaves dele.
+    laborExpenses: CHAVES_EXPENSES.reduce((a, c) => somar(a, baseLabor.get(c) ?? zeros()), zeros()),
     semConta,
-    gastoOperacional,
-    labor,
-    fora: fora.map((k) => ({ chave: k, valores: porLinha.get(k) })),
+    foraDaMaster: [...base.entries()]
+      .filter(([c]) => c.startsWith('fora:'))
+      .map(([c, valores]) => ({ chave: c.slice(5), valores })),
     empresas: [...porEmpresa.values()]
-      .map((e) => {
-        // Todo lançamento carrega a empresa, então as linhas se somam direto,
-        // sem rateio nenhum — e o cálculo é o mesmo do consolidado.
-        const valorDeEmp = (c) => e.linhas.get(c) ?? zeros()
-        const valorAreaEmp = (a) => e.areas.get(a) ?? zeros()
-        const st = calcularSubtotais(valorDeEmp, valorAreaEmp)
-        return {
-          id: e.id,
-          nome: e.nome,
-          temLancamento: Boolean(e.temLancamento),
-          receitaLiquida: st.receitaLiquida,
-          margemBruta: st.margemBruta,
-          ebitdaAjustado: st.ebitdaAjustado,
-          ebitda: st.ebitda,
-          netIncome: st.netIncome,
-          ebitdaAposCapex: st.ebitdaAposCapex,
-          capex: e.capex,
-          porLinha: e.linhas,
-          porArea: e.areas,
-        }
-      })
-      .sort((a, b) => anual(b.receitaLiquida) - anual(a.receitaLiquida) || a.nome.localeCompare(b.nome)),
-    // Pacote com os seus subpacotes, do maior para o menor: o quadro que o
-    // FP&A pediu, o gasto aberto em dois niveis.
+      .map((e) => ({ ...e, demo: demonstrativo(doMapa(e.base)) }))
+      .sort((a, b) => soma(b.demo.nr) - soma(a.demo.nr) || a.nome.localeCompare(b.nome)),
     pacotes: [...porPacote.entries()]
       .map(([nome, g]) => ({
         nome,
         valores: g.total,
         subpacotes: [...g.subs.entries()]
           .map(([sub, valores]) => ({ nome: sub, valores }))
-          .sort((a, b) => anual(b.valores) - anual(a.valores)),
+          .sort((a, b) => soma(b.valores) - soma(a.valores)),
       }))
-      .sort((a, b) => anual(b.valores) - anual(a.valores)),
+      .sort((a, b) => soma(b.valores) - soma(a.valores)),
     areas: [...porArea.entries()]
       .map(([nome, valores]) => ({ nome, valores }))
-      .sort((a, b) => anual(b.valores) - anual(a.valores)),
-    // A chave do caminho volta junto: é ela que casa o mesmo nó entre duas
-    // versões na comparação com o Budget.
+      .sort((a, b) => soma(b.valores) - soma(a.valores)),
+    // A chave do caminho casa o mesmo nó entre versões (Budget e Last Year).
     estrutura: agrupado.estrutura,
     arvore: agrupado.arvore,
     lancamentos: linhas.length,
   }
 }
 
-/**
- * O demonstrativo a partir de linhas soltas — { linhaPl, meses } —, sem passar
- * pelo banco. É o que deixa a conferência da importação mostrar o P&L do que
- * ainda vai entrar, com a mesma ordem e os mesmos subtotais do Resultado.
- */
-export function montarPL(itens) {
-  const porLinha = new Map()
-  const porArea = new Map()
-  let semConta = zeros()
-  for (const it of itens) {
-    if (!it.linhaPl) semConta = somar(semConta, it.meses)
-    else porLinha.set(it.linhaPl, somar(porLinha.get(it.linhaPl) ?? zeros(), it.meses))
-    if (it.linhaPl && OPERACIONAL.has(it.linhaPl) && it.area) {
-      porArea.set(it.area, somar(porArea.get(it.area) ?? zeros(), it.meses))
-    }
-  }
-
-  const valorDe = (chave) => porLinha.get(chave) ?? zeros()
-  const valorArea = porArea.size ? (a) => porArea.get(a) ?? zeros() : null
-  const subtotais = calcularSubtotais(valorDe, valorArea)
-
-  return {
-    pl: montarLinhas('conta', subtotais, valorDe, valorArea),
-    pls: Object.fromEntries(
-      VISOES.map((v) => [v.valor, montarLinhas(v.valor, subtotais, valorDe, valorArea)])
-    ),
-    subtotais,
-    semConta,
-    fora: [...porLinha.keys()]
-      .filter((k) => !CONHECIDAS.has(k))
-      .map((k) => ({ chave: k, valores: porLinha.get(k) })),
-  }
-}
+const soma = (v) => v.reduce((a, b) => a + b, 0)
 
 /**
  * Aninha os nós pela chave do caminho ("bu|torre|sub|empresa|"): o pai de um nó
@@ -500,25 +225,11 @@ function montarArvore(mapa) {
     else raiz.push(n)
   }
   const ordenar = (lista) => {
-    lista.sort((a, b) => anual(b.receita) - anual(a.receita) || a.nome.localeCompare(b.nome))
+    lista.sort((a, b) => soma(b.receita) - soma(a.receita) || a.nome.localeCompare(b.nome))
     for (const n of lista) ordenar(n.filhos)
   }
   ordenar(raiz)
   return raiz
-}
-
-/**
- * A árvore em lista, na ordem de leitura e com a numeração do painel — 1, 1.1,
- * 1.1.1 — como no P&L Contábil que o time usa.
- */
-export function achatar(arvore, prefixo = '') {
-  const saida = []
-  arvore.forEach((no, i) => {
-    const numero = prefixo ? `${prefixo}.${i + 1}` : `${i + 1}`
-    saida.push({ ...no, numero })
-    saida.push(...achatar(no.filhos, numero))
-  })
-  return saida
 }
 
 /**
@@ -536,90 +247,17 @@ export function semaforo(pct) {
 }
 
 /**
- * Os big numbers do Resultado, no formato que o FP&A definiu:
- *
- *   Net Revenue · Gross Margin · Expenses · Labor · Non Labor · EAC
- *
- * Cada um é valor e percentual sobre a receita líquida. Nenhum número nasce
- * aqui — todos saem dos subtotais do P&L:
- *
- *   Expenses   todo o gasto até o Adjusted EBITDA (Receita Líquida − Adj.
- *              EBITDA): as quatro naturezas e Others Income & Expense
- *   Labor      a parte de Expenses cuja Linha P&L da Base Gastos é Labor
- *   Non Labor  Expenses − Labor, para os dois sempre somarem Expenses
- *   EAC        Adjusted EBITDA After Capex
- *
- * Com versão de comparação, cada um ganha o delta: em R$ para o Net Revenue,
- * em ponto percentual para os demais — a margem é o que se compara.
+ * Os ciclos (anos) com as suas versões, do mais recente ao mais antigo. É o
+ * que o Resultado usa para escolher o ano e achar o Last Year: o budget do
+ * ano anterior é o ciclo `ano − 1`, se ele tiver sido carregado.
  */
-export function montarIndicadores(dados, comp) {
-  if (!dados) return []
-
-  const medidas = (d) => {
-    const nr = anual(d.subtotais.receitaLiquida)
-    const expenses = anual(d.gastoOperacional)
-    const labor = anual(d.labor)
-    return {
-      nr,
-      mb: d.subtotais.margemBruta ? anual(d.subtotais.margemBruta) : null,
-      expenses,
-      labor,
-      nonLabor: expenses - labor,
-      eac: anual(d.subtotais.ebitdaAposCapex),
-    }
-  }
-  const a = medidas(dados)
-  const b = comp ? medidas(comp) : null
-  const pctNR = (v, nr) => (nr ? (v / nr) * 100 : null)
-  const deltaPp = (k) =>
-    b && a[k] !== null && b[k] !== null && a.nr && b.nr ? pctNR(a[k], a.nr) - pctNR(b[k], b.nr) : null
-
-  const item = (chave, rotulo, valor) => ({
-    chave,
-    rotulo,
-    // Sem "R$": com o % ao lado, seis caixas por linha não comportam o
-    // prefixo numa tela de notebook, e o "mi" já diz que é dinheiro.
-    valor: valor === null ? '—' : `${milhoesCurto(valor)} mi`,
-    pct: valor === null || chave === 'nr' ? null : `${umaCasa(pctNR(valor, a.nr) ?? NaN)}% RoL`,
-    deltaPp: chave === 'nr' ? null : deltaPp(chave),
-    delta: chave === 'nr' && b ? { valor: a.nr - b.nr, base: b.nr } : null,
-  })
-
-  return [
-    item('nr', 'Net Revenue', a.nr),
-    item('mb', 'Gross Margin', a.mb),
-    item('expenses', 'Expenses', a.expenses),
-    item('labor', 'Labor', a.labor),
-    item('nonLabor', 'Non Labor', a.nonLabor),
-    item('eac', 'EAC', a.eac),
-  ]
-}
-
-const umaCasa = (v) =>
-  !isFinite(v) ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-const milhoesCurto = (v) => umaCasa(Number(v ?? 0) / 1e6)
-
-/** As versões do ciclo, para escolher contra qual comparar. */
-export async function fetchVersoesDoCiclo(cicloId) {
+export async function fetchCiclosResultado() {
   const { data, error } = await supabase
-    .from('versao')
-    .select('id, nome, tipo, status')
-    .eq('ciclo_id', cicloId)
-    .order('criada_em')
+    .from('ciclo')
+    .select('id, ano, status, versao(id, nome, tipo, status, criada_em)')
+    .order('ano', { ascending: false })
   if (error) throw error
   return data ?? []
 }
 
-export const anual = (v) => (v ?? []).reduce((a, b) => a + b, 0)
-
-/**
- * Variação contra o comparativo. Quando a base é zero não existe percentual —
- * devolve null em vez de infinito, e a tela mostra travessão.
- */
-export function variacao(atual, comparado) {
-  const delta = atual - comparado
-  return { delta, pct: comparado ? (delta / Math.abs(comparado)) * 100 : null }
-}
-
-/** Percentual sobre a receita líquida — a base que o P&L da NSTECH usa. */
-export const percentual = (valor, base) => (base ? (valor / base) * 100 : null)
+export { versaoReferencia } from './cicloRegra'

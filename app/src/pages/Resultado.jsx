@@ -1,85 +1,54 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Layout from '../components/Layout'
-import PainelResultado from '../components/PainelResultado'
 import FiltroBotoes from '../components/FiltroBotoes'
 import SeletorColunas from '../components/SeletorColunas'
+import TabelaQuadro from '../components/TabelaQuadro'
 import { exportarExcel } from '../lib/excelUtils'
-import { montarExportacaoResultado } from '../lib/exportarResultado'
 import { useToast } from '../components/ToastProvider'
 import { fetchVersaoAtual } from '../lib/lancamentosData'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../lib/dashboardData'
-import {
-  fetchResultado,
-  fetchVersoesDoCiclo,
-  anual,
-  percentual,
-  variacao,
-  VISOES,
-  montarIndicadores,
-} from '../lib/resultadoData'
+import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
+import { MESES, MEDIDAS_MOM, janela } from '../lib/demonstrativo'
+import { ABAS, montarQuadro, quadroParaExportar, bigNumbers } from '../lib/quadrosResultado'
 
-const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-
-/**
- * As visões do Resultado, uma por aba.
- *
- * Antes vinham empilhadas numa rolagem só, e chegar no P&L custava passar por
- * quatro tabelas. Os filtros ficam acima das abas de propósito: o recorte —
- * BU, torre, empresa, comparativo — vale para todas, e trocar de aba não pode
- * perdê-lo nem voltar ao banco.
- */
-const ABAS = [
-  { valor: 'painel', rotulo: 'Painel Resultado' },
-  { valor: 'empresas', rotulo: 'Resultados por empresa' },
-  { valor: 'pl', rotulo: 'P&L' },
-  { valor: 'plEmpresa', rotulo: 'P&L por empresa' },
-  { valor: 'pacotes', rotulo: 'Gastos por pacote' },
-  { valor: 'areas', rotulo: 'Por área' },
-]
-
-const brl = (v) =>
-  Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const milhoes = (v) => `${(Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`
-/** R$ M com uma casa: o formato #,##0.0 que o Master Resultado usa nas tabelas. */
-const mi = (v) =>
-  (Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-const pct = (v) =>
-  v === null || !isFinite(v)
-    ? '—'
-    : `${v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+const umaCasa = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+const mi = (v) => `${umaCasa((v ?? 0) / 1e6)} mi`
+const brl = (v) => Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 /**
  * Um big number: o nome e, na mesma linha, o valor em destaque e o percentual
- * sobre a receita separados por uma barra ("R$ 60,0 mi | 60,0% RoL").
- *
- * O valor sai sem cor: aqui nada e "bom" ou "ruim" por si so. A cor fica so no
- * delta contra o comparativo, que e a unica coisa com sentido definido.
+ * sobre a receita separados por uma barra. Embaixo, o delta contra o Budget e
+ * contra o Last Year — a única parte com cor, porque é a única com sentido de
+ * "melhor" ou "pior".
  */
-function Indicador({ rotulo, valor, pct, delta, deltaPp }) {
+function DeltaIndicador({ d, contra, menorEMelhor }) {
+  if (!d) return null
+  const x = d.valor ?? d.pp
+  if (x === null || x === undefined || !isFinite(x)) return null
+  const bom = menorEMelhor ? x <= 0 : x >= 0
+  const texto = d.valor !== undefined ? `${x > 0 ? '+' : ''}${mi(x)}` : `${x > 0 ? '+' : ''}${umaCasa(x)} p.p.`
+  return (
+    <div className={`indicador-delta ${bom ? 'melhor' : 'pior'}`}>
+      {texto} vs {contra}
+    </div>
+  )
+}
+
+function Indicador({ rotulo, valor, pct, vsBudget, vsLy, menorEMelhor }) {
   return (
     <div className="indicador">
       <div className="indicador-rotulo">{rotulo}</div>
       <div className="indicador-linha">
-        <span className="indicador-valor">{valor}</span>
-        {pct && (
+        <span className="indicador-valor">{mi(valor)}</span>
+        {pct !== null && pct !== undefined && isFinite(pct) && (
           <>
             <span className="indicador-barra" aria-hidden="true">|</span>
-            <span className="indicador-pct">{pct}</span>
+            <span className="indicador-pct">{umaCasa(pct)}% RoL</span>
           </>
         )}
       </div>
-      {delta && (
-        <div className={`indicador-delta ${delta.valor >= 0 ? 'melhor' : 'pior'}`}>
-          {delta.valor > 0 ? '+' : ''}
-          {milhoes(delta.valor)} vs budget
-        </div>
-      )}
-      {deltaPp !== null && deltaPp !== undefined && (
-        <div className={`indicador-delta ${deltaPp >= 0 ? 'melhor' : 'pior'}`}>
-          {deltaPp > 0 ? '+' : ''}
-          {deltaPp.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p. vs budget
-        </div>
-      )}
+      <DeltaIndicador d={vsBudget} contra="budget" menorEMelhor={menorEMelhor} />
+      <DeltaIndicador d={vsLy} contra="LY" menorEMelhor={menorEMelhor} />
     </div>
   )
 }
@@ -88,11 +57,8 @@ function Indicador({ rotulo, valor, pct, delta, deltaPp }) {
  * A faixa de big numbers, com os títulos na largura dos números.
  *
  * Todo título ocupa a mesma largura: a da linha de número mais larga entre as
- * seis caixas (ou a do título mais longo, se ele for maior). Cada título chega
- * lá pelo espaçamento entre letras — "EAC" e "GROSS MARGIN" terminam alinhados
- * com as bordas do número de baixo, e as seis caixas ficam com o mesmo
- * desenho. É medida no navegador porque depende da fonte e dos valores; mede de
- * novo quando a faixa muda de tamanho ou os números mudam.
+ * seis caixas (ou a do título mais longo, se ele for maior), pelo espaçamento
+ * entre letras. É medida no navegador porque depende da fonte e dos valores.
  */
 function Indicadores({ itens }) {
   const ref = useRef(null)
@@ -111,10 +77,7 @@ function Indicadores({ itens }) {
       const natural = titulos.map((t) => t.getBoundingClientRect().width)
       const caixa = faixa.querySelector('.indicador')
       const util = caixa ? caixa.clientWidth - 2 * parseFloat(getComputedStyle(caixa).paddingLeft) : Infinity
-      const alvo = Math.min(
-        util,
-        Math.max(...linhas.map((l) => l.getBoundingClientRect().width), ...natural)
-      )
+      const alvo = Math.min(util, Math.max(...linhas.map((l) => l.getBoundingClientRect().width), ...natural))
       titulos.forEach((t, i) => {
         const letras = t.textContent.length
         const sobra = alvo - natural[i]
@@ -140,53 +103,98 @@ function Indicadores({ itens }) {
   )
 }
 
+/** Performance Overview em barras: Actual, Budget e Last Year por medida. */
+function Performance({ quadro }) {
+  const papeis = [
+    ['a', 'Actual', 'atual'],
+    ['b', 'Budget', 'orcado'],
+    ['l', 'Last Year', 'ly'],
+  ]
+  return (
+    <div className="performance">
+      {quadro.linhas.map((l) => (
+        <div key={l.rotulo} className="performance-card">
+          <h3>{l.rotulo}</h3>
+          {quadro.grupos.map((g, gi) => {
+            const per = gi === 0 ? 'MTD' : 'YTD'
+            const vals = papeis.map(([k]) => l.v[`${per}.${k}`]).filter((x) => x !== undefined && x !== null)
+            const max = Math.max(1e-9, ...vals.map((x) => Math.abs(x)))
+            return (
+              <div key={g.rotulo}>
+                <div className="performance-periodo">{g.rotulo}</div>
+                {papeis.map(([k, nome, classe]) => {
+                  const x = l.v[`${per}.${k}`]
+                  if (x === undefined) return null
+                  const largura = x === null ? 0 : (Math.abs(x) / max) * 100
+                  return (
+                    <div key={k} className="performance-barra">
+                      <span>{nome}</span>
+                      <div className="performance-trilho">
+                        <span className={`${classe}${x < 0 ? ' negativo' : ''}`} style={{ width: `${largura}%` }} />
+                      </div>
+                      <span className="performance-valor">
+                        {x === null ? '—' : l.fmt === 'pct' ? `${umaCasa(x)}%` : umaCasa(x / 1e6)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /**
- * Resultado: o que os lançamentos viraram, no formato do P&L Contábil.
+ * Resultado: o orçamento no formato da Master Resultado, aba por aba e na
+ * mesma ordem das abas da Master.
  *
- * Responde em blocos as perguntas que se faz depois de subir os dados — qual a
- * receita, o custo, o EBITDA, o capex e quanto isso representa —, abre o P&L
- * linha a linha e depois pela estrutura BU → Torre → Sub Torre → Empresa.
+ * Três versões entram em cada quadro: a do ano escolhido (Actual), a versão
+ * de "Comparar com" (Budget) e o budget do ano anterior (Last Year), que é
+ * achado sozinho pelo ciclo `ano − 1`. O mês de referência faz o MTD e o YTD;
+ * com dezembro, o YTD é o ano todo.
  */
 export default function Resultado() {
   const showToast = useToast()
-  const [versao, setVersao] = useState(null)
+  const [ciclos, setCiclos] = useState([])
+  const [cicloId, setCicloId] = useState('')
   const [bus, setBus] = useState([])
   const [torres, setTorres] = useState([])
   const [empresas, setEmpresas] = useState([])
   const [buId, setBuId] = useState('')
   const [torreId, setTorreId] = useState('')
   const [empresaId, setEmpresaId] = useState('')
-  const [dados, setDados] = useState(null)
-  const [versoes, setVersoes] = useState([])
   const [compararCom, setCompararCom] = useState('')
+  const [mes, setMes] = useState(12)
+  const [dados, setDados] = useState(null)
   const [comp, setComp] = useState(null)
-  // Quais empresas tem lancamento nesta versao. O cadastro tem 60 e so um
-  // punhado aparece no resultado; listar as 60 em botao enchia a tela de
-  // opcao vazia antes do primeiro numero.
+  const [ly, setLy] = useState(null)
+  // Quais empresas têm lançamento no ano: vão primeiro nos botões.
   const [comDado, setComDado] = useState(null)
-  const [mensal, setMensal] = useState('ano')
-  // Qual abertura do P&L: linha contabil, area (COGS/G&A/S&M/R&D) ou pacote.
-  const [visao, setVisao] = useState('conta')
-  const [aba, setAba] = useState('painel')
-  // O que o seletor de colunas vai gravar: montado no clique, com a aba e o
-  // recorte daquele momento.
+  const [aba, setAba] = useState('mom')
+  const [medida, setMedida] = useState('nr')
+  const [modoEmpresa, setModoEmpresa] = useState('mes')
+  const [empresaPl, setEmpresaPl] = useState('')
   const [exportacao, setExportacao] = useState(null)
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
     ;(async () => {
       try {
-        const [va, b, t, e] = await Promise.all([
-          fetchVersaoAtual(), fetchBUs(), fetchTorres(), fetchEmpresas(),
+        const [cs, va, b, t, e] = await Promise.all([
+          fetchCiclosResultado(),
+          fetchVersaoAtual(),
+          fetchBUs(),
+          fetchTorres(),
+          fetchEmpresas(),
         ])
-        setVersao(va)
+        setCiclos(cs)
+        setCicloId(va?.ciclo?.id ?? cs[0]?.id ?? '')
         setBus(b)
         setTorres(t)
         setEmpresas(e)
-        if (va?.ciclo) {
-          const vs = await fetchVersoesDoCiclo(va.ciclo.id)
-          setVersoes(vs.filter((x) => x.id !== va.versao?.id))
-        }
       } catch (err) {
         showToast(`Erro ao carregar: ${err.message}`, 'error')
       }
@@ -194,20 +202,26 @@ export default function Resultado() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const ciclo = ciclos.find((c) => c.id === cicloId) ?? null
+  const versao = versaoReferencia(ciclo)
+  const cicloLy = ciclo ? ciclos.find((c) => c.ano === ciclo.ano - 1) : null
+  const versaoLy = versaoReferencia(cicloLy)
+  const outrasVersoes = (ciclo?.versao ?? []).filter((v) => v.id !== versao?.id)
+
   useEffect(() => {
-    if (!versao?.versao) return
+    if (!versao) return
     ;(async () => {
       setCarregando(true)
       try {
         const filtros = { buId: buId || null, torreId: torreId || null, empresaId: empresaId || null }
-        const [a, b] = await Promise.all([
-          fetchResultado(versao.versao.id, filtros),
+        const [a, b, l] = await Promise.all([
+          fetchResultado(versao.id, filtros),
           compararCom ? fetchResultado(compararCom, filtros) : Promise.resolve(null),
+          versaoLy ? fetchResultado(versaoLy.id, filtros) : Promise.resolve(null),
         ])
         setDados(a)
         setComp(b)
-        // So a carga sem recorte enxerga todas: com filtro aplicado a lista
-        // encolhe para o proprio filtro e nao serviria para trocar de empresa.
+        setLy(l)
         if (!buId && !torreId && !empresaId) {
           setComDado(new Set(a.empresas.filter((e) => e.temLancamento).map((e) => e.id).filter(Boolean)))
         }
@@ -218,9 +232,35 @@ export default function Resultado() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [versao, buId, torreId, empresaId, compararCom])
+  }, [versao?.id, versaoLy?.id, buId, torreId, empresaId, compararCom])
 
-  if (!versao?.versao) {
+  const ctx = useMemo(
+    () =>
+      dados && {
+        dados,
+        comp,
+        ly,
+        mes,
+        medida,
+        modoEmpresa,
+        empresaPl,
+        rotuloVersao: versao ? `${ciclo?.ano} · ${versao.nome}` : 'Actual',
+        rotuloComp: comp ? outrasVersoes.find((v) => v.id === compararCom)?.nome : null,
+        rotuloLy: versaoLy ? `LY ${cicloLy.ano}` : null,
+      },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dados, comp, ly, mes, medida, modoEmpresa, empresaPl]
+  )
+  const quadro = useMemo(() => {
+    if (!ctx) return null
+    try {
+      return montarQuadro(aba, ctx)
+    } catch (err) {
+      return { erro: err.message }
+    }
+  }, [ctx, aba])
+
+  if (!ciclos.length || !versao) {
     return (
       <Layout>
         <header className="topbar">
@@ -228,25 +268,21 @@ export default function Resultado() {
         </header>
         <div className="content folha">
           <div className="empty-hint">
-            Nenhum ciclo com versão ativa. Crie um em Budget - Settings.
+            {ciclos.length ? 'Carregando…' : 'Nenhum ciclo cadastrado. Crie um em Budget - Settings.'}
           </div>
         </div>
       </Layout>
     )
   }
 
-  const base = dados ? anual(dados.subtotais.receitaLiquida) : 0
   const torresDaBu = buId ? torres.filter((t) => t.bu_id === buId) : torres
   const noRecorte = torreId
     ? empresas.filter((e) => e.torre_id === torreId)
     : buId
     ? empresas.filter((e) => e.bu_id === buId)
     : empresas
-  // Primeiro as que tem lancamento; o resto continua acessivel atras do "+ N".
   const comLancamento = comDado ? noRecorte.filter((e) => comDado.has(e.id)) : []
-  const empresasDisponiveis = comDado
-    ? [...comLancamento, ...noRecorte.filter((e) => !comDado.has(e.id))]
-    : noRecorte
+  const empresasDisponiveis = comDado ? [...comLancamento, ...noRecorte.filter((e) => !comDado.has(e.id))] : noRecorte
   const recorte = empresaId
     ? empresas.find((e) => e.id === empresaId)?.nome
     : torreId
@@ -254,6 +290,9 @@ export default function Resultado() {
     : buId
     ? bus.find((b) => b.id === buId)?.nome
     : 'Consolidado'
+  const semConta = dados ? janela(dados.semConta, 'FY') : 0
+  const semDeducao = dados && dados.demo.ded.every((x) => !x) && dados.demo.gr.some((x) => x)
+  const abaAtual = ABAS.find((a) => a.valor === aba)
 
   return (
     <Layout>
@@ -261,107 +300,118 @@ export default function Resultado() {
         <div className="topbar-title">
           <h1>Resultado</h1>
           <p>
-            Ciclo {versao.ciclo.ano} · {versao.versao.nome} · <strong>{recorte}</strong>
+            Ciclo {ciclo.ano} · {versao.nome} · <strong>{recorte}</strong> · referência {MESES[mes - 1]}/{ciclo.ano}
             {dados ? ` · ${dados.lancamentos} lançamento(s)` : ''}
           </p>
         </div>
       </header>
 
       <div className="content folha">
-        {/* Mesmo formato do "Contexto do Lançamento" no módulo de Revenue:
-            painel com cabeçalho e os chips no estilo padrão. Sem o painel, os
-            filtros ficavam soltos no topo da folha e pareciam inacabados. */}
         <div className="panel recorte">
           <div className="panel-header">
             <div>
               <h2>Recorte</h2>
-              <p>BU, Torre e Empresa — vale para todas as visões abaixo</p>
+              <p>Ano, mês de referência, BU, Torre e Empresa — vale para todas as visões abaixo</p>
             </div>
           </div>
           <div className="panel-body">
-            {/* BU e Torre dividem a primeira linha; Empresa ocupa a sua,
-                porque a lista e longa; Visao e Comparar dividem a ultima. */}
             <div className="recorte-grupos">
-          <div className="recorte-bu-torre">
-          <FiltroBotoes
-            label="BU"
-            valor={buId}
-            rotuloTodas="Consolidado"
-            opcoes={bus.map((b) => ({ valor: b.id, rotulo: b.nome }))}
-            onChange={(v) => {
-              setBuId(v)
-              setTorreId('')
-              setEmpresaId('')
-            }}
-          />
-          <FiltroBotoes
-            label="Torre"
-            valor={torreId}
-            rotuloTodas="Todas as Torres"
-            opcoes={torresDaBu.map((t) => ({ valor: t.id, rotulo: t.nome }))}
-            onChange={(v) => {
-              setTorreId(v)
-              setEmpresaId('')
-            }}
-          />
-          </div>
-          {/* P&L por empresa: o mesmo demonstrativo, so daquela empresa. */}
-          <FiltroBotoes
-            label="Empresa"
-            valor={empresaId}
-            rotuloTodas="Consolidado"
-            opcoes={empresasDisponiveis.map((e) => ({ valor: e.id, rotulo: e.nome }))}
-            onChange={setEmpresaId}
-          />
-          <div className="recorte-dupla">
-          <FiltroBotoes
-            label="Visão"
-            valor={mensal}
-            opcoes={[{ valor: 'ano', rotulo: 'Ano' }, { valor: 'mes', rotulo: 'Mês a mês' }]}
-            onChange={setMensal}
-            semTodas
-          />
-          {versoes.length > 0 ? (
-            <FiltroBotoes
-              label="Comparar com (Budget)"
-              valor={compararCom}
-              rotuloTodas="Sem comparação"
-              opcoes={versoes.map((v) => ({ valor: v.id, rotulo: `${v.nome} (${v.tipo})` }))}
-              onChange={setCompararCom}
-            />
-          ) : (
-            <div className="filtro-botoes">
-              <span className="filtro-botoes-label">Comparar com (Budget)</span>
-              <span style={{ fontSize: 12, opacity: 0.7 }}>
-                O ciclo {versao.ciclo.ano} só tem a versão “{versao.versao.nome}”. Crie uma revisão em
-                Budget - Settings para comparar Δ e Δ%.
-              </span>
-            </div>
-          )}
-          </div>
+              <div className="recorte-bu-torre">
+                <FiltroBotoes
+                  label="Ano (ciclo)"
+                  valor={cicloId}
+                  opcoes={ciclos.map((c) => ({ valor: c.id, rotulo: String(c.ano) }))}
+                  onChange={(v) => {
+                    setCicloId(v)
+                    setCompararCom('')
+                  }}
+                  semTodas
+                />
+                <FiltroBotoes
+                  label="Mês de referência (MTD / YTD)"
+                  valor={String(mes)}
+                  opcoes={MESES.map((m, i) => ({ valor: String(i + 1), rotulo: m }))}
+                  onChange={(v) => setMes(Number(v))}
+                  semTodas
+                  semCorte
+                />
+              </div>
+              <div className="recorte-bu-torre">
+                <FiltroBotoes
+                  label="BU"
+                  valor={buId}
+                  rotuloTodas="Consolidado"
+                  opcoes={bus.map((b) => ({ valor: b.id, rotulo: b.nome }))}
+                  onChange={(v) => {
+                    setBuId(v)
+                    setTorreId('')
+                    setEmpresaId('')
+                  }}
+                />
+                <FiltroBotoes
+                  label="Torre"
+                  valor={torreId}
+                  rotuloTodas="Todas as Torres"
+                  opcoes={torresDaBu.map((t) => ({ valor: t.id, rotulo: t.nome }))}
+                  onChange={(v) => {
+                    setTorreId(v)
+                    setEmpresaId('')
+                  }}
+                />
+              </div>
+              <FiltroBotoes
+                label="Empresa"
+                valor={empresaId}
+                rotuloTodas="Consolidado"
+                opcoes={empresasDisponiveis.map((e) => ({ valor: e.id, rotulo: e.nome }))}
+                onChange={setEmpresaId}
+              />
+              <div className="recorte-dupla">
+                {outrasVersoes.length > 0 ? (
+                  <FiltroBotoes
+                    label="Comparar com (Budget)"
+                    valor={compararCom}
+                    rotuloTodas="Sem comparação"
+                    opcoes={outrasVersoes.map((v) => ({ valor: v.id, rotulo: `${v.nome} (${v.tipo})` }))}
+                    onChange={setCompararCom}
+                  />
+                ) : (
+                  <div className="filtro-botoes">
+                    <span className="filtro-botoes-label">Comparar com (Budget)</span>
+                    <span style={{ fontSize: 12, opacity: 0.7 }}>
+                      O ciclo {ciclo.ano} só tem a versão “{versao.nome}”. Crie uma revisão em Budget - Settings.
+                    </span>
+                  </div>
+                )}
+                <div className="filtro-botoes">
+                  <span className="filtro-botoes-label">Last Year</span>
+                  <span style={{ fontSize: 12, opacity: 0.8 }}>
+                    {versaoLy
+                      ? `Budget ${cicloLy.ano} · ${versaoLy.nome} — entra sozinho em todos os quadros`
+                      : `Sem budget de ${ciclo.ano - 1}. Crie o ciclo ${ciclo.ano - 1} em Budget - Settings e importe o template daquele ano para aparecer o Last Year.`}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {carregando && <div className="empty-hint">Carregando…</div>}
 
-        {!carregando && dados && (
+        {!carregando && dados && ctx && (
           <>
-            {/* Os indicadores de revisao, acima das tabelas e abaixo dos filtros */}
-            <Indicadores itens={montarIndicadores(dados, comp)} />
+            <Indicadores itens={bigNumbers(ctx)} />
 
-            {anual(dados.semConta) !== 0 && (
+            {semConta !== 0 && (
               <div className="proto-banner" style={{ marginBottom: 18 }}>
-                ⚠ R$ {brl(anual(dados.semConta))} em lançamentos <strong>sem conta</strong> não entram em nenhuma
-                linha do P&amp;L. Resolva em Fluxo → Pendência de Cadastros.
+                ⚠ R$ {brl(semConta)} em lançamentos <strong>sem conta</strong> não entram em nenhuma linha do P&amp;L.
+                Resolva em Fluxo → Pendência de Cadastros.
               </div>
             )}
-
-            {anual(dados.deducoes) === 0 && anual(dados.receitaBruta) !== 0 && (
+            {semDeducao && (
               <div className="proto-banner" style={{ marginBottom: 18 }}>
-                ⓘ Não há dedução lançada, então a Receita Líquida está igual à Bruta e os percentuais usam essa
-                base. A ferramenta não calcula dedução: ela precisa ser lançada nas contas de
-                “Receita &gt; (-) Deductions”.
+                ⓘ Não há dedução lançada, então a Net Revenue está igual à Gross Revenue. A ferramenta não calcula
+                dedução: ela precisa ser lançada nas contas de “Receita &gt; (-) Deductions”.
               </div>
             )}
 
@@ -377,511 +427,70 @@ export default function Resultado() {
                   {a.rotulo}
                 </button>
               ))}
-              {/* Exporta a aba aberta, no recorte aberto — o que está na tela. */}
               <button
                 type="button"
                 className="btn btn-secondary btn-sm abas-exportar"
-                onClick={() => {
-                  try {
-                    setExportacao(
-                      montarExportacaoResultado(aba, {
-                        dados,
-                        comp,
-                        visao,
-                        recorte,
-                        abaRotulo: ABAS.find((a) => a.valor === aba)?.rotulo,
-                      })
-                    )
-                  } catch (err) {
-                    showToast(err.message, 'error')
-                  }
-                }}
+                disabled={!quadro || quadro.erro}
+                onClick={() => setExportacao(quadroParaExportar(quadro, { aba, recorte }))}
               >
                 ⭳ Exportar
               </button>
             </nav>
 
-            {aba === 'painel' && (
-            <PainelResultado
-              arvore={dados.arvore}
-              consolidado={{
-                receita: base,
-                ebitdaAposCapex: anual(dados.subtotais.ebitdaAposCapex),
-              }}
-              comparacao={
-                comp
-                  ? {
-                      estrutura: comp.estrutura,
-                      consolidado: {
-                        receita: anual(comp.subtotais.receitaLiquida),
-                        ebitdaAposCapex: anual(comp.subtotais.ebitdaAposCapex),
-                      },
-                    }
-                  : null
-              }
-              subtitulo={`Consolidado → BU → Torre → Sub Torre → Empresa${
-                comp ? ` · comparando com ${versoes.find((v) => v.id === compararCom)?.nome ?? 'budget'}` : ''
-              }`}
-            />
-            )}
-
-            {/* MODULO: resultado de cada empresa, so as tres medidas que se olha
-                primeiro — quanto fatura, quanto sobra e quanto sobra depois do capex. */}
-            {aba === 'empresas' && dados.empresas?.length > 0 && (
-              <div className="panel" style={{ marginBottom: 18 }}>
-                <div className="panel-header">
-                  <div>
-                    <h2>Resultados por empresa</h2>
-                    <p>Net Revenue, EBITDA e EBITDA after Capex de cada empresa, com a margem sobre a própria receita</p>
-                  </div>
-                </div>
-                <div className="panel-body">
-                  <div className="rolagem-x">
-                    <table className="tabela-xl sem-indice">
-                      <thead>
-                        <tr className="faixa">
-                          <th className="canto fixa-2">[ BRL M ]</th>
-                          <th className="vao" />
-                          <th>Net Revenue</th>
-                          <th className="vao" />
-                          <th colSpan={2}>EBITDA</th>
-                          <th className="vao" />
-                          <th colSpan={2}>Adj. Ebitda After Capex</th>
-                          <th className="vao" />
-                          <th colSpan={2}>Net Income</th>
-                        </tr>
-                        <tr className="rotulos">
-                          <th className="rotulo fixa-2">Empresa</th>
-                          <th className="vao" />
-                          <th className="atual">Actual</th>
-                          <th className="vao" />
-                          <th className="atual">Actual</th>
-                          <th>%NR</th>
-                          <th className="vao" />
-                          <th className="atual">Actual</th>
-                          <th>%NR</th>
-                          <th className="vao" />
-                          <th className="atual">Actual</th>
-                          <th>%NR</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dados.empresas.map((e) => {
-                          const nr = anual(e.receitaLiquida)
-                          const eb = anual(e.ebitda)
-                          const ec = anual(e.ebitdaAposCapex)
-                          const ni = anual(e.netIncome)
-                          return (
-                            <tr key={e.id ?? e.nome}>
-                              <td className="rotulo fixa-2">{e.nome}</td>
-                              <td className="vao" />
-                              <td className="valor">{mi(nr)}</td>
-                              <td className="vao" />
-                              <td className="valor">{mi(eb)}</td>
-                              <td>{pct(percentual(eb, nr))}</td>
-                              <td className="vao" />
-                              <td className="valor">{mi(ec)}</td>
-                              <td>{pct(percentual(ec, nr))}</td>
-                              <td className="vao" />
-                              <td className="valor">{mi(ni)}</td>
-                              <td>{pct(percentual(ni, nr))}</td>
-                            </tr>
-                          )
-                        })}
-                        <tr className="respiro">
-                          <td colSpan={13} />
-                        </tr>
-                        <tr className="consolidado">
-                          <td className="rotulo fixa-2">Consolidado</td>
-                          <td className="vao" />
-                          <td className="valor">{mi(base)}</td>
-                          <td className="vao" />
-                          <td className="valor">{mi(anual(dados.subtotais.ebitda))}</td>
-                          <td>{pct(percentual(anual(dados.subtotais.ebitda), base))}</td>
-                          <td className="vao" />
-                          <td className="valor">{mi(anual(dados.subtotais.ebitdaAposCapex))}</td>
-                          <td>{pct(percentual(anual(dados.subtotais.ebitdaAposCapex), base))}</td>
-                          <td className="vao" />
-                          <td className="valor">{mi(anual(dados.subtotais.netIncome))}</td>
-                          <td>{pct(percentual(anual(dados.subtotais.netIncome), base))}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* MODULO: o P&L aberto, uma coluna por empresa. E onde se ve QUAL
-                linha de custo pesa em cada uma, que o quadro acima nao mostra. */}
-            {aba === 'plEmpresa' && dados.empresas?.length > 0 && (
-              <div className="panel" style={{ marginBottom: 18 }}>
-                <div className="panel-header">
-                  <div>
-                    <h2>P&amp;L por empresa</h2>
-                    <p>As linhas do P&amp;L abertas por empresa — cada coluna é uma, a última é o consolidado</p>
-                  </div>
-                </div>
-                <div className="panel-body">
-                  <div className="rolagem-x">
-                    <table className="tabela-xl sem-indice">
-                      <thead>
-                        <tr className="faixa">
-                          <th className="canto fixa-2">[ BRL M ]</th>
-                          <th className="vao" />
-                          <th colSpan={dados.empresas.length}>Empresas</th>
-                          <th className="vao" />
-                          <th>Consolidado</th>
-                        </tr>
-                        <tr className="rotulos">
-                          <th className="rotulo fixa-2">Linha do P&amp;L</th>
-                          <th className="vao" />
-                          {dados.empresas.map((e) => (
-                            <th key={e.id ?? e.nome}>{e.nome}</th>
-                          ))}
-                          <th className="vao" />
-                          <th className="atual">Actual</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(dados.pls?.[visao] ?? dados.pl).map((l) => {
-                          const total = anual(l.valores)
-                          if (l.eSecao) {
-                            return (
-                              <tr key={l.rotulo} className="secao">
-                                <td className="rotulo fixa-2">{l.rotulo}</td>
-                                <td colSpan={99} />
-                              </tr>
-                            )
-                          }
-                          if (!l.eSubtotal && total === 0) return null
-                          // Cada empresa carrega os mesmos subtotais do
-                          // consolidado, calculados pela mesma função.
-                          const valorEmp = (e) => {
-                            if (l.subtotal) return e[l.subtotal] ? anual(e[l.subtotal]) : null
-                            if (l.area) return anual(e.porArea?.get(l.area) ?? [])
-                            return anual(e.porLinha.get(l.linha) ?? [])
-                          }
-                          const classe = l.eSubtotal ? 'faixa-soma' : 'detalhe'
-                          return (
-                            <tr key={l.rotulo} className={classe}>
-                              <td className="rotulo fixa-2">
-                                {l.eSubtotal ? `= ${l.rotulo}` : l.rotulo}
-                              </td>
-                              <td className="vao" />
-                              {dados.empresas.map((e) => {
-                                const v = valorEmp(e)
-                                const vazio = v === null || v === 0
-                                return (
-                                  <td key={e.id ?? e.nome} className={vazio ? 'apagado' : undefined}>
-                                    {vazio ? '—' : mi(v)}
-                                  </td>
-                                )
-                              })}
-                              <td className="vao" />
-                              <td className="valor">{mi(total)}</td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="nota-tabela">
-                    Nada é rateado: cada linha soma os lançamentos daquela empresa. Uma célula com travessão é
-                    empresa sem lançamento naquela linha, não valor escondido.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* MODULO: o gasto aberto em pacote e subpacote, com o % sobre a
-                receita liquida. E um quadro proprio, e nao uma visao do P&L:
-                o que se olha aqui e a composicao do gasto, nao o caminho ate
-                o EBITDA. */}
-            {aba === 'pacotes' && dados.pacotes?.length > 0 && (
-              <div className="panel" style={{ marginBottom: 18 }}>
-                <div className="panel-header">
-                  <div>
-                    <h2>Gastos por pacote</h2>
-                    <p>
-                      Cada pacote aberto nos seus subpacotes, com o percentual sobre a receita líquida
-                    </p>
-                  </div>
-                </div>
-                <div className="panel-body">
-                  <div className="rolagem-x">
-                    <table className="tabela-xl sem-indice">
-                      <thead>
-                        <tr className="faixa">
-                          <th className="canto fixa-2">[ BRL M ]</th>
-                          <th className="vao" />
-                          <th colSpan={2}>Gastos</th>
-                        </tr>
-                        <tr className="rotulos">
-                          <th className="rotulo fixa-2">Pacote</th>
-                          <th className="vao" />
-                          <th className="atual">Actual</th>
-                          <th>% RoL</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dados.pacotes.map((p, i) => {
-                          const total = anual(p.valores)
-                          return (
-                            <Fragment key={p.nome}>
-                              {i > 0 && (
-                                <tr className="respiro">
-                                  <td colSpan={4} />
-                                </tr>
-                              )}
-                              <tr className="pai">
-                                <td className="rotulo fixa-2">{p.nome}</td>
-                                <td className="vao" />
-                                <td className="valor">{mi(total)}</td>
-                                <td>{pct(percentual(total, base))}</td>
-                              </tr>
-                              {p.subpacotes.map((sub) => {
-                                const v = anual(sub.valores)
-                                return (
-                                  <tr key={sub.nome} className="subpacote">
-                                    <td className="rotulo fixa-2">{sub.nome}</td>
-                                    <td className="vao" />
-                                    <td className="valor">{mi(v)}</td>
-                                    <td>{pct(percentual(v, base))}</td>
-                                  </tr>
-                                )
-                              })}
-                            </Fragment>
-                          )
-                        })}
-                        <tr className="respiro">
-                          <td colSpan={4} />
-                        </tr>
-                        {(() => {
-                          const t = dados.pacotes.reduce((a, p) => a + anual(p.valores), 0)
-                          return (
-                            <tr className="faixa-soma">
-                              <td className="rotulo fixa-2">= Total de gastos</td>
-                              <td className="vao" />
-                              <td className="valor">{mi(t)}</td>
-                              <td>{pct(percentual(t, base))}</td>
-                            </tr>
-                          )
-                        })()}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="nota-tabela">
-                    O pacote vem da coluna “Pacote” do template, não do plano de contas. Por isso este total
-                    inclui os lançamentos cuja conta ainda não está cadastrada, que o P&amp;L deixa de fora — a
-                    diferença entre os dois é exatamente esse valor.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Por area de alocacao: a segunda dimensao do P&L, que vem do
-                template e nao do plano de contas. */}
-            {aba === 'areas' && dados.areas?.length > 0 && (
-              <div className="panel" style={{ marginBottom: 18 }}>
-                <div className="panel-header">
-                  <div>
-                    <h2>Por área de alocação</h2>
-                    <p>
-                      COGS, G&amp;A, S&amp;M, R&amp;D — vem da coluna “Alocação PnL (Área)” do template. Receita
-                      não tem área: é Net Revenue.
-                    </p>
-                  </div>
-                </div>
-                <div className="panel-body">
-                  <div className="rolagem-x">
-                    <table className="tabela-xl sem-indice">
-                      <thead>
-                        <tr className="faixa">
-                          <th className="canto fixa-2">[ BRL M ]</th>
-                          {mensal === 'mes' && <th className="vao" />}
-                          {mensal === 'mes' && <th colSpan={12}>Mês a mês</th>}
-                          <th className="vao" />
-                          <th colSpan={2}>Ano</th>
-                        </tr>
-                        <tr className="rotulos">
-                          <th className="rotulo fixa-2">Área</th>
-                          {mensal === 'mes' && <th className="vao" />}
-                          {mensal === 'mes' && MESES.map((m) => <th key={m}>{m}</th>)}
-                          <th className="vao" />
-                          <th className="atual">Actual</th>
-                          <th>%NR</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dados.areas.map((a) => (
-                          <tr key={a.nome} className="detalhe">
-                            <td className="rotulo fixa-2">{a.nome}</td>
-                            {mensal === 'mes' && <td className="vao" />}
-                            {mensal === 'mes' && a.valores.map((x, i) => (
-                              <td key={i} className={x === 0 ? 'apagado' : undefined}>
-                                {x === 0 ? '—' : mi(x)}
-                              </td>
-                            ))}
-                            <td className="vao" />
-                            <td className="valor">{mi(anual(a.valores))}</td>
-                            <td>{pct(percentual(anual(a.valores), base))}</td>
-                          </tr>
-                        ))}
-                        <tr className="faixa-soma">
-                          <td className="rotulo fixa-2">= Total de custos e despesas</td>
-                          {mensal === 'mes' && <td className="vao" />}
-                          {mensal === 'mes' && MESES.map((_, i) => (
-                            <td key={i}>{mi(dados.areas.reduce((t, a) => t + a.valores[i], 0))}</td>
-                          ))}
-                          <td className="vao" />
-                          <td className="valor">{mi(dados.areas.reduce((t, a) => t + anual(a.valores), 0))}</td>
-                          <td>{pct(percentual(dados.areas.reduce((t, a) => t + anual(a.valores), 0), base))}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* O P&L linha a linha */}
-            {aba === 'pl' && (
             <div className="panel" style={{ marginBottom: 18 }}>
               <div className="panel-header">
                 <div>
-                  <h2>P&amp;L</h2>
+                  <h2>{abaAtual.rotulo}</h2>
                   <p>
-                    Na ordem do Master Resultado, de Gross Revenue a Adjusted EBITDA After Capex.
-                    {' '}As três visões abrem o mesmo bloco de despesa de jeitos diferentes e somam o mesmo total.
+                    {abaAtual.foraDaMaster ? 'Quadro da ferramenta, sem equivalente na Master' : 'Mesmo layout da aba da Master Resultado'}
+                    {' · '}Actual = {ciclo.ano} {versao.nome}
+                    {comp ? ` · Budget = ${ctx.rotuloComp}` : ''}
+                    {ly ? ` · Last Year = ${cicloLy.ano} ${versaoLy.nome}` : ''}
                   </p>
                 </div>
-                <FiltroBotoes
-                  label="Visão"
-                  valor={visao}
-                  opcoes={(dados.pls ? VISOES.filter((v) => dados.pls[v.valor]) : VISOES).map((v) => ({
-                    valor: v.valor,
-                    rotulo: v.rotulo,
-                  }))}
-                  onChange={setVisao}
-                  semTodas
-                />
+                {aba === 'mom' && (
+                  <FiltroBotoes
+                    label="Medida"
+                    valor={medida}
+                    opcoes={MEDIDAS_MOM.map((m) => ({ valor: m.valor, rotulo: m.rotulo }))}
+                    onChange={setMedida}
+                    semTodas
+                  />
+                )}
+                {aba === 'plEmpresa' && (
+                  <FiltroBotoes
+                    label="Formato"
+                    valor={modoEmpresa}
+                    opcoes={[
+                      { valor: 'mes', rotulo: 'Uma empresa, mês a mês' },
+                      { valor: 'lado', rotulo: 'Empresas lado a lado' },
+                    ]}
+                    onChange={setModoEmpresa}
+                    semTodas
+                  />
+                )}
               </div>
               <div className="panel-body">
-                <div className="rolagem-x">
-                  <table className="tabela-xl sem-indice">
-                    <thead>
-                      <tr className="faixa">
-                        <th className="canto fixa-2">[ BRL M ]</th>
-                        {mensal === 'mes' && <th className="vao" />}
-                        {mensal === 'mes' && <th colSpan={12}>Mês a mês</th>}
-                        <th className="vao" />
-                        <th colSpan={2}>Ano</th>
-                        {comp && <th className="vao" />}
-                        {comp && <th colSpan={3}>Budget</th>}
-                      </tr>
-                      <tr className="rotulos">
-                        <th className="rotulo fixa-2">Linha do P&amp;L</th>
-                        {mensal === 'mes' && <th className="vao" />}
-                        {mensal === 'mes' && MESES.map((m) => <th key={m}>{m}</th>)}
-                        <th className="vao" />
-                        <th className="atual">Actual</th>
-                        <th>%NR</th>
-                        {comp && (
-                          <>
-                            <th className="vao" />
-                            <th className="orcado">Budget</th>
-                            <th>Δ</th>
-                            <th>Δ%</th>
-                          </>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(dados.pls?.[visao] ?? dados.pl).map((l) => {
-                        const v = anual(l.valores)
-                        // Cabeçalho de seção não tem valor; linha zerada que não
-                        // é subtotal só ocupa espaço.
-                        if (l.eSecao) {
-                          return (
-                            <tr key={l.rotulo} className="secao">
-                              <td className="rotulo fixa-2">{l.rotulo}</td>
-                              <td colSpan={99} />
-                            </tr>
-                          )
-                        }
-                        // O esqueleto sai inteiro, mesmo zerado: e assim que o
-                        // Master mostra, e uma linha ausente e ambigua — nao da
-                        // para saber se e zero ou se a ferramenta nao tem.
-                        const classe = l.eSubtotal ? 'faixa-soma' : 'detalhe'
-                        return (
-                          <tr key={l.rotulo} className={classe}>
-                            <td className="rotulo fixa-2">{l.eSubtotal ? `= ${l.rotulo}` : l.rotulo}</td>
-                            {mensal === 'mes' && <td className="vao" />}
-                            {mensal === 'mes' &&
-                              l.valores.map((x, i) => (
-                                <td key={i} className={x === 0 ? 'apagado' : undefined}>
-                                  {x === 0 ? '—' : mi(x)}
-                                </td>
-                              ))}
-                            <td className="vao" />
-                            <td className={v === 0 ? 'valor apagado' : 'valor'}>{v === 0 ? '—' : mi(v)}</td>
-                            <td className={v === 0 ? 'apagado' : undefined}>
-                              {v === 0 ? '—' : pct(percentual(v, base))}
-                            </td>
-                            {comp && (() => {
-                              const alvo = (comp.pls?.[visao] ?? comp.pl).find((x) => x.rotulo === l.rotulo)
-                              const b = anual(alvo?.valores)
-                              const { delta, pct: dp } = variacao(v, b)
-                              return (
-                                <>
-                                  <td className="vao" />
-                                  <td className="valor">{mi(b)}</td>
-                                  <td>
-                                    {delta > 0 ? '+' : ''}{mi(delta)}
-                                  </td>
-                                  <td>
-                                    {dp === null
-                                      ? '—'
-                                      : `${dp > 0 ? '+' : ''}${dp.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
-                                  </td>
-                                </>
-                              )
-                            })()}
-                          </tr>
-                        )
-                      })}
-                      {dados.fora.map((f) => (
-                        <tr key={f.chave} className="alerta">
-                          <td className="rotulo fixa-2">
-                            {f.chave} · fora da estrutura do P&amp;L
-                          </td>
-                          {mensal === 'mes' && <td className="vao" />}
-                          {mensal === 'mes' && f.valores.map((x, i) => (
-                            <td key={i} className={x === 0 ? 'apagado' : undefined}>
-                              {x === 0 ? '—' : mi(x)}
-                            </td>
-                          ))}
-                          <td className="vao" />
-                          <td className="valor">{mi(anual(f.valores))}</td>
-                          <td>{pct(percentual(anual(f.valores), base))}</td>
-                          {comp && (
-                            <>
-                              <td className="vao" />
-                              <td className="valor apagado">—</td>
-                              <td className="apagado">—</td>
-                              <td className="apagado">—</td>
-                            </>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {aba === 'plEmpresa' && modoEmpresa === 'mes' && (
+                  <div style={{ marginBottom: 12 }}>
+                    <FiltroBotoes
+                      label="Empresa do P&L"
+                      valor={empresaPl}
+                      rotuloTodas="Consolidado"
+                      opcoes={(dados.empresas ?? []).filter((e) => e.id).map((e) => ({ valor: e.id, rotulo: e.nome }))}
+                      onChange={setEmpresaPl}
+                    />
+                  </div>
+                )}
+                {quadro?.erro && <div className="empty-hint">Não consegui montar este quadro: {quadro.erro}</div>}
+                {quadro && !quadro.erro && (quadro.grafico ? <Performance quadro={quadro} /> : <TabelaQuadro quadro={quadro} />)}
+                {quadro?.notas?.map((n) => (
+                  <p key={n} className="nota-tabela">
+                    {n}
+                  </p>
+                ))}
               </div>
             </div>
-            )}
-
           </>
         )}
       </div>
