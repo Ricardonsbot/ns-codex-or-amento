@@ -13,6 +13,7 @@
   --color-text: #20242d;
   --color-text-muted: #6b7280;
   --color-border: #e3e7ee;
+  --color-border-forte: #cdd3dc;  /* moldura que precisa aparecer sobre branco */
   --color-dark: #20242d;
 
   --color-receita: #1a9c6a;
@@ -2136,24 +2137,34 @@ tfoot td {
    cartoes disputando atencao. */
 
 .indicadores {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
   background: var(--color-surface);
+  border: 1.5px solid var(--color-border-forte);
   border-radius: var(--radius-lg);
-  padding: 16px 20px;
+  padding: 12px;
   margin-bottom: 18px;
 }
 
-.indicador {
-  flex: 1 1 190px;
-  min-width: 0;
-  padding: 2px 18px;
-  border-left: 1px solid var(--xl-linha);
+/* Tres por linha no meio do caminho e dois no celular: seis caixas numa
+   linha so ficam apertadas abaixo de ~1100px. */
+@media (max-width: 1100px) {
+  .indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-.indicador:first-child {
-  border-left: none;
-  padding-left: 0;
+@media (max-width: 560px) {
+  .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Cada indicador e uma caixa propria dentro da moldura, como itens de um
+   menu: a borda separa melhor que o fio vertical quando a linha quebra. */
+.indicador {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1.5px solid var(--color-border-forte);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
 }
 
 .indicador-rotulo {
