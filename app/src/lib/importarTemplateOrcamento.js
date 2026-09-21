@@ -73,6 +73,34 @@ export function lerPlanilhaEmWorker(arrayBuffer, tipo, aoEstrutura) {
 }
 
 /**
+ * Como `lerPlanilhaEmWorker`, mas lê Receita, Despesa e Capex de uma vez só —
+ * a Gestão de Importação sobe o arquivo uma única vez para os três, em vez de
+ * um upload e uma leitura pesada por tela. Devolve `{ receita, despesa, capex }`,
+ * cada um no formato de `lerPlanilha` (ou `{ erro }` quando a aba não existe ou
+ * tem cabeçalho quebrado — não derruba os outros dois).
+ */
+export function lerTodosOsTiposEmWorker(arrayBuffer, aoEstrutura) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('./orcamentoTemplate.worker.js', import.meta.url), { type: 'module' })
+    worker.onmessage = (e) => {
+      const { etapa, estrutura, resultado, erro } = e.data
+      if (etapa === 'estrutura') {
+        aoEstrutura?.(estrutura)
+        return
+      }
+      worker.terminate()
+      if (etapa === 'erro') reject(new Error(erro))
+      else resolve(resultado)
+    }
+    worker.onerror = (e) => {
+      worker.terminate()
+      reject(new Error(e.message || 'falha ao ler a planilha em segundo plano'))
+    }
+    worker.postMessage({ arrayBuffer, todos: true }, [arrayBuffer])
+  })
+}
+
+/**
  * Casa cada linha com empresa e conta já cadastradas. Não grava nada — devolve
  * o que resolveu e o que não, para a tela mostrar antes de confirmar.
  *

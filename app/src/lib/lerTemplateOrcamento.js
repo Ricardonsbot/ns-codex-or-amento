@@ -355,16 +355,14 @@ export function checarEstrutura(arrayBuffer) {
   return resultado
 }
 
-export function lerPlanilha(arrayBuffer, tipo) {
+/**
+ * O corpo de `lerPlanilha`, mas a partir de um workbook já aberto e com um
+ * `cache` por nome de aba — o que permite `lerTodosOsTipos` ler "Base Gastos"
+ * uma vez só e reaproveitar para Despesa e Capex (ver lá o porquê).
+ */
+function lerTipoDoWorkbook(wb, tipo, cache) {
   const pedido = TEMPLATE[tipo]
   if (!pedido) throw new Error(`Tipo "${tipo}" não tem aba mapeada no template.`)
-
-  // `sheets` limita às abas pedidas e `dense` guarda a aba como matriz em vez de
-  // um objeto com uma chave por célula. São abas de milhares de linhas por ~100
-  // colunas: sem isso o SheetJS cria milhões de propriedades para ler meia
-  // dúzia de valores.
-  const abas = [pedido.aba, pedido.abaAlternativa].filter(Boolean)
-  const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', sheets: abas, dense: true })
   const propria = wb.Sheets[pedido.aba]
   const alternativa = pedido.abaAlternativa ? wb.Sheets[pedido.abaAlternativa] : null
   if (!propria && !alternativa) {
@@ -375,17 +373,22 @@ export function lerPlanilha(arrayBuffer, tipo) {
     )
   }
 
+  const lerComCache = (nomeAba, aba, cfg) => {
+    if (!cache.has(nomeAba)) cache.set(nomeAba, lerAba(aba, cfg, tipo))
+    return cache.get(nomeAba)
+  }
+
   // O Capex lê a aba própria E a Base Gastos. Nos templates de 2026 a aba
   // Capex existe mas vem vazia, e o Capex está lançado na Base Gastos; no de
   // 2027 a aba nem existe. Ler só uma das duas deixava linhas de Capex fora
   // dos dois módulos. Cada linha leva a aba de onde veio: é por ela que o
   // casamento sabe que a linha da Base Gastos precisa ser separada.
   const partes = []
-  if (propria) partes.push(lerAba(propria, pedido, tipo))
+  if (propria) partes.push(lerComCache(pedido.aba, propria, pedido))
   if (alternativa) {
     const cfgAlt = Object.values(TEMPLATE).find((t) => t.aba === pedido.abaAlternativa)
     try {
-      partes.push(lerAba(alternativa, cfgAlt, tipo))
+      partes.push(lerComCache(pedido.abaAlternativa, alternativa, cfgAlt))
     } catch (err) {
       // Com a aba própria lida, a Base Gastos é complemento: um cabeçalho que
       // não bate ali não pode derrubar o Capex que veio certo.
@@ -405,6 +408,52 @@ export function lerPlanilha(arrayBuffer, tipo) {
     // valor: contá-las aqui diria que o Capex tem linha esquecida.
     ignoradas: partes[0].ignoradas,
   }
+}
+
+export function lerPlanilha(arrayBuffer, tipo) {
+  const pedido = TEMPLATE[tipo]
+  if (!pedido) throw new Error(`Tipo "${tipo}" não tem aba mapeada no template.`)
+
+  // `sheets` limita às abas pedidas e `dense` guarda a aba como matriz em vez de
+  // um objeto com uma chave por célula. São abas de milhares de linhas por ~100
+  // colunas: sem isso o SheetJS cria milhões de propriedades para ler meia
+  // dúzia de valores.
+  const abas = [pedido.aba, pedido.abaAlternativa].filter(Boolean)
+  const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', sheets: abas, dense: true })
+  return lerTipoDoWorkbook(wb, tipo, new Map())
+}
+
+/**
+ * Lê Receita, Despesa e Capex de uma vez, abrindo o arquivo uma única vez —
+ * para a Gestão de Importação, que confere e importa os três tipos do mesmo
+ * upload.
+ *
+ * O ganho não é só um XLSX.read a menos: quando o template não tem aba
+ * própria de Capex (2027 em diante), Despesa e Capex leem a MESMA "Base
+ * Gastos" com a MESMA configuração — a separação entre os dois é só depois,
+ * no casamento, por área/linha P&L/conta (`casarTemplateOrcamento.
+ * linhaEhCapex`). Sem o cache por aba, importar os dois relia a aba inteira
+ * duas vezes à toa, e é a aba mais pesada do template — dobrava o tempo da
+ * parte mais lenta da importação.
+ *
+ * Uma aba que não existe ou tem cabeçalho quebrado não derruba as outras:
+ * cada tipo guarda o próprio erro em `erro`, e a tela decide o que fazer com
+ * cada um.
+ */
+export function lerTodosOsTipos(arrayBuffer) {
+  const nomesAba = [...new Set(Object.values(TEMPLATE).flatMap((t) => [t.aba, t.abaAlternativa].filter(Boolean)))]
+  const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', sheets: nomesAba, dense: true })
+  const cache = new Map()
+
+  const resultado = {}
+  for (const tipo of Object.keys(TEMPLATE)) {
+    try {
+      resultado[tipo] = lerTipoDoWorkbook(wb, tipo, cache)
+    } catch (err) {
+      resultado[tipo] = { tipo, aba: TEMPLATE[tipo].aba, ano: null, linhas: [], ignoradas: 0, erro: err.message }
+    }
+  }
+  return resultado
 }
 
 /** Lê uma aba do template no formato de `cfg`. */

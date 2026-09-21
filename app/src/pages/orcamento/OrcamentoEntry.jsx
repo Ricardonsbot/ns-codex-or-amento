@@ -335,7 +335,10 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
           </div>
         </div>
 
-        <ResumoLancamentos linhas={linhas} empresas={empresas} rotulo={rotulo} />
+        {/* Tirado da Revenue a pedido: com 1000+ lançamentos o gráfico e a
+            tabela de agrupamento ficavam pesados e não ajudavam quem só quer
+            lançar. Despesa e Capex continuam com o resumo. */}
+        {tipo !== 'receita' && <ResumoLancamentos linhas={linhas} empresas={empresas} rotulo={rotulo} />}
 
         <div className="panel">
           <div className="panel-header">

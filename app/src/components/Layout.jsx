@@ -15,6 +15,7 @@ const NAV_SECTIONS = [
       { to: '/orcamento/receita', icon: '▲', text: '(+) Revenue' },
       { to: '/orcamento/despesa', icon: '▼', text: '(−) Expenses' },
       { to: '/orcamento/capex', icon: '◆', text: '(−) Capex' },
+      { to: '/gestao-importacao', icon: '⭱', text: 'Gestão de Importação' },
     ],
   },
   {

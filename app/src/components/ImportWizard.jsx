@@ -73,6 +73,9 @@ export default function ImportWizard({ aberto, arquivo, tipo, estrutura, lendo, 
     ? { estado: 'carregando', detalhe: `lendo linha a linha… ${segundos}s` }
     : { estado: 'ok', detalhe: 'concluída' }
 
+  const rotuloAlvo = tipo ? ROTULO_TIPO[tipo]?.toLowerCase() : 'as três abas'
+  const tituloLeitura = tipo ? `Lendo os lançamentos de ${rotuloAlvo}` : 'Lendo os lançamentos das três abas'
+
   return (
     <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label="Importando template">
       <div className="modal" style={{ maxWidth: 560 }}>
@@ -85,8 +88,7 @@ export default function ImportWizard({ aberto, arquivo, tipo, estrutura, lendo, 
 
         <div className="modal-body">
           <p style={{ margin: 0, fontSize: 13, opacity: 0.75 }}>
-            {arquivo} — conferindo a estrutura das três abas antes de importar{' '}
-            {ROTULO_TIPO[tipo]?.toLowerCase()}.
+            {arquivo} — conferindo a estrutura das três abas{tipo ? ` antes de importar ${rotuloAlvo}` : ''}.
           </p>
 
           <ol className="lista-etapas">
@@ -98,11 +100,7 @@ export default function ImportWizard({ aberto, arquivo, tipo, estrutura, lendo, 
                 {...statusAba(estrutura?.[t])}
               />
             ))}
-            <Etapa
-              numero={ORDEM_TIPOS.length + 1}
-              titulo={`Lendo os lançamentos de ${ROTULO_TIPO[tipo]?.toLowerCase()}`}
-              {...etapaLeitura}
-            />
+            <Etapa numero={ORDEM_TIPOS.length + 1} titulo={tituloLeitura} {...etapaLeitura} />
           </ol>
 
           <p style={{ margin: 0, fontSize: 12, opacity: 0.7 }}>

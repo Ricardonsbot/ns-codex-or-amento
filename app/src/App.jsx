@@ -17,6 +17,7 @@ import Despesa from './pages/orcamento/Despesa'
 import Capex from './pages/orcamento/Capex'
 import Aprovacoes from './pages/Aprovacoes'
 import PendenciaCadastros from './pages/PendenciaCadastros'
+import GestaoImportacao from './pages/GestaoImportacao'
 import Resultado from './pages/Resultado'
 import Relatorios from './pages/Relatorios'
 import BudgetSettings from './pages/BudgetSettings'
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/orcamento/receita" element={<RequireAuth><Receita /></RequireAuth>} />
           <Route path="/orcamento/despesa" element={<RequireAuth><Despesa /></RequireAuth>} />
           <Route path="/orcamento/capex" element={<RequireAuth><Capex /></RequireAuth>} />
+          <Route path="/gestao-importacao" element={<RequireAuth><GestaoImportacao /></RequireAuth>} />
           <Route path="/aprovacoes" element={<RequireAuth><Aprovacoes /></RequireAuth>} />
           <Route path="/pendencia-cadastros" element={<RequireAuth><PendenciaCadastros /></RequireAuth>} />
           <Route path="/resultado" element={<RequireAuth><Resultado /></RequireAuth>} />
