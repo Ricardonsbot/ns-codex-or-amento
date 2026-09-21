@@ -287,6 +287,74 @@ function paraTexto(v, rotulo) {
   return v == null ? '' : String(v).split(/\s+/).filter(Boolean).join(' ')
 }
 
+/**
+ * Checagem rápida de estrutura, uma aba por vez: confirma que a aba existe e
+ * que o cabeçalho tem as colunas que a importação exige, sem ler as linhas de
+ * dado. É o que dá pra mostrar "Receita ok, Despesa ok, Capex faltando X" em
+ * segundos, antes do parse pesado — que é por linha, por isso demora nas abas
+ * de milhares de linhas do template.
+ *
+ * `sheetRows` limita a quantas linhas o SheetJS materializa: o cabeçalho vem
+ * sempre nas primeiras, então 40 linhas bastam com folga e o resto da aba nem
+ * é parseado.
+ */
+export function checarEstrutura(arrayBuffer) {
+  const nomesAba = [...new Set(Object.values(TEMPLATE).flatMap((t) => [t.aba, t.abaAlternativa].filter(Boolean)))]
+  const wb = XLSX.read(new Uint8Array(arrayBuffer), {
+    type: 'array',
+    sheets: nomesAba,
+    dense: true,
+    sheetRows: 40,
+  })
+
+  const resultado = {}
+  for (const [tipo, cfg] of Object.entries(TEMPLATE)) {
+    const nomeUsado = [cfg.aba, cfg.abaAlternativa].filter(Boolean).find((n) => wb.Sheets[n])
+    if (!nomeUsado) {
+      resultado[tipo] = { aba: cfg.aba, encontrada: false, faltando: [], usandoAlternativa: false }
+      continue
+    }
+
+    const aba = wb.Sheets[nomeUsado]
+    const r = XLSX.utils.decode_range(aba['!ref'])
+    const denso = aba['!data']
+    const bruto = denso ? (l, c) => denso[l - 1]?.[c] : (l, c) => aba[`${XLSX.utils.encode_col(c)}${l}`]
+    const texto = (l, c) => {
+      const x = bruto(l, c)
+      return x?.v == null ? '' : String(x.v).split(/\s+/).filter(Boolean).join(' ')
+    }
+
+    let cab = -1
+    for (let l = r.s.r + 1; l <= r.e.r + 1 && cab === -1; l++) {
+      for (let c = r.s.c; c <= r.e.c; c++) {
+        if (lim(texto(l, c)) === cfg.ancora) {
+          cab = l
+          break
+        }
+      }
+    }
+
+    const usandoAlternativa = nomeUsado === cfg.abaAlternativa
+    if (cab === -1) {
+      // As 40 linhas não bastaram para achar o cabeçalho: mais provável a aba
+      // ter outro formato do que estar vazia. Fica como "faltando" as colunas
+      // exigidas — ver todas de uma vez é mais claro que "não achei o
+      // cabeçalho" sozinho.
+      resultado[tipo] = { aba: nomeUsado, encontrada: true, faltando: cfg.exigidas, usandoAlternativa }
+      continue
+    }
+
+    const presentes = new Set()
+    for (let c = r.s.c; c <= r.e.c; c++) {
+      const k = lim(texto(cab, c))
+      if (k) presentes.add(k)
+    }
+    const faltando = cfg.exigidas.filter((e) => !presentes.has(e))
+    resultado[tipo] = { aba: nomeUsado, encontrada: true, faltando, usandoAlternativa }
+  }
+  return resultado
+}
+
 export function lerPlanilha(arrayBuffer, tipo) {
   const pedido = TEMPLATE[tipo]
   if (!pedido) throw new Error(`Tipo "${tipo}" não tem aba mapeada no template.`)

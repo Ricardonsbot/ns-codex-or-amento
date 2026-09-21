@@ -45,14 +45,23 @@ export { TEMPLATE }
  * Lê a planilha num Web Worker. O parse do template leva dezenas de segundos —
  * são ~9 MB e abas de milhares de linhas — e na thread principal isso congela a
  * tela inteira, sem nem conseguir mostrar "lendo...".
+ *
+ * `aoEstrutura`, se passado, recebe o resultado de `checarEstrutura` assim que
+ * o worker termina de conferir o cabeçalho das três abas — bem antes do parse
+ * pesado terminar. É o que alimenta o assistente de importação etapa por etapa.
  */
-export function lerPlanilhaEmWorker(arrayBuffer, tipo) {
+export function lerPlanilhaEmWorker(arrayBuffer, tipo, aoEstrutura) {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('./orcamentoTemplate.worker.js', import.meta.url), { type: 'module' })
     worker.onmessage = (e) => {
+      const { etapa, estrutura, resultado, erro } = e.data
+      if (etapa === 'estrutura') {
+        aoEstrutura?.(estrutura)
+        return
+      }
       worker.terminate()
-      if (e.data.erro) reject(new Error(e.data.erro))
-      else resolve(e.data.resultado)
+      if (etapa === 'erro') reject(new Error(erro))
+      else resolve(resultado)
     }
     worker.onerror = (e) => {
       worker.terminate()

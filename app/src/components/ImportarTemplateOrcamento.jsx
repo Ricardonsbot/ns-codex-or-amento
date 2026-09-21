@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useToast } from './ToastProvider'
+import ImportWizard from './ImportWizard'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import TabelaQuadro from './TabelaQuadro'
 import { agruparPorEstrutura } from '../lib/resultadoData'
@@ -142,6 +143,10 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const [ultima, setUltima] = useState(null)   // { ids, quantos } da importacao recem-feita
   const [desfazendo, setDesfazendo] = useState(false)
   const [podeSolicitar, setPodeSolicitar] = useState(false)
+  const [wizardAberto, setWizardAberto] = useState(false)
+  // Resultado de `checarEstrutura`: null até o worker mandar a primeira mensagem.
+  const [estrutura, setEstrutura] = useState(null)
+  const [erroLeitura, setErroLeitura] = useState(null)
   const { user } = useAuth()
 
   useEffect(() => {
@@ -168,16 +173,22 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     setPrevia(null)
     setSubstituir(false)
     setUltima(null)
+    setArquivo(file.name)
+    setEstrutura(null)
+    setErroLeitura(null)
+    setWizardAberto(true)
     try {
-      const lido = await lerPlanilhaEmWorker(await file.arrayBuffer(), tipo)
+      const lido = await lerPlanilhaEmWorker(await file.arrayBuffer(), tipo, setEstrutura)
       if (!lido.linhas.length) {
         showToast(`A aba "${lido.aba}" não tem nenhuma linha preenchida com valor mensal.`, 'warning')
+        setWizardAberto(false)
         return
       }
-      setArquivo(file.name)
       lidoRef.current = lido
       setPrevia({ ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas })
+      setWizardAberto(false)
     } catch (err) {
+      setErroLeitura(err.message)
       showToast(`Não consegui ler a planilha: ${err.message}`, 'error')
     } finally {
       setLendo(false)
@@ -268,6 +279,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     })
     return quadrosDoArquivo({ itens, agrupado: agruparPorEstrutura(itens), receitaDaVersao: previa.receitaDaVersao })
   })()
+
   /**
    * O que cada conta do arquivo representa: a linha do P&L, que vem do plano de
    * contas, e a área de alocação, que vem da coluna "Alocação PnL (Área)" do
@@ -295,7 +307,6 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     }
     return [...mapa.values()].sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
   })()
-
   // Um pedido por RÓTULO: 81 linhas de "CS dedicado" são um cadastro só.
   const aCadastrar = previa ? agruparParaCadastro(previa.marcadas, tipo, arquivo) : []
   // O que de fato vai para a fila. A tabela mostra todas as contas com
@@ -347,6 +358,17 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         accept=".xlsb,.xlsx,.xlsm"
         style={{ display: 'none' }}
         onChange={handleArquivo}
+      />
+
+      <ImportWizard
+        aberto={wizardAberto}
+        arquivo={arquivo}
+        tipo={tipo}
+        estrutura={estrutura}
+        lendo={lendo}
+        segundos={segundos}
+        erro={erroLeitura}
+        onFechar={() => setWizardAberto(false)}
       />
 
       {ultima && !previa && (
