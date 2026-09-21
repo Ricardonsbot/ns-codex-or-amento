@@ -54,11 +54,12 @@ for (const arquivo of arquivos) {
       console.log(`  ${tipo.padEnd(8)} erro: ${e.message}`)
       continue
     }
-    const { prontas, marcadas, fora } = casar(lido, { empresas: emps.data, contas: contas.data })
+    const { prontas, marcadas, fora, outroModulo } = casar(lido, { empresas: emps.data, contas: contas.data })
     console.log(
       `  ${tipo.padEnd(8)} ${String(lido.linhas.length).padStart(5)} linha(s)   ` +
         `ok ${String(prontas.length).padStart(5)}   sem conta ${String(marcadas.length).padStart(4)}   ` +
-        `sem empresa ${String(fora.length).padStart(5)}`
+        `sem empresa ${String(fora.length).padStart(5)}` +
+        (outroModulo.length ? `   de outro módulo ${outroModulo.length}` : '')
     )
     for (const p of fora) {
       const m = p.falhas.find((f) => f.startsWith('Empresa'))

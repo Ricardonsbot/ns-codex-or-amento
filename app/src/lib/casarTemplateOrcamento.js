@@ -26,9 +26,15 @@ const soDigitos = (v) => {
  * A conta encontrada ainda precisa ser do tipo certo: um código de Capex
  * digitado na aba de gastos tem que virar pendência, não despesa.
  */
-export function montarResolvedorDeConta(contas, tipo) {
+export function montarResolvedorDeConta(contas, tipo, { aceitaTambem } = {}) {
   const prefixo = PREFIXO_PL[tipo]
-  const doTipo = contas.filter((c) => (c.linha_pl || '').startsWith(prefixo))
+  // `aceitaTambem` abre a porta para uma segunda natureza de conta. É o caso do
+  // salário ativado: a linha é Capex pela área, mas a conta contábil continua
+  // a de pessoal — "conta contábil respeitando a natureza original", como diz o
+  // próprio plano de contas do template.
+  const aceita = (c) =>
+    (c.linha_pl || '').startsWith(prefixo) || (aceitaTambem && (c.linha_pl || '').startsWith(aceitaTambem))
+  const doTipo = contas.filter(aceita)
   const porDigitos = new Map(contas.map((c) => [soDigitos(c.codigo), c]))
 
   // Entre candidatos de mesmo nome fica o de código mais curto: é a conta base,
@@ -44,7 +50,7 @@ export function montarResolvedorDeConta(contas, tipo) {
     if (digitos) {
       const achada = porDigitos.get(digitos)
       if (!achada) return { erro: `Conta ${codigo} não existe no plano de contas` }
-      if (!(achada.linha_pl || '').startsWith(prefixo)) {
+      if (!aceita(achada)) {
         return { erro: `Conta ${codigo} está no plano como "${achada.linha_pl}", não é ${prefixo}` }
       }
       return { conta: achada }
@@ -66,14 +72,41 @@ export function montarResolvedorDeConta(contas, tipo) {
  *   fora       sem empresa — não há como gravar: `lancamento.bu_id` é
  *              obrigatório e a BU vem da empresa
  */
-export function casar({ tipo, linhas }, { empresas, contas }) {
+/**
+ * A linha da Base Gastos é Capex? Qualquer um dos três sinais basta:
+ *
+ *   área "Capex"             a coluna Alocação PnL (Área) — é ela que diz se o
+ *                            gasto é ativado, mesmo com conta de pessoal
+ *   Linha P&L "CAPEX/..."    a coluna Linha P&L do template 2027
+ *   conta de Capex no plano  o número da conta, quando as colunas vêm vazias
+ */
+export function linhaEhCapex(l, contas) {
+  if (lim(l.area) === 'CAPEX') return true
+  if (lim(l.linha_pl_template).includes('CAPEX')) return true
+  const d = soDigitos(l.contaCodigo)
+  if (!d) return false
+  const c = contas.find((x) => soDigitos(x.codigo) === d)
+  return Boolean(c && (c.linha_pl || '').startsWith(PREFIXO_PL.capex))
+}
+
+export function casar({ tipo, aba, linhas }, { empresas, contas }) {
   const porEmpresa = new Map(empresas.map((e) => [lim(e.nome), e]))
-  const acharConta = montarResolvedorDeConta(contas, tipo)
+  // A Base Gastos traz despesa e Capex juntos (template 2027). Cada módulo
+  // pega a sua parte e deixa a outra para o outro importar — assim importar os
+  // dois não duplica nada, e substituir a despesa não apaga o Capex.
+  const daBaseGastos = aba === 'Base Gastos'
+  const ehCapex = tipo === 'capex'
+  const acharConta = montarResolvedorDeConta(contas, tipo, ehCapex && daBaseGastos ? { aceitaTambem: PREFIXO_PL.despesa } : {})
 
   const prontas = []
   const marcadas = []
   const fora = []
+  const outroModulo = []
   for (const l of linhas) {
+    if (daBaseGastos && linhaEhCapex(l, contas) !== ehCapex) {
+      outroModulo.push({ ...l, destino: ehCapex ? 'despesa' : 'capex' })
+      continue
+    }
     const empresa = porEmpresa.get(lim(l.empresa))
     const { conta, erro } = acharConta(l.contaCodigo, l.contaRotulo)
 
@@ -86,7 +119,7 @@ export function casar({ tipo, linhas }, { empresas, contas }) {
       prontas.push({ ...l, empresa, conta })
     }
   }
-  return { prontas, marcadas, fora, pendentes: fora }
+  return { prontas, marcadas, fora, pendentes: fora, outroModulo }
 }
 
 /**

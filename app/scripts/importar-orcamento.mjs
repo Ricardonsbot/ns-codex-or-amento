@@ -91,7 +91,7 @@ if (ciclo.ano !== lido.ano) {
   console.log(`AVISO: cabeçalho em ${lido.ano} e ciclo em ${ciclo.ano}. Os meses entram por posição (1ª coluna = janeiro).`)
 }
 
-const { prontas, marcadas, fora } = casar(lido, { empresas: emps.data, contas: contas.data })
+const { prontas, marcadas, fora, outroModulo } = casar(lido, { empresas: emps.data, contas: contas.data })
 const aImportar = [...prontas, ...marcadas]
 
 console.log(`\nresolvidas ............ ${prontas.length}`)
@@ -101,6 +101,10 @@ if (marcadas.length > 8) console.log(`    ... e mais ${marcadas.length - 8}`)
 console.log(`fora (sem empresa) .... ${fora.length}`)
 for (const p of fora.slice(0, 8)) console.log(`    linha ${p.linha}: ${p.falhas.join(' | ')}`)
 if (fora.length > 8) console.log(`    ... e mais ${fora.length - 8}`)
+if (outroModulo.length) {
+  const destino = outroModulo[0].destino
+  console.log(`de outro módulo ....... ${outroModulo.length}   <- linhas de ${destino} na ${lido.aba}; entram pela importação de ${destino}`)
+}
 
 // Só uma amostra: em arquivo real são centenas de linhas.
 for (const p of prontas.slice(0, 5)) {

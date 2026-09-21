@@ -224,6 +224,11 @@ export const TEMPLATE = {
   },
   capex: {
     aba: 'Capex',
+    // Do template 2027 em diante o Capex vem dentro da Base Gastos, e a aba
+    // "Capex" deixa de existir. Sem ela, a leitura cai na Base Gastos com o
+    // formato da despesa; quem separa o que é Capex é o casamento, que tem o
+    // plano de contas à mão.
+    abaAlternativa: 'Base Gastos',
     ancora: 'NUMERO DA CONTA',
     exigidas: ['NUMERO DA CONTA', 'NOME DA CONTA CONTABIL', 'EMPRESA'],
     colEmpresa: 'EMPRESA',
@@ -283,17 +288,28 @@ function paraTexto(v, rotulo) {
 }
 
 export function lerPlanilha(arrayBuffer, tipo) {
-  const cfg = TEMPLATE[tipo]
-  if (!cfg) throw new Error(`Tipo "${tipo}" não tem aba mapeada no template.`)
+  const pedido = TEMPLATE[tipo]
+  if (!pedido) throw new Error(`Tipo "${tipo}" não tem aba mapeada no template.`)
 
   // `sheets` limita à aba pedida e `dense` guarda a aba como matriz em vez de um
   // objeto com uma chave por célula. São abas de milhares de linhas por ~100
   // colunas: sem isso o SheetJS cria milhões de propriedades para ler meia
   // dúzia de valores.
-  const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', sheets: cfg.aba, dense: true })
+  const abas = [pedido.aba, pedido.abaAlternativa].filter(Boolean)
+  const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', sheets: abas, dense: true })
+  // A aba própria, se existir; senão a alternativa, lida no formato da aba de
+  // onde ela é (a Base Gastos tem o formato da despesa).
+  const alternativa = !wb.Sheets[pedido.aba] && pedido.abaAlternativa && wb.Sheets[pedido.abaAlternativa]
+  const cfg = alternativa
+    ? Object.values(TEMPLATE).find((t) => t.aba === pedido.abaAlternativa)
+    : pedido
   const aba = wb.Sheets[cfg.aba]
   if (!aba) {
-    throw new Error(`A planilha não tem a aba "${cfg.aba}". Abas encontradas: ${wb.SheetNames.join(', ')}.`)
+    throw new Error(
+      `A planilha não tem a aba "${pedido.aba}"` +
+        (pedido.abaAlternativa ? ` nem a "${pedido.abaAlternativa}"` : '') +
+        `. Abas encontradas: ${wb.SheetNames.join(', ')}.`
+    )
   }
 
   const r = XLSX.utils.decode_range(aba['!ref'])

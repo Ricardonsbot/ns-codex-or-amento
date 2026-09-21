@@ -50,7 +50,9 @@ const NOTA = {
     'guardado positivo, porque o P&L faz EBITDA = receita − despesa.',
   capex:
     'Entra o bloco de competência. O bloco de caixa que vem depois não é gravado. Quantidade e valor ' +
-    'unitário vão para as observações, e os valores trocam de sinal como na Despesa.',
+    'unitário vão para as observações, e os valores trocam de sinal como na Despesa. No template sem a ' +
+    'aba Capex (2027), o Capex é lido da Base Gastos: entram as linhas com área "Capex", Linha P&L ' +
+    '"CAPEX/Intangible" ou conta de Capex no plano.',
 }
 
 const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
@@ -240,7 +242,9 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const pl = previa && aImportar.length
     ? montarPL(
         aImportar.map((p) => ({
-          linhaPl: p.conta?.linha_pl ?? null,
+          // Capex é Capex no P&L mesmo quando a conta é de pessoal (salário
+          // ativado): quem manda é o módulo, não a natureza da conta.
+          linhaPl: tipo === 'capex' ? 'Capex' : p.conta?.linha_pl ?? null,
           meses: p.valores.map((v) => v.valor),
         }))
       )
@@ -506,6 +510,15 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               </div>
             )}
 
+            {previa.outroModulo?.length > 0 && (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ⓘ {previa.outroModulo.length} linha(s) da Base Gastos são de{' '}
+                <strong>{previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'}</strong> e ficam para a
+                importação de {previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'} — o mesmo arquivo
+                entra nos dois módulos, cada um com a sua parte, sem duplicar.
+              </div>
+            )}
+
             {previa.fora.length > 0 && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
                 ⓘ {previa.fora.length} linha(s) <strong>não entram</strong>: sem empresa cadastrada não há como
@@ -538,6 +551,12 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                 <Resumo rotulo="fora (sem empresa)" valor={previa.fora.length} alerta />
               )}
               {previa.ignoradas > 0 && <Resumo rotulo="ignoradas (sem valor)" valor={previa.ignoradas} />}
+              {previa.outroModulo?.length > 0 && (
+                <Resumo
+                  rotulo={`de ${previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'} (outro módulo)`}
+                  valor={previa.outroModulo.length}
+                />
+              )}
             </div>
 
             {pl && (
