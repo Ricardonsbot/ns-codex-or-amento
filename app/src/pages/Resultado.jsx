@@ -43,34 +43,30 @@ const milhoes = (v) => `${(Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { maxim
 /** R$ M com uma casa: o formato #,##0.0 que o Master Resultado usa nas tabelas. */
 const mi = (v) =>
   (Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-/** Percentual com sinal, para o delta contra o comparativo. */
-const pct2 = (v) =>
-  v === null || !isFinite(v)
-    ? '—'
-    : `${v > 0 ? '+' : ''}${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
 const pct = (v) =>
   v === null || !isFinite(v)
     ? '—'
     : `${v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
 
 /**
- * Um indicador em destaque.
+ * Um big number: o nome, o valor e o percentual sobre a receita, na mesma
+ * linha ("60,0 mi | 60,0% RoL"), como no desenho do FP&A.
  *
- * O valor sai sem cor: aqui nada e "bom" ou "ruim" por si so — 47% de COGS e
- * otimo num negocio e inviavel noutro, e pintar de vermelho seria a ferramenta
- * dando um parecer que ela nao tem como dar. A cor fica so no delta contra o
- * comparativo, que e a unica coisa com sentido definido.
+ * O valor sai sem cor: aqui nada e "bom" ou "ruim" por si so. A cor fica so no
+ * delta contra o comparativo, que e a unica coisa com sentido definido.
  */
-function Indicador({ rotulo, valor, nota, delta, deltaPp }) {
+function Indicador({ rotulo, valor, pct, delta, deltaPp }) {
   return (
     <div className="indicador">
       <div className="indicador-rotulo">{rotulo}</div>
-      <div className="indicador-valor">{valor}</div>
+      <div className="indicador-valor">
+        {valor}
+        {pct && <span className="indicador-pct"> | {pct}</span>}
+      </div>
       {delta && (
         <div className={`indicador-delta ${delta.valor >= 0 ? 'melhor' : 'pior'}`}>
           {delta.valor > 0 ? '+' : ''}
           {milhoes(delta.valor)} vs budget
-          {delta.base ? ` (${pct2((delta.valor / Math.abs(delta.base)) * 100)})` : ''}
         </div>
       )}
       {deltaPp !== null && deltaPp !== undefined && (
@@ -79,7 +75,6 @@ function Indicador({ rotulo, valor, nota, delta, deltaPp }) {
           {deltaPp.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p. vs budget
         </div>
       )}
-      <div className="indicador-nota">{nota}</div>
     </div>
   )
 }

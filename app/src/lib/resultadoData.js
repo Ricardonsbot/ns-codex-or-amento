@@ -221,9 +221,21 @@ export function agruparPorEstrutura(itens) {
 let temSubpacote = null
 async function sondarSubpacote() {
   if (temSubpacote !== null) return temSubpacote
-  const { error } = await supabase.from('lancamento').select('pacote, subpacote').limit(1)
+  const { error } = await supabase.from('lancamento').select('pacote, subpacote, linha_pl_template').limit(1)
   temSubpacote = !error
   return temSubpacote
+}
+
+/**
+ * O gasto é Labor? Quem diz é a coluna Linha P&L da Base Gastos:
+ * "Operational Payments - Labor" contra "Operational payments - non Labor" no
+ * template 2027. No de 2026 a mesma coluna trazia a natureza, e o que era
+ * pessoal vinha como "Employee" — continua valendo para os dados antigos.
+ */
+export function ehLabor(linhaPlTemplate) {
+  const t = String(linhaPlTemplate ?? '').toLowerCase()
+  if (/non[\s-]*labor/.test(t)) return false
+  return /labor/.test(t) || t === 'employee'
 }
 
 export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}) {
@@ -232,7 +244,7 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     'tipo, area, bu_id, bu:bu_id(nome), torre_id, torre:torre_id(nome), sub_torre_id, ' +
     'sub_torre:sub_torre_id(nome), empresa_id, empresa:empresa_id(nome), ' +
     'conta:conta_id(codigo, nome, linha_pl), lancamento_valor_mensal(mes, valor)' +
-    (comSubpacote ? ', pacote, subpacote' : '')
+    (comSubpacote ? ', pacote, subpacote, linha_pl_template' : '')
   // O cadastro inteiro do recorte, para o painel mostrar toda empresa — com
   // lançamento ou não. Sem isso o painel só listava quem já subiu template, e
   // uma empresa zerada sumia em vez de aparecer como zero, que é justamente o
@@ -267,13 +279,22 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
   const porPacote = new Map()     // pacote -> { total, subs: Map(subpacote -> meses) }
   const porEmpresa = new Map()    // empresa -> { nome, linhas, areas, ... }
   let semConta = zeros()
+  // O gasto que forma o Adjusted EBITDA, e a parte dele que é Labor.
+  let gastoOperacional = zeros()
+  let labor = zeros()
   const itens = []
 
   for (const l of linhas) {
     const meses = zeros()
     for (const v of l.lancamento_valor_mensal ?? []) meses[v.mes - 1] += Number(v.valor)
 
-    const chave = l.conta?.linha_pl ?? null
+    // Lançamento do módulo Capex é Capex no P&L, mesmo com conta de pessoal:
+    // é o salário ativado, que a Base Gastos marca pela área e não pela conta.
+    const chave = l.tipo === 'capex' ? 'Capex' : l.conta?.linha_pl ?? null
+    if (chave && (OPERACIONAL.has(chave) || chave === 'Despesas > Others Income and Expense')) {
+      gastoOperacional = somar(gastoOperacional, meses)
+      if (ehLabor(l.linha_pl_template)) labor = somar(labor, meses)
+    }
     if (!chave) semConta = somar(semConta, meses)
     else porLinha.set(chave, somar(porLinha.get(chave) ?? zeros(), meses))
 
@@ -366,6 +387,8 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     deducoes,
     capex,
     semConta,
+    gastoOperacional,
+    labor,
     fora: fora.map((k) => ({ chave: k, valores: porLinha.get(k) })),
     empresas: [...porEmpresa.values()]
       .map((e) => {
@@ -497,97 +520,60 @@ export function semaforo(pct) {
 }
 
 /**
- * Os indicadores que se olha primeiro quando um budget chega para revisao.
+ * Os big numbers do Resultado, no formato que o FP&A definiu:
  *
- * Nenhum numero novo nasce aqui: todos saem dos mesmos subtotais do P&L. O que
- * muda e o recorte. Os blocos antigos respondiam "quanto" — receita, custo,
- * EBITDA —, que a propria tabela logo abaixo ja diz. Estes respondem "quanto
- * por real de receita", "quanto disso ja estava no ano passado do orcamento" e
- * "quanto depende de uma empresa so", que e o que faz uma revisao parar em
- * cima de uma linha.
+ *   Net Revenue · Gross Margin · Expenses · Labor · Non Labor · EAC
  *
- * `comp` e a versao comparativa, quando escolhida. O delta das margens vai em
- * ponto percentual, nao em porcentagem de porcentagem.
+ * Cada um é valor e percentual sobre a receita líquida. Nenhum número nasce
+ * aqui — todos saem dos subtotais do P&L:
+ *
+ *   Expenses   todo o gasto até o Adjusted EBITDA (Receita Líquida − Adj.
+ *              EBITDA): as quatro naturezas e Others Income & Expense
+ *   Labor      a parte de Expenses cuja Linha P&L da Base Gastos é Labor
+ *   Non Labor  Expenses − Labor, para os dois sempre somarem Expenses
+ *   EAC        Adjusted EBITDA After Capex
+ *
+ * Com versão de comparação, cada um ganha o delta: em R$ para o Net Revenue,
+ * em ponto percentual para os demais — a margem é o que se compara.
  */
 export function montarIndicadores(dados, comp) {
   if (!dados) return []
 
-  const nr = anual(dados.subtotais.receitaLiquida)
-  const mb = dados.subtotais.margemBruta ? anual(dados.subtotais.margemBruta) : null
-  const eb = anual(dados.subtotais.ebitda)
-  const capex = anual(dados.capex)
-  const pessoal = anual(
-    dados.pl.find((l) => l.linha === 'Despesas > Personnel Costs')?.valores ?? []
-  )
+  const medidas = (d) => {
+    const nr = anual(d.subtotais.receitaLiquida)
+    const expenses = anual(d.gastoOperacional)
+    const labor = anual(d.labor)
+    return {
+      nr,
+      mb: d.subtotais.margemBruta ? anual(d.subtotais.margemBruta) : null,
+      expenses,
+      labor,
+      nonLabor: expenses - labor,
+      eac: anual(d.subtotais.ebitdaAposCapex),
+    }
+  }
+  const a = medidas(dados)
+  const b = comp ? medidas(comp) : null
+  const pctNR = (v, nr) => (nr ? (v / nr) * 100 : null)
+  const deltaPp = (k) =>
+    b && a[k] !== null && b[k] !== null && a.nr && b.nr ? pctNR(a[k], a.nr) - pctNR(b[k], b.nr) : null
 
-  // O quanto o ano sobe de dentro para fora. Um budget que so fecha porque o
-  // segundo semestre cresce muito e um budget com risco concentrado no fim.
-  const mensal = dados.subtotais.receitaLiquida ?? []
-  const tri = (de) => mensal.slice(de, de + 3).reduce((a, b) => a + b, 0)
-  const t1 = tri(0)
-  const rampa = t1 ? (tri(9) / t1 - 1) * 100 : null
-
-  // Concentracao: quanto da receita esta na maior empresa, e quantas empresas
-  // fecham o ano com EBITDA negativo.
-  const empresas = [...(dados.empresas ?? [])]
-    .map((e) => ({ nome: e.nome, receita: anual(e.receitaLiquida), ebitda: anual(e.ebitda) }))
-    .sort((a, b) => b.receita - a.receita)
-  const maior = empresas[0]
-  const top2 = empresas.slice(0, 2).reduce((a, e) => a + e.receita, 0)
-  const negativas = empresas.filter((e) => e.ebitda < 0)
-
-  const cNr = comp ? anual(comp.subtotais.receitaLiquida) : null
-  const pp = (atual, base, compAtual, compBase) =>
-    comp && base && compBase ? (atual / base - compAtual / compBase) * 100 : null
+  const item = (chave, rotulo, valor, sufixo = '') => ({
+    chave,
+    rotulo,
+    valor: valor === null ? '—' : `${milhoesCurto(valor)} mi`,
+    pct: valor === null || chave === 'nr' ? null : `${umaCasa(pctNR(valor, a.nr) ?? NaN)}%${sufixo}`,
+    deltaPp: chave === 'nr' ? null : deltaPp(chave),
+    delta: chave === 'nr' && b ? { valor: a.nr - b.nr, base: b.nr } : null,
+  })
 
   return [
-    {
-      chave: 'nr',
-      rotulo: 'Net Revenue',
-      valor: `R$ ${milhoesCurto(nr)} mi`,
-      nota:
-        rampa === null
-          ? 'sem receita mensal para comparar os trimestres'
-          : `4º tri ${rampa >= 0 ? '+' : ''}${umaCasa(rampa)}% sobre o 1º`,
-      delta: cNr === null ? null : { valor: nr - cNr, base: cNr, dinheiro: true },
-    },
-    {
-      chave: 'mb',
-      rotulo: 'Margem Bruta',
-      valor: mb === null ? '—' : `${umaCasa((mb / nr) * 100)}%`,
-      nota: mb === null ? 'depende da área para separar o COGS' : `COGS consome ${umaCasa(((nr - mb) / nr) * 100)}% da receita`,
-      deltaPp: pp(mb ?? 0, nr, comp?.subtotais.margemBruta ? anual(comp.subtotais.margemBruta) : 0, cNr),
-    },
-    {
-      chave: 'ebitda',
-      rotulo: 'Margem EBITDA',
-      valor: `${umaCasa((eb / nr) * 100)}%`,
-      nota: `R$ ${milhoesCurto(eb)} mi de EBITDA`,
-      deltaPp: pp(eb, nr, comp ? anual(comp.subtotais.ebitda) : 0, cNr),
-    },
-    {
-      chave: 'pessoal',
-      rotulo: 'Pessoal / Receita',
-      valor: `${umaCasa((pessoal / nr) * 100)}%`,
-      nota: `R$ ${milhoesCurto(pessoal)} mi — a maior linha de custo`,
-    },
-    {
-      chave: 'concentracao',
-      rotulo: 'Concentração',
-      valor: maior ? `${umaCasa((maior.receita / nr) * 100)}%` : '—',
-      nota: maior
-        ? `${maior.nome} · top 2 = ${umaCasa((top2 / nr) * 100)}%` +
-          (negativas.length
-            ? ` · ${negativas.length} de ${empresas.length} com EBITDA negativo`
-            : '')
-        : 'sem empresa no recorte',
-    },
-    {
-      chave: 'capex',
-      rotulo: 'Capex / Receita',
-      valor: `${umaCasa((capex / nr) * 100)}%`,
-      nota: capex === 0 ? 'nenhum capex orçado neste recorte' : `R$ ${milhoesCurto(capex)} mi`,
-    },
+    item('nr', 'Net Revenue', a.nr),
+    item('mb', 'Gross Margin', a.mb),
+    item('expenses', 'Expenses', a.expenses, ' RoL'),
+    item('labor', 'Labor', a.labor),
+    item('nonLabor', 'Non Labor', a.nonLabor),
+    item('eac', 'EAC', a.eac),
   ]
 }
 
