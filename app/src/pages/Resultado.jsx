@@ -243,7 +243,6 @@ export default function Resultado() {
             valor={torreId}
             rotuloTodas="Todas as Torres"
             opcoes={torresDaBu.map((t) => ({ valor: t.id, rotulo: t.nome }))}
-            limite={8}
             onChange={(v) => {
               setTorreId(v)
               setEmpresaId('')
@@ -257,7 +256,6 @@ export default function Resultado() {
             rotuloTodas="Consolidado"
             opcoes={empresasDisponiveis.map((e) => ({ valor: e.id, rotulo: e.nome }))}
             onChange={setEmpresaId}
-            limite={comLancamento.length || 12}
           />
           <div className="recorte-dupla">
           <FiltroBotoes
