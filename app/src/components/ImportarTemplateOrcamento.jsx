@@ -268,6 +268,34 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     })
     return quadrosDoArquivo({ itens, agrupado: agruparPorEstrutura(itens), receitaDaVersao: previa.receitaDaVersao })
   })()
+  /**
+   * O que cada conta do arquivo representa: a linha do P&L, que vem do plano de
+   * contas, e a área de alocação, que vem da coluna "Alocação PnL (Área)" do
+   * template. São dimensões diferentes — a mesma conta de Pessoal pode ser COGS
+   * numa empresa e G&A em outra — e sem isso ninguém sabe onde o valor cai.
+   */
+  const classificacao = (() => {
+    if (!previa) return []
+    const mapa = new Map()
+    for (const p of aImportar) {
+      const chave = `${p.conta?.codigo ?? '—'}|${p.area || ''}`
+      if (!mapa.has(chave)) {
+        mapa.set(chave, {
+          codigo: p.conta?.codigo ?? null,
+          nome: p.conta?.nome ?? (p.contaRotulo || '(sem conta)'),
+          linhaPl: p.conta?.linha_pl ?? null,
+          area: p.area || null,
+          linhas: 0,
+          valor: 0,
+        })
+      }
+      const c = mapa.get(chave)
+      c.linhas += 1
+      c.valor += p.total
+    }
+    return [...mapa.values()].sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
+  })()
+
   // Um pedido por RÓTULO: 81 linhas de "CS dedicado" são um cadastro só.
   const aCadastrar = previa ? agruparParaCadastro(previa.marcadas, tipo, arquivo) : []
   // O que de fato vai para a fila. A tabela mostra todas as contas com
