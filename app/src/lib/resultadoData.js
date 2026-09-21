@@ -558,11 +558,11 @@ export function montarIndicadores(dados, comp) {
   const deltaPp = (k) =>
     b && a[k] !== null && b[k] !== null && a.nr && b.nr ? pctNR(a[k], a.nr) - pctNR(b[k], b.nr) : null
 
-  const item = (chave, rotulo, valor, sufixo = '') => ({
+  const item = (chave, rotulo, valor) => ({
     chave,
     rotulo,
-    valor: valor === null ? '—' : `${milhoesCurto(valor)} mi`,
-    pct: valor === null || chave === 'nr' ? null : `${umaCasa(pctNR(valor, a.nr) ?? NaN)}%${sufixo}`,
+    valor: valor === null ? '—' : `R$ ${milhoesCurto(valor)} mi`,
+    pct: valor === null || chave === 'nr' ? null : `${umaCasa(pctNR(valor, a.nr) ?? NaN)}% RoL`,
     deltaPp: chave === 'nr' ? null : deltaPp(chave),
     delta: chave === 'nr' && b ? { valor: a.nr - b.nr, base: b.nr } : null,
   })
@@ -570,7 +570,7 @@ export function montarIndicadores(dados, comp) {
   return [
     item('nr', 'Net Revenue', a.nr),
     item('mb', 'Gross Margin', a.mb),
-    item('expenses', 'Expenses', a.expenses, ' RoL'),
+    item('expenses', 'Expenses', a.expenses),
     item('labor', 'Labor', a.labor),
     item('nonLabor', 'Non Labor', a.nonLabor),
     item('eac', 'EAC', a.eac),

@@ -2136,58 +2136,65 @@ tfoot td {
    cartoes disputando atencao. */
 
 .indicadores {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
   background: var(--color-surface);
-  border: 1.5px solid var(--xl-banda);
-  border-radius: 18px;
-  padding: 12px;
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
   margin-bottom: 18px;
 }
 
-/* Tres por linha no meio do caminho e dois no celular: seis caixas numa
-   linha so ficam ilegiveis abaixo de ~1000px. */
-@media (max-width: 1100px) {
-  .indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
-@media (max-width: 560px) {
-  .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
 .indicador {
+  flex: 1 1 190px;
   min-width: 0;
-  padding: 12px 10px;
-  border: 1.5px solid var(--xl-banda);
-  border-radius: 12px;
-  text-align: center;
+  padding: 2px 18px;
+  border-left: 1px solid var(--xl-linha);
+}
+
+.indicador:first-child {
+  border-left: none;
+  padding-left: 0;
 }
 
 .indicador-rotulo {
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 700;
-  color: var(--xl-texto);
-  margin-bottom: 4px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--xl-medio);
+  margin-bottom: 6px;
 }
 
 .indicador-valor {
   font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
-  font-size: 15px;
-  color: var(--xl-texto);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #000;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.indicador-pct { color: var(--xl-rotulo); }
+.indicador-pct {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--xl-rotulo);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
 
 .indicador-delta {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   margin-top: 3px;
   font-variant-numeric: tabular-nums;
+}
+
+/* A nota e o que evita o numero solto: diz do que ele e feito. */
+.indicador-nota {
+  font-size: 11px;
+  color: var(--xl-medio);
+  margin-top: 4px;
+  line-height: 1.35;
 }
 
 /* ---------- Seletor de colunas da exportacao ---------- */
