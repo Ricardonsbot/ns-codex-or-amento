@@ -2492,3 +2492,46 @@ tfoot td {
   font-variant-numeric: tabular-nums;
   color: var(--xl-texto);
 }
+
+/* ---------- Agrupamento da estrutura, como o do Excel ----------
+   Botões 1 2 3 4 no canto (BU, torre, sub torre, empresa) e um +/− em cada
+   linha que tem filhos. Cinza e pequenos: são controle, não dado. */
+.agrupar-niveis {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.agrupar-niveis button,
+.agrupar-botao {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid #b7b7b7;
+  border-radius: 2px;
+  background: #fff;
+  color: #404040;
+  font: 600 10px/14px 'Segoe UI', system-ui, sans-serif;
+  text-align: center;
+  cursor: pointer;
+}
+
+.agrupar-niveis button:hover,
+.agrupar-botao:hover { border-color: var(--xl-laranja); color: var(--xl-laranja); }
+
+.agrupar-niveis button.ativo {
+  background: #404040;
+  border-color: #404040;
+  color: #fff;
+}
+
+.agrupar-unidade { margin-left: 8px; }
+
+.agrupar-botao {
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+
+/* Nas faixas escuras (Consolidado, BU) o botão continua legível. */
+.tabela-xl tr.consolidado .agrupar-botao,
+.tabela-xl tr.bu .agrupar-botao { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .6); }

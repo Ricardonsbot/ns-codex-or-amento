@@ -31,6 +31,7 @@ import {
 } from './demonstrativo.js'
 
 const NIVEL = ['bu', 'torre', 'sub', 'empresa']
+const NOME_NIVEL = { consolidado: 'Consolidado', bu: 'BU', torre: 'Torre', sub: 'Sub Torre', empresa: 'Empresa' }
 const demoDoNo = (no) => (no ? demonstrativo((c) => no.base?.get(c)) : null)
 
 /** A árvore em lista, com a numeração do painel (1, 1.1, 1.1.1). */
@@ -535,7 +536,7 @@ export function montarQuadro(aba, ctx) {
  */
 export function quadroParaExportar(quadro, { aba, recorte }) {
   const colunas = [
-    ...(quadro.comIndice ? [{ key: 'Índice', grupo: 'Linha' }] : []),
+    ...(quadro.comIndice ? [{ key: 'Nível', grupo: 'Linha' }] : []),
     { key: 'Linha', grupo: 'Linha', obrigatorio: true },
     ...quadro.grupos.flatMap((g) => g.colunas.map((c) => ({ key: `${g.rotulo} · ${c.label}`, grupo: g.rotulo, _k: c.key }))),
   ]
@@ -543,7 +544,8 @@ export function quadroParaExportar(quadro, { aba, recorte }) {
     .filter((l) => l.tipo !== 'respiro')
     .map((l) => {
       const saida = { Linha: l.rotulo ?? '' }
-      if (quadro.comIndice) saida['Índice'] = l.indice ?? ''
+      // O nível no lugar do índice (1.2.3): é o que se filtra no Excel.
+      if (quadro.comIndice) saida['Nível'] = NOME_NIVEL[l.tipo] ?? ''
       for (const c of colunas) {
         if (!c._k) continue
         const x = l.v?.[c._k]
