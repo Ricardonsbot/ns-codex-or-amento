@@ -94,21 +94,24 @@ export function casar({ tipo, aba, linhas }, { empresas, contas }) {
   // A Base Gastos traz despesa e Capex juntos (template 2027). Cada módulo
   // pega a sua parte e deixa a outra para o outro importar — assim importar os
   // dois não duplica nada, e substituir a despesa não apaga o Capex.
-  const daBaseGastos = aba === 'Base Gastos'
   const ehCapex = tipo === 'capex'
-  const acharConta = montarResolvedorDeConta(contas, tipo, ehCapex && daBaseGastos ? { aceitaTambem: PREFIXO_PL.despesa } : {})
+  // A aba vem por linha: o Capex junta a aba própria e a Base Gastos.
+  const daBaseGastos = (l) => (l.aba ?? aba) === 'Base Gastos'
+  const acharConta = montarResolvedorDeConta(contas, tipo)
+  // Só o Capex da Base Gastos aceita conta de despesa: é o salário ativado.
+  const acharContaAtivacao = montarResolvedorDeConta(contas, tipo, { aceitaTambem: PREFIXO_PL.despesa })
 
   const prontas = []
   const marcadas = []
   const fora = []
   const outroModulo = []
   for (const l of linhas) {
-    if (daBaseGastos && linhaEhCapex(l, contas) !== ehCapex) {
+    if (daBaseGastos(l) && linhaEhCapex(l, contas) !== ehCapex) {
       outroModulo.push({ ...l, destino: ehCapex ? 'despesa' : 'capex' })
       continue
     }
     const empresa = porEmpresa.get(lim(l.empresa))
-    const { conta, erro } = acharConta(l.contaCodigo, l.contaRotulo)
+    const { conta, erro } = (ehCapex && daBaseGastos(l) ? acharContaAtivacao : acharConta)(l.contaCodigo, l.contaRotulo)
 
     if (!empresa) {
       const motivo = l.empresa ? `Empresa "${l.empresa}" não está cadastrada` : 'Linha sem empresa'

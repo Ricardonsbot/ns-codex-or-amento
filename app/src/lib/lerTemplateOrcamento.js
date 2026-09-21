@@ -291,20 +291,15 @@ export function lerPlanilha(arrayBuffer, tipo) {
   const pedido = TEMPLATE[tipo]
   if (!pedido) throw new Error(`Tipo "${tipo}" não tem aba mapeada no template.`)
 
-  // `sheets` limita à aba pedida e `dense` guarda a aba como matriz em vez de um
-  // objeto com uma chave por célula. São abas de milhares de linhas por ~100
+  // `sheets` limita às abas pedidas e `dense` guarda a aba como matriz em vez de
+  // um objeto com uma chave por célula. São abas de milhares de linhas por ~100
   // colunas: sem isso o SheetJS cria milhões de propriedades para ler meia
   // dúzia de valores.
   const abas = [pedido.aba, pedido.abaAlternativa].filter(Boolean)
   const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', sheets: abas, dense: true })
-  // A aba própria, se existir; senão a alternativa, lida no formato da aba de
-  // onde ela é (a Base Gastos tem o formato da despesa).
-  const alternativa = !wb.Sheets[pedido.aba] && pedido.abaAlternativa && wb.Sheets[pedido.abaAlternativa]
-  const cfg = alternativa
-    ? Object.values(TEMPLATE).find((t) => t.aba === pedido.abaAlternativa)
-    : pedido
-  const aba = wb.Sheets[cfg.aba]
-  if (!aba) {
+  const propria = wb.Sheets[pedido.aba]
+  const alternativa = pedido.abaAlternativa ? wb.Sheets[pedido.abaAlternativa] : null
+  if (!propria && !alternativa) {
     throw new Error(
       `A planilha não tem a aba "${pedido.aba}"` +
         (pedido.abaAlternativa ? ` nem a "${pedido.abaAlternativa}"` : '') +
@@ -312,6 +307,40 @@ export function lerPlanilha(arrayBuffer, tipo) {
     )
   }
 
+  // O Capex lê a aba própria E a Base Gastos. Nos templates de 2026 a aba
+  // Capex existe mas vem vazia, e o Capex está lançado na Base Gastos; no de
+  // 2027 a aba nem existe. Ler só uma das duas deixava linhas de Capex fora
+  // dos dois módulos. Cada linha leva a aba de onde veio: é por ela que o
+  // casamento sabe que a linha da Base Gastos precisa ser separada.
+  const partes = []
+  if (propria) partes.push(lerAba(propria, pedido, tipo))
+  if (alternativa) {
+    const cfgAlt = Object.values(TEMPLATE).find((t) => t.aba === pedido.abaAlternativa)
+    try {
+      partes.push(lerAba(alternativa, cfgAlt, tipo))
+    } catch (err) {
+      // Com a aba própria lida, a Base Gastos é complemento: um cabeçalho que
+      // não bate ali não pode derrubar o Capex que veio certo.
+      if (!propria) throw err
+    }
+  }
+  // O ano é o da parte que tem dado. Nos templates de 2026 a aba Capex vazia
+  // ainda carrega o cabeçalho de 2024, de um template antigo; tomar o ano dela
+  // mandava o Capex para o ciclo errado.
+  const comDado = partes.find((x) => x.linhas.length) ?? partes[0]
+  return {
+    tipo,
+    aba: partes.map((x) => x.aba).join(' + '),
+    ano: comDado.ano,
+    linhas: partes.flatMap((x) => x.linhas.map((l) => ({ ...l, aba: x.aba }))),
+    // As ignoradas da Base Gastos, lida pelo Capex, são linhas de despesa sem
+    // valor: contá-las aqui diria que o Capex tem linha esquecida.
+    ignoradas: partes[0].ignoradas,
+  }
+}
+
+/** Lê uma aba do template no formato de `cfg`. */
+function lerAba(aba, cfg, tipo) {
   const r = XLSX.utils.decode_range(aba['!ref'])
   // No modo denso a aba vem em `!data`, indexada por [linha][coluna] com base
   // zero; `l` aqui é número de linha da planilha, base um.

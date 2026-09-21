@@ -10,6 +10,7 @@
  */
 import { classificar, demonstrativo, janela, categoriaCapex, PL_CONTABIL } from '../src/lib/demonstrativo.js'
 import { versaoReferencia, cicloDoAno } from '../src/lib/cicloRegra.js'
+import { casar } from '../src/lib/casarTemplateOrcamento.js'
 
 let falhas = 0
 const ok = (cond, msg) => {
@@ -93,6 +94,34 @@ const ciclos = [
 ok(versaoReferencia(cicloDoAno(ciclos, 2026)).id === 'o', 'referência do ano é a versão ativa')
 ok(versaoReferencia(cicloDoAno(ciclos, 2025)).id === 'x', 'ano encerrado usa a Original como Last Year')
 ok(cicloDoAno(ciclos, 2027) === null, 'template de ano sem ciclo não cai em outro ano')
+
+// ---- Despesa e Capex dividem a Base Gastos sem perder nem duplicar ---------
+{
+  const contas = [
+    { id: 'p', codigo: '4.7.03.001.003', nome: 'DECIMO TERCEIRO', linha_pl: 'Despesas > Personnel Costs' },
+    { id: 'm', codigo: '1.2.05.003.004', nome: 'MAQUINAS', linha_pl: 'Capex' },
+    { id: 'n', codigo: '4.7.03.004.007', nome: 'NUVEM', linha_pl: 'Despesas > Telecomunication / Technology expenses' },
+  ]
+  const empresas = [{ id: 'e', nome: 'Log.One' }]
+  const v = [{ mes: 1, valor: 10 }]
+  const bg = [
+    { linha: 1, aba: 'Base Gastos', empresa: 'Log.One', contaCodigo: '4.7.03.004.007', area: 'COGS', valores: v },
+    { linha: 2, aba: 'Base Gastos', empresa: 'Log.One', contaCodigo: '1.2.05.003.004', area: 'Capex', valores: v },
+    { linha: 3, aba: 'Base Gastos', empresa: 'Log.One', contaCodigo: '4.7.03.001.003', area: 'Capex', valores: v },
+  ]
+  // Template 2026: aba Capex vazia e o Capex lançado na Base Gastos.
+  const d = casar({ tipo: 'despesa', aba: 'Base Gastos', linhas: bg }, { empresas, contas })
+  const c = casar({ tipo: 'capex', aba: 'Capex + Base Gastos', linhas: bg }, { empresas, contas })
+  const naDespesa = [...d.prontas, ...d.marcadas].map((x) => x.linha)
+  const noCapex = [...c.prontas, ...c.marcadas].map((x) => x.linha)
+  ok(naDespesa.join() === '1', 'Despesa fica só com o gasto')
+  ok(noCapex.join() === '2,3', 'Capex pega a máquina e o salário ativado da Base Gastos')
+  ok(naDespesa.length + noCapex.length === bg.length, 'nenhuma linha fica fora dos dois módulos')
+  ok(c.prontas.find((x) => x.linha === 3)?.conta?.id === 'p', 'salário ativado entra com a conta de pessoal')
+  // Linha da aba Capex própria não passa pelo filtro da Base Gastos.
+  const propria = casar({ tipo: 'capex', aba: 'Capex', linhas: [{ ...bg[1], aba: 'Capex', area: '' }] }, { empresas, contas })
+  ok(propria.prontas.length === 1, 'linha da aba Capex própria entra direto')
+}
 
 console.log(falhas ? `\n${falhas} falha(s)` : '\ntudo passou')
 process.exitCode = falhas ? 1 : 0
