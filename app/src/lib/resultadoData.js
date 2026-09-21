@@ -233,6 +233,20 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     'sub_torre:sub_torre_id(nome), empresa_id, empresa:empresa_id(nome), ' +
     'conta:conta_id(codigo, nome, linha_pl), lancamento_valor_mensal(mes, valor)' +
     (comSubpacote ? ', pacote, subpacote' : '')
+  // O cadastro inteiro do recorte, para o painel mostrar toda empresa — com
+  // lançamento ou não. Sem isso o painel só listava quem já subiu template, e
+  // uma empresa zerada sumia em vez de aparecer como zero, que é justamente o
+  // que se quer ver durante o ciclo: quem ainda não mandou.
+  const cadastroQ = (() => {
+    let q = supabase
+      .from('empresa')
+      .select('id, nome, bu_id, torre_id, sub_torre_id, bu:bu_id(nome), torre:torre_id(nome), sub_torre:sub_torre_id(nome)')
+    if (buId) q = q.eq('bu_id', buId)
+    if (torreId) q = q.eq('torre_id', torreId)
+    if (empresaId) q = q.eq('id', empresaId)
+    return q
+  })()
+
   const linhas = []
   for (let de = 0; ; de += 1000) {
     let q = supabase
@@ -315,7 +329,20 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     })
   }
 
-  const agrupado = agruparPorEstrutura(itens)
+  const { data: cadastro, error: erroCadastro } = await cadastroQ
+  if (erroCadastro) throw erroCadastro
+  // Entram zeradas e antes dos lançamentos: somar zero não muda nada, e a
+  // chave do caminho é a mesma que o lançamento gera (ele herda BU, torre e
+  // sub torre da empresa na importação).
+  const vazias = (cadastro ?? []).map((e) => ({
+    tipo: 'receita',
+    meses: zeros(),
+    bu: { id: e.bu_id, nome: e.bu?.nome },
+    torre: { id: e.torre_id, nome: e.torre?.nome },
+    sub: { id: e.sub_torre_id, nome: e.sub_torre?.nome },
+    empresa: { id: e.id, nome: e.nome },
+  }))
+  const agrupado = agruparPorEstrutura([...vazias, ...itens])
 
   // Linhas do plano que existem nos dados mas não estão na estrutura do P&L.
   const fora = [...porLinha.keys()].filter((k) => !CONHECIDAS.has(k))
