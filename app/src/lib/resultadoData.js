@@ -561,7 +561,9 @@ export function montarIndicadores(dados, comp) {
   const item = (chave, rotulo, valor) => ({
     chave,
     rotulo,
-    valor: valor === null ? '—' : `R$ ${milhoesCurto(valor)} mi`,
+    // Sem "R$": com o % ao lado, seis caixas por linha não comportam o
+    // prefixo numa tela de notebook, e o "mi" já diz que é dinheiro.
+    valor: valor === null ? '—' : `${milhoesCurto(valor)} mi`,
     pct: valor === null || chave === 'nr' ? null : `${umaCasa(pctNR(valor, a.nr) ?? NaN)}% RoL`,
     deltaPp: chave === 'nr' ? null : deltaPp(chave),
     delta: chave === 'nr' && b ? { valor: a.nr - b.nr, base: b.nr } : null,

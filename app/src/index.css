@@ -2161,7 +2161,7 @@ tfoot td {
    menu: a borda separa melhor que o fio vertical quando a linha quebra. */
 .indicador {
   min-width: 0;
-  padding: 12px 14px;
+  padding: 12px 8px;
   border: 1.5px solid var(--color-border-forte);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -2171,11 +2171,13 @@ tfoot td {
 /* Valor e % RoL na mesma linha, centralizados, separados pela barra. Quebra
    para baixo so quando a caixa fica estreita demais. */
 .indicador-linha {
-  display: flex;
+  /* inline-flex para a largura ser a do conteudo: e ela que a faixa mede. */
+  display: inline-flex;
   flex-wrap: wrap;
   justify-content: center;
+  max-width: 100%;
   align-items: baseline;
-  column-gap: 8px;
+  column-gap: 6px;
 }
 
 .indicador-barra {
@@ -2185,19 +2187,24 @@ tfoot td {
 }
 
 .indicador-rotulo {
-  font-size: 10px;
+  /* table: bloco que encolhe ao texto, para medir a largura do texto; o espacamento entre letras
+     que leva o titulo a largura do numero e posto pela faixa, em JS. */
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: .08em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--xl-medio);
   margin-bottom: 6px;
 }
 
 .indicador-valor {
   font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
-  /* 22 e nao 26: com o % ao lado, seis caixas por linha precisam caber em
-     ~180px cada numa tela de notebook. */
-  font-size: 22px;
+  /* 18 e nao 26: com o % ao lado, seis caixas por linha precisam caber em
+     ~150px cada numa tela de notebook ("325,1 mi | 68,3% RoL" mede 137px). */
+  font-size: 18px;
   white-space: nowrap;
   font-weight: 700;
   line-height: 1.1;
@@ -2206,7 +2213,7 @@ tfoot td {
 }
 
 .indicador-pct {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--xl-rotulo);
   font-variant-numeric: tabular-nums;
