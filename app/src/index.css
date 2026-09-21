@@ -2118,6 +2118,18 @@ tfoot td {
 
 .recorte-dupla > .filtro-botoes { flex: 1 1 240px; }
 
+/* BU e Torre na mesma linha, em todo recorte: a BU tem poucas opcoes e fica
+   do tamanho delas; a Torre ocupa o resto. Em tela estreita a Torre desce. */
+.recorte-bu-torre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 40px;
+}
+
+.recorte-bu-torre > .filtro-botoes:first-child { flex: 0 0 auto; }
+.recorte-bu-torre > .filtro-botoes:last-child { flex: 1 1 320px; min-width: 0; }
+
 /* ---------- Indicadores de revisao do budget ----------
    Ficam entre os filtros e as tabelas: sao a leitura que se faz antes de abrir
    qualquer quadro. Um bloco branco so, dividido por fios, para nao virar seis

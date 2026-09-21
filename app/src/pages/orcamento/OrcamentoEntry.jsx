@@ -301,6 +301,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
           </div>
           <div className="panel-body">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="recorte-bu-torre">
               <FiltroBotoes
                 label="BU"
                 valor={selectedBuId}
@@ -322,6 +323,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
                   setSelectedEmpresaId('')
                 }}
               />
+              </div>
               <FiltroBotoes
                 label="Empresa"
                 valor={selectedEmpresaId}

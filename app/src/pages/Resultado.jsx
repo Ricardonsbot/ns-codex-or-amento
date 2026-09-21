@@ -223,9 +223,10 @@ export default function Resultado() {
             </div>
           </div>
           <div className="panel-body">
-            {/* BU, Torre e Empresa ocupam a linha toda porque as listas sao
-                longas; Visao e Comparar sao curtos e dividem a ultima. */}
+            {/* BU e Torre dividem a primeira linha; Empresa ocupa a sua,
+                porque a lista e longa; Visao e Comparar dividem a ultima. */}
             <div className="recorte-grupos">
+          <div className="recorte-bu-torre">
           <FiltroBotoes
             label="BU"
             valor={buId}
@@ -248,6 +249,7 @@ export default function Resultado() {
               setEmpresaId('')
             }}
           />
+          </div>
           {/* P&L por empresa: o mesmo demonstrativo, so daquela empresa. */}
           <FiltroBotoes
             label="Empresa"
