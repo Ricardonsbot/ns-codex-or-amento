@@ -64,7 +64,7 @@ export default function Layout({ children }) {
       <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
         <div className="sidebar-brand">
           <NavLink to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-            <div className="logo-mark">NS</div>
+            <img className="logo-mark" src="/logo-64.png" alt="NS Budget" width="34" height="34" />
             <div className="brand-text">
               <strong><span className="brand-ns">NS</span> <span className="brand-rest">Budget</span></strong>
               <span>Ferramenta Orçamentária Nstech</span>

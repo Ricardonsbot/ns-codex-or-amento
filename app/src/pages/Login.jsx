@@ -37,8 +37,8 @@ export default function Login() {
   return (
     <div className="login-shell">
       <div className="login-brand-header">
-        <div className="logo-mark">NS</div>
-        <strong><span className="brand-ns">NS</span> <span className="brand-rest">Budget</span></strong>
+        {/* O logo já traz "NS BUDGET" escrito: repetir o nome embaixo seria eco. */}
+        <img className="logo-mark" src="/logo.png" alt="NS Budget" width="96" height="96" />
         <span>Ferramenta Orçamentária Nstech</span>
       </div>
 
