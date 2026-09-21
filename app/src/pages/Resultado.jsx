@@ -209,7 +209,7 @@ export default function Resultado() {
         // So a carga sem recorte enxerga todas: com filtro aplicado a lista
         // encolhe para o proprio filtro e nao serviria para trocar de empresa.
         if (!buId && !torreId && !empresaId) {
-          setComDado(new Set(a.empresas.map((e) => e.id).filter(Boolean)))
+          setComDado(new Set(a.empresas.filter((e) => e.temLancamento).map((e) => e.id).filter(Boolean)))
         }
       } catch (err) {
         showToast(`Erro ao montar o resultado: ${err.message}`, 'error')

@@ -278,6 +278,22 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
   const porArea = new Map()       // area -> 12 meses (só do bloco operacional)
   const porPacote = new Map()     // pacote -> { total, subs: Map(subpacote -> meses) }
   const porEmpresa = new Map()    // empresa -> { nome, linhas, areas, ... }
+  // Toda empresa do recorte entra, com ou sem lançamento: as abas por empresa
+  // mostram o cadastro inteiro, e zero só quando a empresa não lançou nada.
+  const { data: cadastro, error: erroCadastro } = await cadastroQ
+  if (erroCadastro) throw erroCadastro
+  for (const e of cadastro ?? []) {
+    porEmpresa.set(e.id, {
+      id: e.id,
+      nome: e.nome,
+      linhas: new Map(),
+      areas: new Map(),
+      receita: zeros(),
+      despesa: zeros(),
+      capex: zeros(),
+    })
+  }
+
   let semConta = zeros()
   // O gasto que forma o Adjusted EBITDA, e a parte dele que é Labor.
   let gastoOperacional = zeros()
@@ -333,6 +349,7 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
       })
     }
     const e = porEmpresa.get(eid)
+    e.temLancamento = true
     e[l.tipo] = somar(e[l.tipo], meses)
     if (chave) e.linhas.set(chave, somar(e.linhas.get(chave) ?? zeros(), meses))
     if (noBloco) {
@@ -350,8 +367,6 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     })
   }
 
-  const { data: cadastro, error: erroCadastro } = await cadastroQ
-  if (erroCadastro) throw erroCadastro
   // Entram zeradas e antes dos lançamentos: somar zero não muda nada, e a
   // chave do caminho é a mesma que o lançamento gera (ele herda BU, torre e
   // sub torre da empresa na importação).
@@ -400,6 +415,7 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
         return {
           id: e.id,
           nome: e.nome,
+          temLancamento: Boolean(e.temLancamento),
           receitaLiquida: st.receitaLiquida,
           margemBruta: st.margemBruta,
           ebitdaAjustado: st.ebitdaAjustado,
