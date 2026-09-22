@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'react'
+import { useUnidade } from './UnidadeProvider'
 
 const umaCasa = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-const mi = (v) => `${umaCasa((v ?? 0) / 1e6)} mi`
 
 /**
  * Um big number: o nome e, na mesma linha, o valor em destaque e o percentual
@@ -10,11 +10,13 @@ const mi = (v) => `${umaCasa((v ?? 0) / 1e6)} mi`
  * "melhor" ou "pior".
  */
 function DeltaIndicador({ d, contra, menorEMelhor }) {
+  const { numero, u } = useUnidade()
   if (!d) return null
   const x = d.valor ?? d.pp
   if (x === null || x === undefined || !isFinite(x)) return null
   const bom = menorEMelhor ? x <= 0 : x >= 0
-  const texto = d.valor !== undefined ? `${x > 0 ? '+' : ''}${mi(x)}` : `${x > 0 ? '+' : ''}${umaCasa(x)} p.p.`
+  const texto =
+    d.valor !== undefined ? `${x > 0 ? '+' : ''}${numero(x)} ${u.sufixo}` : `${x > 0 ? '+' : ''}${umaCasa(x)} p.p.`
   return (
     <div className={`indicador-delta ${bom ? 'melhor' : 'pior'}`}>
       {texto} vs {contra}
@@ -23,11 +25,12 @@ function DeltaIndicador({ d, contra, menorEMelhor }) {
 }
 
 function Indicador({ rotulo, valor, pct, vsBudget, vsLy, menorEMelhor }) {
+  const { numero, u } = useUnidade()
   return (
     <div className="indicador">
       <div className="indicador-rotulo">{rotulo}</div>
       <div className="indicador-linha">
-        <span className="indicador-valor">{mi(valor)}</span>
+        <span className="indicador-valor">{numero(valor)} {u.sufixo}</span>
         {pct !== null && pct !== undefined && isFinite(pct) && (
           <>
             <span className="indicador-barra" aria-hidden="true">|</span>

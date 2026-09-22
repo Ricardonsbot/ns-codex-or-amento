@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import ToastProvider from './components/ToastProvider'
 import AuthProvider from './components/AuthProvider'
+import UnidadeProvider from './components/UnidadeProvider'
 import RequireAuth from './components/RequireAuth'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -26,6 +27,7 @@ export default function App() {
   return (
     <ToastProvider>
       <AuthProvider>
+        <UnidadeProvider>
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
@@ -48,6 +50,7 @@ export default function App() {
           <Route path="/cadastros/:slug" element={<RequireAuth><CadastroSimples /></RequireAuth>} />
           <Route path="/budget-settings" element={<RequireAuth><BudgetSettings /></RequireAuth>} />
         </Routes>
+        </UnidadeProvider>
       </AuthProvider>
     </ToastProvider>
   )

@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import FiltroBotoes from './FiltroBotoes'
+import { useUnidade } from './UnidadeProvider'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
-const brl = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const mil = (v) =>
   Math.abs(v) >= 1000
     ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}k`
@@ -28,6 +28,7 @@ const AGRUPAMENTOS = [
  * gravado — se veio da importação, é o que a planilha trouxe.
  */
 export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
+  const { numero, comMoeda } = useUnidade()
   const [agrupar, setAgrupar] = useState('empresa')
 
   const nomeEmpresa = useMemo(
@@ -80,7 +81,7 @@ export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
           <h2>Resumo de {rotulo}</h2>
           <p>
             {linhas.length} lançamento(s) · {grupos.length}{' '}
-            {AGRUPAMENTOS.find((a) => a.chave === agrupar).rotulo.toLowerCase()}(s) · total R$ {brl(total)}
+            {AGRUPAMENTOS.find((a) => a.chave === agrupar).rotulo.toLowerCase()}(s) · total {comMoeda(total)}
           </p>
         </div>
         <FiltroBotoes
@@ -175,10 +176,10 @@ export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
                   </td>
                   {g.valores.map((v, i) => (
                     <td key={i} className="text-right" style={{ fontSize: 12, opacity: v === 0 ? 0.3 : 1 }}>
-                      {v === 0 ? '—' : brl(v)}
+                      {v === 0 ? '—' : numero(v)}
                     </td>
                   ))}
-                  <td className="text-right"><strong>{brl(g.total)}</strong></td>
+                  <td className="text-right"><strong>{numero(g.total)}</strong></td>
                 </tr>
               ))}
             </tbody>
@@ -187,10 +188,10 @@ export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
                 <td><strong>Total</strong></td>
                 {porMes.map((v, i) => (
                   <td key={i} className="text-right" style={{ fontSize: 12 }}>
-                    <strong>{v === 0 ? '—' : brl(v)}</strong>
+                    <strong>{v === 0 ? '—' : numero(v)}</strong>
                   </td>
                 ))}
-                <td className="text-right"><strong>{brl(total)}</strong></td>
+                <td className="text-right"><strong>{numero(total)}</strong></td>
               </tr>
             </tfoot>
           </table>

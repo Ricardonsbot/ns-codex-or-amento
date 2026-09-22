@@ -60,11 +60,8 @@ export async function fetchBridgeSummary({ ano, buId, torreId }) {
     if (totals[l.tipo] !== undefined) totals[l.tipo] += soma
   }
 
-  return {
-    receita: totals.receita / 1_000_000,
-    despesa: totals.despesa / 1_000_000,
-    capex: totals.capex / 1_000_000,
-  }
+  // Em R$ cheios: quem mostra é que aplica a unidade escolhida (R$ M ou mil).
+  return totals
 }
 
 export function computeBridge({ receita, despesa, capex }) {
@@ -87,10 +84,4 @@ export function computeBridge({ receita, despesa, capex }) {
       ebitdaAfterCapex: { bottom: 0, height: pct(ebitdaAfterCapex) },
     },
   }
-}
-
-export function formatMi(valor) {
-  const sinal = valor < 0 ? '− ' : ''
-  const numero = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-  return `${sinal}R$ ${numero} mi`
 }

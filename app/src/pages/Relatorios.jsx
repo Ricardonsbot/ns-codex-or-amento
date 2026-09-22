@@ -3,12 +3,14 @@ import Layout from '../components/Layout'
 import { useToast } from '../components/ToastProvider'
 import { fetchVersaoAtual } from '../lib/lancamentosData'
 import { fetchRelatorio } from '../lib/relatoriosData'
-import { formatMi } from '../lib/dashboardData'
+import BotaoUnidade from '../components/BotaoUnidade'
+import { useUnidade } from '../components/UnidadeProvider'
 
 const CLASSE_NIVEL = ['report-bu-row', 'report-torre-row', 'report-subtorre-row', 'report-empresa-row']
 
 export default function Relatorios() {
   const showToast = useToast()
+  const { comMoeda } = useUnidade()
   const [versaoAtual, setVersaoAtual] = useState(null)
   const [linhas, setLinhas] = useState([])
   const [totalGeral, setTotalGeral] = useState({ receita: 0, despesa: 0, capex: 0 })
@@ -64,6 +66,7 @@ export default function Relatorios() {
                 <h2>Receita, Despesa, Capex e EBITDA por estrutura</h2>
                 <p>{loading ? 'Carregando…' : `${linhas.length} linha(s)`}</p>
               </div>
+              <BotaoUnidade />
             </div>
             <div className="panel-body table-wrap">
               <table className="report-table">
@@ -80,10 +83,10 @@ export default function Relatorios() {
                   {linhas.map((linha, i) => (
                     <tr key={i} className={CLASSE_NIVEL[linha.nivel]}>
                       <td>{linha.nome}</td>
-                      <td className="text-right">{formatMi(linha.receita / 1_000_000)}</td>
-                      <td className="text-right">{formatMi(linha.despesa / 1_000_000)}</td>
-                      <td className="text-right">{formatMi(linha.capex / 1_000_000)}</td>
-                      <td className={`text-right ${linha.ebitda >= 0 ? 'up' : 'down'}`}>{formatMi(linha.ebitda / 1_000_000)}</td>
+                      <td className="text-right">{comMoeda(linha.receita)}</td>
+                      <td className="text-right">{comMoeda(linha.despesa)}</td>
+                      <td className="text-right">{comMoeda(linha.capex)}</td>
+                      <td className={`text-right ${linha.ebitda >= 0 ? 'up' : 'down'}`}>{comMoeda(linha.ebitda)}</td>
                     </tr>
                   ))}
                   {!loading && linhas.length === 0 && (
@@ -95,10 +98,10 @@ export default function Relatorios() {
                 <tfoot>
                   <tr>
                     <td>Total Geral</td>
-                    <td className="text-right">{formatMi(totalGeral.receita / 1_000_000)}</td>
-                    <td className="text-right">{formatMi(totalGeral.despesa / 1_000_000)}</td>
-                    <td className="text-right">{formatMi(totalGeral.capex / 1_000_000)}</td>
-                    <td className={ebitdaGeral >= 0 ? 'up' : 'down'} style={{ textAlign: 'right' }}>{formatMi(ebitdaGeral / 1_000_000)}</td>
+                    <td className="text-right">{comMoeda(totalGeral.receita)}</td>
+                    <td className="text-right">{comMoeda(totalGeral.despesa)}</td>
+                    <td className="text-right">{comMoeda(totalGeral.capex)}</td>
+                    <td className={ebitdaGeral >= 0 ? 'up' : 'down'} style={{ textAlign: 'right' }}>{comMoeda(ebitdaGeral)}</td>
                   </tr>
                 </tfoot>
               </table>

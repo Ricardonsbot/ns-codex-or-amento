@@ -9,6 +9,8 @@ import { montarExportacaoReceita } from '../../lib/exportarResultado'
 import { useToast } from '../../components/ToastProvider'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../../lib/dashboardData'
 import { fetchContas } from '../../lib/contasData'
+import BotaoUnidade from '../../components/BotaoUnidade'
+import { useUnidade } from '../../components/UnidadeProvider'
 import { contasDoTipo } from '../../lib/linhasPl'
 import {
   fetchVersaoAtual,
@@ -28,12 +30,10 @@ function paddedValores(lista) {
   return Array.from({ length: 12 }, (_, i) => porMes.get(i + 1) ?? 0)
 }
 
-function formatMil(v) {
-  return `R$ ${(v / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} mil`
-}
 
 export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse }) {
   const showToast = useToast()
+  const { comMoeda } = useUnidade()
 
   const [versaoAtual, setVersaoAtual] = useState(null)
   const [bus, setBus] = useState([])
@@ -296,7 +296,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
           <div className="panel-header">
             <div>
               <h2>Contexto do Lançamento</h2>
-              <p>Selecione BU, Torre e Empresa antes de editar a grade abaixo</p>
+              <p>Selecione BU, Torre e Empresa antes de editar a grade abaixo · a unidade vale para os totais</p>
             </div>
           </div>
           <div className="panel-body">
@@ -331,6 +331,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
                 opcoes={empresasDisponiveis.map((e) => ({ valor: e.id, rotulo: e.nome }))}
                 onChange={setSelectedEmpresaId}
               />
+              <BotaoUnidade />
             </div>
           </div>
         </div>
@@ -397,7 +398,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
                         <input type="number" value={v} onChange={(e) => atualizarValorMes(linha.id, i, e.target.value)} />
                       </td>
                     ))}
-                    <td className="text-right total-cell">{formatMil(linha.valores.reduce((a, b) => a + b, 0))}</td>
+                    <td className="text-right total-cell">{comMoeda(linha.valores.reduce((a, b) => a + b, 0))}</td>
                     <td>
                       <button className="btn btn-ghost btn-sm" title="Salvar" onClick={() => handleSalvarLinha(linha)}>💾</button>
                       <button className="btn btn-ghost btn-sm" title="Replicar Para Todos os Meses" onClick={() => handleReplicarJaneiro(linha.id)}>⇥</button>
@@ -415,7 +416,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
               <tfoot>
                 <tr>
                   <td colSpan={17}>Total Geral</td>
-                  <td className="text-right">{formatMil(totalGeral)}</td>
+                  <td className="text-right">{comMoeda(totalGeral)}</td>
                   <td></td>
                 </tr>
               </tfoot>

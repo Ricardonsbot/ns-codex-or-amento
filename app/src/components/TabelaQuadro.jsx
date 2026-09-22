@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { semaforo } from '../lib/resultadoData'
+import { useUnidade } from './UnidadeProvider'
 
 /**
  * Desenha um quadro de quadrosResultado.js no formato da Master: faixa laranja
@@ -34,11 +35,11 @@ function formatoDe(coluna, linha) {
 }
 
 function Celula({ valor, fmt, semaforoAtivo }) {
+  const { numero, desprezivel } = useUnidade()
   if (valor === null || valor === undefined || !isFinite(valor)) return <td className="apagado">—</td>
   if (fmt === 'mi') {
-    const m = valor / 1e6
-    if (Math.abs(m) < 0.05) return <td className="apagado">—</td>
-    return <td className="valor">{umaCasa(m)}</td>
+    if (desprezivel(valor)) return <td className="apagado">—</td>
+    return <td className="valor">{numero(valor)}</td>
   }
   if (fmt === 'pp') return <td>{`${valor > 0 ? '+' : ''}${umaCasa(valor)} p.p.`}</td>
   const cor = semaforoAtivo ? semaforo(valor) : null
@@ -86,6 +87,7 @@ function visiveis(linhas, nivelMax, excecoes) {
 
 export default function TabelaQuadro({ quadro }) {
   const { grupos, linhas } = quadro
+  const { u } = useUnidade()
   // Quadro por estrutura (BU → Torre → Sub Torre → Empresa) ganha o
   // agrupamento; os demais são tabelas corridas.
   const arvore = Boolean(quadro.comIndice)
@@ -131,10 +133,10 @@ export default function TabelaQuadro({ quadro }) {
                       {x.n}
                     </button>
                   ))}
-                  <span className="agrupar-unidade">[ BRL M ]</span>
+                  <span className="agrupar-unidade">{u.faixa}</span>
                 </span>
               ) : (
-                '[ BRL M ]'
+                u.faixa
               )}
             </th>
             {grupos.map((g) => [

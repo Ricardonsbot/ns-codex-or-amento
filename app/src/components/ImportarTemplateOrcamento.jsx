@@ -8,6 +8,7 @@ import { agruparPorEstrutura } from '../lib/resultadoData'
 import { classificar } from '../lib/demonstrativo'
 import { quadrosDoArquivo } from '../lib/quadrosResultado'
 import { useAuth } from './AuthProvider'
+import { useUnidade } from './UnidadeProvider'
 import { createCiclo } from '../lib/ciclosData'
 import {
   lerPlanilhaEmWorker,
@@ -20,9 +21,6 @@ import {
 import { registrarImportacao, marcarDesfeito } from '../lib/importacoesData'
 
 const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-/** R$ M com uma casa: o formato #,##0.0 das tabelas do Master Resultado. */
-const mi = (v) =>
-  (Number(v ?? 0) / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 /**
  * Como o tipo se chama nas mensagens. O `rotulo` da tela é "Revenue"/"Expenses",
@@ -131,6 +129,7 @@ function Resumo({ rotulo, valor, alerta }) {
  */
 export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onImportado }) {
   const showToast = useToast()
+  const { numero: mi, comMoeda, u } = useUnidade()
   const inputRef = useRef(null)
   const [lendo, setLendo] = useState(false)
   const [criandoCiclo, setCriandoCiclo] = useState(false)
@@ -611,7 +610,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               }}
             >
               <Resumo rotulo="linhas" valor={aImportar.length} />
-              <Resumo rotulo="total do ano" valor={brl(total)} />
+              <Resumo rotulo="total do ano" valor={comMoeda(total)} />
               <Resumo rotulo="empresas" valor={empresas} />
               <Resumo rotulo="contas" valor={contas} />
               {previa.marcadas.length > 0 && (
@@ -662,7 +661,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                     <table className="tabela-xl sem-indice">
                       <thead>
                         <tr className="faixa">
-                          <th className="canto fixa-2">[ BRL M ]</th>
+                          <th className="canto fixa-2">{u.faixa}</th>
                           <th className="vao" />
                           <th colSpan={2}>Classificação</th>
                           <th className="vao" />

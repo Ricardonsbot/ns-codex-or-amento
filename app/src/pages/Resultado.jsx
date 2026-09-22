@@ -11,12 +11,15 @@ import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/r
 import { MESES, MEDIDAS_MOM, janela } from '../lib/demonstrativo'
 import { ABAS, montarQuadro, quadroParaExportar, bigNumbers } from '../lib/quadrosResultado'
 import Indicadores from '../components/Indicadores'
+import BotaoUnidade from '../components/BotaoUnidade'
+import { useUnidade } from '../components/UnidadeProvider'
 
 const umaCasa = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 const brl = (v) => Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 /** Performance Overview em barras: Actual, Budget e Last Year por medida. */
 function Performance({ quadro }) {
+  const { numero } = useUnidade()
   const papeis = [
     ['a', 'Actual', 'atual'],
     ['b', 'Budget', 'orcado'],
@@ -45,7 +48,7 @@ function Performance({ quadro }) {
                         <span className={`${classe}${x < 0 ? ' negativo' : ''}`} style={{ width: `${largura}%` }} />
                       </div>
                       <span className="performance-valor">
-                        {x === null ? '—' : l.fmt === 'pct' ? `${umaCasa(x)}%` : umaCasa(x / 1e6)}
+                        {x === null ? '—' : l.fmt === 'pct' ? `${umaCasa(x)}%` : numero(x)}
                       </span>
                     </div>
                   )
@@ -223,7 +226,7 @@ export default function Resultado() {
           <div className="panel-header">
             <div>
               <h2>Recorte</h2>
-              <p>Ano, mês de referência, BU, Torre e Empresa — vale para todas as visões abaixo</p>
+              <p>Ano, mês de referência, BU, Torre, Empresa e unidade — vale para todas as visões abaixo</p>
             </div>
           </div>
           <div className="panel-body">
@@ -278,6 +281,7 @@ export default function Resultado() {
                 opcoes={empresasDisponiveis.map((e) => ({ valor: e.id, rotulo: e.nome }))}
                 onChange={setEmpresaId}
               />
+              <BotaoUnidade />
               <div className="recorte-dupla">
                 {outrasVersoes.length > 0 ? (
                   <FiltroBotoes

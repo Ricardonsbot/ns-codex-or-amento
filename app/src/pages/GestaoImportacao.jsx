@@ -15,6 +15,7 @@ import {
   desfazer,
 } from '../lib/importarTemplateOrcamento'
 import { registrarImportacao, marcarDesfeito } from '../lib/importacoesData'
+import { useUnidade } from '../components/UnidadeProvider'
 
 const ROTULO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
 const NOME = { receita: 'receita', despesa: 'despesa', capex: 'capex' }
@@ -38,6 +39,7 @@ const semCadastro = (m) =>
  */
 function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar, onDesfeito }) {
   const showToast = useToast()
+  const { comMoeda } = useUnidade()
   const { sessao } = useAuth()
   const email = sessao?.user?.email
   const [previa, setPrevia] = useState(null)
@@ -300,7 +302,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
                 <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6 }}>linhas</div>
               </div>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 700 }}>{brl(total)}</div>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>{comMoeda(total)}</div>
                 <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6 }}>total do ano</div>
               </div>
               <div>

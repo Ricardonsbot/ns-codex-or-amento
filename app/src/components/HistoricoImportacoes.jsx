@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import { historicoDisponivel, listarImportacoes } from '../lib/importacoesData'
+import BotaoUnidade from './BotaoUnidade'
+import { useUnidade } from './UnidadeProvider'
 
 const TIPOS = [
   { valor: 'receita', rotulo: 'Revenue' },
@@ -8,8 +10,6 @@ const TIPOS = [
 ]
 const ORIGEM = { gestao: 'Gestão de Importação', receita: 'tela (+) Revenue', despesa: 'tela (−) Expenses', capex: 'tela (−) Capex' }
 
-const umaCasa = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-const mi = (v) => (v ? `${umaCasa(v / 1e6)}` : '—')
 const quando = (iso) =>
   new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 const tamanhoArquivo = (b) => (b ? `${(b / 1024 / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB` : '')
@@ -20,6 +20,8 @@ const tamanhoArquivo = (b) => (b ? `${(b / 1024 / 1024).toLocaleString('pt-BR', 
  * empresa. `versao` muda a cada importação da tela, para a lista recarregar.
  */
 export default function HistoricoImportacoes({ versao }) {
+  const { numero, u } = useUnidade()
+  const mi = (v) => (v ? numero(v) : '—')
   const [registros, setRegistros] = useState(null)
   const [semTabela, setSemTabela] = useState(false)
   const [erro, setErro] = useState(null)
@@ -52,8 +54,9 @@ export default function HistoricoImportacoes({ versao }) {
       <div className="panel-header">
         <div>
           <h2>Templates importados</h2>
-          <p>Quem subiu cada arquivo e o que ele trazia, no momento da importação · valores em R$ M, ano inteiro</p>
+          <p>Quem subiu cada arquivo e o que ele trazia, no momento da importação · {u.faixa}, ano inteiro</p>
         </div>
+        <BotaoUnidade />
       </div>
       <div className="panel-body">
         {semTabela && (

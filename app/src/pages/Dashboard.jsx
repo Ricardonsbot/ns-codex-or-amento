@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useToast } from '../components/ToastProvider'
-import { fetchAnos, fetchBUs, fetchTorres, fetchBridgeSummary, computeBridge, formatMi } from '../lib/dashboardData'
+import { fetchAnos, fetchBUs, fetchTorres, fetchBridgeSummary, computeBridge } from '../lib/dashboardData'
+import BotaoUnidade from '../components/BotaoUnidade'
+import { useUnidade } from '../components/UnidadeProvider'
 import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
 import { bigNumbers } from '../lib/quadrosResultado'
 import Indicadores from '../components/Indicadores'
@@ -19,6 +21,7 @@ const lerAberto = () => {
 
 export default function Dashboard() {
   const showToast = useToast()
+  const { comMoeda } = useUnidade()
 
   const [bus, setBus] = useState([])
   const [torres, setTorres] = useState([])
@@ -164,6 +167,7 @@ export default function Dashboard() {
               ))}
             </select>
           </div>
+          <BotaoUnidade />
           {loading && <span className="text-muted">Atualizando…</span>}
         </div>
 
@@ -223,7 +227,7 @@ export default function Dashboard() {
           <div className="panel-body">
             <div className="bridge-chart">
               <div className="bridge-col">
-                <div className="bridge-value">{formatMi(bridge.receita)}</div>
+                <div className="bridge-value">{comMoeda(bridge.receita)}</div>
                 <div className="bridge-track"><div className="bridge-bar receita" style={{ bottom: `${bridge.bars.receita.bottom}%`, height: `${bridge.bars.receita.height}%` }} /></div>
                 <div className="bridge-label"><span className="bridge-sign">(+)</span>Revenue</div>
               </div>
@@ -233,7 +237,7 @@ export default function Dashboard() {
                 <div className="bridge-label">&nbsp;</div>
               </div>
               <div className="bridge-col">
-                <div className="bridge-value">{formatMi(-Math.abs(bridge.despesa))}</div>
+                <div className="bridge-value">{comMoeda(-Math.abs(bridge.despesa))}</div>
                 <div className="bridge-track"><div className="bridge-bar despesa" style={{ bottom: `${bridge.bars.despesa.bottom}%`, height: `${bridge.bars.despesa.height}%` }} /></div>
                 <div className="bridge-label"><span className="bridge-sign">(−)</span>Expenses</div>
               </div>
@@ -243,7 +247,7 @@ export default function Dashboard() {
                 <div className="bridge-label">&nbsp;</div>
               </div>
               <div className="bridge-col">
-                <div className="bridge-value">{formatMi(bridge.ebitda)}</div>
+                <div className="bridge-value">{comMoeda(bridge.ebitda)}</div>
                 <div className="bridge-track"><div className="bridge-bar subtotal" style={{ bottom: `${bridge.bars.ebitda.bottom}%`, height: `${bridge.bars.ebitda.height}%` }} /></div>
                 <div className="bridge-label">EBITDA</div>
               </div>
@@ -253,7 +257,7 @@ export default function Dashboard() {
                 <div className="bridge-label">&nbsp;</div>
               </div>
               <div className="bridge-col">
-                <div className="bridge-value">{formatMi(-Math.abs(bridge.capex))}</div>
+                <div className="bridge-value">{comMoeda(-Math.abs(bridge.capex))}</div>
                 <div className="bridge-track"><div className="bridge-bar capex" style={{ bottom: `${bridge.bars.capex.bottom}%`, height: `${bridge.bars.capex.height}%` }} /></div>
                 <div className="bridge-label"><span className="bridge-sign">(−)</span>Capex</div>
               </div>
@@ -263,7 +267,7 @@ export default function Dashboard() {
                 <div className="bridge-label">&nbsp;</div>
               </div>
               <div className="bridge-col">
-                <div className="bridge-value">{formatMi(bridge.ebitdaAfterCapex)}</div>
+                <div className="bridge-value">{comMoeda(bridge.ebitdaAfterCapex)}</div>
                 <div className="bridge-track"><div className="bridge-bar final" style={{ bottom: `${bridge.bars.ebitdaAfterCapex.bottom}%`, height: `${bridge.bars.ebitdaAfterCapex.height}%` }} /></div>
                 <div className="bridge-label">EBITDA after Capex</div>
               </div>
