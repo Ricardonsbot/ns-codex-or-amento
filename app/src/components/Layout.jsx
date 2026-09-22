@@ -12,9 +12,9 @@ const NAV_SECTIONS = [
   {
     label: 'Orçamento',
     items: [
-      { to: '/orcamento/receita', icon: '▲', text: '(+) Revenue' },
-      { to: '/orcamento/despesa', icon: '▼', text: '(−) Expenses' },
-      { to: '/orcamento/capex', icon: '◆', text: '(−) Capex' },
+      { to: '/orcamento/receita', icon: '▲', cor: 'receita', text: '(+) Revenue' },
+      { to: '/orcamento/despesa', icon: '▼', cor: 'despesa', text: '(−) Expenses' },
+      { to: '/orcamento/capex', icon: '🏗️', text: '(−) Capex' },
       { to: '/gestao-importacao', icon: '⭱', text: 'Gestão de Importação' },
     ],
   },
@@ -89,7 +89,7 @@ export default function Layout({ children }) {
                 to={item.to}
                 className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
               >
-                <span className="nav-icon">{item.icon}</span> <span className="nav-label">{item.text}</span>
+                <span className={`nav-icon${item.cor ? ` ${item.cor}` : ''}`}>{item.icon}</span> <span className="nav-label">{item.text}</span>
               </NavLink>
             ))}
           </div>

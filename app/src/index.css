@@ -133,6 +133,10 @@ a { color: inherit; text-decoration: none; }
   opacity: .85;
 }
 
+/* Revenue sobe em verde, Expenses desce em vermelho — mesmo no item ativo. */
+.nav-item .nav-icon.receita { color: var(--color-receita); opacity: 1; }
+.nav-item .nav-icon.despesa { color: var(--color-despesa); opacity: 1; }
+
 .nav-item:hover {
   background: var(--color-bg);
 }
