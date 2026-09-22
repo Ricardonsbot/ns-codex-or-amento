@@ -257,7 +257,7 @@ export const RESUMO = [
 
 /** As medidas do Painel Resultado MoM, na ordem dos blocos da Master. */
 export const MEDIDAS_MOM = [
-  { valor: 'nr', rotulo: 'Net Sales' },
+  { valor: 'nr', rotulo: 'Net Revenue' },
   { valor: 'cogs', rotulo: '(-) CoGS' },
   { valor: 'ga', rotulo: '(-) General & Administrative' },
   { valor: 'sm', rotulo: '(-) Sales & Marketing' },
