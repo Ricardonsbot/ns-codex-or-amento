@@ -1255,12 +1255,14 @@ tfoot td {
   text-align: center;
 }
 
-/* ---------- Faixa de acesso rápido (Visualizar / Inserir / Cadastrar / Exportar) ---------- */
+/* ---------- Faixa de acesso rápido (Inserir / Cadastrar / Exportar) ----------
+   Atalho, não conteúdo: fica numa faixa baixa no alto do Dashboard, para o
+   resumo do orçamento não nascer empurrado para fora da tela. */
 
 .action-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 150px));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 210px));
+  gap: 10px;
 }
 
 .action-strip > a,
@@ -1270,37 +1272,60 @@ tfoot td {
 
 .action-strip .hub-card {
   width: 100%;
-  aspect-ratio: 1 / 1;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 16px 14px;
-  gap: 8px;
+  text-align: left;
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+.action-strip .hub-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-card);
 }
 
 .action-strip .hub-card .hub-icon {
-  width: 38px;
-  height: 38px;
-  font-size: 16px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  font-size: 14px;
+  flex: none;
 }
 
 .action-strip .hub-card h3 {
-  font-size: 13.5px;
+  font-size: 13px;
+  margin: 0;
 }
 
+/* A frase explicativa sai: numa faixa de atalho o título e a seta bastam. */
 .action-strip .hub-card p {
-  font-size: 11px;
-  flex: none;
-  line-height: 1.3;
+  display: none;
 }
 
 .action-strip .hub-card .hub-cta {
   font-size: 11px;
+  margin-left: auto;
+}
+
+/* Recolher/expandir um painel pelo cabeçalho. */
+.panel-toggle {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 6px 9px;
+}
+
+.panel-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 @media (max-width: 480px) {
-  .action-strip { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+  .action-strip { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
   .bridge-chart { overflow-x: auto; }
 }
 

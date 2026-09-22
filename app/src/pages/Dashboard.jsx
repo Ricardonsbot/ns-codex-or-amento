@@ -4,6 +4,16 @@ import Layout from '../components/Layout'
 import { useToast } from '../components/ToastProvider'
 import { fetchAnos, fetchBUs, fetchTorres, fetchBridgeSummary, computeBridge, formatMi } from '../lib/dashboardData'
 
+// Escolha de quem está olhando, não dado do orçamento: fica no navegador.
+const CHAVE_ACESSO_RAPIDO = 'ns-budget:acesso-rapido-aberto'
+const lerAberto = () => {
+  try {
+    return localStorage.getItem(CHAVE_ACESSO_RAPIDO) !== 'false'
+  } catch {
+    return true
+  }
+}
+
 export default function Dashboard() {
   const showToast = useToast()
 
@@ -16,6 +26,18 @@ export default function Dashboard() {
 
   const [bridge, setBridge] = useState(computeBridge({ receita: 0, despesa: 0, capex: 0 }))
   const [loading, setLoading] = useState(true)
+  const [acessoAberto, setAcessoAberto] = useState(lerAberto)
+
+  function alternarAcesso() {
+    setAcessoAberto((aberto) => {
+      try {
+        localStorage.setItem(CHAVE_ACESSO_RAPIDO, String(!aberto))
+      } catch {
+        // navegador sem armazenamento: a escolha só não sobrevive ao reload
+      }
+      return !aberto
+    })
+  }
 
   useEffect(() => {
     async function carregarFiltros() {
@@ -107,8 +129,17 @@ export default function Dashboard() {
               <h2>Acesso Rápido</h2>
               <p>Navegue pelas funcionalidades do orçamento sem sair do menu</p>
             </div>
+            <button
+              type="button"
+              className="panel-toggle"
+              aria-expanded={acessoAberto}
+              title={acessoAberto ? 'Recolher o acesso rápido' : 'Mostrar o acesso rápido'}
+              onClick={() => alternarAcesso()}
+            >
+              {acessoAberto ? '▾ Recolher' : '▸ Mostrar'}
+            </button>
           </div>
-          <div className="panel-body">
+          <div className="panel-body" hidden={!acessoAberto}>
             <div className="action-strip">
               <Link to="/orcamento/despesa">
                 <div className="hub-card hub-inserir">
