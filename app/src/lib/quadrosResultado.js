@@ -110,8 +110,8 @@ const temValor = (demo, s) => demo && demo[s]?.some((x) => x)
 
 /**
  * Visão Torres (o Painel Resultado MoM da Master): a estrutura inteira, mês a
- * mês, de uma medida. Em gasto e subtotal cada mês e o YTD ganham a coluna
- * % NR ao lado, sobre a Net Revenue da própria linha (torre, sub torre...).
+ * mês, de uma medida. Em gasto e subtotal o YTD ganha a coluna % NR ao lado,
+ * sobre a Net Revenue da própria linha (torre, sub torre...).
  */
 function painelMoM(ctx) {
   const { mes } = ctx
@@ -122,10 +122,7 @@ function painelMoM(ctx) {
   const grupos = [
     {
       rotulo: `${MEDIDAS_MOM.find((m) => m.valor === medida)?.rotulo ?? medida} · Actual`,
-      colunas: MESES.flatMap((m, i) => [
-        { key: `m${i}`, label: m, fmt: 'mi', papel: i === mes - 1 ? 'atual' : undefined },
-        ...(comNR ? [{ key: `m${i}nr`, label: '% NR', fmt: 'pct' }] : []),
-      ]),
+      colunas: MESES.map((m, i) => ({ key: `m${i}`, label: m, fmt: 'mi', papel: i === mes - 1 ? 'atual' : undefined })),
     },
     {
       rotulo: `YTD ${MESES[mes - 1]}`,
@@ -136,10 +133,7 @@ function painelMoM(ctx) {
     const serie = dA?.[medida] ?? []
     const nr = dA?.nr ?? []
     const v = {}
-    MESES.forEach((_, i) => {
-      v[`m${i}`] = serie[i] ?? 0
-      if (comNR) v[`m${i}nr`] = pctNR(serie[i] ?? 0, nr[i])
-    })
+    MESES.forEach((_, i) => (v[`m${i}`] = serie[i] ?? 0))
     Object.assign(
       v,
       valoresBloco('ytd', {
