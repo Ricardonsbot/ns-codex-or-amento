@@ -108,32 +108,47 @@ const temValor = (demo, s) => demo && demo[s]?.some((x) => x)
 
 // ---------------------------------------------------------------------------
 
-/** Painel Resultado MoM: a estrutura inteira, mês a mês, de uma medida. */
+/**
+ * Visão Torres (o Painel Resultado MoM da Master): a estrutura inteira, mês a
+ * mês, de uma medida. Em gasto e subtotal cada mês e o YTD ganham a coluna
+ * % NR ao lado, sobre a Net Revenue da própria linha (torre, sub torre...).
+ */
 function painelMoM(ctx) {
   const { mes } = ctx
   const medida = ctx.medida ?? 'nr'
+  const comNR = medida !== 'nr'
   const comBudget = Boolean(ctx.comp)
   const comLy = Boolean(ctx.ly)
   const grupos = [
     {
       rotulo: `${MEDIDAS_MOM.find((m) => m.valor === medida)?.rotulo ?? medida} · Actual`,
-      colunas: MESES.map((m, i) => ({ key: `m${i}`, label: m, fmt: 'mi', papel: i === mes - 1 ? 'atual' : undefined })),
+      colunas: MESES.flatMap((m, i) => [
+        { key: `m${i}`, label: m, fmt: 'mi', papel: i === mes - 1 ? 'atual' : undefined },
+        ...(comNR ? [{ key: `m${i}nr`, label: '% NR', fmt: 'pct' }] : []),
+      ]),
     },
     {
       rotulo: `YTD ${MESES[mes - 1]}`,
-      colunas: colunasBloco('ytd', { comNR: false, comBudget, comLy }),
+      colunas: colunasBloco('ytd', { comNR, comBudget, comLy }),
     },
   ]
   const linha = (rotulo, tipo, nivel, indice, dA, dB, dL) => {
     const serie = dA?.[medida] ?? []
+    const nr = dA?.nr ?? []
     const v = {}
-    MESES.forEach((_, i) => (v[`m${i}`] = serie[i] ?? 0))
+    MESES.forEach((_, i) => {
+      v[`m${i}`] = serie[i] ?? 0
+      if (comNR) v[`m${i}nr`] = pctNR(serie[i] ?? 0, nr[i])
+    })
     Object.assign(
       v,
       valoresBloco('ytd', {
         a: janela(serie, 'YTD', mes),
+        nrA: janela(nr, 'YTD', mes),
         b: comBudget ? janela(dB?.[medida] ?? [], 'YTD', mes) : undefined,
+        nrB: janela(dB?.nr ?? [], 'YTD', mes),
         l: comLy ? janela(dL?.[medida] ?? [], 'YTD', mes) : undefined,
+        nrL: janela(dL?.nr ?? [], 'YTD', mes),
       })
     )
     return { rotulo, tipo, nivel, indice, v }
@@ -148,14 +163,26 @@ function painelMoM(ctx) {
   return { grupos, linhas, comIndice: true }
 }
 
-/** P&L por Empresa MoM: o P&L de uma empresa (ou do consolidado) mês a mês. */
+/**
+ * Visão P&L (o P&L por Empresa MoM da Master): o P&L de uma empresa, ou do
+ * consolidado, mês a mês. Cada mês tem o % NR ao lado; nas linhas de receita
+ * (Gross e Net Revenue) ele fica vazio, porque é a própria base.
+ */
+const semNR = new Set(['gr', 'nr'])
+
 function plPorEmpresaMoM(ctx) {
   const { mes } = ctx
   if (ctx.modoEmpresa === 'lado') return plEmpresasLadoALado(ctx)
   const emp = ctx.dados.empresas?.find((e) => e.id === ctx.empresaPl) ?? null
   const demo = emp ? emp.demo : ctx.dados.demo
   const grupos = [
-    { rotulo: `${emp?.nome ?? 'Consolidado'} · Actual`, colunas: MESES.map((m, i) => ({ key: `m${i}`, label: m, fmt: 'mi', papel: i === mes - 1 ? 'atual' : undefined })) },
+    {
+      rotulo: `${emp?.nome ?? 'Consolidado'} · Actual`,
+      colunas: MESES.flatMap((m, i) => [
+        { key: `m${i}`, label: m, fmt: 'mi', papel: i === mes - 1 ? 'atual' : undefined },
+        { key: `m${i}nr`, label: '% NR', fmt: 'pct' },
+      ]),
+    },
     { rotulo: `YTD ${MESES[mes - 1]}`, colunas: [{ key: 'ytd', label: 'Actual', fmt: 'mi', papel: 'atual' }, { key: 'ytdnr', label: '% NR', fmt: 'pct' }] },
     { rotulo: 'FY', colunas: [{ key: 'fy', label: 'Actual', fmt: 'mi', papel: 'atual' }, { key: 'fynr', label: '% NR', fmt: 'pct' }] },
   ]
@@ -165,11 +192,20 @@ function plPorEmpresaMoM(ctx) {
   for (const l of PL_CONTABIL) {
     if (l.soComValor && !temValor(demo, l.s)) continue
     const serie = demo[l.s]
+    const comNR = !semNR.has(l.s)
     const v = {}
-    MESES.forEach((_, i) => (v[`m${i}`] = serie[i]))
+    MESES.forEach((_, i) => {
+      v[`m${i}`] = serie[i]
+      v[`m${i}nr`] = comNR ? pctNR(serie[i], demo.nr[i]) : null
+    })
     const y = janela(serie, 'YTD', mes)
     const f = janela(serie, 'FY', mes)
-    Object.assign(v, { ytd: y, ytdnr: pctNR(y, nrY), fy: f, fynr: pctNR(f, nrF) })
+    Object.assign(v, {
+      ytd: y,
+      ytdnr: comNR ? pctNR(y, nrY) : null,
+      fy: f,
+      fynr: comNR ? pctNR(f, nrF) : null,
+    })
     linhas.push({ rotulo: l.rotulo, tipo: l.tipo, v })
   }
   return { grupos, linhas }
@@ -180,14 +216,33 @@ function plEmpresasLadoALado(ctx) {
   const { mes } = ctx
   const empresas = ctx.dados.empresas ?? []
   const grupos = [
-    { rotulo: `Empresas · YTD ${MESES[mes - 1]}`, colunas: empresas.map((e) => ({ key: `e:${e.id ?? e.nome}`, label: e.nome, fmt: 'mi' })) },
-    { rotulo: 'Consolidado', colunas: [{ key: 'cons', label: 'Actual', fmt: 'mi', papel: 'atual' }] },
+    {
+      rotulo: `Empresas · YTD ${MESES[mes - 1]}`,
+      colunas: empresas.flatMap((e) => [
+        { key: `e:${e.id ?? e.nome}`, label: e.nome, fmt: 'mi' },
+        { key: `e:${e.id ?? e.nome}:nr`, label: '% NR', fmt: 'pct' },
+      ]),
+    },
+    {
+      rotulo: 'Consolidado',
+      colunas: [
+        { key: 'cons', label: 'Actual', fmt: 'mi', papel: 'atual' },
+        { key: 'consnr', label: '% NR', fmt: 'pct' },
+      ],
+    },
   ]
+  const ytd = (demo, s) => janela(demo[s], 'YTD', mes)
   const linhas = []
   for (const l of PL_CONTABIL) {
     if (l.soComValor && !temValor(ctx.dados.demo, l.s)) continue
-    const v = { cons: janela(ctx.dados.demo[l.s], 'YTD', mes) }
-    for (const e of empresas) v[`e:${e.id ?? e.nome}`] = janela(e.demo[l.s], 'YTD', mes)
+    const comNR = !semNR.has(l.s)
+    const cons = ytd(ctx.dados.demo, l.s)
+    const v = { cons, consnr: comNR ? pctNR(cons, ytd(ctx.dados.demo, 'nr')) : null }
+    for (const e of empresas) {
+      const k = `e:${e.id ?? e.nome}`
+      v[k] = ytd(e.demo, l.s)
+      v[`${k}:nr`] = comNR ? pctNR(v[k], ytd(e.demo, 'nr')) : null
+    }
     linhas.push({ rotulo: l.rotulo, tipo: l.tipo, v })
   }
   return { grupos, linhas }
@@ -511,8 +566,8 @@ function areas(ctx) {
  * e ficam depois de propósito.
  */
 export const ABAS = [
-  { valor: 'mom', rotulo: 'Painel Resultado MoM', montar: painelMoM },
-  { valor: 'plEmpresa', rotulo: 'P&L por Empresa MoM', montar: plPorEmpresaMoM },
+  { valor: 'mom', rotulo: 'Visão Torres', montar: painelMoM },
+  { valor: 'plEmpresa', rotulo: 'Visão P&L', montar: plPorEmpresaMoM },
   { valor: 'pl', rotulo: 'P&L Contábil', montar: plContabil },
   { valor: 'painel', rotulo: 'Painel Resultado (YTD)', montar: painelYtd },
   { valor: 'capex', rotulo: 'Capex (YTD)', montar: capexYtd },

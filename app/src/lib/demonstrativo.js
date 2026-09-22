@@ -255,7 +255,7 @@ export const RESUMO = [
   { rotulo: 'Adj. EBITDA Af. CAPEX Margin [%]', pct: 'eac' },
 ]
 
-/** As medidas do Painel Resultado MoM, na ordem dos blocos da Master. */
+/** As medidas da Visão Torres (Painel Resultado MoM), na ordem dos blocos da Master. */
 export const MEDIDAS_MOM = [
   { valor: 'nr', rotulo: 'Net Revenue' },
   { valor: 'cogs', rotulo: '(-) CoGS' },
