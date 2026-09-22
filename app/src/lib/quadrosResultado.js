@@ -110,13 +110,13 @@ const temValor = (demo, s) => demo && demo[s]?.some((x) => x)
 
 /**
  * Visão Torres (o Painel Resultado MoM da Master): a estrutura inteira, mês a
- * mês, de uma medida. Em gasto e subtotal o YTD ganha a coluna % NR ao lado,
- * sobre a Net Revenue da própria linha (torre, sub torre...).
+ * mês, de uma medida. O YTD tem a coluna % NR ao lado: nos gastos e
+ * subtotais, sobre a Net Revenue da própria linha (torre, sub torre...); na
+ * medida Net Revenue, sobre a do consolidado — quanto a linha é do total.
  */
 function painelMoM(ctx) {
   const { mes } = ctx
   const medida = ctx.medida ?? 'nr'
-  const comNR = medida !== 'nr'
   const comBudget = Boolean(ctx.comp)
   const comLy = Boolean(ctx.ly)
   const grupos = [
@@ -126,28 +126,30 @@ function painelMoM(ctx) {
     },
     {
       rotulo: `YTD ${MESES[mes - 1]}`,
-      colunas: colunasBloco('ytd', { comNR, comBudget, comLy }),
+      colunas: colunasBloco('ytd', { comBudget, comLy }),
     },
   ]
+  const { A, B, L } = versoes(ctx)
+  const nrYtd = (d) => janela(d?.nr ?? [], 'YTD', mes)
+  // Net Revenue sobre ela mesma daria 100% em toda linha: vira participação no consolidado.
+  const base = (d, cons) => nrYtd(medida === 'nr' ? cons : d)
   const linha = (rotulo, tipo, nivel, indice, dA, dB, dL) => {
     const serie = dA?.[medida] ?? []
-    const nr = dA?.nr ?? []
     const v = {}
     MESES.forEach((_, i) => (v[`m${i}`] = serie[i] ?? 0))
     Object.assign(
       v,
       valoresBloco('ytd', {
         a: janela(serie, 'YTD', mes),
-        nrA: janela(nr, 'YTD', mes),
+        nrA: base(dA, A),
         b: comBudget ? janela(dB?.[medida] ?? [], 'YTD', mes) : undefined,
-        nrB: janela(dB?.nr ?? [], 'YTD', mes),
+        nrB: base(dB, B),
         l: comLy ? janela(dL?.[medida] ?? [], 'YTD', mes) : undefined,
-        nrL: janela(dL?.nr ?? [], 'YTD', mes),
+        nrL: base(dL, L),
       })
     )
     return { rotulo, tipo, nivel, indice, v }
   }
-  const { A, B, L } = versoes(ctx)
   const linhas = [linha('Consolidado', 'consolidado', -1, '=', A, B, L), { tipo: 'respiro' }]
   for (const no of achatar(ctx.dados.arvore ?? [])) {
     linhas.push(
