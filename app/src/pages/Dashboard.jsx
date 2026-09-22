@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useToast } from '../components/ToastProvider'
 import { fetchAnos, fetchBUs, fetchTorres, fetchBridgeSummary, computeBridge, formatMi } from '../lib/dashboardData'
+import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
+import { bigNumbers } from '../lib/quadrosResultado'
+import Indicadores from '../components/Indicadores'
 
 // Escolha de quem está olhando, não dado do orçamento: fica no navegador.
 const CHAVE_ACESSO_RAPIDO = 'ns-budget:acesso-rapido-aberto'
@@ -27,6 +30,8 @@ export default function Dashboard() {
   const [bridge, setBridge] = useState(computeBridge({ receita: 0, despesa: 0, capex: 0 }))
   const [loading, setLoading] = useState(true)
   const [acessoAberto, setAcessoAberto] = useState(lerAberto)
+  const [ciclos, setCiclos] = useState([])
+  const [indicadores, setIndicadores] = useState(null)
 
   function alternarAcesso() {
     setAcessoAberto((aberto) => {
@@ -42,9 +47,15 @@ export default function Dashboard() {
   useEffect(() => {
     async function carregarFiltros() {
       try {
-        const [anosData, busData, torresData] = await Promise.all([fetchAnos(), fetchBUs(), fetchTorres()])
+        const [anosData, busData, torresData, ciclosData] = await Promise.all([
+          fetchAnos(),
+          fetchBUs(),
+          fetchTorres(),
+          fetchCiclosResultado(),
+        ])
         setBus(busData)
         setTorres(torresData)
+        setCiclos(ciclosData)
         setSelectedAno(anosData[0] ?? null)
       } catch (err) {
         showToast(`Erro ao carregar filtros do Supabase: ${err.message}`, 'error')
@@ -74,6 +85,39 @@ export default function Dashboard() {
     aplicarFiltros()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAno, selectedBuId, selectedTorreId])
+
+  // Os mesmos big numbers do Resultado, no recorte dos filtros do Dashboard:
+  // ano inteiro (FY) da versão de referência do ciclo, contra o ano anterior.
+  const ciclo = ciclos.find((c) => c.ano === selectedAno) ?? null
+  const versao = versaoReferencia(ciclo)
+  const versaoLy = versaoReferencia(ciclos.find((c) => c.ano === selectedAno - 1))
+
+  useEffect(() => {
+    if (!versao) {
+      setIndicadores(null)
+      return
+    }
+    let cancelado = false
+    ;(async () => {
+      try {
+        const filtros = { buId: selectedBuId || null, torreId: selectedTorreId || null, empresaId: null }
+        const [a, l] = await Promise.all([
+          fetchResultado(versao.id, filtros),
+          versaoLy ? fetchResultado(versaoLy.id, filtros) : Promise.resolve(null),
+        ])
+        if (!cancelado) setIndicadores(bigNumbers({ dados: a, comp: null, ly: l, mes: 12 }))
+      } catch (err) {
+        if (!cancelado) {
+          setIndicadores(null)
+          showToast(`Erro ao montar os indicadores: ${err.message}`, 'error')
+        }
+      }
+    })()
+    return () => {
+      cancelado = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [versao?.id, versaoLy?.id, selectedBuId, selectedTorreId])
 
   const torresDisponiveis = selectedBuId ? torres.filter((t) => t.bu_id === selectedBuId) : torres
 
@@ -122,6 +166,8 @@ export default function Dashboard() {
           </div>
           {loading && <span className="text-muted">Atualizando…</span>}
         </div>
+
+        {indicadores && <Indicadores itens={indicadores} />}
 
         <div className="panel">
           <div className="panel-header">
