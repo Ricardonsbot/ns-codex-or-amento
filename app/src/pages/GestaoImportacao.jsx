@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import ImportWizard from '../components/ImportWizard'
+import HistoricoImportacoes from '../components/HistoricoImportacoes'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
@@ -13,6 +14,7 @@ import {
   apagarDoTipo,
   desfazer,
 } from '../lib/importarTemplateOrcamento'
+import { registrarImportacao, marcarDesfeito } from '../lib/importacoesData'
 
 const ROTULO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
 const NOME = { receita: 'receita', despesa: 'despesa', capex: 'capex' }
@@ -34,9 +36,10 @@ const semCadastro = (m) =>
  * só que aqui os três correm a partir de UM upload já lido, em vez de três
  * telas com um "Importar Template" cada uma.
  */
-function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado }) {
+function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar, onDesfeito }) {
   const showToast = useToast()
-  const { user } = useAuth()
+  const { sessao } = useAuth()
+  const email = sessao?.user?.email
   const [previa, setPrevia] = useState(null)
   const [conferindo, setConferindo] = useState(true)
   const [erroConferencia, setErroConferencia] = useState(null)
@@ -93,7 +96,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado }) {
       const paraEnviar = previa.marcadas.filter(semCadastro)
       if (paraEnviar.length && podeSolicitar) {
         try {
-          enviadas = await solicitar(agruparParaCadastro(paraEnviar, tipo, arquivo), user?.email)
+          enviadas = await solicitar(agruparParaCadastro(paraEnviar, tipo, arquivo), email)
         } catch (err) {
           erroEnvio = err.message
         }
@@ -107,6 +110,20 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado }) {
         erroEnvio ? 'warning' : 'success'
       )
       if (erroEnvio) showToast(`As linhas entraram, mas não consegui enviar as contas para aprovação: ${erroEnvio}`, 'error')
+
+      // O histórico vem depois de gravar e num try próprio: falhar aqui não
+      // desfaz nem invalida a importação, que já está no banco.
+      try {
+        await onRegistrar?.(tipo, {
+          linhas: [...previa.prontas, ...previa.marcadas],
+          apagados,
+          ano: lido.ano,
+          ciclo: previa.ciclo,
+          versao: previa.versao,
+        })
+      } catch (err) {
+        showToast(`Importado, mas não consegui registrar no histórico: ${err.message}`, 'warning')
+      }
 
       setUltima({ ids: apagados ? null : ids, quantos: ids.length, enviadas })
       setPrevia(null)
@@ -123,6 +140,11 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado }) {
     try {
       const n = await desfazer(ultima.ids)
       showToast(`${n} lançamento(s) de ${NOME[tipo]} desfeito(s).`, 'success')
+      try {
+        await onDesfeito?.(tipo)
+      } catch {
+        // o desfazer já apagou os lançamentos; o histórico só fica sem a marca
+      }
       setUltima(null)
       onImportado?.()
     } catch (err) {
@@ -357,6 +379,13 @@ export default function GestaoImportacao() {
   const [todos, setTodos] = useState(null)
   const [podeSolicitar, setPodeSolicitar] = useState(false)
   const [chave, setChave] = useState(0) // muda a cada upload, para os CardTipo remontarem do zero
+  const [tamanho, setTamanho] = useState(null)
+  const [versaoHistorico, setVersaoHistorico] = useState(0)
+  const { sessao } = useAuth()
+  // Um registro de histórico por upload: o primeiro tipo importado cria, os
+  // seguintes acrescentam. A fila impede dois cards de criarem dois registros
+  // ao confirmar quase juntos.
+  const registro = useRef({ id: null, fila: Promise.resolve() })
 
   useEffect(() => {
     tabelaDisponivel().then(setPodeSolicitar)
@@ -376,6 +405,8 @@ export default function GestaoImportacao() {
 
     setLendo(true)
     setArquivo(file.name)
+    setTamanho(file.size)
+    registro.current = { id: null, fila: Promise.resolve() }
     setTodos(null)
     setEstrutura(null)
     setErroLeitura(null)
@@ -391,6 +422,31 @@ export default function GestaoImportacao() {
     } finally {
       setLendo(false)
     }
+  }
+
+  function registrar(tipo, dados) {
+    const r = registro.current
+    const passo = r.fila.then(async () => {
+      r.id = await registrarImportacao({
+        ...dados,
+        id: r.id,
+        tipo,
+        arquivo,
+        tamanho,
+        origem: 'gestao',
+        usuarioEmail: sessao?.user?.email,
+      })
+      setVersaoHistorico((n) => n + 1)
+    })
+    r.fila = passo.catch(() => {})
+    return passo
+  }
+
+  async function desfeito(tipo) {
+    const r = registro.current
+    await r.fila
+    await marcarDesfeito(r.id, tipo)
+    setVersaoHistorico((n) => n + 1)
   }
 
   const tiposComDado = todos ? ORDEM.filter((t) => !todos[t].erro && todos[t].linhas.length > 0) : []
@@ -451,7 +507,15 @@ export default function GestaoImportacao() {
             )}
 
             {tiposComDado.map((t) => (
-              <CardTipo key={`${chave}-${t}`} tipo={t} lido={todos[t]} arquivo={arquivo} podeSolicitar={podeSolicitar} />
+              <CardTipo
+                key={`${chave}-${t}`}
+                tipo={t}
+                lido={todos[t]}
+                arquivo={arquivo}
+                podeSolicitar={podeSolicitar}
+                onRegistrar={registrar}
+                onDesfeito={desfeito}
+              />
             ))}
 
             {!tiposComDado.length && !tiposComErro.length && (
@@ -459,6 +523,8 @@ export default function GestaoImportacao() {
             )}
           </>
         )}
+
+        <HistoricoImportacoes versao={versaoHistorico} />
       </div>
     </Layout>
   )

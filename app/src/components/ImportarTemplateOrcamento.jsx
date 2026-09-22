@@ -17,6 +17,7 @@ import {
   desfazer,
   TEMPLATE,
 } from '../lib/importarTemplateOrcamento'
+import { registrarImportacao, marcarDesfeito } from '../lib/importacoesData'
 
 const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 /** R$ M com uma casa: o formato #,##0.0 das tabelas do Master Resultado. */
@@ -138,6 +139,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const [gravando, setGravando] = useState(false)
   const [previa, setPrevia] = useState(null)
   const [arquivo, setArquivo] = useState('')
+  const [tamanho, setTamanho] = useState(null)
   const [segundos, setSegundos] = useState(0)
   const [substituir, setSubstituir] = useState(false)
   const [ultima, setUltima] = useState(null)   // { ids, quantos } da importacao recem-feita
@@ -147,7 +149,8 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   // Resultado de `checarEstrutura`: null até o worker mandar a primeira mensagem.
   const [estrutura, setEstrutura] = useState(null)
   const [erroLeitura, setErroLeitura] = useState(null)
-  const { user } = useAuth()
+  const { sessao } = useAuth()
+  const email = sessao?.user?.email
 
   useEffect(() => {
     tabelaDisponivel().then(setPodeSolicitar)
@@ -174,6 +177,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     setSubstituir(false)
     setUltima(null)
     setArquivo(file.name)
+    setTamanho(file.size)
     setEstrutura(null)
     setErroLeitura(null)
     setWizardAberto(true)
@@ -213,7 +217,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
       const paraEnviar = previa.marcadas.filter(semCadastro)
       if (paraEnviar.length && podeSolicitar) {
         try {
-          enviadas = await solicitar(agruparParaCadastro(paraEnviar, tipo, arquivo), user?.email)
+          enviadas = await solicitar(agruparParaCadastro(paraEnviar, tipo, arquivo), email)
         } catch (err) {
           erroEnvio = err.message
         }
@@ -228,9 +232,29 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
       )
       if (erroEnvio) showToast(`As linhas entraram, mas não consegui enviar as contas para aprovação: ${erroEnvio}`, 'error')
 
+      // Historico depois de gravar, num try proprio: falhar aqui nao invalida a
+      // importacao, que ja esta no banco.
+      let registroId = null
+      try {
+        registroId = await registrarImportacao({
+          arquivo,
+          tamanho,
+          origem: tipo,
+          ano: previa.ano,
+          ciclo: previa.ciclo,
+          versao: previa.versao,
+          tipo,
+          linhas: [...previa.prontas, ...previa.marcadas],
+          apagados,
+          usuarioEmail: email,
+        })
+      } catch (err) {
+        showToast(`Importado, mas não consegui registrar no histórico: ${err.message}`, 'warning')
+      }
+
       // A substituicao apagou linhas que o desfazer nao traz de volta; oferecer
       // "desfazer" ali seria mentira. O aviso das contas enviadas aparece nos dois casos.
-      setUltima({ ids: apagados ? null : ids, quantos: ids.length, enviadas })
+      setUltima({ ids: apagados ? null : ids, quantos: ids.length, enviadas, registroId })
       setPrevia(null)
       onImportado?.()
     } catch (err) {
@@ -245,6 +269,11 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     try {
       const n = await desfazer(ultima.ids)
       showToast(`${n} lançamento(s) desfeito(s).`, 'success')
+      try {
+        await marcarDesfeito(ultima.registroId, tipo)
+      } catch {
+        // os lançamentos já saíram; o histórico só fica sem a marca
+      }
       setUltima(null)
       onImportado?.()
     } catch (err) {
