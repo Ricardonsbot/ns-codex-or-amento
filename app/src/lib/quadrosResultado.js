@@ -165,8 +165,8 @@ function painelMoM(ctx) {
 
 /**
  * Visão P&L (o P&L por Empresa MoM da Master): o P&L de uma empresa, ou do
- * consolidado, mês a mês. Cada mês tem o % NR ao lado; nas linhas de receita
- * (Gross e Net Revenue) ele fica vazio, porque é a própria base.
+ * consolidado, mês a mês, e o FY com o % NR. Nas linhas de receita (Gross e
+ * Net Revenue) o % NR fica vazio, porque é a própria base.
  */
 const semNR = new Set(['gr', 'nr'])
 
@@ -178,15 +178,10 @@ function plPorEmpresaMoM(ctx) {
   const grupos = [
     {
       rotulo: `${emp?.nome ?? 'Consolidado'} · Actual`,
-      colunas: MESES.flatMap((m, i) => [
-        { key: `m${i}`, label: m, fmt: 'mi', papel: i === mes - 1 ? 'atual' : undefined },
-        { key: `m${i}nr`, label: '% NR', fmt: 'pct' },
-      ]),
+      colunas: MESES.map((m, i) => ({ key: `m${i}`, label: m, fmt: 'mi', papel: i === mes - 1 ? 'atual' : undefined })),
     },
-    { rotulo: `YTD ${MESES[mes - 1]}`, colunas: [{ key: 'ytd', label: 'Actual', fmt: 'mi', papel: 'atual' }, { key: 'ytdnr', label: '% NR', fmt: 'pct' }] },
     { rotulo: 'FY', colunas: [{ key: 'fy', label: 'Actual', fmt: 'mi', papel: 'atual' }, { key: 'fynr', label: '% NR', fmt: 'pct' }] },
   ]
-  const nrY = janela(demo.nr, 'YTD', mes)
   const nrF = janela(demo.nr, 'FY', mes)
   const linhas = []
   for (const l of PL_CONTABIL) {
@@ -194,18 +189,9 @@ function plPorEmpresaMoM(ctx) {
     const serie = demo[l.s]
     const comNR = !semNR.has(l.s)
     const v = {}
-    MESES.forEach((_, i) => {
-      v[`m${i}`] = serie[i]
-      v[`m${i}nr`] = comNR ? pctNR(serie[i], demo.nr[i]) : null
-    })
-    const y = janela(serie, 'YTD', mes)
+    MESES.forEach((_, i) => (v[`m${i}`] = serie[i]))
     const f = janela(serie, 'FY', mes)
-    Object.assign(v, {
-      ytd: y,
-      ytdnr: comNR ? pctNR(y, nrY) : null,
-      fy: f,
-      fynr: comNR ? pctNR(f, nrF) : null,
-    })
+    Object.assign(v, { fy: f, fynr: comNR ? pctNR(f, nrF) : null })
     linhas.push({ rotulo: l.rotulo, tipo: l.tipo, v })
   }
   return { grupos, linhas }
