@@ -390,6 +390,15 @@ export function checklist(registro, escopo = 'arquivo') {
         : 'toda conta cai numa linha da Master'
     ),
     item(
+      'sinais',
+      'vermelho',
+      'Sinais do valor',
+      sinaisTrocados === 0,
+      sinaisTrocados
+        ? `${plural(sinaisTrocados, 'linha', 'linhas')} com o sinal trocado — o valor entra invertido no P&L`
+        : 'receita e gasto positivos'
+    ),
+    item(
       'destino',
       'vermelho',
       'Ciclo e versão de destino',
@@ -439,13 +448,6 @@ export function checklist(registro, escopo = 'arquivo') {
       mesesVazios ? `${plural(mesesVazios, 'empresa tem', 'empresas têm')} mês em branco` : 'nenhum buraco de mês'
     ),
     item(
-      'sinais',
-      'amarelo',
-      'Sinais do valor',
-      sinaisTrocados === 0,
-      sinaisTrocados ? `${plural(sinaisTrocados, 'linha', 'linhas')} com o sinal trocado` : 'receita e gasto positivos'
-    ),
-    item(
       'linhaPlTemplate',
       'amarelo',
       'Linha do P&L igual à do plano',
@@ -468,13 +470,17 @@ export function checklist(registro, escopo = 'arquivo') {
   return escopo === 'tipo' ? itens.filter((i) => i.chave !== 'tipos') : itens
 }
 
-/** Nome de cada dimensão de cadastro no checklist. */
+/**
+ * Nome e peso de cada dimensão de cadastro no checklist. Centro de custo é
+ * vermelho: é por ele que o gasto é cobrado de quem responde pela área, e um
+ * centro que não existe no cadastro não tem dono.
+ */
 const CADASTRO = {
-  centroCusto: 'Centros de custo cadastrados',
-  fornecedor: 'Fornecedores cadastrados',
-  produto: 'Produtos cadastrados',
-  cliente: 'Clientes cadastrados',
-  diretoria: 'Diretorias cadastradas',
+  centroCusto: { rotulo: 'Centros de custo cadastrados', nivel: 'vermelho' },
+  fornecedor: { rotulo: 'Fornecedores cadastrados', nivel: 'amarelo' },
+  produto: { rotulo: 'Produtos cadastrados', nivel: 'amarelo' },
+  cliente: { rotulo: 'Clientes cadastrados', nivel: 'amarelo' },
+  diretoria: { rotulo: 'Diretorias cadastradas', nivel: 'amarelo' },
 }
 
 /**
@@ -484,14 +490,14 @@ const CADASTRO = {
  */
 function itensDeCadastro(tipos, usados) {
   return Object.entries(CADASTRO)
-    .map(([chave, rotulo]) => {
+    .map(([chave, { rotulo, nivel }]) => {
       const partes = usados.map((x) => tipos[x]?.cadastros?.[chave]).filter(Boolean)
       if (!partes.length) return null
       const linhas = partes.reduce((a, x) => a + x.linhas, 0)
       const exemplos = partes.flatMap((x) => x.exemplos ?? []).slice(0, 3)
       return {
         chave: `cad-${chave}`,
-        nivel: 'amarelo',
+        nivel,
         rotulo,
         ok: linhas === 0,
         detalhe: linhas
