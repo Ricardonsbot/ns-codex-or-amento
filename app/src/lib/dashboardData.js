@@ -24,7 +24,7 @@ export async function fetchEmpresas() {
   return data ?? []
 }
 
-export async function fetchBridgeSummary({ ano, buId, torreId }) {
+export async function fetchBridgeSummary({ ano, buId, torreId, empresaId }) {
   const zero = { receita: 0, despesa: 0, capex: 0 }
   if (!ano) return zero
 
@@ -50,6 +50,7 @@ export async function fetchBridgeSummary({ ano, buId, torreId }) {
     .in('versao_id', versaoIds)
   if (buId) query = query.eq('bu_id', buId)
   if (torreId) query = query.eq('torre_id', torreId)
+  if (empresaId) query = query.eq('empresa_id', empresaId)
 
   const { data: lancamentos, error: lancamentoError } = await query
   if (lancamentoError) throw lancamentoError

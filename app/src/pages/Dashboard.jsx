@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useToast } from '../components/ToastProvider'
-import { fetchAnos, fetchBUs, fetchTorres, fetchBridgeSummary, computeBridge } from '../lib/dashboardData'
+import { fetchAnos, fetchBUs, fetchTorres, fetchEmpresas, fetchBridgeSummary, computeBridge } from '../lib/dashboardData'
 import BotaoUnidade from '../components/BotaoUnidade'
 import { useUnidade } from '../components/UnidadeProvider'
 import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
@@ -25,10 +25,12 @@ export default function Dashboard() {
 
   const [bus, setBus] = useState([])
   const [torres, setTorres] = useState([])
+  const [empresas, setEmpresas] = useState([])
 
   const [selectedAno, setSelectedAno] = useState(null)
   const [selectedBuId, setSelectedBuId] = useState('')
   const [selectedTorreId, setSelectedTorreId] = useState('')
+  const [selectedEmpresaId, setSelectedEmpresaId] = useState('')
 
   const [bridge, setBridge] = useState(computeBridge({ receita: 0, despesa: 0, capex: 0 }))
   const [loading, setLoading] = useState(true)
@@ -50,14 +52,16 @@ export default function Dashboard() {
   useEffect(() => {
     async function carregarFiltros() {
       try {
-        const [anosData, busData, torresData, ciclosData] = await Promise.all([
+        const [anosData, busData, torresData, empresasData, ciclosData] = await Promise.all([
           fetchAnos(),
           fetchBUs(),
           fetchTorres(),
+          fetchEmpresas(),
           fetchCiclosResultado(),
         ])
         setBus(busData)
         setTorres(torresData)
+        setEmpresas(empresasData)
         setCiclos(ciclosData)
         setSelectedAno(anosData[0] ?? null)
       } catch (err) {
@@ -77,6 +81,7 @@ export default function Dashboard() {
           ano: selectedAno,
           buId: selectedBuId || null,
           torreId: selectedTorreId || null,
+          empresaId: selectedEmpresaId || null,
         })
         setBridge(computeBridge(resumo))
       } catch (err) {
@@ -87,7 +92,7 @@ export default function Dashboard() {
     }
     aplicarFiltros()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAno, selectedBuId, selectedTorreId])
+  }, [selectedAno, selectedBuId, selectedTorreId, selectedEmpresaId])
 
   // Os mesmos big numbers do Resultado, no recorte dos filtros do Dashboard:
   // ano inteiro (FY) da versão de referência do ciclo, contra o ano anterior.
@@ -103,7 +108,11 @@ export default function Dashboard() {
     let cancelado = false
     ;(async () => {
       try {
-        const filtros = { buId: selectedBuId || null, torreId: selectedTorreId || null, empresaId: null }
+        const filtros = {
+          buId: selectedBuId || null,
+          torreId: selectedTorreId || null,
+          empresaId: selectedEmpresaId || null,
+        }
         const [a, l] = await Promise.all([
           fetchResultado(versao.id, filtros),
           versaoLy ? fetchResultado(versaoLy.id, filtros) : Promise.resolve(null),
@@ -120,9 +129,15 @@ export default function Dashboard() {
       cancelado = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [versao?.id, versaoLy?.id, selectedBuId, selectedTorreId])
+  }, [versao?.id, versaoLy?.id, selectedBuId, selectedTorreId, selectedEmpresaId])
 
   const torresDisponiveis = selectedBuId ? torres.filter((t) => t.bu_id === selectedBuId) : torres
+  // A empresa segue o recorte de cima: escolher a torre encurta a lista.
+  const empresasDisponiveis = selectedTorreId
+    ? empresas.filter((e) => e.torre_id === selectedTorreId)
+    : selectedBuId
+    ? empresas.filter((e) => e.bu_id === selectedBuId)
+    : empresas
 
   return (
     <Layout>
@@ -146,6 +161,7 @@ export default function Dashboard() {
               onChange={(e) => {
                 setSelectedBuId(e.target.value)
                 setSelectedTorreId('')
+                setSelectedEmpresaId('')
               }}
             >
               <option value="">Todas as BUs</option>
@@ -158,11 +174,28 @@ export default function Dashboard() {
           </div>
           <div className="filter-field">
             <label>Torre</label>
-            <select value={selectedTorreId} onChange={(e) => setSelectedTorreId(e.target.value)}>
+            <select
+              value={selectedTorreId}
+              onChange={(e) => {
+                setSelectedTorreId(e.target.value)
+                setSelectedEmpresaId('')
+              }}
+            >
               <option value="">Todas as Torres</option>
               {torresDisponiveis.map((torre) => (
                 <option key={torre.id} value={torre.id}>
                   {torre.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label>Empresa</label>
+            <select value={selectedEmpresaId} onChange={(e) => setSelectedEmpresaId(e.target.value)}>
+              <option value="">Todas as Empresas</option>
+              {empresasDisponiveis.map((empresa) => (
+                <option key={empresa.id} value={empresa.id}>
+                  {empresa.nome}
                 </option>
               ))}
             </select>
