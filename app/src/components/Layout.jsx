@@ -68,7 +68,6 @@ export default function Layout({ children }) {
             <img className="logo-mark" src="/logo-64.png" alt="NS Budget" width="34" height="34" />
             <div className="brand-text">
               <strong><span className="brand-ns">NS</span> <span className="brand-rest">Budget</span></strong>
-              <span>Ferramenta Orçamentária Nstech</span>
             </div>
           </NavLink>
           <button
