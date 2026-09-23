@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { avaliar, exemploDeHistorico, historicoDisponivel, listarImportacoes } from '../lib/importacoesData'
 import ChecklistImportacao from './ChecklistImportacao'
 import BotaoUnidade from './BotaoUnidade'
@@ -40,6 +40,8 @@ export default function HistoricoImportacoes({ versao }) {
   const [erro, setErro] = useState(null)
   // Registro cuja janela de status está aberta.
   const [statusDe, setStatusDe] = useState(null)
+  // Registro com o detalhe por empresa aberto embaixo da linha.
+  const [aberto, setAberto] = useState(null)
 
   useEffect(() => {
     let cancelado = false
@@ -96,6 +98,7 @@ export default function HistoricoImportacoes({ versao }) {
             <table className="data-table tabela-templates">
               <thead>
                 <tr>
+                  <th aria-label="Abrir o detalhe por empresa" />
                   <th>DETALHES</th>
                   <th className="text-center">STATUS</th>
                   <th>MOTIVO</th>
@@ -112,13 +115,29 @@ export default function HistoricoImportacoes({ versao }) {
                 {registros.map((r) => {
                   const t = r.totais ?? {}
                   const a = avaliar(r)
+                  const empresas = r.empresas ?? []
+                  const estaAberto = aberto === r.id
                   return (
+                    <Fragment key={r.id}>
                     <tr
-                      key={r.id}
                       className="linha-template"
                       onClick={() => setStatusDe(r)}
                       title="Ver o status deste template"
                     >
+                      <td style={{ width: 28 }}>
+                        <button
+                          type="button"
+                          className="abrir-detalhe"
+                          aria-expanded={estaAberto}
+                          title={estaAberto ? 'Fechar o detalhe por empresa' : 'Ver o detalhe por empresa'}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setAberto(estaAberto ? null : r.id)
+                          }}
+                        >
+                          {estaAberto ? '▾' : '▸'}
+                        </button>
+                      </td>
                       <td>
                         <div className="detalhe-bloco">
                           <span className="detalhe-icone" aria-hidden="true">🗒</span>
@@ -167,12 +186,44 @@ export default function HistoricoImportacoes({ versao }) {
                           })}
                         </div>
                       </td>
-                      <td className="text-right">{(r.empresas ?? []).length}</td>
+                      <td className="text-right">{empresas.length}</td>
                       <td className="text-right">{mi(t.gr)}</td>
                       <td className="text-right"><strong>{mi(t.nr)}</strong></td>
                       <td className="text-right">{mi(t.despesa)}</td>
                       <td className="text-right">{mi(t.capex)}</td>
                     </tr>
+                    {estaAberto && (
+                      <tr>
+                        <td />
+                        <td colSpan={9} style={{ background: 'var(--color-bg)' }}>
+                          <table className="data-table" style={{ margin: '4px 0' }}>
+                            <thead>
+                              <tr>
+                                <th>EMPRESA</th>
+                                <th className="text-right">LINHAS</th>
+                                <th className="text-right">GROSS REVENUE</th>
+                                <th className="text-right">NET REVENUE</th>
+                                <th className="text-right">EXPENSES</th>
+                                <th className="text-right">CAPEX</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {empresas.map((e) => (
+                                <tr key={e.id ?? e.nome}>
+                                  <td>{e.nome}</td>
+                                  <td className="text-right">{e.linhas}</td>
+                                  <td className="text-right">{mi(e.gr)}</td>
+                                  <td className="text-right"><strong>{mi(e.nr)}</strong></td>
+                                  <td className="text-right">{mi(e.despesa)}</td>
+                                  <td className="text-right">{mi(e.capex)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   )
                 })}
               </tbody>

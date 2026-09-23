@@ -2896,3 +2896,16 @@ tfoot td {
 .grafico-bridge .barra-sobe { fill: var(--color-receita); }
 .grafico-bridge .barra-desce { fill: var(--color-despesa); }
 .grafico-bridge-unidade { text-align: right; font-size: 11px; color: var(--color-text-muted); padding: 0 6px 4px; }
+
+/* Setinha que abre o detalhe por empresa, sem disparar o clique da linha. */
+.abrir-detalhe {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.abrir-detalhe:hover { color: var(--color-primary); }
