@@ -211,6 +211,14 @@ export default function Resultado() {
     }
   }
 
+  // A Bridge precisa dos dois lados. Abrir a aba e ver só um aviso é ruim:
+  // quando ninguém escolheu comparação, ela assume a primeira versão do
+  // ciclo — quem quiser outra troca no Recorte.
+  useEffect(() => {
+    if (aba === 'bridge' && !compararCom && outrasVersoes.length) setCompararCom(outrasVersoes[0].id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aba, compararCom, outrasVersoes.length])
+
   const quadro = useMemo(() => {
     if (!ctx) return null
     try {
