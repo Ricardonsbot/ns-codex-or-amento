@@ -24,6 +24,10 @@ import {
  *
  * Recebe o cliente em vez de importá-lo para servir também ao script de linha
  * de comando, que monta o seu próprio.
+ *
+ * `aoProgredir(feitos, total, fase)` é chamado a cada lote, com fase
+ * 'cabecalhos' e depois 'mensais' — são duas contagens diferentes, e a
+ * segunda é a mais demorada das duas.
  */
 const LOTE_CABECALHO = 500
 const LOTE_MENSAL = 1000
@@ -50,7 +54,7 @@ export async function gravarEmLote(client, linhas, versaoId, tipo, suporte, aoPr
       )
     }
     ids.push(...data.map((x) => x.id))
-    aoProgredir?.(ids.length, linhas.length)
+    aoProgredir?.(ids.length, linhas.length, 'cabecalhos')
   }
 
   const mensais = []
@@ -65,6 +69,7 @@ export async function gravarEmLote(client, linhas, versaoId, tipo, suporte, aoPr
     const lote = mensais.slice(i, i + LOTE_MENSAL)
     const { error } = await client.from('lancamento_valor_mensal').insert(lote)
     if (error) throw new Error(`gravando valores mensais ${i + 1}–${i + lote.length}: ${error.message}`)
+    aoProgredir?.(Math.min(i + LOTE_MENSAL, mensais.length), mensais.length, 'mensais')
   }
 
   return ids

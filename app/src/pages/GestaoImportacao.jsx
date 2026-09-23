@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import ImportWizard from '../components/ImportWizard'
+import ProgressoGravacao from '../components/ProgressoGravacao'
 import HistoricoImportacoes from '../components/HistoricoImportacoes'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
@@ -46,6 +47,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
   const [conferindo, setConferindo] = useState(true)
   const [erroConferencia, setErroConferencia] = useState(null)
   const [gravando, setGravando] = useState(false)
+  const [progresso, setProgresso] = useState(null)
   const [substituir, setSubstituir] = useState(false)
   const [criandoCiclo, setCriandoCiclo] = useState(false)
   const [ultima, setUltima] = useState(null)
@@ -87,10 +89,13 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
 
   async function handleConfirmar() {
     setGravando(true)
+    setProgresso({ feitos: 0, total: 0, fase: substituir && previa.jaExistem ? 'apagando' : 'cabecalhos' })
     try {
       let apagados = 0
       if (substituir && previa.jaExistem) apagados = await apagarDoTipo(previa.versao.id, tipo)
-      const ids = await importar([...previa.prontas, ...previa.marcadas], previa.versao.id, tipo)
+      const ids = await importar([...previa.prontas, ...previa.marcadas], previa.versao.id, tipo, (feitos, total, fase) =>
+        setProgresso({ feitos, total, fase })
+      )
       const oQue = NOME[tipo]
 
       let enviadas = 0
@@ -134,6 +139,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
       showToast(`Erro ao importar ${NOME[tipo]}: ${err.message}`, 'error')
     } finally {
       setGravando(false)
+      setProgresso(null)
     }
   }
 
@@ -195,6 +201,8 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
       </div>
 
       <div className="panel-body">
+        {gravando && <ProgressoGravacao progresso={progresso} rotulo={ROTULO[tipo]} />}
+
         {lido.erro && (
           <div className="proto-banner">✕ Não consegui ler esta aba: {lido.erro}</div>
         )}

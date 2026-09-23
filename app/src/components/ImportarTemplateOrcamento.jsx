@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useToast } from './ToastProvider'
 import ImportWizard from './ImportWizard'
+import ProgressoGravacao from './ProgressoGravacao'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import TabelaQuadro from './TabelaQuadro'
 import { agruparPorEstrutura } from '../lib/resultadoData'
@@ -136,6 +137,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   // O arquivo já lido, para conferir de novo depois de criar o ciclo do ano.
   const lidoRef = useRef(null)
   const [gravando, setGravando] = useState(false)
+  const [progresso, setProgresso] = useState(null)
   const [previa, setPrevia] = useState(null)
   const [arquivo, setArquivo] = useState('')
   const [tamanho, setTamanho] = useState(null)
@@ -200,10 +202,13 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
 
   async function handleConfirmar() {
     setGravando(true)
+    setProgresso({ feitos: 0, total: 0, fase: substituir && previa.jaExistem ? 'apagando' : 'cabecalhos' })
     try {
       let apagados = 0
       if (substituir && previa.jaExistem) apagados = await apagarDoTipo(previa.versao.id, tipo)
-      const ids = await importar([...previa.prontas, ...previa.marcadas], previa.versao.id, tipo)
+      const ids = await importar([...previa.prontas, ...previa.marcadas], previa.versao.id, tipo, (feitos, total, fase) =>
+        setProgresso({ feitos, total, fase })
+      )
       const oQue = NOME[tipo] ?? tipo
 
       // Conta sem cadastro que tem dado vai para aprovacao sozinha, sem
@@ -260,6 +265,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
       showToast(`Erro ao importar: ${err.message}`, 'error')
     } finally {
       setGravando(false)
+      setProgresso(null)
     }
   }
 
@@ -387,6 +393,8 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         style={{ display: 'none' }}
         onChange={handleArquivo}
       />
+
+      {gravando && <ProgressoGravacao progresso={progresso} rotulo={rotulo} />}
 
       <ImportWizard
         aberto={wizardAberto}

@@ -2688,3 +2688,31 @@ tfoot td {
 
 .menu-exportar-lista strong { font-size: 13px; font-weight: 600; }
 .menu-exportar-lista span { font-size: 11.5px; color: var(--color-text-muted); }
+
+/* ---------- Barra de progresso (gravação da importação) ---------- */
+
+.barra-progresso {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.barra-progresso-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-primary);
+  transition: width .2s ease;
+}
+
+/* Sem total conhecido: vai e volta, só para mostrar que não travou. */
+.barra-progresso-fill.indeterminada {
+  width: 35%;
+  animation: barra-varre 1.1s ease-in-out infinite;
+}
+
+@keyframes barra-varre {
+  0% { margin-left: -35%; }
+  100% { margin-left: 100%; }
+}
