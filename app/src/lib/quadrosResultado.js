@@ -458,6 +458,115 @@ function budgetMesAMes(ctx) {
 }
 
 
+/**
+ * Bridge de Receita: sai da Net Revenue do Budget e chega na da versão atual,
+ * com um degrau por produto, empresa ou torre — quem explica a diferença.
+ *
+ * Primeira etapa do pedido: a decomposição por dimensão. A por driver de
+ * movimento (novo, churn, expansão, contração e reajuste) vem depois, e
+ * depende do cliente estar preenchido nos templates.
+ *
+ * Só aparece com uma versão em "Comparar com (Budget)": sem os dois lados não
+ * há ponte.
+ */
+const DIMENSOES_BRIDGE = {
+  produto: { rotulo: 'Produto', lista: (d) => d?.produtos ?? [] },
+  empresa: {
+    rotulo: 'Empresa',
+    lista: (d) => (d?.empresas ?? []).map((e) => ({ nome: e.nome, valores: e.demo.nr })),
+  },
+  torre: {
+    rotulo: 'Torre',
+    lista: (d) =>
+      (d?.estrutura ?? [])
+        .filter((n) => n.nivel === 1)
+        .map((n) => ({ nome: n.nome, valores: demoDoNo(n)?.nr ?? [] })),
+  },
+}
+
+/** Quantos degraus aparecem antes de o resto virar "Outros". */
+const DEGRAUS_BRIDGE = 15
+
+function bridgeReceita(ctx) {
+  const { mes } = ctx
+  const dim = DIMENSOES_BRIDGE[ctx.dimensaoBridge] ?? DIMENSOES_BRIDGE.produto
+  const grupos = [
+    {
+      rotulo: `Bridge de Receita · YTD ${MESES[mes - 1]}`,
+      colunas: [
+        { key: 'b', label: ctx.rotuloComp ?? 'Budget', fmt: 'mi', papel: 'orcado' },
+        { key: 'a', label: 'Actual', fmt: 'mi', papel: 'atual' },
+        { key: 'd', label: '∆', fmt: 'mi' },
+        { key: 'dp', label: '∆%', fmt: 'pct', semaforo: true },
+      ],
+    },
+  ]
+
+  if (!ctx.comp) {
+    return {
+      grupos,
+      linhas: [],
+      notas: ['Escolha uma versão em “Comparar com (Budget)”, no Recorte: a bridge precisa dos dois lados.'],
+    }
+  }
+
+  const ytd = (valores) => janela(valores ?? [], 'YTD', mes)
+  const somar = (lista) => {
+    const m = new Map()
+    for (const x of lista) m.set(x.nome, (m.get(x.nome) ?? 0) + ytd(x.valores))
+    return m
+  }
+  const atual = somar(dim.lista(ctx.dados))
+  const budget = somar(dim.lista(ctx.comp))
+
+  const nomes = [...new Set([...atual.keys(), ...budget.keys()])]
+  const itens = nomes
+    .map((nome) => {
+      const a = atual.get(nome) ?? 0
+      const b = budget.get(nome) ?? 0
+      return { nome, a, b, d: a - b }
+    })
+    .filter((x) => x.a || x.b)
+    .sort((x, y) => Math.abs(y.d) - Math.abs(x.d))
+
+  const mostrados = itens.slice(0, DEGRAUS_BRIDGE)
+  const resto = itens.slice(DEGRAUS_BRIDGE)
+  const totalA = itens.reduce((s, x) => s + x.a, 0)
+  const totalB = itens.reduce((s, x) => s + x.b, 0)
+
+  const linha = (rotulo, tipo, b, a) => ({
+    rotulo,
+    tipo,
+    v: { b, a, d: a - b, dp: b ? ((a - b) / Math.abs(b)) * 100 : null },
+  })
+
+  const linhas = [
+    linha(`Net Revenue · ${ctx.rotuloComp ?? 'Budget'}`, 'subtotal', totalB, totalB),
+    { tipo: 'respiro' },
+    ...mostrados.map((x) => linha(x.nome, 'linha', x.b, x.a)),
+  ]
+  if (resto.length) {
+    linhas.push(
+      linha(
+        `Outros ${dim.rotulo.toLowerCase()}s (${resto.length})`,
+        'linha',
+        resto.reduce((s, x) => s + x.b, 0),
+        resto.reduce((s, x) => s + x.a, 0)
+      )
+    )
+  }
+  linhas.push({ tipo: 'respiro' }, linha(`Net Revenue · ${ctx.rotuloVersao ?? 'Actual'}`, 'subtotal', totalB, totalA))
+
+  return {
+    grupos,
+    linhas,
+    notas: [
+      `Um degrau por ${dim.rotulo.toLowerCase()}, do que mais muda para o que menos muda; do ${DEGRAUS_BRIDGE + 1}º em diante tudo vira “Outros”.`,
+      'A quebra por driver de movimento — novo, churn, expansão, contração e reajuste — é a próxima etapa.',
+    ],
+  }
+}
+
 /** Gastos por pacote: pacote e subpacote, no YTD, com o % RoL. */
 function pacotes(ctx) {
   const { mes } = ctx
@@ -503,6 +612,7 @@ export const ABAS = [
   { valor: 'mom', rotulo: 'Visão Torres', montar: painelMoM },
   { valor: 'plEmpresa', rotulo: 'Visão P&L', montar: plPorEmpresaMoM },
   { valor: 'pl', rotulo: 'P&L Contábil', montar: plContabil },
+  { valor: 'bridge', rotulo: 'Bridge de Receita', montar: bridgeReceita, foraDaMaster: true },
   { valor: 'capex', rotulo: 'Capex (YTD)', montar: capexYtd },
   { valor: 'performance', rotulo: 'Performance Overview', montar: performance },
   { valor: 'resumo', rotulo: 'Painel Resumo', montar: resumo },

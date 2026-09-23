@@ -68,6 +68,15 @@ async function sondarSubpacote() {
   return temSubpacote
 }
 
+/** As colunas de produto existem? Vieram na migração 2026-09-10. */
+let temProduto = null
+async function sondarProduto() {
+  if (temProduto !== null) return temProduto
+  const { error } = await supabase.from('lancamento').select('produto_analitico, produto_sintetico').limit(1)
+  temProduto = !error
+  return temProduto
+}
+
 /**
  * O gasto é Labor? Quem diz é a coluna Linha P&L da Base Gastos:
  * "Operational Payments - Labor" contra "Operational payments - non Labor" no
@@ -81,12 +90,13 @@ export function ehLabor(linhaPlTemplate) {
 }
 
 export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}) {
-  const comSubpacote = await sondarSubpacote()
+  const [comSubpacote, comProduto] = await Promise.all([sondarSubpacote(), sondarProduto()])
   const campos =
     'tipo, area, bu_id, bu:bu_id(nome), torre_id, torre:torre_id(nome), sub_torre_id, ' +
     'sub_torre:sub_torre_id(nome), empresa_id, empresa:empresa_id(nome), ' +
     'conta:conta_id(codigo, nome, linha_pl), lancamento_valor_mensal(mes, valor)' +
-    (comSubpacote ? ', pacote, subpacote, linha_pl_template, area_ajustada' : '')
+    (comSubpacote ? ', pacote, subpacote, linha_pl_template, area_ajustada' : '') +
+    (comProduto ? ', produto_analitico, produto_sintetico' : '')
 
   // O cadastro inteiro do recorte: toda empresa aparece, com ou sem
   // lançamento, e zero só quando ela não lançou nada.
@@ -116,6 +126,7 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
   const base = new Map() // chave do demonstrativo -> 12 meses
   const baseLabor = new Map() // a parte Labor de cada chave de Expenses
   const porPacote = new Map() // pacote -> { total, subs: Map(subpacote -> meses) }
+  const porProduto = new Map() // produto -> 12 meses de Net Revenue
   let semConta = zeros()
   const itens = []
 
@@ -142,6 +153,13 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
       const s = g.subs.get(sub)
       s.total = somar(s.total, meses)
       acumular(s.areas, area, meses)
+    }
+
+    // Receita por produto: é a base da Bridge de Receita. Entra o que vira
+    // Net Revenue — Gross Revenue e dedução —, com o nome analítico quando
+    // existe; o sintético serve de reserva.
+    if (l.tipo === 'receita' && (k === 'gr' || k === 'ded')) {
+      acumular(porProduto, l.produto_analitico || l.produto_sintetico || 'Sem produto', meses)
     }
 
     const eid = l.empresa_id ?? 'sem-empresa'
@@ -209,6 +227,9 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     ]
       .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
       .map(([nome]) => nome),
+    produtos: [...porProduto.entries()]
+      .map(([nome, valores]) => ({ nome, valores }))
+      .sort((a, b) => soma(b.valores) - soma(a.valores)),
     // A chave do caminho casa o mesmo nó entre versões (Budget e Last Year).
     estrutura: agrupado.estrutura,
     arvore: agrupado.arvore,

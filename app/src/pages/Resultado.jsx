@@ -96,6 +96,7 @@ export default function Resultado() {
   const [aba, setAba] = useState('mom')
   const [medida, setMedida] = useState('nr')
   const [areaPacote, setAreaPacote] = useState('')
+  const [dimensaoBridge, setDimensaoBridge] = useState('produto')
   const [modoEmpresa, setModoEmpresa] = useState('mes')
   const [empresaPl, setEmpresaPl] = useState('')
   const [exportacao, setExportacao] = useState(null)
@@ -165,6 +166,7 @@ export default function Resultado() {
         mes,
         medida,
         areaPacote,
+        dimensaoBridge,
         modoEmpresa,
         empresaPl,
         rotuloVersao: versao ? `${ciclo?.ano} · ${versao.nome}` : 'Actual',
@@ -172,7 +174,7 @@ export default function Resultado() {
         rotuloLy: versaoLy ? `LY ${cicloLy.ano}` : null,
       },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dados, comp, ly, mes, medida, areaPacote, modoEmpresa, empresaPl]
+    [dados, comp, ly, mes, medida, areaPacote, dimensaoBridge, modoEmpresa, empresaPl]
   )
   /**
    * Base empilhada: os lançamentos gravados da versão, no mesmo recorte da
@@ -428,6 +430,19 @@ export default function Resultado() {
                     valor={medida}
                     opcoes={MEDIDAS_MOM.map((m) => ({ valor: m.valor, rotulo: m.rotulo }))}
                     onChange={setMedida}
+                    semTodas
+                  />
+                )}
+                {aba === 'bridge' && (
+                  <FiltroBotoes
+                    label="Abrir por"
+                    valor={dimensaoBridge}
+                    opcoes={[
+                      { valor: 'produto', rotulo: 'Produto' },
+                      { valor: 'empresa', rotulo: 'Empresa' },
+                      { valor: 'torre', rotulo: 'Torre' },
+                    ]}
+                    onChange={setDimensaoBridge}
                     semTodas
                   />
                 )}
