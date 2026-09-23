@@ -69,10 +69,17 @@ export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
   // Escala do gráfico. Com valores negativos o eixo fica no meio.
   const maxAbs = Math.max(...porMes.map(Math.abs), 1)
   const temNegativo = porMes.some((v) => v < 0)
-  const ALTURA = 150
+  // O passo largo é o que deixa o gráfico ocupar a largura do painel sem
+  // ficar alto: o viewBox guarda a proporção, e 12 × 120 por ~96 de altura dá
+  // uma faixa baixa mesmo numa tela grande.
+  const ALTURA = 96
   const base = temNegativo ? ALTURA / 2 : ALTURA
-  const LARGURA_BARRA = 46
-  const largura = LARGURA_BARRA * 12
+  const PASSO = 120
+  const largura = PASSO * 12
+  const alcance = (temNegativo ? ALTURA / 2 : ALTURA) * 0.82
+  const x = (i) => i * PASSO + PASSO / 2
+  const y = (v) => base - (v / maxAbs) * alcance
+  const pontos = porMes.map((v, i) => `${x(i)},${y(v)}`).join(' ')
 
   return (
     <div className="panel">
@@ -94,62 +101,50 @@ export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
       </div>
 
       <div className="panel-body">
-        {/* Gráfico: um mês por barra, com o valor escrito em cima */}
-        {/* viewBox no lugar de largura fixa: o desenho acompanha a tela em vez
-            de forcar rolagem lateral. */}
+        {/* Gráfico de linha: um ponto por mês, com o valor escrito em cima.
+            viewBox no lugar de largura fixa, para o desenho ocupar a largura
+            inteira do painel. */}
         <div style={{ marginBottom: 18 }}>
           <svg
-            viewBox={`0 0 ${largura} ${ALTURA + 34}`}
+            viewBox={`0 0 ${largura} ${ALTURA + 26}`}
             preserveAspectRatio="xMidYMid meet"
-            style={{ width: '100%', height: 'auto', display: 'block', minHeight: 140 }}
+            style={{ width: '100%', height: 'auto', display: 'block' }}
             role="img"
             aria-label={`Total por mês de ${rotulo}`}
           >
-            <line
-              x1="0"
-              y1={base}
-              x2={largura}
-              y2={base}
-              stroke="currentColor"
-              opacity="0.25"
+            <line x1="0" y1={base} x2={largura} y2={base} stroke="currentColor" opacity="0.25" />
+            <polyline
+              points={pontos}
+              fill="none"
+              stroke="var(--color-primary, #ff3d03)"
+              strokeWidth="2"
+              strokeLinejoin="round"
+              strokeLinecap="round"
             />
-            {porMes.map((v, i) => {
-              const h = (Math.abs(v) / maxAbs) * (temNegativo ? ALTURA / 2 : ALTURA) * 0.88
-              const x = i * LARGURA_BARRA
-              return (
-                <g key={i}>
-                  <rect
-                    x={x + 8}
-                    y={v < 0 ? base : base - h}
-                    width={LARGURA_BARRA - 16}
-                    height={Math.max(h, v === 0 ? 0 : 1)}
-                    rx="2"
-                    fill={v < 0 ? 'var(--color-danger, #c0392b)' : 'var(--color-primary, #ff3d03)'}
-                    opacity={v === 0 ? 0.12 : 0.85}
-                  />
-                  <text
-                    x={x + LARGURA_BARRA / 2}
-                    y={v < 0 ? base + h + 13 : base - h - 5}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fill="currentColor"
-                    opacity={v === 0 ? 0.35 : 0.8}
-                  >
-                    {mil(v)}
-                  </text>
-                  <text
-                    x={x + LARGURA_BARRA / 2}
-                    y={ALTURA + 26}
-                    textAnchor="middle"
-                    fontSize="11"
-                    fill="currentColor"
-                    opacity="0.6"
-                  >
-                    {MESES[i]}
-                  </text>
-                </g>
-              )
-            })}
+            {porMes.map((v, i) => (
+              <g key={i}>
+                <circle
+                  cx={x(i)}
+                  cy={y(v)}
+                  r="3"
+                  fill={v < 0 ? 'var(--color-danger, #c0392b)' : 'var(--color-primary, #ff3d03)'}
+                  opacity={v === 0 ? 0.3 : 1}
+                />
+                <text
+                  x={x(i)}
+                  y={v < 0 ? y(v) + 12 : y(v) - 6}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fill="currentColor"
+                  opacity={v === 0 ? 0.35 : 0.75}
+                >
+                  {mil(v)}
+                </text>
+                <text x={x(i)} y={ALTURA + 20} textAnchor="middle" fontSize="12" fill="currentColor" opacity="0.6">
+                  {MESES[i]}
+                </text>
+              </g>
+            ))}
           </svg>
         </div>
 
