@@ -5,6 +5,7 @@ import ImportWizard from './ImportWizard'
 import ProgressoGravacao from './ProgressoGravacao'
 import ChecklistImportacao from './ChecklistImportacao'
 import AlertaStatus from './AlertaStatus'
+import TutorialImportacao from './TutorialImportacao'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import TabelaQuadro from './TabelaQuadro'
 import { agruparPorEstrutura } from '../lib/resultadoData'
@@ -149,6 +150,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const [desfazendo, setDesfazendo] = useState(false)
   const [checklistAberto, setChecklistAberto] = useState(false)
   const [statusPrevia, setStatusPrevia] = useState(false)
+  const [tutorialAberto, setTutorialAberto] = useState(false)
   const [podeSolicitar, setPodeSolicitar] = useState(false)
   const [wizardAberto, setWizardAberto] = useState(false)
   // Resultado de `checarEstrutura`: null até o worker mandar a primeira mensagem.
@@ -424,6 +426,21 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
       >
         {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Importar Template'}
       </button>
+      <button
+        className="btn btn-ghost btn-sm"
+        type="button"
+        title="Como submeter um template"
+        onClick={() => setTutorialAberto(true)}
+      >
+        ? Como importar
+      </button>
+      {tutorialAberto && (
+        <TutorialImportacao
+          etapa={ultima ? 5 : previa ? 4 : lendo ? 3 : 1}
+          janela
+          onFechar={() => setTutorialAberto(false)}
+        />
+      )}
       {lendo && (
         <span style={{ marginLeft: 10, fontSize: 12, opacity: 0.7 }}>
           a leitura roda em segundo plano — pode continuar usando a tela

@@ -2841,3 +2841,43 @@ tfoot td {
 .alerta-status-texto strong { font-size: 13px; }
 .alerta-status-texto span { font-size: 12px; color: var(--color-text-muted); }
 .alerta-status .btn { margin-left: auto; }
+
+/* ---------- Passo a passo da importação ---------- */
+
+.lista-passos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.passo-importacao {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.passo-numero {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-forte);
+}
+
+.passo-importacao.atual .passo-numero { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.passo-importacao.vencido .passo-numero { background: var(--color-success-bg); border-color: var(--color-success); color: var(--color-success); }
+.passo-importacao.futuro { opacity: .72; }
+
+.passo-importacao strong { font-size: 13.5px; }
+.passo-importacao p { margin: 2px 0 0; font-size: 12.5px; color: var(--color-text-muted); line-height: 1.5; }
+.passo-importacao .passo-dica { color: var(--color-warning); }

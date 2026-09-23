@@ -5,6 +5,7 @@ import ImportWizard from '../components/ImportWizard'
 import ProgressoGravacao from '../components/ProgressoGravacao'
 import ChecklistImportacao from '../components/ChecklistImportacao'
 import AlertaStatus from '../components/AlertaStatus'
+import TutorialImportacao from '../components/TutorialImportacao'
 import HistoricoImportacoes from '../components/HistoricoImportacoes'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
@@ -460,6 +461,9 @@ export default function GestaoImportacao() {
   const [chave, setChave] = useState(0) // muda a cada upload, para os CardTipo remontarem do zero
   const [tamanho, setTamanho] = useState(null)
   const [versaoHistorico, setVersaoHistorico] = useState(0)
+  const [tutorialAberto, setTutorialAberto] = useState(false)
+  // Quantos tipos já foram gravados neste upload: leva o passo a passo ao fim.
+  const [gravados, setGravados] = useState(0)
   const { sessao } = useAuth()
   // Um registro de histórico por upload: o primeiro tipo importado cria, os
   // seguintes acrescentam. A fila impede dois cards de criarem dois registros
@@ -486,6 +490,7 @@ export default function GestaoImportacao() {
     setArquivo(file.name)
     setTamanho(file.size)
     registro.current = { id: null, fila: Promise.resolve() }
+    setGravados(0)
     setTodos(null)
     setEstrutura(null)
     setErroLeitura(null)
@@ -528,6 +533,9 @@ export default function GestaoImportacao() {
     setVersaoHistorico((n) => n + 1)
   }
 
+  // 1 sem arquivo · 2 escolhendo · 3 lendo · 4 conferindo · 5 gravado
+  const etapaTutorial = gravados ? 5 : todos ? 4 : lendo ? 3 : 1
+
   const tiposComDado = todos ? ORDEM.filter((t) => !todos[t].erro && todos[t].linhas.length > 0) : []
   const tiposVazios = todos ? ORDEM.filter((t) => !todos[t].erro && !todos[t].linhas.length) : []
   const tiposComErro = todos ? ORDEM.filter((t) => todos[t].erro) : []
@@ -539,6 +547,9 @@ export default function GestaoImportacao() {
           <h1>Gestão de Importação</h1>
           <p>Suba o Template Budget uma vez — Receita, Despesa e Capex são conferidos e importados juntos.</p>
         </div>
+        <button className="btn btn-secondary btn-sm" type="button" onClick={() => setTutorialAberto(true)}>
+          ? Como importar
+        </button>
         <button className="btn btn-primary btn-sm" type="button" onClick={() => inputRef.current?.click()} disabled={lendo}>
           {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Selecionar Template'}
         </button>
@@ -563,12 +574,7 @@ export default function GestaoImportacao() {
       />
 
       <div className="content">
-        {!todos && !lendo && (
-          <div className="empty-hint">
-            Selecione o arquivo do Template Budget (.xlsb, .xlsx ou .xlsm) para começar. O assistente confere as três
-            abas — Receita, Despesa e Capex — antes de ler linha a linha.
-          </div>
-        )}
+        {!todos && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
 
         {todos && (
           <>
@@ -594,6 +600,7 @@ export default function GestaoImportacao() {
                 podeSolicitar={podeSolicitar}
                 onRegistrar={registrar}
                 onDesfeito={desfeito}
+                onImportado={() => setGravados((n) => n + 1)}
               />
             ))}
 
@@ -604,6 +611,10 @@ export default function GestaoImportacao() {
         )}
 
         <HistoricoImportacoes versao={versaoHistorico} />
+
+        {tutorialAberto && (
+          <TutorialImportacao etapa={etapaTutorial} janela onFechar={() => setTutorialAberto(false)} />
+        )}
       </div>
     </Layout>
   )
