@@ -461,17 +461,26 @@ function budgetMesAMes(ctx) {
 /** Gastos por pacote: pacote e subpacote, no YTD, com o % RoL. */
 function pacotes(ctx) {
   const { mes } = ctx
+  // `area` vazia é "todas": o quadro soma o pacote inteiro. Com uma área
+  // escolhida (G&A, CoGS, R&D...), cada pacote entra só com a parte dela.
+  const area = ctx.areaPacote || ''
+  const serie = (x) => (area ? x.areas?.[area] ?? [] : x.valores)
   const nr = janela(ctx.dados.demo.nr, 'YTD', mes)
-  const grupos = [{ rotulo: `Gastos · YTD ${MESES[mes - 1]}`, colunas: [{ key: 'a', label: 'Actual', fmt: 'mi', papel: 'atual' }, { key: 'nr', label: '% RoL', fmt: 'pct' }] }]
+  const rotuloGrupo = area ? `Gastos · ${area} · YTD ${MESES[mes - 1]}` : `Gastos · YTD ${MESES[mes - 1]}`
+  const grupos = [{ rotulo: rotuloGrupo, colunas: [{ key: 'a', label: 'Actual', fmt: 'mi', papel: 'atual' }, { key: 'nr', label: '% RoL', fmt: 'pct' }] }]
   const linhas = []
   let total = 0
   for (const p of ctx.dados.pacotes ?? []) {
-    const t = -janela(p.valores, 'YTD', mes)
+    const t = -janela(serie(p), 'YTD', mes)
+    // Com filtro, pacote sem gasto na área escolhida sai da tabela: deixá-lo
+    // zerado esconderia os que importam no meio de dezenas de linhas vazias.
+    if (area && !t) continue
     total += t
     if (linhas.length) linhas.push({ tipo: 'respiro' })
     linhas.push({ rotulo: p.nome, tipo: 'grupo', v: { a: t, nr: pctNR(t, nr) } })
     for (const s of p.subpacotes) {
-      const x = -janela(s.valores, 'YTD', mes)
+      const x = -janela(serie(s), 'YTD', mes)
+      if (area && !x) continue
       linhas.push({ rotulo: s.nome, tipo: 'filha', v: { a: x, nr: pctNR(x, nr) } })
     }
   }
@@ -481,36 +490,9 @@ function pacotes(ctx) {
     linhas,
     notas: [
       'O pacote vem da coluna “Pacote” do template, não do plano de contas. Por isso este total inclui os lançamentos cuja conta ainda não está cadastrada, que o P&L deixa de fora.',
+      ...(area ? [`Filtrado pela área “${area}”: pacote sem gasto nessa área não aparece.`] : []),
     ],
   }
-}
-
-/** Por área: COGS, G&A, S&M, R&D mês a mês. */
-function areas(ctx) {
-  const { mes } = ctx
-  const nr = janela(ctx.dados.demo.nr, 'YTD', mes)
-  const grupos = [
-    { rotulo: 'Mês a mês', colunas: MESES.map((m, i) => ({ key: `m${i}`, label: m, fmt: 'mi' })) },
-    { rotulo: `YTD ${MESES[mes - 1]}`, colunas: [{ key: 'a', label: 'Actual', fmt: 'mi', papel: 'atual' }, { key: 'nr', label: '% NR', fmt: 'pct' }] },
-  ]
-  const linhas = []
-  const tot = Array(12).fill(0)
-  for (const a of ctx.dados.areas ?? []) {
-    const v = {}
-    MESES.forEach((_, i) => {
-      v[`m${i}`] = -a.valores[i]
-      tot[i] -= a.valores[i]
-    })
-    v.a = -janela(a.valores, 'YTD', mes)
-    v.nr = pctNR(v.a, nr)
-    linhas.push({ rotulo: a.nome, tipo: 'linha', v })
-  }
-  const v = {}
-  MESES.forEach((_, i) => (v[`m${i}`] = tot[i]))
-  v.a = janela(tot, 'YTD', mes)
-  v.nr = pctNR(v.a, nr)
-  linhas.push({ rotulo: '= Total de custos e despesas', tipo: 'subtotal', v })
-  return { grupos, linhas }
 }
 
 /**
@@ -526,7 +508,6 @@ export const ABAS = [
   { valor: 'resumo', rotulo: 'Painel Resumo', montar: resumo },
   { valor: 'mensal', rotulo: 'Budget mês a mês', montar: budgetMesAMes },
   { valor: 'pacotes', rotulo: 'Gastos por pacote', montar: pacotes, foraDaMaster: true },
-  { valor: 'areas', rotulo: 'Por área', montar: areas, foraDaMaster: true },
 ]
 
 export function montarQuadro(aba, ctx) {

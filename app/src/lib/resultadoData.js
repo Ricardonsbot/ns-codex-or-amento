@@ -6,7 +6,6 @@ import {
   zeros,
   somar,
   CHAVES_EXPENSES,
-  NATUREZAS_OPERACIONAIS,
 } from './demonstrativo'
 
 /**
@@ -116,7 +115,6 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
   const porEmpresa = new Map((cadastro ?? []).map((e) => [e.id, novaEmpresa(e.id, e.nome)]))
   const base = new Map() // chave do demonstrativo -> 12 meses
   const baseLabor = new Map() // a parte Labor de cada chave de Expenses
-  const porArea = new Map() // área -> 12 meses, só do bloco operacional
   const porPacote = new Map() // pacote -> { total, subs: Map(subpacote -> meses) }
   let semConta = zeros()
   const itens = []
@@ -130,19 +128,20 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     else semConta = somar(semConta, meses)
     if (k && CHAVES_EXPENSES.includes(k) && ehLabor(l.linha_pl_template)) acumular(baseLabor, k, meses)
 
-    // A área só conta dentro do bloco operacional: fora dele — capex, D&A,
-    // rateios — a coluna existe mas não pertence a nenhuma linha de gasto.
-    if (l.tipo !== 'capex' && NATUREZAS_OPERACIONAIS.has(l.conta?.linha_pl)) {
-      acumular(porArea, l.area_ajustada || l.area || 'Sem área', meses)
-    }
-
     // O quadro de pacotes vem da coluna Pacote do template, não do plano de
-    // contas: inclui o que ainda não tem conta cadastrada.
+    // contas: inclui o que ainda não tem conta cadastrada. Cada pacote guarda
+    // também o gasto por área (G&A, CoGS, R&D...), que é o filtro do quadro.
     if (l.tipo !== 'receita' && l.pacote) {
-      if (!porPacote.has(l.pacote)) porPacote.set(l.pacote, { total: zeros(), subs: new Map() })
+      if (!porPacote.has(l.pacote)) porPacote.set(l.pacote, { total: zeros(), areas: new Map(), subs: new Map() })
       const g = porPacote.get(l.pacote)
+      const area = l.area_ajustada || l.area || 'Sem área'
       g.total = somar(g.total, meses)
-      acumular(g.subs, l.subpacote || 'Sem subpacote', meses)
+      acumular(g.areas, area, meses)
+      const sub = l.subpacote || 'Sem subpacote'
+      if (!g.subs.has(sub)) g.subs.set(sub, { total: zeros(), areas: new Map() })
+      const s = g.subs.get(sub)
+      s.total = somar(s.total, meses)
+      acumular(s.areas, area, meses)
     }
 
     const eid = l.empresa_id ?? 'sem-empresa'
@@ -192,14 +191,24 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
       .map(([nome, g]) => ({
         nome,
         valores: g.total,
+        areas: Object.fromEntries(g.areas),
         subpacotes: [...g.subs.entries()]
-          .map(([sub, valores]) => ({ nome: sub, valores }))
+          .map(([sub, s]) => ({ nome: sub, valores: s.total, areas: Object.fromEntries(s.areas) }))
           .sort((a, b) => soma(b.valores) - soma(a.valores)),
       }))
       .sort((a, b) => soma(b.valores) - soma(a.valores)),
-    areas: [...porArea.entries()]
-      .map(([nome, valores]) => ({ nome, valores }))
-      .sort((a, b) => soma(b.valores) - soma(a.valores)),
+    // As áreas que aparecem nos pacotes, da maior para a menor: são as opções
+    // do filtro do quadro "Gastos por pacote".
+    areasDosPacotes: [
+      ...[...porPacote.values()]
+        .reduce((mapa, g) => {
+          for (const [area, v] of g.areas) mapa.set(area, (mapa.get(area) ?? 0) + soma(v))
+          return mapa
+        }, new Map())
+        .entries(),
+    ]
+      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+      .map(([nome]) => nome),
     // A chave do caminho casa o mesmo nó entre versões (Budget e Last Year).
     estrutura: agrupado.estrutura,
     arvore: agrupado.arvore,

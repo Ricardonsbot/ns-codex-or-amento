@@ -93,6 +93,7 @@ export default function Resultado() {
   const [comDado, setComDado] = useState(null)
   const [aba, setAba] = useState('mom')
   const [medida, setMedida] = useState('nr')
+  const [areaPacote, setAreaPacote] = useState('')
   const [modoEmpresa, setModoEmpresa] = useState('mes')
   const [empresaPl, setEmpresaPl] = useState('')
   const [exportacao, setExportacao] = useState(null)
@@ -161,6 +162,7 @@ export default function Resultado() {
         ly,
         mes,
         medida,
+        areaPacote,
         modoEmpresa,
         empresaPl,
         rotuloVersao: versao ? `${ciclo?.ano} · ${versao.nome}` : 'Actual',
@@ -168,7 +170,7 @@ export default function Resultado() {
         rotuloLy: versaoLy ? `LY ${cicloLy.ano}` : null,
       },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dados, comp, ly, mes, medida, modoEmpresa, empresaPl]
+    [dados, comp, ly, mes, medida, areaPacote, modoEmpresa, empresaPl]
   )
   /**
    * Base empilhada: os lançamentos gravados da versão, no mesmo recorte da
@@ -418,6 +420,15 @@ export default function Resultado() {
                     opcoes={MEDIDAS_MOM.map((m) => ({ valor: m.valor, rotulo: m.rotulo }))}
                     onChange={setMedida}
                     semTodas
+                  />
+                )}
+                {aba === 'pacotes' && (
+                  <FiltroBotoes
+                    label="Área"
+                    valor={areaPacote}
+                    rotuloTodas="Todas as áreas"
+                    opcoes={(dados?.areasDosPacotes ?? []).map((a) => ({ valor: a, rotulo: a }))}
+                    onChange={setAreaPacote}
                   />
                 )}
                 {aba === 'plEmpresa' && (
