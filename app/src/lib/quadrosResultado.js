@@ -457,26 +457,6 @@ function budgetMesAMes(ctx) {
   return { grupos, linhas }
 }
 
-/** Resultados por empresa: as medidas-resumo de cada empresa, no YTD. */
-function porEmpresa(ctx) {
-  const { mes } = ctx
-  const medidas = [
-    { s: 'nr', rotulo: 'Net Revenue', comNR: false },
-    { s: 'adjEbitda', rotulo: 'Adjusted EBITDA', comNR: true },
-    { s: 'eac', rotulo: 'Adj. EBITDA After Capex', comNR: true },
-    { s: 'ni', rotulo: 'Net Income', comNR: true },
-  ]
-  const grupos = medidas.map((m) => ({ rotulo: m.rotulo, colunas: colunasBloco(m.s, { comNR: m.comNR }) }))
-  const linha = (rotulo, tipo, d) => {
-    const v = {}
-    const nr = janela(d.nr, 'YTD', mes)
-    for (const m of medidas) Object.assign(v, valoresBloco(m.s, { a: janela(d[m.s], 'YTD', mes), nrA: nr }))
-    return { rotulo, tipo, v }
-  }
-  const linhas = (ctx.dados.empresas ?? []).map((e) => linha(e.nome, 'linha', e.demo))
-  linhas.push({ tipo: 'respiro' }, linha('Consolidado', 'consolidado', ctx.dados.demo))
-  return { grupos, linhas }
-}
 
 /** Gastos por pacote: pacote e subpacote, no YTD, com o % RoL. */
 function pacotes(ctx) {
@@ -545,7 +525,6 @@ export const ABAS = [
   { valor: 'performance', rotulo: 'Performance Overview', montar: performance },
   { valor: 'resumo', rotulo: 'Painel Resumo', montar: resumo },
   { valor: 'mensal', rotulo: 'Budget mês a mês', montar: budgetMesAMes },
-  { valor: 'empresas', rotulo: 'Resultados por empresa', montar: porEmpresa, foraDaMaster: true },
   { valor: 'pacotes', rotulo: 'Gastos por pacote', montar: pacotes, foraDaMaster: true },
   { valor: 'areas', rotulo: 'Por área', montar: areas, foraDaMaster: true },
 ]
