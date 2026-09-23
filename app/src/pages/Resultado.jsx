@@ -12,6 +12,7 @@ import { MESES, MEDIDAS_MOM, janela } from '../lib/demonstrativo'
 import { ABAS, montarQuadro, quadroParaExportar, bigNumbers } from '../lib/quadrosResultado'
 import Indicadores from '../components/Indicadores'
 import BotaoUnidade from '../components/BotaoUnidade'
+import BridgeOrcamento from '../components/BridgeOrcamento'
 import MenuExportar from '../components/MenuExportar'
 import { montarExportacaoEmpilhada } from '../lib/exportarResultado'
 import { fetchLancamentosParaExportar } from '../lib/lancamentosData'
@@ -357,6 +358,13 @@ export default function Resultado() {
         {!carregando && dados && ctx && (
           <>
             <Indicadores itens={bigNumbers(ctx)} />
+
+            <BridgeOrcamento
+              receita={janela(dados.demo.nr, 'YTD', mes)}
+              despesa={janela(dados.demo.nr, 'YTD', mes) - janela(dados.demo.adjEbitda, 'YTD', mes)}
+              capex={-janela(dados.demo.capex, 'YTD', mes)}
+              subtitulo={`${recorte} · ${ciclo.ano} ${versao.nome} · YTD ${MESES[mes - 1]}`}
+            />
 
             {semConta !== 0 && (
               <div className="proto-banner" style={{ marginBottom: 18 }}>

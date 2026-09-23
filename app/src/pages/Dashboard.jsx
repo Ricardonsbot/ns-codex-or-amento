@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useToast } from '../components/ToastProvider'
-import { fetchAnos, fetchBUs, fetchTorres, fetchEmpresas, fetchBridgeSummary, computeBridge } from '../lib/dashboardData'
+import { fetchAnos, fetchBUs, fetchTorres, fetchEmpresas } from '../lib/dashboardData'
 import BotaoUnidade from '../components/BotaoUnidade'
-import { useUnidade } from '../components/UnidadeProvider'
 import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
 import { bigNumbers } from '../lib/quadrosResultado'
 import Indicadores from '../components/Indicadores'
@@ -21,7 +20,6 @@ const lerAberto = () => {
 
 export default function Dashboard() {
   const showToast = useToast()
-  const { comMoeda } = useUnidade()
 
   const [bus, setBus] = useState([])
   const [torres, setTorres] = useState([])
@@ -32,7 +30,6 @@ export default function Dashboard() {
   const [selectedTorreId, setSelectedTorreId] = useState('')
   const [selectedEmpresaId, setSelectedEmpresaId] = useState('')
 
-  const [bridge, setBridge] = useState(computeBridge({ receita: 0, despesa: 0, capex: 0 }))
   const [loading, setLoading] = useState(true)
   const [acessoAberto, setAcessoAberto] = useState(lerAberto)
   const [ciclos, setCiclos] = useState([])
@@ -72,28 +69,6 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
-    if (selectedAno === null) return
-    async function aplicarFiltros() {
-      setLoading(true)
-      try {
-        const resumo = await fetchBridgeSummary({
-          ano: selectedAno,
-          buId: selectedBuId || null,
-          torreId: selectedTorreId || null,
-          empresaId: selectedEmpresaId || null,
-        })
-        setBridge(computeBridge(resumo))
-      } catch (err) {
-        showToast(`Erro ao consultar lançamentos: ${err.message}`, 'error')
-      } finally {
-        setLoading(false)
-      }
-    }
-    aplicarFiltros()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAno, selectedBuId, selectedTorreId, selectedEmpresaId])
-
   // Os mesmos big numbers do Resultado, no recorte dos filtros do Dashboard:
   // ano inteiro (FY) da versão de referência do ciclo, contra o ano anterior.
   const ciclo = ciclos.find((c) => c.ano === selectedAno) ?? null
@@ -103,9 +78,11 @@ export default function Dashboard() {
   useEffect(() => {
     if (!versao) {
       setIndicadores(null)
+      setLoading(false)
       return
     }
     let cancelado = false
+    setLoading(true)
     ;(async () => {
       try {
         const filtros = {
@@ -123,6 +100,8 @@ export default function Dashboard() {
           setIndicadores(null)
           showToast(`Erro ao montar os indicadores: ${err.message}`, 'error')
         }
+      } finally {
+        if (!cancelado) setLoading(false)
       }
     })()
     return () => {
@@ -245,64 +224,6 @@ export default function Dashboard() {
                 <h3>Exportar</h3>
                 <p>Baixar o resumo do orçamento do ciclo atual.</p>
                 <div className="hub-cta">Exportar dados →</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="panel">
-          <div className="panel-header">
-            <div>
-              <h2>Resumo do Orçamento — Revenue → EBITDA after Capex</h2>
-              <p>Ciclo {selectedAno ?? '—'} · dados reais do Supabase (R$ milhões)</p>
-            </div>
-          </div>
-          <div className="panel-body">
-            <div className="bridge-chart">
-              <div className="bridge-col">
-                <div className="bridge-value">{comMoeda(bridge.receita)}</div>
-                <div className="bridge-track"><div className="bridge-bar receita" style={{ bottom: `${bridge.bars.receita.bottom}%`, height: `${bridge.bars.receita.height}%` }} /></div>
-                <div className="bridge-label"><span className="bridge-sign">(+)</span>Revenue</div>
-              </div>
-              <div className="bridge-connector">
-                <div className="bridge-value">&nbsp;</div>
-                <div className="bridge-connector-track"><div className="bridge-connector-line" style={{ bottom: `${bridge.bars.receita.height}%` }} /></div>
-                <div className="bridge-label">&nbsp;</div>
-              </div>
-              <div className="bridge-col">
-                <div className="bridge-value">{comMoeda(-Math.abs(bridge.despesa))}</div>
-                <div className="bridge-track"><div className="bridge-bar despesa" style={{ bottom: `${bridge.bars.despesa.bottom}%`, height: `${bridge.bars.despesa.height}%` }} /></div>
-                <div className="bridge-label"><span className="bridge-sign">(−)</span>Expenses</div>
-              </div>
-              <div className="bridge-connector">
-                <div className="bridge-value">&nbsp;</div>
-                <div className="bridge-connector-track"><div className="bridge-connector-line" style={{ bottom: `${bridge.bars.ebitda.height}%` }} /></div>
-                <div className="bridge-label">&nbsp;</div>
-              </div>
-              <div className="bridge-col">
-                <div className="bridge-value">{comMoeda(bridge.ebitda)}</div>
-                <div className="bridge-track"><div className="bridge-bar subtotal" style={{ bottom: `${bridge.bars.ebitda.bottom}%`, height: `${bridge.bars.ebitda.height}%` }} /></div>
-                <div className="bridge-label">EBITDA</div>
-              </div>
-              <div className="bridge-connector">
-                <div className="bridge-value">&nbsp;</div>
-                <div className="bridge-connector-track"><div className="bridge-connector-line" style={{ bottom: `${bridge.bars.ebitda.height}%` }} /></div>
-                <div className="bridge-label">&nbsp;</div>
-              </div>
-              <div className="bridge-col">
-                <div className="bridge-value">{comMoeda(-Math.abs(bridge.capex))}</div>
-                <div className="bridge-track"><div className="bridge-bar capex" style={{ bottom: `${bridge.bars.capex.bottom}%`, height: `${bridge.bars.capex.height}%` }} /></div>
-                <div className="bridge-label"><span className="bridge-sign">(−)</span>Capex</div>
-              </div>
-              <div className="bridge-connector">
-                <div className="bridge-value">&nbsp;</div>
-                <div className="bridge-connector-track"><div className="bridge-connector-line" style={{ bottom: `${bridge.bars.ebitdaAfterCapex.height}%` }} /></div>
-                <div className="bridge-label">&nbsp;</div>
-              </div>
-              <div className="bridge-col">
-                <div className="bridge-value">{comMoeda(bridge.ebitdaAfterCapex)}</div>
-                <div className="bridge-track"><div className="bridge-bar final" style={{ bottom: `${bridge.bars.ebitdaAfterCapex.bottom}%`, height: `${bridge.bars.ebitdaAfterCapex.height}%` }} /></div>
-                <div className="bridge-label">EBITDA after Capex</div>
               </div>
             </div>
           </div>
