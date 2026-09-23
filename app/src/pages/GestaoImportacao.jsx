@@ -275,7 +275,6 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
           <ChecklistImportacao
             registro={ultima.resumo}
             escopo="tipo"
-            titulo={`${ROTULO[tipo]} · ${arquivo}`}
             onFechar={() => setChecklistAberto(false)}
           />
         )}

@@ -1,19 +1,28 @@
 import { useEffect, useRef } from 'react'
-import { checklist, flagDo } from '../lib/importacoesData'
+import { avaliar } from '../lib/importacoesData'
+import { useUnidade } from './UnidadeProvider'
 
-const CORES = { verde: 'Tudo certo', amarelo: 'Passou, mas confira', vermelho: 'Tem pendência' }
+const quando = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—')
+
+/** Uma linha "Rótulo: valor" do bloco de detalhes. */
+function Detalhe({ rotulo, children }) {
+  return (
+    <div className="detalhe-linha">
+      <span>{rotulo}:</span>
+      <div>{children}</div>
+    </div>
+  )
+}
 
 /**
- * O checklist do template numa janela: os itens vermelhos (o número sai
- * errado) e os amarelos (entra, mas alguém precisa olhar), pendências
- * primeiro.
+ * O status de um template importado, numa janela: os detalhes do arquivo à
+ * esquerda e, à direita, o que é essencial para consolidar, o que seria ideal
+ * ter e o que impede a liberação. Embaixo, as medidas que o arquivo trouxe.
  *
- * É janela, e não um bloco na página, porque são onze frases longas: em
- * linha, dentro da tabela do histórico, uma passava por cima da outra.
- *
- * Abre sozinha depois de importar, e pela flag na lista do histórico.
+ * Abre sozinha depois de importar e ao clicar na linha do histórico.
  */
-export default function ChecklistImportacao({ registro, escopo, titulo, onFechar }) {
+export default function ChecklistImportacao({ registro, escopo, onFechar }) {
+  const { numero, u } = useUnidade()
   const fechar = useRef(null)
   useEffect(() => {
     fechar.current?.focus()
@@ -22,46 +31,109 @@ export default function ChecklistImportacao({ registro, escopo, titulo, onFechar
     return () => document.removeEventListener('keydown', esc)
   }, [onFechar])
 
-  const itens = checklist(registro, escopo)
-  const flag = flagDo(registro, escopo)
-  const pendentes = itens.filter((i) => !i.ok)
-  const lista = [...pendentes, ...itens.filter((i) => i.ok)]
+  const a = avaliar(registro, escopo)
 
   return (
-    <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label="Checklist do template">
-      <div className="modal" style={{ maxWidth: 620 }}>
+    <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label="Status do template">
+      <div className="modal modal-status" style={{ maxWidth: 820 }}>
         <div className="modal-header">
-          <h3>Checklist do template</h3>
+          <h3>Status do template</h3>
           <button ref={fechar} className="modal-close" type="button" onClick={onFechar} aria-label="Fechar">
             ×
           </button>
         </div>
 
         <div className="modal-body">
-          <div className="checklist-cabecalho">
-            <span className={`flag-template flag-${flag}`}>● {CORES[flag]}</span>
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-              {titulo ? `${titulo} · ` : ''}
-              {pendentes.length
-                ? `${pendentes.length} de ${itens.length} itens pedem atenção`
-                : `${itens.length} itens conferidos`}
-            </span>
+          <div className="status-colunas">
+            <div className="status-detalhes">
+              <div className="status-titulo">Detalhes</div>
+              <div className="detalhe-bloco">
+                <span className="detalhe-icone" aria-hidden="true">🗒</span>
+                <div>
+                  <Detalhe rotulo="Nome">{registro?.arquivo ?? '—'}</Detalhe>
+                  <Detalhe rotulo="Data Import">{quando(registro?.criado_em)}</Detalhe>
+                  <Detalhe rotulo="User">
+                    <span className="detalhe-email">{registro?.usuario_email ?? registro?.usuario_nome ?? '—'}</span>
+                  </Detalhe>
+                  <Detalhe rotulo="Ciclo">
+                    {[registro?.ano, registro?.versao_nome].filter(Boolean).join(' - ') || '—'}
+                  </Detalhe>
+                </div>
+              </div>
+            </div>
+
+            <div className="status-niveis">
+              <div className="status-titulo">Status</div>
+
+              <div className="nivel">
+                <span className={`bolinha ${a.liberado ? 'verde' : 'cinza'}`} aria-hidden="true" />
+                <div>
+                  <strong>Essencial {a.liberado ? '(Liberado)' : '(Incompleto)'}</strong>
+                  <ul className="nivel-itens">
+                    {a.essenciais.map((i) => (
+                      <li key={i.chave} className={i.ok ? 'ok' : 'falta'}>
+                        <span aria-hidden="true">{i.ok ? '☑' : '☐'}</span> {i.rotulo}
+                        <em>{i.detalhe}</em>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {a.ideais.length > 0 && (
+                <div className="nivel">
+                  <span className={`bolinha ${a.pendencias.length ? 'amarelo' : 'verde'}`} aria-hidden="true" />
+                  <div>
+                    <strong>Ideal {a.pendencias.length ? '(Pendências)' : '(Completo)'}</strong>
+                    <ul className="nivel-itens">
+                      {a.ideais.map((i) => (
+                        <li key={i.chave} className={i.ok ? 'ok' : 'falta'}>
+                          <span aria-hidden="true">{i.ok ? '☑' : '☐'}</span> {i.rotulo}
+                          <em>{i.detalhe}</em>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {a.impedimentos.length > 0 && (
+                <div className="nivel">
+                  <span className="bolinha vermelho" aria-hidden="true" />
+                  <div>
+                    <strong>Impedimento (Não Liberado)</strong>
+                    <ul className="nivel-itens">
+                      {a.impedimentos.map((i) => (
+                        <li key={i.chave} className="falta">
+                          {i.rotulo}
+                          <em>{i.detalhe}</em>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <ul className="lista-checklist">
-            {lista.map((i) => (
-              <li key={i.chave} className={i.ok ? 'ok' : `pendente nivel-${i.nivel}`}>
-                <span aria-hidden="true">{i.ok ? '✓' : i.nivel === 'vermelho' ? '✕' : '!'}</span>
-                <div>
-                  <strong>{i.rotulo}</strong>
-                  <span> — {i.detalhe}</span>
+          <div className="status-medidas">
+            {a.medidas.map((m) => (
+              <div key={m.chave}>
+                <div className="status-medida-rotulo">{m.rotulo}</div>
+                <div className="status-medida-valor">
+                  <span className={`bolinha ${m.cor}`} aria-hidden="true" />
+                  {m.valor ? numero(m.valor) : '—'}
                 </div>
-              </li>
+              </div>
             ))}
-          </ul>
+            <div className="status-medidas-unidade">{u.faixa}</div>
+          </div>
         </div>
 
         <div className="modal-footer">
+          <span style={{ marginRight: 'auto', fontSize: 12.5 }}>
+            Consolidação: <strong>{a.apto ? 'Apto para consolidar' : 'Não apto'}</strong>
+          </span>
           <button className="btn btn-secondary" type="button" onClick={onFechar}>
             Fechar
           </button>

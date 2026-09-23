@@ -485,7 +485,6 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         <ChecklistImportacao
           registro={ultima.resumo}
           escopo="tipo"
-          titulo={`${rotulo} · ${arquivo}`}
           onFechar={() => setChecklistAberto(false)}
         />
       )}

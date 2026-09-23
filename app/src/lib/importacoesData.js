@@ -113,9 +113,27 @@ function conferirCadastros(linhas, cadastros) {
   return saida
 }
 
+/**
+ * Campos que o status "Essencial" e o "Ideal" olham, por preenchimento.
+ * Churn não existe como coluna do template; fica registrado como ausente, e
+ * o item some do quadro em vez de acusar falso negativo.
+ */
+const PREENCHIMENTO = {
+  valor: (p) => (p.total ?? 0) !== 0,
+  centroCusto: (p) => Boolean(p.centro_custo_nome || p.centroCusto),
+  contaContabil: (p) => Boolean(p.conta),
+  empresa: (p) => Boolean(typeof p.empresa === 'object' ? p.empresa?.id : p.empresa),
+  mrr: (p) => Boolean(p.mrr),
+  cliente: (p) => Boolean(p.cliente),
+  churn: (p) => Boolean(p.churn),
+  subpacote: (p) => Boolean(p.subpacote),
+}
+
 export function medirLinhas(linhas, tipo, cadastros) {
   let semArea = 0
   let sinaisTrocados = 0
+  let caixa = 0
+  const vazios = Object.fromEntries(Object.keys(PREENCHIMENTO).map((k) => [k, 0]))
   // Linha do P&L: a da conta no plano é a que manda. Duas coisas podem dar
   // errado — a conta cair numa linha que a Master não conhece (o valor some
   // do P&L) e a coluna "Linha P&L" do template discordar do plano.
@@ -126,6 +144,8 @@ export function medirLinhas(linhas, tipo, cadastros) {
 
   for (const p of linhas) {
     const total = p.total ?? soma(p.valores)
+    for (const [chave, tem] of Object.entries(PREENCHIMENTO)) if (!tem({ ...p, total })) vazios[chave] += 1
+    for (const v of p.valores ?? []) caixa += Number(v?.valor_caixa ?? 0)
     if (tipo !== 'receita' && total < 0) sinaisTrocados += 1
     if (tipo === 'receita' && total < 0) sinaisTrocados += 1
     const chave = classificar({ tipo, conta: p.conta, area: p.area, area_ajustada: p.area_ajustada })
@@ -152,6 +172,8 @@ export function medirLinhas(linhas, tipo, cadastros) {
     plDesconhecida,
     plDivergente,
     plExemplos,
+    vazios,
+    caixa,
     empresas: meses.size,
     cadastros: conferirCadastros(linhas, cadastros),
   }
@@ -316,207 +338,97 @@ export function resumoDaImportacao({ ano, versao, tipo, linhas, fora, marcadas, 
 }
 
 /**
- * O checklist do template importado. Cada item é
- * { chave, nivel, rotulo, ok, detalhe }:
+ * O quadro de status do template, em três níveis:
  *
- *   vermelho  o número sai errado ou incompleto — não dá para consolidar
- *   amarelo   entra, mas alguém precisa olhar
+ *   Essencial     o que o consolidado precisa para fechar. Falhou, o template
+ *                 fica "Não liberado" e vira impedimento.
+ *   Ideal         o que enriquece a análise (MRR, cliente, churn, subpacote).
+ *                 Falhou, é pendência: consolida do mesmo jeito.
+ *   Medidas       Net Revenue, Gasto, Capex e Fluxo de Caixa, com o sinal de
+ *                 que o arquivo trouxe cada um.
  *
- * É aqui que se mexe quando a régua do FP&A mudar. Serve tanto para a tela
- * que aparece logo depois de importar quanto para a lista do histórico: as
- * duas montam o mesmo objeto de registro.
- *
- * `escopo` 'tipo' é o checklist de UMA importação (o card de Receita, por
- * exemplo): ali não faz sentido cobrar que os três tipos tenham entrado, que
- * é coisa do arquivo inteiro.
+ * `ok` de cada item é "todas as linhas têm"; `faltam` diz em quantas não tem.
  */
-export function checklist(registro, escopo = 'arquivo') {
+export function avaliar(registro, escopo = 'arquivo') {
   const tipos = registro?.tipos ?? {}
   const t = registro?.totais ?? {}
-  const ROTULO = { receita: 'Receita', despesa: 'Despesa', capex: 'Capex' }
-  const usados = Object.keys(ROTULO).filter((x) => tipos[x])
-  const faltando = Object.keys(ROTULO).filter((x) => !tipos[x])
+  const usados = ['receita', 'despesa', 'capex'].filter((x) => tipos[x])
+  const linhas = usados.reduce((a, x) => a + (tipos[x]?.linhas ?? 0), 0)
+  const vazio = (campo) => usados.reduce((a, x) => a + (tipos[x]?.vazios?.[campo] ?? 0), 0)
+  const temCampo = (campo) => usados.some((x) => tipos[x]?.vazios?.[campo] !== undefined)
   const somar = (campo) => usados.reduce((a, x) => a + (tipos[x]?.[campo] ?? 0), 0)
-  const algum = (campo) => usados.some((x) => tipos[x]?.[campo])
 
-  const linhas = somar('linhas')
-  const fora = somar('fora')
-  const marcadas = somar('marcadas')
-  const semArea = somar('semArea')
-  const mesesVazios = somar('mesesVazios')
-  const sinaisTrocados = somar('sinaisTrocados')
-  const plDesconhecida = somar('plDesconhecida')
-  const plDivergente = somar('plDivergente')
-  const plExemplos = usados.flatMap((x) => tipos[x]?.plExemplos ?? []).slice(0, 3)
-  const desfeitos = usados.filter((x) => tipos[x]?.desfeito)
-  const comDeducao = Math.abs(t.nr ?? 0) < Math.abs(t.gr ?? 0)
-  const margem = t.nr ? ((t.nr - (t.despesa ?? 0)) / t.nr) * 100 : null
-  const item = (chave, nivel, rotulo, ok, detalhe) => ({ chave, nivel, rotulo, ok, detalhe })
-  const plural = (n, um, muitos) => `${n} ${n === 1 ? um : muitos}`
+  const item = (chave, rotulo, faltam, detalhe) => ({
+    chave,
+    rotulo,
+    faltam,
+    ok: faltam === 0,
+    detalhe: detalhe ?? (faltam ? `${faltam} de ${linhas} linha(s) sem` : 'todas as linhas têm'),
+  })
 
-  const itens = [
+  // Essenciais. Empresa e conta olham também o cadastro: campo preenchido com
+  // nome que não existe no cadastro não serve para consolidar.
+  const foraEmpresa = somar('fora')
+  const semConta = somar('marcadas')
+  const ccFora = usados.reduce((a, x) => a + (tipos[x]?.cadastros?.centroCusto?.linhas ?? 0), 0)
+  const essenciais = [
+    item('valor', 'Valor', vazio('valor')),
     item(
-      'empresas',
-      'vermelho',
-      'Empresas do arquivo cadastradas',
-      fora === 0,
-      fora ? `${plural(fora, 'linha ficou', 'linhas ficaram')} de fora — empresa não cadastrada` : `todas as ${linhas} linhas entraram`
+      'centroCusto',
+      'Centro de custo',
+      vazio('centroCusto') + ccFora,
+      vazio('centroCusto') + ccFora
+        ? `${vazio('centroCusto')} sem preencher · ${ccFora} fora do cadastro`
+        : 'preenchido e cadastrado'
     ),
     item(
-      'contas',
-      'vermelho',
-      'Contas no plano de contas',
-      marcadas === 0,
-      marcadas ? `${plural(marcadas, 'linha entrou', 'linhas entraram')} sem conta — ficam fora do P&L` : 'todas as contas existem no plano'
+      'contaContabil',
+      'Conta contábil',
+      semConta,
+      semConta ? `${semConta} linha(s) sem conta no plano` : 'todas no plano de contas'
     ),
     item(
-      'area',
-      'vermelho',
-      'Área de alocação preenchida',
-      semArea === 0,
-      semArea
-        ? `${plural(semArea, 'linha de gasto', 'linhas de gasto')} sem área — não viram CoGS, G&A, S&M nem R&D`
-        : 'todo gasto tem área'
+      'empresa',
+      'Empresa',
+      foraEmpresa,
+      foraEmpresa ? `${foraEmpresa} linha(s) com empresa fora do cadastro` : 'todas cadastradas'
     ),
-    item(
-      'linhaPl',
-      'vermelho',
-      'Linha do P&L reconhecida',
-      plDesconhecida === 0,
-      plDesconhecida
-        ? `${plural(plDesconhecida, 'linha cai', 'linhas caem')} numa linha do P&L que a Master não tem${
-            plExemplos.length ? ` — ex.: ${plExemplos.join(', ')}` : ''
-          }`
-        : 'toda conta cai numa linha da Master'
-    ),
-    item(
-      'sinais',
-      'vermelho',
-      'Sinais do valor',
-      sinaisTrocados === 0,
-      sinaisTrocados
-        ? `${plural(sinaisTrocados, 'linha', 'linhas')} com o sinal trocado — o valor entra invertido no P&L`
-        : 'receita e gasto positivos'
-    ),
-    item(
-      'destino',
-      'vermelho',
-      'Ciclo e versão de destino',
-      Boolean(registro?.ano && registro?.versao_nome),
-      registro?.ano && registro?.versao_nome ? `${registro.ano} · ${registro.versao_nome}` : 'destino incompleto'
-    ),
-    item(
-      'duplicidade',
-      'vermelho',
-      'Sem duplicidade',
-      !algum('somouEmCima'),
-      algum('somouEmCima')
-        ? 'a versão já tinha lançamentos deste tipo e a importação somou — confira se dobrou'
-        : 'não somou em cima de lançamento que já existia'
-    ),
-    item(
-      'desfeito',
-      'vermelho',
-      'Importação em pé',
-      desfeitos.length === 0,
-      desfeitos.length ? `${desfeitos.map((x) => ROTULO[x]).join(', ')} desfeito(s) depois` : 'nada foi desfeito'
-    ),
-
-    item(
-      'tipos',
-      'amarelo',
-      'Receita, Despesa e Capex no arquivo',
-      faltando.length === 0,
-      faltando.length ? `só veio ${usados.map((x) => ROTULO[x]).join(', ')} — envio parcial?` : 'os três entraram'
-    ),
-    item(
-      'deducao',
-      'amarelo',
-      'Dedução na receita',
-      !tipos.receita || comDeducao,
-      !tipos.receita
-        ? 'sem receita neste arquivo'
-        : comDeducao
-        ? 'Net Revenue menor que a Gross Revenue'
-        : 'Net Revenue igual à Gross Revenue — margem sai otimista'
-    ),
-    item(
-      'meses',
-      'amarelo',
-      'Doze meses por empresa',
-      mesesVazios === 0,
-      mesesVazios ? `${plural(mesesVazios, 'empresa tem', 'empresas têm')} mês em branco` : 'nenhum buraco de mês'
-    ),
-    item(
-      'linhaPlTemplate',
-      'amarelo',
-      'Linha do P&L igual à do plano',
-      plDivergente === 0,
-      plDivergente
-        ? `${plural(plDivergente, 'linha traz', 'linhas trazem')} no template uma Linha P&L diferente da conta no plano — vale a do plano`
-        : 'template e plano de contas dizem a mesma coisa'
-    ),
-    item(
-      'margem',
-      'amarelo',
-      'Margem plausível',
-      margem === null || (margem > -20 && margem < 70),
-      margem === null
-        ? 'sem receita para calcular'
-        : `EBITDA/NR de ${margem.toFixed(1)}%${margem > 70 || margem < -20 ? ' — confira a classificação' : ''}`
-    ),
-    ...itensDeCadastro(tipos, usados),
   ]
-  return escopo === 'tipo' ? itens.filter((i) => i.chave !== 'tipos') : itens
-}
 
-/**
- * Nome e peso de cada dimensão de cadastro no checklist. Centro de custo é
- * vermelho: é por ele que o gasto é cobrado de quem responde pela área, e um
- * centro que não existe no cadastro não tem dono.
- */
-const CADASTRO = {
-  centroCusto: { rotulo: 'Centros de custo cadastrados', nivel: 'vermelho' },
-  fornecedor: { rotulo: 'Fornecedores cadastrados', nivel: 'amarelo' },
-  produto: { rotulo: 'Produtos cadastrados', nivel: 'amarelo' },
-  cliente: { rotulo: 'Clientes cadastrados', nivel: 'amarelo' },
-  diretoria: { rotulo: 'Diretorias cadastradas', nivel: 'amarelo' },
-}
+  const ideais = [
+    ['mrr', 'MRR'],
+    ['cliente', 'Cliente'],
+    ['churn', 'Churn'],
+    ['subpacote', 'Subpacote'],
+  ]
+    .filter(([campo]) => temCampo(campo) && vazio(campo) < linhas) // campo que o template não traz não vira item
+    .map(([campo, rotulo]) => item(campo, rotulo, vazio(campo)))
 
-/**
- * Um item por dimensão que o arquivo realmente traz. Dimensão que o template
- * não preenche, ou cadastro que ainda não existe como tabela, não vira item —
- * um checklist cheio de "não se aplica" não ajuda ninguém.
- */
-function itensDeCadastro(tipos, usados) {
-  return Object.entries(CADASTRO)
-    .map(([chave, { rotulo, nivel }]) => {
-      const partes = usados.map((x) => tipos[x]?.cadastros?.[chave]).filter(Boolean)
-      if (!partes.length) return null
-      const linhas = partes.reduce((a, x) => a + x.linhas, 0)
-      const exemplos = partes.flatMap((x) => x.exemplos ?? []).slice(0, 3)
-      return {
-        chave: `cad-${chave}`,
-        nivel,
-        rotulo,
-        ok: linhas === 0,
-        detalhe: linhas
-          ? `${linhas} linha(s) com valor fora do cadastro${exemplos.length ? ` — ex.: ${exemplos.join(', ')}` : ''}`
-          : 'todos os valores existem no cadastro',
-      }
-    })
-    .filter(Boolean)
-}
+  const impedimentos = essenciais.filter((i) => !i.ok)
+  const pendencias = ideais.filter((i) => !i.ok)
+  const liberado = impedimentos.length === 0
 
-/**
- * Verde quando tudo passa; vermelho quando falha algum item vermelho; amarelo
- * quando só os de atenção falharam.
- */
-export function flagDo(registro, escopo = 'arquivo') {
-  const itens = checklist(registro, escopo)
-  if (itens.some((i) => !i.ok && i.nivel === 'vermelho')) return 'vermelho'
-  if (itens.some((i) => !i.ok)) return 'amarelo'
-  return 'verde'
+  const medidas = [
+    { chave: 'nr', rotulo: 'Net Revenue', valor: t.nr ?? 0 },
+    { chave: 'despesa', rotulo: 'Gasto', valor: t.despesa ?? 0 },
+    { chave: 'capex', rotulo: 'Capex', valor: t.capex ?? 0 },
+    { chave: 'caixa', rotulo: 'Fluxo de Caixa', valor: somar('caixa') },
+  ].map((m) => ({ ...m, cor: m.valor ? 'verde' : 'amarelo' }))
+
+  return {
+    escopo,
+    essenciais,
+    ideais,
+    impedimentos,
+    pendencias,
+    medidas,
+    liberado,
+    apto: liberado,
+    // O que aparece na coluna Motivo da lista.
+    motivo: !liberado ? 'Não liberado' : pendencias.length ? 'Pendência' : 'Liberado',
+    corEssencial: liberado ? 'verde' : 'vermelho',
+    corIdeal: pendencias.length ? 'amarelo' : 'verde',
+  }
 }
 
 /**
@@ -533,44 +445,55 @@ export function exemploDeHistorico() {
     despesa: lista.reduce((a, e) => a + e.despesa, 0),
     capex: lista.reduce((a, e) => a + e.capex, 0),
   })
-  const info = (linhas, fora = 0, marcadas = 0) => ({ linhas, total: 0, apagados: 0, fora, marcadas, desfeito: false })
+  const info = (linhas, { fora = 0, marcadas = 0, vazios = {}, caixa = 0 } = {}) => ({
+    linhas,
+    total: 0,
+    apagados: 0,
+    fora,
+    marcadas,
+    somouEmCima: false,
+    desfeito: false,
+    caixa,
+    vazios: { valor: 0, centroCusto: 0, contaContabil: 0, empresa: 0, mrr: 0, cliente: 0, churn: linhas, subpacote: 0, ...vazios },
+    cadastros: {},
+  })
 
-  const completas = [
-    empresa('Opentech', 1240, 195_100_000, 112_300_000, 8_400_000),
-    empresa('BRK', 980, 184_400_000, 95_500_000, 6_100_000),
-  ]
-  const pendente = [empresa('LogRisk', 410, 70_500_000, 46_500_000, 3_200_000)]
+  const logrisk = [empresa('LogRisk', 410, 70_500_000, 46_500_000, 3_200_000)]
+  const brk = [empresa('BRK', 980, 184_400_000, 95_500_000, 6_100_000)]
+  const buonny = [empresa('Buonny', 260, 21_300_000, 14_800_000, 900_000)]
+
+  const linha = (id, arquivo, empresas, tipos, horas) => ({
+    id,
+    criado_em: new Date(Date.now() - horas * 36e5).toISOString(),
+    usuario_email: 'emerson.nakamura@nstech.com.br',
+    usuario_nome: 'Emerson Tadashi Nakamura',
+    arquivo,
+    tamanho_bytes: 6_200_000,
+    origem: 'gestao',
+    ano: 2027,
+    versao_nome: 'B27 - Ciclo 1 - v2',
+    tipos,
+    empresas,
+    totais: somaEmpresas(empresas),
+    exemplo: true,
+  })
 
   return [
-    {
-      id: 'exemplo-1',
-      criado_em: new Date(Date.now() - 36e5).toISOString(),
-      usuario_email: 'fpa@nstech.com.br',
-      usuario_nome: 'Exemplo — FP&A',
-      arquivo: 'Template Budget 2027 v3.xlsb',
-      tamanho_bytes: 9_400_000,
-      origem: 'gestao',
-      ano: 2027,
-      versao_nome: 'Original',
-      tipos: { receita: info(1100), despesa: info(950), capex: info(170) },
-      empresas: completas,
-      totais: somaEmpresas(completas),
-      exemplo: true,
-    },
-    {
-      id: 'exemplo-2',
-      criado_em: new Date(Date.now() - 3 * 864e5).toISOString(),
-      usuario_email: 'controladoria@nstech.com.br',
-      usuario_nome: 'Exemplo — Controladoria',
-      arquivo: 'Template Budget 2027 LogRisk.xlsx',
-      tamanho_bytes: 4_100_000,
-      origem: 'despesa',
-      ano: 2027,
-      versao_nome: 'Original',
-      tipos: { despesa: info(410, 12, 7) },
-      empresas: pendente,
-      totais: somaEmpresas(pendente),
-      exemplo: true,
-    },
+    // Tudo em ordem: essencial e ideal verdes, liberado.
+    linha('exemplo-1', 'Template Budget 2027 - LogRisk', logrisk, {
+      receita: info(180, { caixa: 66_000_000 }),
+      despesa: info(190, { caixa: 46_000_000 }),
+      capex: info(40, { caixa: 3_100_000 }),
+    }, 2),
+    // Essencial ok, mas falta preencher campos do Ideal: pendência.
+    linha('exemplo-2', 'Template Budget 2027 - BRK', brk, {
+      receita: info(520, { vazios: { mrr: 120, cliente: 60 }, caixa: 173_000_000 }),
+      despesa: info(380, { vazios: { subpacote: 95 }, caixa: 95_000_000 }),
+      capex: info(80, { caixa: 6_000_000 }),
+    }, 5),
+    linha('exemplo-3', 'Template Budget 2027 - Buonny', buonny, {
+      receita: info(150, { vazios: { cliente: 40 }, caixa: 20_000_000 }),
+      despesa: info(95, { vazios: { subpacote: 30 }, caixa: 14_500_000 }),
+    }, 26),
   ]
 }
