@@ -4,6 +4,7 @@ import { useToast } from './ToastProvider'
 import ImportWizard from './ImportWizard'
 import ProgressoGravacao from './ProgressoGravacao'
 import ChecklistImportacao from './ChecklistImportacao'
+import AlertaStatus from './AlertaStatus'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import TabelaQuadro from './TabelaQuadro'
 import { agruparPorEstrutura } from '../lib/resultadoData'
@@ -147,6 +148,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const [ultima, setUltima] = useState(null)   // { ids, quantos } da importacao recem-feita
   const [desfazendo, setDesfazendo] = useState(false)
   const [checklistAberto, setChecklistAberto] = useState(false)
+  const [statusPrevia, setStatusPrevia] = useState(false)
   const [podeSolicitar, setPodeSolicitar] = useState(false)
   const [wizardAberto, setWizardAberto] = useState(false)
   // Resultado de `checarEstrutura`: null até o worker mandar a primeira mensagem.
@@ -314,6 +316,21 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
     }
   }
 
+  // O status já na conferência, antes de gravar.
+  const resumoPrevia = previa
+    ? resumoDaImportacao({
+        ano: previa.ano,
+        versao: previa.versao,
+        tipo,
+        linhas: [...previa.prontas, ...previa.marcadas],
+        fora: previa.fora.length,
+        marcadas: previa.marcadas.length,
+        apagados: 0,
+        somouEmCima: Boolean(previa.jaExistem) && !substituir,
+        cadastros: previa.cadastros,
+      })
+    : null
+
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
 
   /**
@@ -465,11 +482,6 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               {desfazendo ? 'Desfazendo…' : '↶ Desfazer'}
             </button>
           )}
-          {ultima.resumo && (
-            <button className="btn btn-secondary btn-sm" type="button" onClick={() => setChecklistAberto(true)}>
-              ☑ Ver checklist
-            </button>
-          )}
           <button
             className="btn btn-secondary btn-sm"
             type="button"
@@ -479,6 +491,14 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
             Dispensar
           </button>
         </div>
+      )}
+
+      {ultima?.resumo && !previa && (
+        <AlertaStatus registro={ultima.resumo} escopo="tipo" onAbrir={() => setChecklistAberto(true)} />
+      )}
+
+      {statusPrevia && resumoPrevia && (
+        <ChecklistImportacao registro={resumoPrevia} escopo="tipo" onFechar={() => setStatusPrevia(false)} />
       )}
 
       {checklistAberto && ultima?.resumo && (
@@ -640,6 +660,10 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                 ⓘ {previa.fora.length} linha(s) <strong>não entram</strong>: sem empresa cadastrada não há como
                 gravar, porque a BU do lançamento vem dela. Cadastre a empresa e importe de novo.
               </div>
+            )}
+
+            {resumoPrevia && (
+              <AlertaStatus registro={resumoPrevia} escopo="tipo" previa onAbrir={() => setStatusPrevia(true)} />
             )}
 
             {/* Resumo antes da tabela: com muitas linhas, o total do rodape

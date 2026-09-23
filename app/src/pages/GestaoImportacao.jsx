@@ -4,6 +4,7 @@ import Layout from '../components/Layout'
 import ImportWizard from '../components/ImportWizard'
 import ProgressoGravacao from '../components/ProgressoGravacao'
 import ChecklistImportacao from '../components/ChecklistImportacao'
+import AlertaStatus from '../components/AlertaStatus'
 import HistoricoImportacoes from '../components/HistoricoImportacoes'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
@@ -54,6 +55,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
   const [ultima, setUltima] = useState(null)
   const [desfazendo, setDesfazendo] = useState(false)
   const [checklistAberto, setChecklistAberto] = useState(false)
+  const [statusPrevia, setStatusPrevia] = useState(false)
 
   useEffect(() => {
     let cancelado = false
@@ -188,6 +190,22 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
     }
   }
 
+  // O status já na conferência: é aqui que dá para desistir e corrigir a
+  // planilha, em vez de descobrir o impedimento depois de gravar.
+  const resumoPrevia = previa
+    ? resumoDaImportacao({
+        ano: lido.ano,
+        versao: previa.versao,
+        tipo,
+        linhas: [...previa.prontas, ...previa.marcadas],
+        fora: previa.fora.length,
+        marcadas: previa.marcadas.length,
+        apagados: 0,
+        somouEmCima: Boolean(previa.jaExistem) && !substituir,
+        cadastros: previa.cadastros,
+      })
+    : null
+
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
   const total = aImportar.reduce((a, p) => a + p.total, 0)
   const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
@@ -241,6 +259,10 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
 
         {erroConferencia && <div className="proto-banner">✕ Erro ao conferir: {erroConferencia}</div>}
 
+        {ultima?.resumo && (
+          <AlertaStatus registro={ultima.resumo} escopo="tipo" onAbrir={() => setChecklistAberto(true)} />
+        )}
+
         {ultima && (
           <div
             className="flex-row"
@@ -260,11 +282,6 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
                 {desfazendo ? 'Desfazendo…' : '↶ Desfazer'}
               </button>
             )}
-            {ultima.resumo && (
-              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setChecklistAberto(true)}>
-                ☑ Ver checklist
-              </button>
-            )}
             <button className="btn btn-secondary btn-sm" type="button" onClick={() => setUltima(null)} style={{ marginLeft: 'auto' }}>
               Dispensar
             </button>
@@ -277,6 +294,10 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
             escopo="tipo"
             onFechar={() => setChecklistAberto(false)}
           />
+        )}
+
+        {statusPrevia && resumoPrevia && (
+          <ChecklistImportacao registro={resumoPrevia} escopo="tipo" onFechar={() => setStatusPrevia(false)} />
         )}
 
         {previa && (
@@ -341,6 +362,15 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
               <div className="proto-banner" style={{ marginBottom: 12 }}>
                 ⓘ {previa.fora.length} linha(s) não entram: sem empresa cadastrada não há como gravar.
               </div>
+            )}
+
+            {resumoPrevia && (
+              <AlertaStatus
+                registro={resumoPrevia}
+                escopo="tipo"
+                previa
+                onAbrir={() => setStatusPrevia(true)}
+              />
             )}
 
             <div className="flex-row" style={{ gap: 20, flexWrap: 'wrap', marginBottom: 12, padding: '10px 12px', borderRadius: 6, background: 'var(--color-surface-alt, #f2f4f7)', border: '1px solid var(--color-border, #e2e5ea)' }}>

@@ -2819,3 +2819,25 @@ tfoot td {
 @media (max-width: 720px) {
   .status-colunas { grid-template-columns: 1fr; }
 }
+
+/* Faixa de status na tela de importação */
+.alerta-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.alerta-status.ok { border-color: #bfe3cd; background: var(--color-success-bg); }
+.alerta-status.atencao { border-color: #f0dca0; background: var(--color-warning-bg); }
+.alerta-status.bloqueado { border-color: #f0bcbc; background: var(--color-danger-bg); }
+
+.alerta-status-bolinhas { white-space: nowrap; }
+.alerta-status-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.alerta-status-texto strong { font-size: 13px; }
+.alerta-status-texto span { font-size: 12px; color: var(--color-text-muted); }
+.alerta-status .btn { margin-left: auto; }
