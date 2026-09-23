@@ -282,7 +282,8 @@ function plContabil(ctx) {
 
 /**
  * Um quadro por estrutura (Consolidado → BU → Torre → Sub Torre → Empresa),
- * com um bloco por medida. É o Painel Resultado (YTD) e o Capex (YTD).
+ * com um bloco por medida. É o Capex (YTD) e o painel da conferência de
+ * importação.
  */
 function quadroEstrutura(ctx, medidas, periodo) {
   const { mes } = ctx
@@ -318,17 +319,6 @@ function quadroEstrutura(ctx, medidas, periodo) {
     )
   }
   return { grupos, linhas, comIndice: true }
-}
-
-function painelYtd(ctx) {
-  return quadroEstrutura(
-    ctx,
-    [
-      { s: 'nr', rotulo: 'Net Revenue', comNR: false },
-      { s: 'eac', rotulo: 'Adj. Ebitda After Capex', comNR: true },
-    ],
-    'YTD'
-  )
 }
 
 function capexYtd(ctx) {
@@ -551,7 +541,6 @@ export const ABAS = [
   { valor: 'mom', rotulo: 'Visão Torres', montar: painelMoM },
   { valor: 'plEmpresa', rotulo: 'Visão P&L', montar: plPorEmpresaMoM },
   { valor: 'pl', rotulo: 'P&L Contábil', montar: plContabil },
-  { valor: 'painel', rotulo: 'Painel Resultado (YTD)', montar: painelYtd },
   { valor: 'capex', rotulo: 'Capex (YTD)', montar: capexYtd },
   { valor: 'performance', rotulo: 'Performance Overview', montar: performance },
   { valor: 'resumo', rotulo: 'Painel Resumo', montar: resumo },
