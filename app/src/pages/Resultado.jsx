@@ -14,6 +14,7 @@ import Indicadores from '../components/Indicadores'
 import BotaoUnidade from '../components/BotaoUnidade'
 import SeletorEmpresa from '../components/SeletorEmpresa'
 import BridgeOrcamento from '../components/BridgeOrcamento'
+import GraficoBridge from '../components/GraficoBridge'
 import MenuExportar from '../components/MenuExportar'
 import { montarExportacaoEmpilhada } from '../lib/exportarResultado'
 import { fetchLancamentosParaExportar } from '../lib/lancamentosData'
@@ -482,6 +483,7 @@ export default function Resultado() {
                   </div>
                 )}
                 {quadro?.erro && <div className="empty-hint">Não consegui montar este quadro: {quadro.erro}</div>}
+                {quadro?.cascata && <GraficoBridge cascata={quadro.cascata} />}
                 {quadro && !quadro.erro && (quadro.grafico ? <Performance quadro={quadro} /> : <TabelaQuadro quadro={quadro} />)}
                 {quadro?.notas?.map((n) => (
                   <p key={n} className="nota-tabela">

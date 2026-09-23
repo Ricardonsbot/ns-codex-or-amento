@@ -2881,3 +2881,18 @@ tfoot td {
 .passo-importacao strong { font-size: 13.5px; }
 .passo-importacao p { margin: 2px 0 0; font-size: 12.5px; color: var(--color-text-muted); line-height: 1.5; }
 .passo-importacao .passo-dica { color: var(--color-warning); }
+
+/* ---------- Cascata da Bridge de Receita ---------- */
+
+.grafico-bridge {
+  margin: 4px 0 18px;
+  padding: 12px 8px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.grafico-bridge .barra-total { fill: var(--xl-escuro, #404040); }
+.grafico-bridge .barra-sobe { fill: var(--color-receita); }
+.grafico-bridge .barra-desce { fill: var(--color-despesa); }
+.grafico-bridge-unidade { text-align: right; font-size: 11px; color: var(--color-text-muted); padding: 0 6px 4px; }

@@ -615,6 +615,12 @@ function bridgeReceita(ctx) {
     return {
       grupos,
       linhas,
+      // O gráfico em cascata desenha isto; a tabela abaixo é o detalhe.
+      cascata: {
+        inicio: { rotulo: ctx.rotuloComp ?? 'Budget', valor: totalB },
+        degraus: Object.values(drivers).map((d) => ({ rotulo: d.rotulo, valor: d.total })),
+        fim: { rotulo: ctx.rotuloVersao ?? 'Actual', valor: totalA },
+      },
       notas: [
         'Cada par cliente × produto entra num driver só; a soma dos cinco fecha a diferença entre as duas Net Revenues.',
         ctx.dados?.comReajuste === false
@@ -674,11 +680,26 @@ function bridgeReceita(ctx) {
   }
   linhas.push({ tipo: 'respiro' }, linha(`Net Revenue · ${ctx.rotuloVersao ?? 'Actual'}`, 'subtotal', totalB, totalA))
 
+  const degrausGrafico = [
+    ...mostrados.slice(0, 8).map((x) => ({ rotulo: x.nome, valor: x.d })),
+    // O que não coube em degrau próprio vira um só, para a ponte fechar.
+    ...(() => {
+      const sobra = [...mostrados.slice(8), ...resto].reduce((s, x) => s + x.d, 0)
+      return sobra ? [{ rotulo: 'Outros', valor: sobra }] : []
+    })(),
+  ]
+
   return {
     grupos,
     linhas,
+    cascata: {
+      inicio: { rotulo: ctx.rotuloComp ?? 'Budget', valor: totalB },
+      degraus: degrausGrafico,
+      fim: { rotulo: ctx.rotuloVersao ?? 'Actual', valor: totalA },
+    },
     notas: [
       `Um degrau por ${dim.rotulo.toLowerCase()}, do que mais muda para o que menos muda; do ${DEGRAUS_BRIDGE + 1}º em diante tudo vira “Outros”.`,
+      'No gráfico cabem os oito maiores; o restante entra num degrau só.',
       'A quebra por driver de movimento — novo, churn, expansão, contração e reajuste — é a próxima etapa.',
     ],
   }
