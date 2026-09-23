@@ -124,6 +124,8 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
         await onRegistrar?.(tipo, {
           linhas: [...previa.prontas, ...previa.marcadas],
           apagados,
+          fora: previa.fora.length,
+          marcadas: previa.marcadas.length,
           ano: lido.ano,
           ciclo: previa.ciclo,
           versao: previa.versao,

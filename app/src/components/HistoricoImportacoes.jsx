@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { historicoDisponivel, listarImportacoes } from '../lib/importacoesData'
+import { checklist, exemploDeHistorico, flagDo, historicoDisponivel, listarImportacoes } from '../lib/importacoesData'
 import BotaoUnidade from './BotaoUnidade'
 import { useUnidade } from './UnidadeProvider'
 
@@ -32,7 +32,12 @@ export default function HistoricoImportacoes({ versao }) {
     ;(async () => {
       try {
         if (!(await historicoDisponivel())) {
-          if (!cancelado) setSemTabela(true)
+          // Sem a tabela não há o que listar: mostra o exemplo, marcado como
+          // tal, para a tela poder ser vista e discutida antes da migração.
+          if (!cancelado) {
+            setSemTabela(true)
+            setRegistros(exemploDeHistorico())
+          }
           return
         }
         const r = await listarImportacoes()
@@ -61,9 +66,9 @@ export default function HistoricoImportacoes({ versao }) {
       <div className="panel-body">
         {semTabela && (
           <div className="proto-banner">
-            ⓘ O histórico ainda não está disponível — falta rodar
-            supabase/migrations/2026-09-22-historico-de-importacao.sql no Supabase. A importação funciona normalmente
-            enquanto isso, só não fica registrada.
+            ⓘ <strong>Exemplo.</strong> O histórico ainda não está disponível — falta rodar
+            supabase/migrations/2026-09-22-historico-de-importacao.sql no Supabase. As duas linhas abaixo são
+            fictícias, só para mostrar o formato; nada do que for importado fica registrado enquanto o SQL não rodar.
           </div>
         )}
         {erro && <div className="proto-banner">✕ Não consegui carregar o histórico: {erro}</div>}
@@ -82,6 +87,7 @@ export default function HistoricoImportacoes({ versao }) {
                   <th>ARQUIVO</th>
                   <th>USUÁRIO</th>
                   <th>DESTINO</th>
+                  <th>FLAG</th>
                   <th>TIPOS</th>
                   <th className="text-right">EMPRESAS</th>
                   <th className="text-right">GROSS REVENUE</th>
@@ -102,6 +108,7 @@ export default function HistoricoImportacoes({ versao }) {
                         <td style={{ whiteSpace: 'nowrap' }}>{quando(r.criado_em)}</td>
                         <td>
                           <strong>{r.arquivo}</strong>
+                          {r.exemplo && <span className="pill" style={{ marginLeft: 6 }}>exemplo</span>}
                           <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
                             {[tamanhoArquivo(r.tamanho_bytes), ORIGEM[r.origem]].filter(Boolean).join(' · ')}
                           </div>
@@ -115,6 +122,24 @@ export default function HistoricoImportacoes({ versao }) {
                         <td style={{ whiteSpace: 'nowrap' }}>
                           {r.ano ?? '—'}
                           {r.versao_nome ? ` · ${r.versao_nome}` : ''}
+                        </td>
+                        <td>
+                          {(() => {
+                            const itens = checklist(r)
+                            const pendentes = itens.filter((i) => !i.ok)
+                            return (
+                              <span
+                                className={`flag-template flag-${flagDo(r)}`}
+                                title={
+                                  pendentes.length
+                                    ? `Pendências: ${pendentes.map((i) => i.rotulo).join(' · ')}`
+                                    : 'Checklist completo'
+                                }
+                              >
+                                ● {pendentes.length ? `${pendentes.length} pendência(s)` : 'ok'}
+                              </span>
+                            )
+                          })()}
                         </td>
                         <td>
                           <div className="flex-row" style={{ gap: 4, flexWrap: 'wrap' }}>
@@ -146,7 +171,18 @@ export default function HistoricoImportacoes({ versao }) {
                       {estaAberto && (
                         <tr>
                           <td />
-                          <td colSpan={10} style={{ background: 'var(--color-bg)' }}>
+                          <td colSpan={11} style={{ background: 'var(--color-bg)' }}>
+                            <ul className="lista-checklist">
+                              {checklist(r).map((i) => (
+                                <li key={i.chave} className={i.ok ? 'ok' : 'pendente'}>
+                                  <span aria-hidden="true">{i.ok ? '✓' : '✕'}</span>
+                                  <div>
+                                    <strong>{i.rotulo}</strong>
+                                    <span> — {i.detalhe}</span>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
                             <table className="data-table" style={{ margin: '4px 0' }}>
                               <thead>
                                 <tr>

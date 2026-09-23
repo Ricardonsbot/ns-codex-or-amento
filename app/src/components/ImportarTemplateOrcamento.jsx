@@ -250,6 +250,8 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
           tipo,
           linhas: [...previa.prontas, ...previa.marcadas],
           apagados,
+          fora: previa.fora.length,
+          marcadas: previa.marcadas.length,
           usuarioEmail: email,
         })
       } catch (err) {
