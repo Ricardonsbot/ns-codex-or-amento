@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import ImportWizard from '../components/ImportWizard'
 import ProgressoGravacao from '../components/ProgressoGravacao'
+import ChecklistImportacao from '../components/ChecklistImportacao'
 import HistoricoImportacoes from '../components/HistoricoImportacoes'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
@@ -15,7 +16,7 @@ import {
   apagarDoTipo,
   desfazer,
 } from '../lib/importarTemplateOrcamento'
-import { registrarImportacao, marcarDesfeito } from '../lib/importacoesData'
+import { registrarImportacao, marcarDesfeito, resumoDaImportacao } from '../lib/importacoesData'
 import { useUnidade } from '../components/UnidadeProvider'
 
 const ROTULO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
@@ -88,6 +89,9 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
   }
 
   async function handleConfirmar() {
+    // A versão já tinha lançamentos deste tipo e a pessoa não marcou
+    // substituir: entra como pendência no checklist, pode ter dobrado.
+    const somouEmCima = Boolean(previa.jaExistem) && !substituir
     setGravando(true)
     setProgresso({ feitos: 0, total: 0, fase: substituir && previa.jaExistem ? 'apagando' : 'cabecalhos' })
     try {
@@ -126,6 +130,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
           apagados,
           fora: previa.fora.length,
           marcadas: previa.marcadas.length,
+          somouEmCima,
           ano: lido.ano,
           ciclo: previa.ciclo,
           versao: previa.versao,
@@ -134,7 +139,21 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
         showToast(`Importado, mas não consegui registrar no histórico: ${err.message}`, 'warning')
       }
 
-      setUltima({ ids: apagados ? null : ids, quantos: ids.length, enviadas })
+      setUltima({
+        ids: apagados ? null : ids,
+        quantos: ids.length,
+        enviadas,
+        resumo: resumoDaImportacao({
+          ano: lido.ano,
+          versao: previa.versao,
+          tipo,
+          linhas: [...previa.prontas, ...previa.marcadas],
+          fora: previa.fora.length,
+          marcadas: previa.marcadas.length,
+          apagados,
+          somouEmCima,
+        }),
+      })
       setPrevia(null)
       onImportado?.()
     } catch (err) {
@@ -241,6 +260,8 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
             </button>
           </div>
         )}
+
+        {ultima?.resumo && <ChecklistImportacao registro={ultima.resumo} escopo="tipo" />}
 
         {previa && (
           <>

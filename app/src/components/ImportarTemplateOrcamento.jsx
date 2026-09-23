@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useToast } from './ToastProvider'
 import ImportWizard from './ImportWizard'
 import ProgressoGravacao from './ProgressoGravacao'
+import ChecklistImportacao from './ChecklistImportacao'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import TabelaQuadro from './TabelaQuadro'
 import { agruparPorEstrutura } from '../lib/resultadoData'
@@ -19,7 +20,7 @@ import {
   desfazer,
   TEMPLATE,
 } from '../lib/importarTemplateOrcamento'
-import { registrarImportacao, marcarDesfeito } from '../lib/importacoesData'
+import { registrarImportacao, marcarDesfeito, resumoDaImportacao } from '../lib/importacoesData'
 
 const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
@@ -201,6 +202,9 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   }
 
   async function handleConfirmar() {
+    // A versão já tinha lançamentos deste tipo e a pessoa não marcou
+    // substituir: entra como pendência no checklist, pode ter dobrado.
+    const somouEmCima = Boolean(previa.jaExistem) && !substituir
     setGravando(true)
     setProgresso({ feitos: 0, total: 0, fase: substituir && previa.jaExistem ? 'apagando' : 'cabecalhos' })
     try {
@@ -252,6 +256,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
           apagados,
           fora: previa.fora.length,
           marcadas: previa.marcadas.length,
+          somouEmCima,
           usuarioEmail: email,
         })
       } catch (err) {
@@ -260,7 +265,22 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
 
       // A substituicao apagou linhas que o desfazer nao traz de volta; oferecer
       // "desfazer" ali seria mentira. O aviso das contas enviadas aparece nos dois casos.
-      setUltima({ ids: apagados ? null : ids, quantos: ids.length, enviadas, registroId })
+      setUltima({
+        ids: apagados ? null : ids,
+        quantos: ids.length,
+        enviadas,
+        registroId,
+        resumo: resumoDaImportacao({
+          ano: previa.ano,
+          versao: previa.versao,
+          tipo,
+          linhas: [...previa.prontas, ...previa.marcadas],
+          fora: previa.fora.length,
+          marcadas: previa.marcadas.length,
+          apagados,
+          somouEmCima,
+        }),
+      })
       setPrevia(null)
       onImportado?.()
     } catch (err) {
@@ -451,6 +471,8 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
           </button>
         </div>
       )}
+
+      {ultima?.resumo && !previa && <ChecklistImportacao registro={ultima.resumo} escopo="tipo" />}
 
       {previa && (
         <div className="panel" style={{ marginTop: 14 }}>

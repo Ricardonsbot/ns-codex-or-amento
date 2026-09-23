@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import { checklist, exemploDeHistorico, flagDo, historicoDisponivel, listarImportacoes } from '../lib/importacoesData'
+import ChecklistImportacao from './ChecklistImportacao'
 import BotaoUnidade from './BotaoUnidade'
 import { useUnidade } from './UnidadeProvider'
 
@@ -172,17 +173,7 @@ export default function HistoricoImportacoes({ versao }) {
                         <tr>
                           <td />
                           <td colSpan={11} style={{ background: 'var(--color-bg)' }}>
-                            <ul className="lista-checklist">
-                              {checklist(r).map((i) => (
-                                <li key={i.chave} className={i.ok ? 'ok' : 'pendente'}>
-                                  <span aria-hidden="true">{i.ok ? '✓' : '✕'}</span>
-                                  <div>
-                                    <strong>{i.rotulo}</strong>
-                                    <span> — {i.detalhe}</span>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
+                            <ChecklistImportacao registro={r} compacto />
                             <table className="data-table" style={{ margin: '4px 0' }}>
                               <thead>
                                 <tr>

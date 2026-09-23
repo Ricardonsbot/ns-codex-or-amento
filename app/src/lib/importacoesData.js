@@ -55,6 +55,39 @@ export function resumirLinhas(linhas, tipo) {
   return [...porEmpresa.values()]
 }
 
+/**
+ * As medições que o checklist usa e que só existem no momento da importação:
+ * depois de gravado, ninguém consegue reconstruir "o que a planilha trazia".
+ *
+ *   semArea       linhas de gasto operacional sem área de alocação — sem ela
+ *                 o valor não vira CoGS, G&A, S&M nem R&D
+ *   mesesVazios   empresas com algum mês sem valor nenhum: budget com buraco
+ *   sinaisTrocados linhas de gasto com total negativo (ou receita negativa)
+ */
+export function medirLinhas(linhas, tipo) {
+  let semArea = 0
+  let sinaisTrocados = 0
+  const meses = new Map() // empresa -> 12 bandeiras de "tem valor"
+
+  for (const p of linhas) {
+    const total = p.total ?? soma(p.valores)
+    if (tipo !== 'receita' && total < 0) sinaisTrocados += 1
+    if (tipo === 'receita' && total < 0) sinaisTrocados += 1
+    if (tipo !== 'capex' && classificar({ tipo, conta: p.conta, area: p.area, area_ajustada: p.area_ajustada }) === 'semArea') {
+      semArea += 1
+    }
+    const nome = (typeof p.empresa === 'object' ? p.empresa?.nome : p.empresa) ?? '(sem empresa)'
+    if (!meses.has(nome)) meses.set(nome, Array(12).fill(false))
+    const bandeiras = meses.get(nome)
+    ;(p.valores ?? []).forEach((v, i) => {
+      if (Number(v?.valor ?? v ?? 0)) bandeiras[i] = true
+    })
+  }
+
+  const mesesVazios = [...meses.values()].filter((b) => b.some((x) => !x)).length
+  return { semArea, sinaisTrocados, mesesVazios, empresas: meses.size }
+}
+
 /** Junta a lista de empresas já registrada com a de um tipo novo. */
 function juntarEmpresas(atuais, novas) {
   const mapa = new Map((atuais ?? []).map((e) => [e.id ?? e.nome, { ...zero(), ...e }]))
@@ -93,6 +126,7 @@ export async function registrarImportacao({
   apagados,
   fora,
   marcadas,
+  somouEmCima,
   usuarioEmail,
 }) {
   if (!(await historicoDisponivel())) return null
@@ -105,6 +139,8 @@ export async function registrarImportacao({
     // entraram por falta de empresa cadastrada e linhas que entraram sem conta.
     fora: fora ?? 0,
     marcadas: marcadas ?? 0,
+    somouEmCima: Boolean(somouEmCima),
+    ...medirLinhas(linhas, tipo),
     desfeito: false,
   }
 
@@ -175,71 +211,121 @@ export async function listarImportacoes(limite = 200) {
 }
 
 /**
- * O checklist que acende a flag do template: verde quando tudo passa,
- * vermelho quando sobra alguma pendência.
- *
- * É aqui que se mexe para mudar a regra — cada item é
- * { chave, rotulo, ok, detalhe }, e a flag é o "e" de todos eles.
+ * O registro de uma importação recém-feita, no mesmo formato do que vai para
+ * o banco. Serve ao checklist que aparece na tela logo depois de gravar —
+ * assim ele funciona mesmo antes de a migração do histórico ter rodado.
  */
-export function checklist(registro) {
+export function resumoDaImportacao({ ano, versao, tipo, linhas, fora, marcadas, apagados, somouEmCima }) {
+  const empresas = resumirLinhas(linhas, tipo)
+  return {
+    ano: ano ?? null,
+    versao_nome: versao?.nome ?? null,
+    tipos: {
+      [tipo]: {
+        linhas: linhas.length,
+        apagados: apagados ?? 0,
+        fora: fora ?? 0,
+        marcadas: marcadas ?? 0,
+        somouEmCima: Boolean(somouEmCima),
+        ...medirLinhas(linhas, tipo),
+        desfeito: false,
+      },
+    },
+    empresas,
+    totais: empresas.reduce(
+      (t, e) => ({
+        linhas: t.linhas + e.linhas,
+        gr: t.gr + e.gr,
+        nr: t.nr + e.nr,
+        despesa: t.despesa + e.despesa,
+        capex: t.capex + e.capex,
+      }),
+      zero()
+    ),
+  }
+}
+
+/**
+ * O checklist do template importado. Cada item é
+ * { chave, nivel, rotulo, ok, detalhe }:
+ *
+ *   vermelho  o número sai errado ou incompleto — não dá para consolidar
+ *   amarelo   entra, mas alguém precisa olhar
+ *
+ * É aqui que se mexe quando a régua do FP&A mudar. Serve tanto para a tela
+ * que aparece logo depois de importar quanto para a lista do histórico: as
+ * duas montam o mesmo objeto de registro.
+ *
+ * `escopo` 'tipo' é o checklist de UMA importação (o card de Receita, por
+ * exemplo): ali não faz sentido cobrar que os três tipos tenham entrado, que
+ * é coisa do arquivo inteiro.
+ */
+export function checklist(registro, escopo = 'arquivo') {
   const tipos = registro?.tipos ?? {}
   const t = registro?.totais ?? {}
   const ROTULO = { receita: 'Receita', despesa: 'Despesa', capex: 'Capex' }
   const usados = Object.keys(ROTULO).filter((x) => tipos[x])
   const faltando = Object.keys(ROTULO).filter((x) => !tipos[x])
   const somar = (campo) => usados.reduce((a, x) => a + (tipos[x]?.[campo] ?? 0), 0)
+  const algum = (campo) => usados.some((x) => tipos[x]?.[campo])
+
   const fora = somar('fora')
   const marcadas = somar('marcadas')
+  const semArea = somar('semArea')
+  const mesesVazios = somar('mesesVazios')
+  const sinaisTrocados = somar('sinaisTrocados')
   const desfeitos = usados.filter((x) => tipos[x]?.desfeito)
   const comDeducao = Math.abs(t.nr ?? 0) < Math.abs(t.gr ?? 0)
+  const margem = t.nr ? ((t.nr - (t.despesa ?? 0)) / t.nr) * 100 : null
 
-  return [
-    {
-      chave: 'tipos',
-      rotulo: 'Receita, Despesa e Capex importados',
-      ok: faltando.length === 0,
-      detalhe: faltando.length ? `falta ${faltando.map((x) => ROTULO[x]).join(', ')}` : 'os três entraram',
-    },
-    {
-      chave: 'empresas',
-      rotulo: 'Todas as linhas com empresa cadastrada',
-      ok: fora === 0,
-      detalhe: fora ? `${fora} linha(s) ficaram de fora` : 'nenhuma linha ficou de fora',
-    },
-    {
-      chave: 'contas',
-      rotulo: 'Todas as contas no plano',
-      ok: marcadas === 0,
-      detalhe: marcadas ? `${marcadas} linha(s) entraram sem conta` : 'nenhuma conta pendente',
-    },
-    {
-      chave: 'deducao',
-      rotulo: 'Dedução lançada na receita',
-      ok: !tipos.receita || comDeducao,
-      detalhe: !tipos.receita
+  const item = (chave, nivel, rotulo, ok, detalhe) => ({ chave, nivel, rotulo, ok, detalhe })
+
+  const itens = [
+    item('empresas', 'vermelho', 'Nenhuma linha fora por falta de empresa cadastrada', fora === 0,
+      fora ? `${fora} linha(s) não entraram` : 'todas as linhas entraram'),
+    item('contas', 'vermelho', 'Nenhuma conta fora do plano', marcadas === 0,
+      marcadas ? `${marcadas} linha(s) entraram sem conta — ficam fora do P&L` : 'nenhuma conta pendente'),
+    item('area', 'vermelho', 'Todo gasto com área de alocação', semArea === 0,
+      semArea ? `${semArea} linha(s) sem área — não viram CoGS, G&A, S&M nem R&D` : 'áreas preenchidas'),
+    item('destino', 'vermelho', 'Ciclo e versão de destino definidos', Boolean(registro?.ano && registro?.versao_nome),
+      registro?.ano && registro?.versao_nome ? `${registro.ano} · ${registro.versao_nome}` : 'destino incompleto'),
+    item('duplicidade', 'vermelho', 'Não somou em cima do que já existia', !algum('somouEmCima'),
+      algum('somouEmCima')
+        ? 'a versão já tinha lançamentos deste tipo e a importação somou — confira se dobrou'
+        : 'sem risco de duplicidade'),
+    item('desfeito', 'vermelho', 'Nada foi desfeito depois', desfeitos.length === 0,
+      desfeitos.length ? `${desfeitos.map((x) => ROTULO[x]).join(', ')} desfeito(s)` : 'importação inteira em pé'),
+
+    item('tipos', 'amarelo', 'Receita, Despesa e Capex no mesmo arquivo', faltando.length === 0,
+      faltando.length ? `falta ${faltando.map((x) => ROTULO[x]).join(', ')} — envio parcial?` : 'os três entraram'),
+    item('deducao', 'amarelo', 'Dedução lançada na receita', !tipos.receita || comDeducao,
+      !tipos.receita
         ? 'sem receita neste arquivo'
         : comDeducao
         ? 'Net Revenue menor que a Gross Revenue'
-        : 'Net Revenue igual à Gross Revenue — falta dedução',
-    },
-    {
-      chave: 'destino',
-      rotulo: 'Ciclo e versão de destino definidos',
-      ok: Boolean(registro?.ano && registro?.versao_nome),
-      detalhe:
-        registro?.ano && registro?.versao_nome ? `${registro.ano} · ${registro.versao_nome}` : 'destino incompleto',
-    },
-    {
-      chave: 'desfeito',
-      rotulo: 'Nada foi desfeito depois',
-      ok: desfeitos.length === 0,
-      detalhe: desfeitos.length ? `${desfeitos.map((x) => ROTULO[x]).join(', ')} desfeito(s)` : 'importação inteira em pé',
-    },
+        : 'Net Revenue igual à Gross Revenue — margem sai otimista'),
+    item('meses', 'amarelo', 'Doze meses preenchidos em cada empresa', mesesVazios === 0,
+      mesesVazios ? `${mesesVazios} empresa(s) com mês em branco` : 'nenhum buraco de mês'),
+    item('sinais', 'amarelo', 'Sinais coerentes: receita e gasto positivos', sinaisTrocados === 0,
+      sinaisTrocados ? `${sinaisTrocados} linha(s) com o sinal trocado` : 'sinais coerentes'),
+    item('margem', 'amarelo', 'Margem dentro de uma faixa plausível', margem === null || (margem > -20 && margem < 70),
+      margem === null
+        ? 'sem receita para calcular'
+        : `EBITDA/NR de ${margem.toFixed(1)}%${margem > 70 || margem < -20 ? ' — confira a classificação' : ''}`),
   ]
+  return escopo === 'tipo' ? itens.filter((i) => i.chave !== 'tipos') : itens
 }
 
-/** Verde quando o checklist passa inteiro; vermelho quando falta algo. */
-export const flagDo = (registro) => (checklist(registro).every((i) => i.ok) ? 'verde' : 'vermelho')
+/**
+ * Verde quando tudo passa; vermelho quando falha algum item vermelho; amarelo
+ * quando só os de atenção falharam.
+ */
+export function flagDo(registro, escopo = 'arquivo') {
+  const itens = checklist(registro, escopo)
+  if (itens.some((i) => !i.ok && i.nivel === 'vermelho')) return 'vermelho'
+  if (itens.some((i) => !i.ok)) return 'amarelo'
+  return 'verde'
+}
 
 /**
  * Dois registros de exemplo, para a tela poder ser vista antes de a migração
