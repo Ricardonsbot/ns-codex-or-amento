@@ -470,6 +470,7 @@ function budgetMesAMes(ctx) {
  * há ponte.
  */
 const DIMENSOES_BRIDGE = {
+  driver: { rotulo: 'Driver', lista: () => [] },
   produto: { rotulo: 'Produto', lista: (d) => d?.produtos ?? [] },
   empresa: {
     rotulo: 'Empresa',
@@ -487,18 +488,87 @@ const DIMENSOES_BRIDGE = {
 /** Quantos degraus aparecem antes de o resto virar "Outros". */
 const DEGRAUS_BRIDGE = 15
 
+/**
+ * A bridge por driver de movimento: o mesmo caminho do Budget até o Actual,
+ * mas dizendo POR QUE mudou, e não onde.
+ *
+ * Cada par cliente × produto é comparado entre as duas versões:
+ *
+ *   Novo        só existe na versão nova
+ *   Churn       só existia no Budget
+ *   Reajuste    a parte da variação que o próprio template marca como
+ *               reajuste (coluna "Reajuste"); é efeito de preço contratual,
+ *               não de volume
+ *   Expansão    o que sobrou para cima nos pares que existem dos dois lados
+ *   Contração   o que sobrou para baixo
+ *
+ * A soma dos cinco fecha exatamente a diferença entre as duas Net Revenues —
+ * é o que faz a ponte ser ponte, e não uma lista de variações.
+ *
+ * Sem quantidade no template não há preço × volume de verdade; reajuste é o
+ * mais perto disso que os dados permitem.
+ */
+function bridgePorDriver(ctx, mes) {
+  const ytd = (v) => janela(v ?? [], 'YTD', mes)
+  const mapa = (dados) => new Map((dados?.clienteProduto ?? []).map((x) => [x.chave, x]))
+  const atual = mapa(ctx.dados)
+  const budget = mapa(ctx.comp)
+
+  const drivers = {
+    novo: { rotulo: '(+) Novo', itens: [], total: 0 },
+    expansao: { rotulo: '(+) Expansão', itens: [], total: 0 },
+    reajuste: { rotulo: '(+/−) Reajuste', itens: [], total: 0 },
+    contracao: { rotulo: '(−) Contração', itens: [], total: 0 },
+    churn: { rotulo: '(−) Churn', itens: [], total: 0 },
+  }
+  const lancar = (chave, nome, valor) => {
+    if (!valor) return
+    drivers[chave].total += valor
+    drivers[chave].itens.push({ nome, valor })
+  }
+
+  for (const [chave, x] of atual) {
+    const nome = `${x.cliente} · ${x.produto}`
+    const a = ytd(x.valores)
+    const antes = budget.get(chave)
+    if (!antes) {
+      lancar('novo', nome, a)
+      continue
+    }
+    const b = ytd(antes.valores)
+    // O reajuste sai primeiro: o resto da diferença é volume/mix.
+    const reaj = ytd(x.reajuste) - ytd(antes.reajuste)
+    const resto = a - b - reaj
+    lancar('reajuste', nome, reaj)
+    lancar(resto >= 0 ? 'expansao' : 'contracao', nome, resto)
+  }
+  for (const [chave, x] of budget) {
+    if (atual.has(chave)) continue
+    lancar('churn', `${x.cliente} · ${x.produto}`, -ytd(x.valores))
+  }
+
+  const semCliente = [...atual.values(), ...budget.values()].some((x) => x.cliente === 'Sem cliente')
+  return { drivers, semCliente }
+}
+
 function bridgeReceita(ctx) {
   const { mes } = ctx
+  const porDriver = ctx.dimensaoBridge === 'driver'
   const dim = DIMENSOES_BRIDGE[ctx.dimensaoBridge] ?? DIMENSOES_BRIDGE.produto
   const grupos = [
     {
       rotulo: `Bridge de Receita · YTD ${MESES[mes - 1]}`,
-      colunas: [
-        { key: 'b', label: ctx.rotuloComp ?? 'Budget', fmt: 'mi', papel: 'orcado' },
-        { key: 'a', label: 'Actual', fmt: 'mi', papel: 'atual' },
-        { key: 'd', label: '∆', fmt: 'mi' },
-        { key: 'dp', label: '∆%', fmt: 'pct', semaforo: true },
-      ],
+      colunas: porDriver
+        ? [
+            { key: 'd', label: '∆', fmt: 'mi' },
+            { key: 'dp', label: '% do ∆ total', fmt: 'pct' },
+          ]
+        : [
+            { key: 'b', label: ctx.rotuloComp ?? 'Budget', fmt: 'mi', papel: 'orcado' },
+            { key: 'a', label: 'Actual', fmt: 'mi', papel: 'atual' },
+            { key: 'd', label: '∆', fmt: 'mi' },
+            { key: 'dp', label: '∆%', fmt: 'pct', semaforo: true },
+          ],
     },
   ]
 
@@ -511,6 +581,53 @@ function bridgeReceita(ctx) {
   }
 
   const ytd = (valores) => janela(valores ?? [], 'YTD', mes)
+  const nrDe = (dados) => ytd(dados?.demo?.nr)
+
+  if (porDriver) {
+    const { drivers, semCliente } = bridgePorDriver(ctx, mes)
+    const totalB = nrDe(ctx.comp)
+    const totalA = nrDe(ctx.dados)
+    const delta = totalA - totalB
+    const pct = (v) => (delta ? (v / Math.abs(delta)) * 100 : null)
+
+    const linhas = [
+      { rotulo: `Net Revenue · ${ctx.rotuloComp ?? 'Budget'}`, tipo: 'subtotal', v: { d: totalB, dp: null } },
+      { tipo: 'respiro' },
+    ]
+    for (const d of Object.values(drivers)) {
+      linhas.push({ rotulo: d.rotulo, tipo: 'grupo', v: { d: d.total, dp: pct(d.total) } })
+      // Os maiores de cada driver: é o que se leva para a reunião.
+      for (const it of [...d.itens].sort((x, y) => Math.abs(y.valor) - Math.abs(x.valor)).slice(0, 5)) {
+        linhas.push({ rotulo: it.nome, tipo: 'filha', v: { d: it.valor, dp: pct(it.valor) } })
+      }
+      if (d.itens.length > 5) {
+        const resto = d.itens.length - 5
+        const soma = d.total - [...d.itens].sort((x, y) => Math.abs(y.valor) - Math.abs(x.valor)).slice(0, 5).reduce((s, x) => s + x.valor, 0)
+        linhas.push({ rotulo: `Outros (${resto})`, tipo: 'filha', v: { d: soma, dp: pct(soma) } })
+      }
+    }
+    linhas.push(
+      { tipo: 'respiro' },
+      { rotulo: `Net Revenue · ${ctx.rotuloVersao ?? 'Actual'}`, tipo: 'subtotal', v: { d: totalA, dp: null } }
+    )
+
+    const fecha = Math.abs(Object.values(drivers).reduce((s, d) => s + d.total, 0) - delta) < 1
+    return {
+      grupos,
+      linhas,
+      notas: [
+        'Cada par cliente × produto entra num driver só; a soma dos cinco fecha a diferença entre as duas Net Revenues.',
+        ctx.dados?.comReajuste === false
+          ? 'A coluna "Reajuste" do template ainda não existe no banco: o efeito de preço fica dentro de expansão e contração.'
+          : 'Reajuste é o que o próprio template marca na coluna "Reajuste" — efeito de preço contratual, não de volume.',
+        ...(semCliente
+          ? ['Parte das linhas está sem cliente preenchido e cai em "Sem cliente": ali novo e churn ficam menos confiáveis.']
+          : []),
+        ...(fecha ? [] : ['⚠ A soma dos drivers não fechou a diferença — confira se há receita sem produto nos dois lados.']),
+      ],
+    }
+  }
+
   const somar = (lista) => {
     const m = new Map()
     for (const x of lista) m.set(x.nome, (m.get(x.nome) ?? 0) + ytd(x.valores))

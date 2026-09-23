@@ -96,7 +96,7 @@ export default function Resultado() {
   const [aba, setAba] = useState('mom')
   const [medida, setMedida] = useState('nr')
   const [areaPacote, setAreaPacote] = useState('')
-  const [dimensaoBridge, setDimensaoBridge] = useState('produto')
+  const [dimensaoBridge, setDimensaoBridge] = useState('driver')
   const [modoEmpresa, setModoEmpresa] = useState('mes')
   const [empresaPl, setEmpresaPl] = useState('')
   const [exportacao, setExportacao] = useState(null)
@@ -438,6 +438,7 @@ export default function Resultado() {
                     label="Abrir por"
                     valor={dimensaoBridge}
                     opcoes={[
+                      { valor: 'driver', rotulo: 'Driver' },
                       { valor: 'produto', rotulo: 'Produto' },
                       { valor: 'empresa', rotulo: 'Empresa' },
                       { valor: 'torre', rotulo: 'Torre' },

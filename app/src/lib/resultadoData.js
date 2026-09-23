@@ -68,13 +68,27 @@ async function sondarSubpacote() {
   return temSubpacote
 }
 
-/** As colunas de produto existem? Vieram na migração 2026-09-10. */
+/** As colunas de produto e cliente existem? Vieram na migração 2026-09-10. */
 let temProduto = null
 async function sondarProduto() {
   if (temProduto !== null) return temProduto
-  const { error } = await supabase.from('lancamento').select('produto_analitico, produto_sintetico').limit(1)
+  const { error } = await supabase.from('lancamento').select('produto_analitico, produto_sintetico, cliente').limit(1)
   temProduto = !error
   return temProduto
+}
+
+/**
+ * A coluna do reajuste mensal existe? É ela que separa o efeito de preço
+ * contratual do resto na Bridge de Receita. Sem ela a bridge por driver
+ * segue funcionando — o reajuste some como degrau e fica dentro de
+ * expansão e contração.
+ */
+let temReajuste = null
+async function sondarReajuste() {
+  if (temReajuste !== null) return temReajuste
+  const { error } = await supabase.from('lancamento_valor_mensal').select('valor_reajuste').limit(1)
+  temReajuste = !error
+  return temReajuste
 }
 
 /**
@@ -90,13 +104,17 @@ export function ehLabor(linhaPlTemplate) {
 }
 
 export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}) {
-  const [comSubpacote, comProduto] = await Promise.all([sondarSubpacote(), sondarProduto()])
+  const [comSubpacote, comProduto, comReajuste] = await Promise.all([
+    sondarSubpacote(),
+    sondarProduto(),
+    sondarReajuste(),
+  ])
   const campos =
     'tipo, area, bu_id, bu:bu_id(nome), torre_id, torre:torre_id(nome), sub_torre_id, ' +
     'sub_torre:sub_torre_id(nome), empresa_id, empresa:empresa_id(nome), ' +
-    'conta:conta_id(codigo, nome, linha_pl), lancamento_valor_mensal(mes, valor)' +
+    `conta:conta_id(codigo, nome, linha_pl), lancamento_valor_mensal(mes, valor${comReajuste ? ', valor_reajuste' : ''})` +
     (comSubpacote ? ', pacote, subpacote, linha_pl_template, area_ajustada' : '') +
-    (comProduto ? ', produto_analitico, produto_sintetico' : '')
+    (comProduto ? ', produto_analitico, produto_sintetico, cliente' : '')
 
   // O cadastro inteiro do recorte: toda empresa aparece, com ou sem
   // lançamento, e zero só quando ela não lançou nada.
@@ -127,12 +145,18 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
   const baseLabor = new Map() // a parte Labor de cada chave de Expenses
   const porPacote = new Map() // pacote -> { total, subs: Map(subpacote -> meses) }
   const porProduto = new Map() // produto -> 12 meses de Net Revenue
+  // cliente × produto -> { valores, reajuste }: o grão da bridge por driver.
+  const porClienteProduto = new Map()
   let semConta = zeros()
   const itens = []
 
   for (const l of linhas) {
     const meses = zeros()
-    for (const v of l.lancamento_valor_mensal ?? []) meses[v.mes - 1] += Number(v.valor)
+    const reajuste = zeros()
+    for (const v of l.lancamento_valor_mensal ?? []) {
+      meses[v.mes - 1] += Number(v.valor)
+      reajuste[v.mes - 1] += Number(v.valor_reajuste ?? 0)
+    }
 
     const k = classificar(l)
     if (k) acumular(base, k, meses)
@@ -159,7 +183,16 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     // Net Revenue — Gross Revenue e dedução —, com o nome analítico quando
     // existe; o sintético serve de reserva.
     if (l.tipo === 'receita' && (k === 'gr' || k === 'ded')) {
-      acumular(porProduto, l.produto_analitico || l.produto_sintetico || 'Sem produto', meses)
+      const produto = l.produto_analitico || l.produto_sintetico || 'Sem produto'
+      const cliente = l.cliente || 'Sem cliente'
+      acumular(porProduto, produto, meses)
+      const chave = `${cliente}||${produto}`
+      if (!porClienteProduto.has(chave)) {
+        porClienteProduto.set(chave, { chave, cliente, produto, valores: zeros(), reajuste: zeros() })
+      }
+      const cp = porClienteProduto.get(chave)
+      cp.valores = somar(cp.valores, meses)
+      cp.reajuste = somar(cp.reajuste, reajuste)
     }
 
     const eid = l.empresa_id ?? 'sem-empresa'
@@ -230,6 +263,8 @@ export async function fetchResultado(versaoId, { buId, torreId, empresaId } = {}
     produtos: [...porProduto.entries()]
       .map(([nome, valores]) => ({ nome, valores }))
       .sort((a, b) => soma(b.valores) - soma(a.valores)),
+    clienteProduto: [...porClienteProduto.values()],
+    comReajuste,
     // A chave do caminho casa o mesmo nó entre versões (Budget e Last Year).
     estrutura: agrupado.estrutura,
     arvore: agrupado.arvore,
