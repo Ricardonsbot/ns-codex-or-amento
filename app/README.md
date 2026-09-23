@@ -410,7 +410,11 @@ Abre em `http://localhost:8090`.
 
 **Importante:** o Vite embute as variáveis `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` no JavaScript **durante o build** (não são lidas em tempo de execução do container). O `docker-compose.yml` já está configurado pra ler essas duas variáveis do seu `app/.env` local e passá-las como build args — ou seja, configure o `.env` (passo acima) **antes** de rodar `docker compose up`. Se trocar as chaves depois, rode `docker compose up --build` de novo para reconstruir a imagem com os novos valores.
 
-Esse Dockerfile faz um build de produção (`npm run build`) e serve os arquivos estáticos resultantes via nginx — não é hot-reload como o `npm run dev`; é o equivalente a rodar a versão "publicada" do app localmente.
+Esse Dockerfile faz um build de produção (`npm run build`) e serve os arquivos estáticos resultantes via nginx — não é hot-reload como o `npm run dev`; é o equivalente a rodar a versão "publicada" do app localmente. O nginx roda sem privilégio de root (imagem `nginx-unprivileged`, porta 8080 dentro do container), para funcionar sem ajuste em clusters que exigem containers non-root.
+
+## Rodando em Kubernetes
+
+Manifests prontos em [`k8s/`](./k8s) — Deployment, Service, Ingress e HPA, com `securityContext` non-root/read-only e probes de liveness/readiness em `/healthz`. Veja [`k8s/README.md`](./k8s/README.md) para o passo a passo de build, push da imagem e `kubectl apply`.
 
 ## Estrutura
 

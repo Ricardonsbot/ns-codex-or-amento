@@ -16,10 +16,14 @@ ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
 RUN npm run build
 
-# ---- Serve stage: serve os arquivos estáticos gerados via nginx ----
-FROM nginx:alpine
+# ---- Serve stage: nginx sem root, para rodar em clusters que exigem
+# containers non-root (Pod Security "restricted", a maioria dos clusters
+# gerenciados hoje). A imagem "unprivileged" já escuta na 8080 e roda como
+# uid 101 — sem isso o Kubernetes barraria o pod ou exigiria correr como
+# root, o que muita política de segurança recusa.
+FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+EXPOSE 8080
