@@ -36,6 +36,9 @@ function paddedValores(lista) {
 export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse }) {
   const showToast = useToast()
   const { comMoeda } = useUnidade()
+  // Só o Capex mantém a grade linha a linha. Em Revenue e Expenses o volume
+  // vem do template, e a tela é de conferência: resumo por conta e gráfico.
+  const temGrade = tipo === 'capex'
 
   const [versaoAtual, setVersaoAtual] = useState(null)
   const [bus, setBus] = useState([])
@@ -308,9 +311,26 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
         <div className="panel launch-context-panel">
           <div className="panel-header">
             <div>
-              <h2>Contexto do Lançamento</h2>
-              <p>Selecione BU, Torre e Empresa antes de editar a grade abaixo · a unidade vale para os totais</p>
+              <h2>Contexto</h2>
+              <p>
+                BU, Torre, Empresa e unidade — valem para o resumo abaixo
+                {temGrade ? ' e para a grade de lançamento' : ''}
+              </p>
             </div>
+            <MenuExportar
+              ocupado={preparando}
+              opcoes={[
+                ...(tipo === 'receita'
+                  ? [{ valor: 'colunas', rotulo: 'Lançamentos', descricao: 'Uma linha por lançamento, com os 12 meses em colunas' }]
+                  : []),
+                {
+                  valor: 'empilhada',
+                  rotulo: 'Base empilhada',
+                  descricao: 'Um lançamento por mês em cada linha, para tabela dinâmica e Power BI',
+                },
+              ]}
+              onEscolher={handleExportar}
+            />
           </div>
           <div className="panel-body">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -349,34 +369,19 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
           </div>
         </div>
 
-        {/* Tirado da Revenue a pedido: com 1000+ lançamentos o gráfico e a
-            tabela de agrupamento ficavam pesados e não ajudavam quem só quer
-            lançar. Despesa e Capex continuam com o resumo. */}
-        {tipo !== 'receita' && <ResumoLancamentos linhas={linhas} empresas={empresas} rotulo={rotulo} />}
+        {/* O resumo por conta é o que estas telas mostram. Revenue e Expenses
+            não têm mais a grade linha a linha: o lançamento entra por
+            importação de template, e conferir é olhar a conta, não a linha. */}
+        <ResumoLancamentos linhas={linhas} rotulo={rotulo} />
 
+        {temGrade && (
         <div className="panel">
           <div className="panel-header">
             <div>
               <h2>Lançamento de {rotulo}</h2>
               <p>Valores mensais em R$. Clique em 💾 para salvar a linha após editar.</p>
             </div>
-            <div className="flex-row" style={{ gap: 8 }}>
-              <MenuExportar
-                ocupado={preparando}
-                opcoes={[
-                  ...(tipo === 'receita'
-                    ? [{ valor: 'colunas', rotulo: 'Lançamentos', descricao: 'Uma linha por lançamento, com os 12 meses em colunas' }]
-                    : []),
-                  {
-                    valor: 'empilhada',
-                    rotulo: 'Base empilhada',
-                    descricao: 'Um lançamento por mês em cada linha, para tabela dinâmica e Power BI',
-                  },
-                ]}
-                onEscolher={handleExportar}
-              />
-              <button className="btn btn-primary btn-sm" onClick={handleAdicionarLinha}>+ Adicionar Conta</button>
-            </div>
+            <button className="btn btn-primary btn-sm" onClick={handleAdicionarLinha}>+ Adicionar Conta</button>
           </div>
           <div className="panel-body table-wrap">
             <table className="entry-grid">
@@ -445,6 +450,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
             </table>
           </div>
         </div>
+        )}
       </div>
 
       {exportacao && (

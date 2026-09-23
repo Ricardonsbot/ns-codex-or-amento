@@ -10,13 +10,14 @@ const umaCasa = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, max
  * "melhor" ou "pior".
  */
 function DeltaIndicador({ d, contra, menorEMelhor }) {
-  const { numero, u } = useUnidade()
+  const { numero } = useUnidade()
   if (!d) return null
   const x = d.valor ?? d.pp
   if (x === null || x === undefined || !isFinite(x)) return null
   const bom = menorEMelhor ? x <= 0 : x >= 0
-  const texto =
-    d.valor !== undefined ? `${x > 0 ? '+' : ''}${numero(x)} ${u.sufixo}` : `${x > 0 ? '+' : ''}${umaCasa(x)} p.p.`
+  // Sem "mi"/"mil" ao lado do número: a unidade já está no botão da tela, e
+  // repeti-la em sete caixas só fazia volume.
+  const texto = d.valor !== undefined ? `${x > 0 ? '+' : ''}${numero(x)}` : `${x > 0 ? '+' : ''}${umaCasa(x)} p.p.`
   return (
     <div className={`indicador-delta ${bom ? 'melhor' : 'pior'}`}>
       {texto} vs {contra}
@@ -25,12 +26,12 @@ function DeltaIndicador({ d, contra, menorEMelhor }) {
 }
 
 function Indicador({ rotulo, valor, pct, vsBudget, vsLy, menorEMelhor }) {
-  const { numero, u } = useUnidade()
+  const { numero } = useUnidade()
   return (
     <div className="indicador">
       <div className="indicador-rotulo">{rotulo}</div>
       <div className="indicador-linha">
-        <span className="indicador-valor">{numero(valor)} {u.sufixo}</span>
+        <span className="indicador-valor">{numero(valor)}</span>
         {pct !== null && pct !== undefined && isFinite(pct) && (
           <>
             <span className="indicador-barra" aria-hidden="true">|</span>

@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-import FiltroBotoes from './FiltroBotoes'
+import { useMemo } from 'react'
 import { useUnidade } from './UnidadeProvider'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -10,45 +9,27 @@ const mil = (v) =>
     : v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
 
 /**
- * Como agrupar as linhas na tabela. A chave é o que junta; o rótulo é o que
- * aparece. Empresa vem primeiro porque é por onde se confere o que foi
- * digitado — uma linha por empresa é o recorte que a pessoa reconhece.
+ * O resumo é por CONTA. Era por empresa, com botões para trocar; virou só
+ * conta porque é assim que se confere um orçamento contra o plano — e o
+ * recorte de empresa já vem dos filtros da tela.
  */
-const AGRUPAMENTOS = [
-  { chave: 'empresa', rotulo: 'Empresa' },
-  { chave: 'conta', rotulo: 'Conta' },
-  { chave: 'descricao', rotulo: 'Descrição' },
-]
 
 /**
  * Resumo do que está lançado: os doze meses em gráfico e a mesma coisa aberta
- * em tabela.
+ * em tabela, uma linha por conta.
  *
  * Não calcula nada além de somar. O que aparece aqui é exatamente o que está
  * gravado — se veio da importação, é o que a planilha trouxe.
  */
-export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
+export default function ResumoLancamentos({ linhas, rotulo }) {
   const { numero, comMoeda } = useUnidade()
-  const [agrupar, setAgrupar] = useState('empresa')
-
-  const nomeEmpresa = useMemo(
-    () => new Map((empresas ?? []).map((e) => [e.id, e.nome])),
-    [empresas]
-  )
 
   const { grupos, porMes, total } = useMemo(() => {
     const mapa = new Map()
     const meses = Array(12).fill(0)
 
     for (const l of linhas) {
-      const nome =
-        agrupar === 'empresa'
-          ? nomeEmpresa.get(l.empresa_id) ?? 'Sem empresa'
-          : agrupar === 'conta'
-          ? l.conta
-            ? `${l.conta.codigo} — ${l.conta.nome}`
-            : 'Sem conta'
-          : l.descricao || 'Sem descrição'
+      const nome = l.conta ? `${l.conta.codigo} — ${l.conta.nome}` : 'Sem conta'
 
       if (!mapa.has(nome)) mapa.set(nome, { nome, valores: Array(12).fill(0), linhas: 0 })
       const g = mapa.get(nome)
@@ -62,7 +43,7 @@ export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
     const lista = [...mapa.values()].map((g) => ({ ...g, total: g.valores.reduce((a, b) => a + b, 0) }))
     lista.sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
     return { grupos: lista, porMes: meses, total: meses.reduce((a, b) => a + b, 0) }
-  }, [linhas, agrupar, nomeEmpresa])
+  }, [linhas])
 
   if (!linhas.length) return null
 
@@ -87,17 +68,9 @@ export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
         <div>
           <h2>Resumo de {rotulo}</h2>
           <p>
-            {linhas.length} lançamento(s) · {grupos.length}{' '}
-            {AGRUPAMENTOS.find((a) => a.chave === agrupar).rotulo.toLowerCase()}(s) · total {comMoeda(total)}
+            {linhas.length} lançamento(s) · {grupos.length} conta(s) · total {comMoeda(total)}
           </p>
         </div>
-        <FiltroBotoes
-          label="Agrupar por"
-          valor={agrupar}
-          opcoes={AGRUPAMENTOS.map((a) => ({ valor: a.chave, rotulo: a.rotulo }))}
-          onChange={setAgrupar}
-          semTodas
-        />
       </div>
 
       <div className="panel-body">
@@ -153,7 +126,7 @@ export default function ResumoLancamentos({ linhas, empresas, rotulo }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>{AGRUPAMENTOS.find((a) => a.chave === agrupar).rotulo.toUpperCase()}</th>
+                <th>CONTA</th>
                 {MESES.map((m) => (
                   <th key={m} className="text-right">{m.toUpperCase()}</th>
                 ))}
