@@ -12,6 +12,7 @@ import { MESES, MEDIDAS_MOM, janela } from '../lib/demonstrativo'
 import { ABAS, montarQuadro, quadroParaExportar, bigNumbers } from '../lib/quadrosResultado'
 import Indicadores from '../components/Indicadores'
 import BotaoUnidade from '../components/BotaoUnidade'
+import SeletorEmpresa from '../components/SeletorEmpresa'
 import BridgeOrcamento from '../components/BridgeOrcamento'
 import MenuExportar from '../components/MenuExportar'
 import { montarExportacaoEmpilhada } from '../lib/exportarResultado'
@@ -315,12 +316,12 @@ export default function Resultado() {
                   }}
                 />
               </div>
-              <FiltroBotoes
-                label="Empresa"
+              <SeletorEmpresa
+                empresas={empresasDisponiveis}
+                torres={torres}
                 valor={empresaId}
-                rotuloTodas="Consolidado"
-                opcoes={empresasDisponiveis.map((e) => ({ valor: e.id, rotulo: e.nome }))}
                 onChange={setEmpresaId}
+                rotuloTodas="Consolidado"
               />
               <BotaoUnidade />
               <div className="recorte-dupla">

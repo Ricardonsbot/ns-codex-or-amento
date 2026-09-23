@@ -10,6 +10,7 @@ import { useToast } from '../../components/ToastProvider'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../../lib/dashboardData'
 import { fetchContas } from '../../lib/contasData'
 import BotaoUnidade from '../../components/BotaoUnidade'
+import SeletorEmpresa from '../../components/SeletorEmpresa'
 import MenuExportar from '../../components/MenuExportar'
 import { useUnidade } from '../../components/UnidadeProvider'
 import { contasDoTipo } from '../../lib/linhasPl'
@@ -336,12 +337,12 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
                 }}
               />
               </div>
-              <FiltroBotoes
-                label="Empresa"
+              <SeletorEmpresa
+                empresas={empresasDisponiveis}
+                torres={torres}
                 valor={selectedEmpresaId}
-                rotuloTodas="Todas as Empresas"
-                opcoes={empresasDisponiveis.map((e) => ({ valor: e.id, rotulo: e.nome }))}
                 onChange={setSelectedEmpresaId}
+                rotuloTodas="Todas as empresas"
               />
               <BotaoUnidade />
             </div>

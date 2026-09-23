@@ -2716,3 +2716,7 @@ tfoot td {
   0% { margin-left: -35%; }
   100% { margin-left: 100%; }
 }
+
+/* Empresa é caixa de seleção (são mais de 50): fica mais larga que os demais
+   campos, para o nome não ser cortado. */
+.filtro-empresa { min-width: 260px; }
