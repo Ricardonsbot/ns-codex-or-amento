@@ -567,7 +567,9 @@ export function bigNumbers(ctx) {
     const y = (s) => janela(d[s], 'YTD', mes)
     const expenses = -y('expenses')
     const labor = janela(dados.laborExpenses ?? [], 'YTD', mes)
-    return { nr: y('nr'), gm: y('gm'), expenses, labor, nonLabor: expenses - labor, eac: y('eac') }
+    // Capex sai positivo, como Expenses: é gasto, e o sinal da Master o traz
+    // negativo.
+    return { nr: y('nr'), gm: y('gm'), expenses, labor, nonLabor: expenses - labor, capex: -y('capex'), eac: y('eac') }
   }
   const a = med(ctx.dados)
   const b = med(ctx.comp)
@@ -581,7 +583,7 @@ export function bigNumbers(ctx) {
     vsBudget: b ? (chave === 'nr' ? { valor: a.nr - b.nr } : { pp: pp(chave, b) }) : null,
     vsLy: l ? (chave === 'nr' ? { valor: a.nr - l.nr } : { pp: pp(chave, l) }) : null,
     // Gasto maior é pior: o delta de Expenses, Labor e Non Labor inverte a cor.
-    menorEMelhor: ['expenses', 'labor', 'nonLabor'].includes(chave),
+    menorEMelhor: ['expenses', 'labor', 'nonLabor', 'capex'].includes(chave),
   })
   return [
     item('nr', 'Net Revenue'),
@@ -589,6 +591,7 @@ export function bigNumbers(ctx) {
     item('expenses', 'Expenses'),
     item('labor', 'Labor'),
     item('nonLabor', 'Non Labor'),
+    item('capex', 'Capex'),
     item('eac', 'EAC'),
   ]
 }

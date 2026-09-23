@@ -2350,7 +2350,7 @@ tfoot td {
 
 .indicadores {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   /* A largura vem de fora, nunca do conteudo. Sem isto a grade entrava no
      calculo de largura do layout pelo tamanho dos titulos, e o ajuste dos
      titulos (que depende da largura da caixa) alargava a pagina inteira. */
@@ -2363,8 +2363,12 @@ tfoot td {
   margin-bottom: 18px;
 }
 
-/* Tres por linha no meio do caminho e dois no celular: seis caixas numa
-   linha so ficam apertadas abaixo de ~1100px. */
+/* Quatro, tres e dois conforme a tela encolhe: sete caixas numa linha so
+   ficam apertadas abaixo de ~1400px. */
+@media (max-width: 1400px) {
+  .indicadores { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
 @media (max-width: 1100px) {
   .indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
