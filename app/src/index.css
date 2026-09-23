@@ -2724,6 +2724,9 @@ tfoot td {
 /* ---------- Flag e checklist do template importado ---------- */
 
 .flag-template {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -2739,11 +2742,11 @@ tfoot td {
 
 .lista-checklist {
   list-style: none;
-  margin: 8px 0 12px;
+  margin: 8px 0 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 4px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
   font-size: 12.5px;
 }
 
@@ -2757,22 +2760,7 @@ tfoot td {
 .lista-checklist li.pendente > span:first-child { color: var(--color-danger); }
 .lista-checklist li span:last-child { color: var(--color-text-muted); }
 
-/* Checklist logo depois de importar */
-.checklist-importacao {
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-}
-
-.checklist-importacao.compacto {
-  margin: 0 0 8px;
-  padding: 0;
-  border: none;
-  background: none;
-}
-
+/* Checklist do template (janela) */
 .checklist-cabecalho {
   display: flex;
   align-items: center;

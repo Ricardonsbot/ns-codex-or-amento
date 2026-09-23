@@ -64,18 +64,78 @@ export function resumirLinhas(linhas, tipo) {
  *   mesesVazios   empresas com algum mês sem valor nenhum: budget com buraco
  *   sinaisTrocados linhas de gasto com total negativo (ou receita negativa)
  */
-export function medirLinhas(linhas, tipo) {
+const norm = (v) =>
+  String(v ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+
+/** O valor que cada dimensão tem na linha, por tipo de template. */
+const DIMENSOES = {
+  centroCusto: (p) => p.centro_custo_nome || p.centroCusto,
+  fornecedor: (p) => p.fornecedor,
+  produto: (p) => p.produto_analitico || p.produto_sintetico,
+  cliente: (p) => p.cliente,
+  diretoria: (p) => p.diretoria,
+}
+
+/**
+ * Quantas linhas trazem um valor que não está no cadastro, por dimensão.
+ * Casa por código ou por nome, ignorando acento e caixa; o template junta os
+ * dois no mesmo campo ("1234 · CSC - FP&A"), então basta um deles aparecer.
+ */
+function conferirCadastros(linhas, cadastros) {
+  const saida = {}
+  for (const [chave, ler] of Object.entries(DIMENSOES)) {
+    const registrados = cadastros?.[chave]
+    if (!registrados) continue // tabela ausente: sem item no checklist
+    const conhecidos = registrados.map(norm).filter(Boolean)
+    const usados = new Map() // valor -> quantas linhas
+    for (const p of linhas) {
+      const v = ler(p)
+      if (!v) continue
+      usados.set(v, (usados.get(v) ?? 0) + 1)
+    }
+    if (!usados.size) continue // a dimensão não vem neste template
+    let linhasFora = 0
+    const exemplos = []
+    for (const [valor, quantas] of usados) {
+      const n = norm(valor)
+      const achou = conhecidos.some((c) => n === c || n.includes(c))
+      if (achou) continue
+      linhasFora += quantas
+      if (exemplos.length < 3) exemplos.push(valor)
+    }
+    saida[chave] = { linhas: linhasFora, valores: usados.size, exemplos }
+  }
+  return saida
+}
+
+export function medirLinhas(linhas, tipo, cadastros) {
   let semArea = 0
   let sinaisTrocados = 0
+  // Linha do P&L: a da conta no plano é a que manda. Duas coisas podem dar
+  // errado — a conta cair numa linha que a Master não conhece (o valor some
+  // do P&L) e a coluna "Linha P&L" do template discordar do plano.
+  let plDesconhecida = 0
+  let plDivergente = 0
+  const plExemplos = []
   const meses = new Map() // empresa -> 12 bandeiras de "tem valor"
 
   for (const p of linhas) {
     const total = p.total ?? soma(p.valores)
     if (tipo !== 'receita' && total < 0) sinaisTrocados += 1
     if (tipo === 'receita' && total < 0) sinaisTrocados += 1
-    if (tipo !== 'capex' && classificar({ tipo, conta: p.conta, area: p.area, area_ajustada: p.area_ajustada }) === 'semArea') {
-      semArea += 1
+    const chave = classificar({ tipo, conta: p.conta, area: p.area, area_ajustada: p.area_ajustada })
+    if (tipo !== 'capex' && chave === 'semArea') semArea += 1
+    if (p.conta && (!chave || String(chave).startsWith('fora:'))) {
+      plDesconhecida += 1
+      if (plExemplos.length < 3) plExemplos.push(p.conta.linha_pl || '(conta sem linha do P&L)')
     }
+    const doTemplate = p.linha_pl_ajustada || p.linha_pl_template
+    if (p.conta?.linha_pl && doTemplate && norm(doTemplate) !== norm(p.conta.linha_pl)) plDivergente += 1
     const nome = (typeof p.empresa === 'object' ? p.empresa?.nome : p.empresa) ?? '(sem empresa)'
     if (!meses.has(nome)) meses.set(nome, Array(12).fill(false))
     const bandeiras = meses.get(nome)
@@ -85,7 +145,16 @@ export function medirLinhas(linhas, tipo) {
   }
 
   const mesesVazios = [...meses.values()].filter((b) => b.some((x) => !x)).length
-  return { semArea, sinaisTrocados, mesesVazios, empresas: meses.size }
+  return {
+    semArea,
+    sinaisTrocados,
+    mesesVazios,
+    plDesconhecida,
+    plDivergente,
+    plExemplos,
+    empresas: meses.size,
+    cadastros: conferirCadastros(linhas, cadastros),
+  }
 }
 
 /** Junta a lista de empresas já registrada com a de um tipo novo. */
@@ -127,6 +196,7 @@ export async function registrarImportacao({
   fora,
   marcadas,
   somouEmCima,
+  cadastros,
   usuarioEmail,
 }) {
   if (!(await historicoDisponivel())) return null
@@ -140,7 +210,7 @@ export async function registrarImportacao({
     fora: fora ?? 0,
     marcadas: marcadas ?? 0,
     somouEmCima: Boolean(somouEmCima),
-    ...medirLinhas(linhas, tipo),
+    ...medirLinhas(linhas, tipo, cadastros),
     desfeito: false,
   }
 
@@ -215,7 +285,7 @@ export async function listarImportacoes(limite = 200) {
  * o banco. Serve ao checklist que aparece na tela logo depois de gravar —
  * assim ele funciona mesmo antes de a migração do histórico ter rodado.
  */
-export function resumoDaImportacao({ ano, versao, tipo, linhas, fora, marcadas, apagados, somouEmCima }) {
+export function resumoDaImportacao({ ano, versao, tipo, linhas, fora, marcadas, apagados, somouEmCima, cadastros }) {
   const empresas = resumirLinhas(linhas, tipo)
   return {
     ano: ano ?? null,
@@ -227,7 +297,7 @@ export function resumoDaImportacao({ ano, versao, tipo, linhas, fora, marcadas, 
         fora: fora ?? 0,
         marcadas: marcadas ?? 0,
         somouEmCima: Boolean(somouEmCima),
-        ...medirLinhas(linhas, tipo),
+        ...medirLinhas(linhas, tipo, cadastros),
         desfeito: false,
       },
     },
@@ -269,51 +339,167 @@ export function checklist(registro, escopo = 'arquivo') {
   const somar = (campo) => usados.reduce((a, x) => a + (tipos[x]?.[campo] ?? 0), 0)
   const algum = (campo) => usados.some((x) => tipos[x]?.[campo])
 
+  const linhas = somar('linhas')
   const fora = somar('fora')
   const marcadas = somar('marcadas')
   const semArea = somar('semArea')
   const mesesVazios = somar('mesesVazios')
   const sinaisTrocados = somar('sinaisTrocados')
+  const plDesconhecida = somar('plDesconhecida')
+  const plDivergente = somar('plDivergente')
+  const plExemplos = usados.flatMap((x) => tipos[x]?.plExemplos ?? []).slice(0, 3)
   const desfeitos = usados.filter((x) => tipos[x]?.desfeito)
   const comDeducao = Math.abs(t.nr ?? 0) < Math.abs(t.gr ?? 0)
   const margem = t.nr ? ((t.nr - (t.despesa ?? 0)) / t.nr) * 100 : null
-
   const item = (chave, nivel, rotulo, ok, detalhe) => ({ chave, nivel, rotulo, ok, detalhe })
+  const plural = (n, um, muitos) => `${n} ${n === 1 ? um : muitos}`
 
   const itens = [
-    item('empresas', 'vermelho', 'Nenhuma linha fora por falta de empresa cadastrada', fora === 0,
-      fora ? `${fora} linha(s) não entraram` : 'todas as linhas entraram'),
-    item('contas', 'vermelho', 'Nenhuma conta fora do plano', marcadas === 0,
-      marcadas ? `${marcadas} linha(s) entraram sem conta — ficam fora do P&L` : 'nenhuma conta pendente'),
-    item('area', 'vermelho', 'Todo gasto com área de alocação', semArea === 0,
-      semArea ? `${semArea} linha(s) sem área — não viram CoGS, G&A, S&M nem R&D` : 'áreas preenchidas'),
-    item('destino', 'vermelho', 'Ciclo e versão de destino definidos', Boolean(registro?.ano && registro?.versao_nome),
-      registro?.ano && registro?.versao_nome ? `${registro.ano} · ${registro.versao_nome}` : 'destino incompleto'),
-    item('duplicidade', 'vermelho', 'Não somou em cima do que já existia', !algum('somouEmCima'),
+    item(
+      'empresas',
+      'vermelho',
+      'Empresas do arquivo cadastradas',
+      fora === 0,
+      fora ? `${plural(fora, 'linha ficou', 'linhas ficaram')} de fora — empresa não cadastrada` : `todas as ${linhas} linhas entraram`
+    ),
+    item(
+      'contas',
+      'vermelho',
+      'Contas no plano de contas',
+      marcadas === 0,
+      marcadas ? `${plural(marcadas, 'linha entrou', 'linhas entraram')} sem conta — ficam fora do P&L` : 'todas as contas existem no plano'
+    ),
+    item(
+      'area',
+      'vermelho',
+      'Área de alocação preenchida',
+      semArea === 0,
+      semArea
+        ? `${plural(semArea, 'linha de gasto', 'linhas de gasto')} sem área — não viram CoGS, G&A, S&M nem R&D`
+        : 'todo gasto tem área'
+    ),
+    item(
+      'linhaPl',
+      'vermelho',
+      'Linha do P&L reconhecida',
+      plDesconhecida === 0,
+      plDesconhecida
+        ? `${plural(plDesconhecida, 'linha cai', 'linhas caem')} numa linha do P&L que a Master não tem${
+            plExemplos.length ? ` — ex.: ${plExemplos.join(', ')}` : ''
+          }`
+        : 'toda conta cai numa linha da Master'
+    ),
+    item(
+      'destino',
+      'vermelho',
+      'Ciclo e versão de destino',
+      Boolean(registro?.ano && registro?.versao_nome),
+      registro?.ano && registro?.versao_nome ? `${registro.ano} · ${registro.versao_nome}` : 'destino incompleto'
+    ),
+    item(
+      'duplicidade',
+      'vermelho',
+      'Sem duplicidade',
+      !algum('somouEmCima'),
       algum('somouEmCima')
         ? 'a versão já tinha lançamentos deste tipo e a importação somou — confira se dobrou'
-        : 'sem risco de duplicidade'),
-    item('desfeito', 'vermelho', 'Nada foi desfeito depois', desfeitos.length === 0,
-      desfeitos.length ? `${desfeitos.map((x) => ROTULO[x]).join(', ')} desfeito(s)` : 'importação inteira em pé'),
+        : 'não somou em cima de lançamento que já existia'
+    ),
+    item(
+      'desfeito',
+      'vermelho',
+      'Importação em pé',
+      desfeitos.length === 0,
+      desfeitos.length ? `${desfeitos.map((x) => ROTULO[x]).join(', ')} desfeito(s) depois` : 'nada foi desfeito'
+    ),
 
-    item('tipos', 'amarelo', 'Receita, Despesa e Capex no mesmo arquivo', faltando.length === 0,
-      faltando.length ? `falta ${faltando.map((x) => ROTULO[x]).join(', ')} — envio parcial?` : 'os três entraram'),
-    item('deducao', 'amarelo', 'Dedução lançada na receita', !tipos.receita || comDeducao,
+    item(
+      'tipos',
+      'amarelo',
+      'Receita, Despesa e Capex no arquivo',
+      faltando.length === 0,
+      faltando.length ? `só veio ${usados.map((x) => ROTULO[x]).join(', ')} — envio parcial?` : 'os três entraram'
+    ),
+    item(
+      'deducao',
+      'amarelo',
+      'Dedução na receita',
+      !tipos.receita || comDeducao,
       !tipos.receita
         ? 'sem receita neste arquivo'
         : comDeducao
         ? 'Net Revenue menor que a Gross Revenue'
-        : 'Net Revenue igual à Gross Revenue — margem sai otimista'),
-    item('meses', 'amarelo', 'Doze meses preenchidos em cada empresa', mesesVazios === 0,
-      mesesVazios ? `${mesesVazios} empresa(s) com mês em branco` : 'nenhum buraco de mês'),
-    item('sinais', 'amarelo', 'Sinais coerentes: receita e gasto positivos', sinaisTrocados === 0,
-      sinaisTrocados ? `${sinaisTrocados} linha(s) com o sinal trocado` : 'sinais coerentes'),
-    item('margem', 'amarelo', 'Margem dentro de uma faixa plausível', margem === null || (margem > -20 && margem < 70),
+        : 'Net Revenue igual à Gross Revenue — margem sai otimista'
+    ),
+    item(
+      'meses',
+      'amarelo',
+      'Doze meses por empresa',
+      mesesVazios === 0,
+      mesesVazios ? `${plural(mesesVazios, 'empresa tem', 'empresas têm')} mês em branco` : 'nenhum buraco de mês'
+    ),
+    item(
+      'sinais',
+      'amarelo',
+      'Sinais do valor',
+      sinaisTrocados === 0,
+      sinaisTrocados ? `${plural(sinaisTrocados, 'linha', 'linhas')} com o sinal trocado` : 'receita e gasto positivos'
+    ),
+    item(
+      'linhaPlTemplate',
+      'amarelo',
+      'Linha do P&L igual à do plano',
+      plDivergente === 0,
+      plDivergente
+        ? `${plural(plDivergente, 'linha traz', 'linhas trazem')} no template uma Linha P&L diferente da conta no plano — vale a do plano`
+        : 'template e plano de contas dizem a mesma coisa'
+    ),
+    item(
+      'margem',
+      'amarelo',
+      'Margem plausível',
+      margem === null || (margem > -20 && margem < 70),
       margem === null
         ? 'sem receita para calcular'
-        : `EBITDA/NR de ${margem.toFixed(1)}%${margem > 70 || margem < -20 ? ' — confira a classificação' : ''}`),
+        : `EBITDA/NR de ${margem.toFixed(1)}%${margem > 70 || margem < -20 ? ' — confira a classificação' : ''}`
+    ),
+    ...itensDeCadastro(tipos, usados),
   ]
   return escopo === 'tipo' ? itens.filter((i) => i.chave !== 'tipos') : itens
+}
+
+/** Nome de cada dimensão de cadastro no checklist. */
+const CADASTRO = {
+  centroCusto: 'Centros de custo cadastrados',
+  fornecedor: 'Fornecedores cadastrados',
+  produto: 'Produtos cadastrados',
+  cliente: 'Clientes cadastrados',
+  diretoria: 'Diretorias cadastradas',
+}
+
+/**
+ * Um item por dimensão que o arquivo realmente traz. Dimensão que o template
+ * não preenche, ou cadastro que ainda não existe como tabela, não vira item —
+ * um checklist cheio de "não se aplica" não ajuda ninguém.
+ */
+function itensDeCadastro(tipos, usados) {
+  return Object.entries(CADASTRO)
+    .map(([chave, rotulo]) => {
+      const partes = usados.map((x) => tipos[x]?.cadastros?.[chave]).filter(Boolean)
+      if (!partes.length) return null
+      const linhas = partes.reduce((a, x) => a + x.linhas, 0)
+      const exemplos = partes.flatMap((x) => x.exemplos ?? []).slice(0, 3)
+      return {
+        chave: `cad-${chave}`,
+        nivel: 'amarelo',
+        rotulo,
+        ok: linhas === 0,
+        detalhe: linhas
+          ? `${linhas} linha(s) com valor fora do cadastro${exemplos.length ? ` — ex.: ${exemplos.join(', ')}` : ''}`
+          : 'todos os valores existem no cadastro',
+      }
+    })
+    .filter(Boolean)
 }
 
 /**

@@ -122,6 +122,25 @@ export async function conferir(lido) {
   ])
   for (const x of [emps, contas, ciclos, bus, torres, subs]) if (x.error) throw x.error
 
+  // Os cadastros que o checklist confere: centro de custo, fornecedor,
+  // produto, cliente e diretoria entram como texto no lançamento, e ninguém
+  // percebe quando o template traz um valor que não existe no cadastro.
+  // Tabela que ainda não existe não derruba a conferência — fica sem o item.
+  const [ccs, forns, prods, clis, dirs] = await Promise.all([
+    supabase.from('centro_de_custo').select('codigo, nome'),
+    supabase.from('fornecedor').select('nome'),
+    supabase.from('produto').select('codigo, nome'),
+    supabase.from('cliente').select('nome'),
+    supabase.from('diretoria').select('nome'),
+  ])
+  const cadastros = {
+    centroCusto: ccs.error ? null : (ccs.data ?? []).flatMap((x) => [x.codigo, x.nome]),
+    fornecedor: forns.error ? null : (forns.data ?? []).map((x) => x.nome),
+    produto: prods.error ? null : (prods.data ?? []).flatMap((x) => [x.codigo, x.nome]),
+    cliente: clis.error ? null : (clis.data ?? []).map((x) => x.nome),
+    diretoria: dirs.error ? null : (dirs.data ?? []).map((x) => x.nome),
+  }
+
   const nomeDe = (lista) => new Map(lista.map((x) => [x.id, x.nome]))
   const hierarquia = { bu: nomeDe(bus.data), torre: nomeDe(torres.data), sub: nomeDe(subs.data) }
 
@@ -157,6 +176,7 @@ export async function conferir(lido) {
   return {
     ciclo,
     versao,
+    cadastros,
     cicloFaltando: ciclo ? null : lido.ano,
     jaExistem,
     receitaDaVersao,

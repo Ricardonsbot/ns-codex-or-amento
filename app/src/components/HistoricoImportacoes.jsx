@@ -27,6 +27,8 @@ export default function HistoricoImportacoes({ versao }) {
   const [semTabela, setSemTabela] = useState(false)
   const [erro, setErro] = useState(null)
   const [aberto, setAberto] = useState(null)
+  // Registro cujo checklist está aberto na janela.
+  const [checklistDe, setChecklistDe] = useState(null)
 
   useEffect(() => {
     let cancelado = false
@@ -126,19 +128,19 @@ export default function HistoricoImportacoes({ versao }) {
                         </td>
                         <td>
                           {(() => {
-                            const itens = checklist(r)
-                            const pendentes = itens.filter((i) => !i.ok)
+                            const pendentes = checklist(r).filter((i) => !i.ok)
                             return (
-                              <span
+                              <button
+                                type="button"
                                 className={`flag-template flag-${flagDo(r)}`}
-                                title={
-                                  pendentes.length
-                                    ? `Pendências: ${pendentes.map((i) => i.rotulo).join(' · ')}`
-                                    : 'Checklist completo'
-                                }
+                                title="Ver o checklist deste template"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setChecklistDe(r)
+                                }}
                               >
                                 ● {pendentes.length ? `${pendentes.length} pendência(s)` : 'ok'}
-                              </span>
+                              </button>
                             )
                           })()}
                         </td>
@@ -173,7 +175,6 @@ export default function HistoricoImportacoes({ versao }) {
                         <tr>
                           <td />
                           <td colSpan={11} style={{ background: 'var(--color-bg)' }}>
-                            <ChecklistImportacao registro={r} compacto />
                             <table className="data-table" style={{ margin: '4px 0' }}>
                               <thead>
                                 <tr>
@@ -209,6 +210,14 @@ export default function HistoricoImportacoes({ versao }) {
           </div>
         )}
       </div>
+
+      {checklistDe && (
+        <ChecklistImportacao
+          registro={checklistDe}
+          titulo={checklistDe.arquivo}
+          onFechar={() => setChecklistDe(null)}
+        />
+      )}
     </div>
   )
 }

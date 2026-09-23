@@ -146,6 +146,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const [substituir, setSubstituir] = useState(false)
   const [ultima, setUltima] = useState(null)   // { ids, quantos } da importacao recem-feita
   const [desfazendo, setDesfazendo] = useState(false)
+  const [checklistAberto, setChecklistAberto] = useState(false)
   const [podeSolicitar, setPodeSolicitar] = useState(false)
   const [wizardAberto, setWizardAberto] = useState(false)
   // Resultado de `checarEstrutura`: null até o worker mandar a primeira mensagem.
@@ -257,6 +258,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
           fora: previa.fora.length,
           marcadas: previa.marcadas.length,
           somouEmCima,
+          cadastros: previa.cadastros,
           usuarioEmail: email,
         })
       } catch (err) {
@@ -279,8 +281,10 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
           marcadas: previa.marcadas.length,
           apagados,
           somouEmCima,
+          cadastros: previa.cadastros,
         }),
       })
+      setChecklistAberto(true)
       setPrevia(null)
       onImportado?.()
     } catch (err) {
@@ -461,6 +465,11 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
               {desfazendo ? 'Desfazendo…' : '↶ Desfazer'}
             </button>
           )}
+          {ultima.resumo && (
+            <button className="btn btn-secondary btn-sm" type="button" onClick={() => setChecklistAberto(true)}>
+              ☑ Ver checklist
+            </button>
+          )}
           <button
             className="btn btn-secondary btn-sm"
             type="button"
@@ -472,7 +481,14 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         </div>
       )}
 
-      {ultima?.resumo && !previa && <ChecklistImportacao registro={ultima.resumo} escopo="tipo" />}
+      {checklistAberto && ultima?.resumo && (
+        <ChecklistImportacao
+          registro={ultima.resumo}
+          escopo="tipo"
+          titulo={`${rotulo} · ${arquivo}`}
+          onFechar={() => setChecklistAberto(false)}
+        />
+      )}
 
       {previa && (
         <div className="panel" style={{ marginTop: 14 }}>

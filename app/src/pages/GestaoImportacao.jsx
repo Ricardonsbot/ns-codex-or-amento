@@ -53,6 +53,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
   const [criandoCiclo, setCriandoCiclo] = useState(false)
   const [ultima, setUltima] = useState(null)
   const [desfazendo, setDesfazendo] = useState(false)
+  const [checklistAberto, setChecklistAberto] = useState(false)
 
   useEffect(() => {
     let cancelado = false
@@ -131,6 +132,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
           fora: previa.fora.length,
           marcadas: previa.marcadas.length,
           somouEmCima,
+          cadastros: previa.cadastros,
           ano: lido.ano,
           ciclo: previa.ciclo,
           versao: previa.versao,
@@ -143,6 +145,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
         ids: apagados ? null : ids,
         quantos: ids.length,
         enviadas,
+        // Abre a janela do checklist assim que a gravação termina.
         resumo: resumoDaImportacao({
           ano: lido.ano,
           versao: previa.versao,
@@ -152,8 +155,10 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
           marcadas: previa.marcadas.length,
           apagados,
           somouEmCima,
+          cadastros: previa.cadastros,
         }),
       })
+      setChecklistAberto(true)
       setPrevia(null)
       onImportado?.()
     } catch (err) {
@@ -255,13 +260,25 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
                 {desfazendo ? 'Desfazendo…' : '↶ Desfazer'}
               </button>
             )}
+            {ultima.resumo && (
+              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setChecklistAberto(true)}>
+                ☑ Ver checklist
+              </button>
+            )}
             <button className="btn btn-secondary btn-sm" type="button" onClick={() => setUltima(null)} style={{ marginLeft: 'auto' }}>
               Dispensar
             </button>
           </div>
         )}
 
-        {ultima?.resumo && <ChecklistImportacao registro={ultima.resumo} escopo="tipo" />}
+        {checklistAberto && ultima?.resumo && (
+          <ChecklistImportacao
+            registro={ultima.resumo}
+            escopo="tipo"
+            titulo={`${ROTULO[tipo]} · ${arquivo}`}
+            onFechar={() => setChecklistAberto(false)}
+          />
+        )}
 
         {previa && (
           <>
