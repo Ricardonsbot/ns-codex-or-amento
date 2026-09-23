@@ -108,3 +108,90 @@ export function montarExportacaoReceita(lancamentos, { bus, torres, empresas, re
     linhas,
   }
 }
+
+/**
+ * Base empilhada: uma linha por lançamento × mês, no formato que tabela
+ * dinâmica e Power BI esperam — em vez das 12 colunas de mês lado a lado.
+ *
+ * Só entram os meses com valor diferente de zero: um orçamento de 7 mil
+ * lançamentos viraria 84 mil linhas, a maioria zerada.
+ *
+ * Os valores saem em R$ cheios, com o sinal de quem lançou (gasto positivo),
+ * como no resto da exportação.
+ */
+export function montarExportacaoEmpilhada(lancamentos, { bus, torres, subs = [], empresas, recorte, rotuloVersao, ano }) {
+  const nomeDe = (lista, id) => lista.find((x) => x.id === id)?.nome ?? ''
+  const TIPO = { receita: 'Receita', despesa: 'Despesa', capex: 'Capex' }
+
+  const campos = [
+    ['Ano', () => ano ?? ''],
+    ['Versão', () => rotuloVersao ?? ''],
+    ['Tipo', (l) => TIPO[l.tipo] ?? l.tipo],
+    ['BU', (l) => nomeDe(bus, l.bu_id)],
+    ['Torre', (l) => nomeDe(torres, l.torre_id) || l.torre_texto || ''],
+    ['Sub Torre', (l) => nomeDe(subs, l.sub_torre_id)],
+    ['Empresa', (l) => nomeDe(empresas, l.empresa_id) || l.empresa_texto || ''],
+    ['Código da conta', (l) => l.conta?.codigo ?? ''],
+    ['Conta', (l) => l.conta?.nome ?? l.conta_contabil_texto ?? ''],
+    ['Linha do P&L', (l) => l.conta?.linha_pl ?? ''],
+    ['Área', (l) => l.area_ajustada || l.area || ''],
+    ['Pacote', (l) => l.pacote ?? ''],
+    ['Subpacote', (l) => l.subpacote ?? ''],
+    ['Centro de custo', (l) => l.centro_de_custo || l.centro_custo_nome || ''],
+    ['Diretoria', (l) => l.diretoria ?? ''],
+    ['Fornecedor', (l) => l.fornecedor ?? ''],
+    ['Produto', (l) => l.produto_analitico || l.produto_sintetico || ''],
+    ['Cliente', (l) => l.cliente ?? ''],
+    ['Descrição', (l) => l.descricao ?? ''],
+    ['Obs', (l) => l.obs ?? ''],
+  ]
+
+  // Blocos derivados do template: só entram como coluna quando alguma linha
+  // tem o campo, para o arquivo não levar colunas sempre vazias.
+  const temCampo = (campo) =>
+    lancamentos.some((l) => (l.lancamento_valor_mensal ?? []).some((m) => m[campo] !== null && m[campo] !== undefined))
+  const valores = [
+    ['Valor', 'valor'],
+    ['Valor caixa', 'valor_caixa'],
+    ['Valor reajustado', 'valor_ajustado'],
+    ['Valor líquido', 'valor_liquido'],
+  ].filter(([, campo]) => campo === 'valor' || temCampo(campo))
+
+  const colunas = [
+    ...campos.map(([k]) => ({ key: k, grupo: 'Identificação', obrigatorio: k === 'Empresa' })),
+    { key: 'Mês', grupo: 'Competência', obrigatorio: true },
+    { key: 'Mês (nº)', grupo: 'Competência' },
+    { key: 'Competência', grupo: 'Competência' },
+    ...valores.map(([k]) => ({ key: k, grupo: 'Valores', obrigatorio: k === 'Valor' })),
+  ]
+
+  const linhas = []
+  for (const l of lancamentos) {
+    for (const m of l.lancamento_valor_mensal ?? []) {
+      const valor = Number(m.valor ?? 0)
+      const derivado = valores.some(([, campo]) => campo !== 'valor' && Number(m[campo] ?? 0))
+      if (!valor && !derivado) continue
+      const saida = {}
+      for (const [k, f] of campos) saida[k] = f(l)
+      saida['Mês'] = MESES[m.mes - 1] ?? ''
+      saida['Mês (nº)'] = m.mes
+      saida['Competência'] = ano ? `${ano}-${String(m.mes).padStart(2, '0')}` : ''
+      for (const [k, campo] of valores) saida[k] = reais(m[campo] === null || m[campo] === undefined ? null : Number(m[campo]))
+      linhas.push(saida)
+    }
+  }
+  linhas.sort(
+    (a, b) =>
+      String(a.Empresa).localeCompare(String(b.Empresa), 'pt-BR') ||
+      String(a['Código da conta']).localeCompare(String(b['Código da conta'])) ||
+      a['Mês (nº)'] - b['Mês (nº)']
+  )
+
+  const sufixo = String(recorte ?? 'Todas').replace(/[\\/:*?"<>|]/g, '-')
+  return {
+    nomeArquivo: `Base_Empilhada_${sufixo}`,
+    chavePreferencia: 'Base_Empilhada',
+    colunas,
+    linhas,
+  }
+}

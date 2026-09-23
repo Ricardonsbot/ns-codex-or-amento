@@ -5,11 +5,12 @@ import ResumoLancamentos from '../../components/ResumoLancamentos'
 import FiltroBotoes from '../../components/FiltroBotoes'
 import SeletorColunas from '../../components/SeletorColunas'
 import { exportarExcel } from '../../lib/excelUtils'
-import { montarExportacaoReceita } from '../../lib/exportarResultado'
+import { montarExportacaoReceita, montarExportacaoEmpilhada } from '../../lib/exportarResultado'
 import { useToast } from '../../components/ToastProvider'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../../lib/dashboardData'
 import { fetchContas } from '../../lib/contasData'
 import BotaoUnidade from '../../components/BotaoUnidade'
+import MenuExportar from '../../components/MenuExportar'
 import { useUnidade } from '../../components/UnidadeProvider'
 import { contasDoTipo } from '../../lib/linhasPl'
 import {
@@ -211,7 +212,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
    * o líquido e as colunas do template. Por isso o que foi editado e ainda não
    * salvo não sai — o arquivo é o que está gravado.
    */
-  async function handleExportar() {
+  async function handleExportar(formato) {
     setPreparando(true)
     try {
       const dados = await fetchLancamentosParaExportar({
@@ -232,7 +233,18 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
         : selectedBuId
         ? bus.find((b) => b.id === selectedBuId)?.nome
         : 'Todas'
-      setExportacao(montarExportacaoReceita(dados, { bus, torres, empresas, recorte }))
+      setExportacao(
+        formato === 'empilhada'
+          ? montarExportacaoEmpilhada(dados, {
+              bus,
+              torres,
+              empresas,
+              recorte,
+              rotuloVersao: versaoAtual.versao.nome,
+              ano: versaoAtual.ciclo?.ano,
+            })
+          : montarExportacaoReceita(dados, { bus, torres, empresas, recorte })
+      )
     } catch (err) {
       showToast(`Erro ao preparar a exportação: ${err.message}`, 'error')
     } finally {
@@ -348,11 +360,20 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
               <p>Valores mensais em R$. Clique em 💾 para salvar a linha após editar.</p>
             </div>
             <div className="flex-row" style={{ gap: 8 }}>
-              {tipo === 'receita' && (
-                <button className="btn btn-secondary btn-sm" type="button" onClick={handleExportar} disabled={preparando}>
-                  {preparando ? 'Preparando…' : '⭳ Exportar'}
-                </button>
-              )}
+              <MenuExportar
+                ocupado={preparando}
+                opcoes={[
+                  ...(tipo === 'receita'
+                    ? [{ valor: 'colunas', rotulo: 'Lançamentos', descricao: 'Uma linha por lançamento, com os 12 meses em colunas' }]
+                    : []),
+                  {
+                    valor: 'empilhada',
+                    rotulo: 'Base empilhada',
+                    descricao: 'Um lançamento por mês em cada linha, para tabela dinâmica e Power BI',
+                  },
+                ]}
+                onEscolher={handleExportar}
+              />
               <button className="btn btn-primary btn-sm" onClick={handleAdicionarLinha}>+ Adicionar Conta</button>
             </div>
           </div>

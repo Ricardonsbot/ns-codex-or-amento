@@ -12,6 +12,9 @@ import { MESES, MEDIDAS_MOM, janela } from '../lib/demonstrativo'
 import { ABAS, montarQuadro, quadroParaExportar, bigNumbers } from '../lib/quadrosResultado'
 import Indicadores from '../components/Indicadores'
 import BotaoUnidade from '../components/BotaoUnidade'
+import MenuExportar from '../components/MenuExportar'
+import { montarExportacaoEmpilhada } from '../lib/exportarResultado'
+import { fetchLancamentosParaExportar } from '../lib/lancamentosData'
 import { useUnidade } from '../components/UnidadeProvider'
 
 const umaCasa = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -93,6 +96,7 @@ export default function Resultado() {
   const [modoEmpresa, setModoEmpresa] = useState('mes')
   const [empresaPl, setEmpresaPl] = useState('')
   const [exportacao, setExportacao] = useState(null)
+  const [preparando, setPreparando] = useState(false)
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
@@ -166,6 +170,40 @@ export default function Resultado() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [dados, comp, ly, mes, medida, modoEmpresa, empresaPl]
   )
+  /**
+   * Base empilhada: os lançamentos gravados da versão, no mesmo recorte da
+   * tela. Não sai do quadro — o quadro já vem somado — e por isso busca os
+   * três tipos no banco.
+   */
+  async function exportarEmpilhada() {
+    setPreparando(true)
+    try {
+      const filtros = { versaoId: versao.id, buId: buId || null, torreId: torreId || null, empresaId: empresaId || null }
+      const porTipo = await Promise.all(
+        ['receita', 'despesa', 'capex'].map((tipo) => fetchLancamentosParaExportar({ ...filtros, tipo }))
+      )
+      const lancamentos = porTipo.flat()
+      if (!lancamentos.length) {
+        showToast('Nenhum lançamento gravado nesse recorte para exportar.', 'warning')
+        return
+      }
+      setExportacao(
+        montarExportacaoEmpilhada(lancamentos, {
+          bus,
+          torres,
+          empresas,
+          recorte,
+          rotuloVersao: versao.nome,
+          ano: ciclo.ano,
+        })
+      )
+    } catch (err) {
+      showToast(`Erro ao preparar a exportação: ${err.message}`, 'error')
+    } finally {
+      setPreparando(false)
+    }
+  }
+
   const quadro = useMemo(() => {
     if (!ctx) return null
     try {
@@ -343,14 +381,23 @@ export default function Resultado() {
                   {a.rotulo}
                 </button>
               ))}
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm abas-exportar"
-                disabled={!quadro || quadro.erro}
-                onClick={() => setExportacao(quadroParaExportar(quadro, { aba, recorte }))}
-              >
-                ⭳ Exportar
-              </button>
+              <div className="abas-exportar">
+                <MenuExportar
+                  desabilitado={!quadro || quadro.erro}
+                  ocupado={preparando}
+                  opcoes={[
+                    { valor: 'quadro', rotulo: 'Quadro da tela', descricao: `${abaAtual?.rotulo}, como está aqui` },
+                    {
+                      valor: 'empilhada',
+                      rotulo: 'Base empilhada',
+                      descricao: 'Um lançamento por mês em cada linha, para tabela dinâmica e Power BI',
+                    },
+                  ]}
+                  onEscolher={(f) =>
+                    f === 'quadro' ? setExportacao(quadroParaExportar(quadro, { aba, recorte })) : exportarEmpilhada()
+                  }
+                />
+              </div>
             </nav>
 
             <div className="panel" style={{ marginBottom: 18 }}>
