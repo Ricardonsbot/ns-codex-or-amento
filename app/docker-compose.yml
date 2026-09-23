@@ -1,3 +1,8 @@
+# `name` aqui é o que aparece no Docker Desktop como nome do projeto — sem
+# isso, o Compose usa o nome da pasta ("app"), e imagem/container saem como
+# "app-app" em vez de algo reconhecível.
+name: ns-budget
+
 services:
   app:
     build:
@@ -5,5 +10,7 @@ services:
       args:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    image: ns-budget:latest
+    container_name: ns-budget
     ports:
       - "8090:8080"
