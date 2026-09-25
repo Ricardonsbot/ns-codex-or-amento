@@ -9,6 +9,7 @@ import TutorialImportacao from '../components/TutorialImportacao'
 import HistoricoImportacoes from '../components/HistoricoImportacoes'
 import SeletorFormato from '../components/SeletorFormato'
 import CardTargetsPacote from '../components/CardTargetsPacote'
+import CargaCadastros from '../components/CargaCadastros'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
@@ -22,6 +23,7 @@ import {
 } from '../lib/importarTemplateOrcamento'
 import { registrarImportacao, marcarDesfeito, resumoDaImportacao } from '../lib/importacoesData'
 import { FORMATOS, conferirFormato, detectarFormato, nomesDasAbas } from '../lib/formatosTemplate'
+import { lim } from '../lib/lerTemplateOrcamento'
 import { lerTargetsPacote } from '../lib/lerTemplatePacoteiro'
 import { useUnidade } from '../components/UnidadeProvider'
 
@@ -459,6 +461,11 @@ export default function GestaoImportacao() {
   const [formato, setFormato] = useState('empresas')
   const [deteccao, setDeteccao] = useState(null)
   const [targets, setTargets] = useState(null)
+  // O File fica no estado, e não só na ref, porque a carga de cadastros relê
+  // o arquivo por conta própria — as abas de cadastro não passam pela leitura
+  // dos lançamentos.
+  const [blob, setBlob] = useState(null)
+  const [temMapaFornecedores, setTemMapaFornecedores] = useState(false)
   const [lendo, setLendo] = useState(false)
   const [segundos, setSegundos] = useState(0)
   const [wizardAberto, setWizardAberto] = useState(false)
@@ -499,6 +506,7 @@ export default function GestaoImportacao() {
     setArquivo(file.name)
     setTamanho(file.size)
     arquivoRef.current = file
+    setBlob(file)
     registro.current = { id: null, fila: Promise.resolve() }
     setGravados(0)
 
@@ -506,11 +514,14 @@ export default function GestaoImportacao() {
     // das abas são abertos aqui, sem parsear nenhuma — é rápido.
     let escolhido = 'empresas'
     try {
-      const d = detectarFormato(nomesDasAbas(await file.arrayBuffer()), file.name)
+      const abas = nomesDasAbas(await file.arrayBuffer())
+      setTemMapaFornecedores(abas.some((a) => lim(a) === 'MAPA FORNECEDORES'))
+      const d = detectarFormato(abas, file.name)
       escolhido = d.formato
       setDeteccao(d)
     } catch {
       setDeteccao(null)
+      setTemMapaFornecedores(false)
     }
     setFormato(escolhido)
     await ler(file, escolhido)
@@ -634,6 +645,8 @@ export default function GestaoImportacao() {
         {targets && (
           <CardTargetsPacote lido={targets} arquivo={arquivo} onGravado={() => setGravados((n) => n + 1)} />
         )}
+
+        {temMapaFornecedores && blob && <CargaCadastros arquivo={blob} nomeArquivo={arquivo} />}
 
         {todos && (
           <>

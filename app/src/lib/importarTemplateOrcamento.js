@@ -101,6 +101,29 @@ export function lerTodosOsTiposEmWorker(arrayBuffer, aoEstrutura) {
 }
 
 /**
+ * Lê as abas de cadastro do template 2027 — Mapa Fornecedores e ERP — no
+ * mesmo worker. São ~4,7 mil fornecedores e ~67 mil linhas de ERP: rápido
+ * perto do parse dos lançamentos, mas ainda o bastante para travar a tela se
+ * rodasse na thread principal.
+ */
+export function lerCadastrosEmWorker(arrayBuffer) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('./orcamentoTemplate.worker.js', import.meta.url), { type: 'module' })
+    worker.onmessage = (e) => {
+      const { etapa, resultado, erro } = e.data
+      worker.terminate()
+      if (etapa === 'erro') reject(new Error(erro))
+      else resolve(resultado)
+    }
+    worker.onerror = (e) => {
+      worker.terminate()
+      reject(new Error(e.message || 'falha ao ler os cadastros em segundo plano'))
+    }
+    worker.postMessage({ arrayBuffer, cadastros: true }, [arrayBuffer])
+  })
+}
+
+/**
  * Casa cada linha com empresa e conta já cadastradas. Não grava nada — devolve
  * o que resolveu e o que não, para a tela mostrar antes de confirmar.
  *
