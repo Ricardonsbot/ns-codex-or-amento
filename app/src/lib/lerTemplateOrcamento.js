@@ -138,10 +138,14 @@ export const TEMPLATE = {
     bloco: 'VALORES BASE',
     // Blocos que o template calcula a partir da base. O nome à esquerda é a
     // coluna de lancamento_valor_mensal que recebe cada um.
+    // Cada bloco pode ter mais de um nome: o template renomeia os títulos de
+    // uma versão para outra, e ler pelo nome antigo devolvia coluna vazia sem
+    // dizer nada. Vale o primeiro título da lista que existir na aba.
     derivados: [
       ['proporcao', 'PROPORCAO DE REAJUSTE'],
       ['valor_ajustado', 'VALORES REAJUSTADOS'],
-      ['valor_reajuste', 'REAJUSTE'],
+      // "Reajuste" até o template 2026; "Receita Líquida - Reajuste" no 2027.
+      ['valor_reajuste', ['RECEITA LIQUIDA REAJUSTE', 'REAJUSTE']],
       // Só os templates mais antigos têm este bloco; nos novos ele não existe
       // e a coluna fica nula, sem erro.
       ['valor_liquido', 'RECEITA LIQUIDA'],
@@ -187,7 +191,10 @@ export const TEMPLATE = {
     colEmpresa: 'EMPRESA',
     sinal: -1,
     bloco: 'GASTOS COMPETENCIA',
-    derivados: [['valor_caixa', 'GASTOS CAIXA']],
+    // No template 2027 o caixa virou dois blocos: o que a pessoa digita
+    // ("Caixa input Manual") e o que o template calcula a partir dele e do PMP
+    // ("Regime Caixa"). O que vale é o calculado — é ele que fecha o fluxo.
+    derivados: [['valor_caixa', ['GASTOS REGIME CAIXA', 'GASTOS CAIXA']]],
     extras: [
       ['LINHA P L', 'Linha P&L'],
       ['GRUPO CAIXA', 'Grupo caixa'],
@@ -234,7 +241,7 @@ export const TEMPLATE = {
     colEmpresa: 'EMPRESA',
     sinal: -1,
     bloco: 'CAPEX COMPETENCIA',
-    derivados: [['valor_caixa', 'CAPEX CAIXA']],
+    derivados: [['valor_caixa', ['CAPEX REGIME CAIXA', 'CAPEX CAIXA']]],
     extras: [
       ['LINHA P L', 'Linha P&L'],
       ['GRUPO CAIXA', 'Grupo caixa'],
@@ -540,13 +547,19 @@ function lerAba(aba, cfg, tipo) {
   // existe, ele é a âncora: diz qual dos cinco blocos entra, em vez de depender
   // de ser o primeiro. Sem o título, cai na primeira corrida.
   const temTitulos = cab - 2 >= 1
-  /** As 12 colunas do bloco cujo título (linha 2) é `titulo`, ou null. */
+  /**
+   * As 12 colunas do bloco cujo título (linha 2) é `titulo` — ou o primeiro
+   * título da lista que der bloco, quando o template mudou de nome entre uma
+   * versão e outra. Devolve null se nenhum bater.
+   */
   const blocoPorTitulo = (titulo) => {
     if (!temTitulos) return null
-    for (let c = r.s.c; c <= r.e.c; c++) {
-      if (lim(texto(cab - 2, c)) !== titulo) continue
-      const corrida = corridas.find((x) => x[0] === c)
-      return corrida && corrida.length === 12 ? corrida : null
+    for (const alvo of Array.isArray(titulo) ? titulo : [titulo]) {
+      for (let c = r.s.c; c <= r.e.c; c++) {
+        if (lim(texto(cab - 2, c)) !== alvo) continue
+        const corrida = corridas.find((x) => x[0] === c)
+        if (corrida && corrida.length === 12) return corrida
+      }
     }
     return null
   }
