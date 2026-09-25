@@ -8,6 +8,10 @@
 --   Gross e Net Revenue, despesa e capex. E o que alimenta a lista
 --   "Templates importados" da Gestao de Importacao.
 --
+--   Traz tambem a liberacao do template: aguardando, liberado ou devolvido,
+--   com quem decidiu, quando e o motivo. O checklist diz se o arquivo esta
+--   tecnicamente apto; a liberacao e a decisao de quem responde pelo numero.
+--
 --   Os numeros sao uma fotografia do momento da importacao. Se depois os
 --   lancamentos forem editados, substituidos por outra importacao ou
 --   apagados, o registro continua dizendo o que o arquivo trazia.
@@ -47,10 +51,28 @@ create table if not exists importacao (
   -- Por empresa: [{ "id", "nome", "linhas", "gr", "nr", "despesa", "capex" }]
   empresas       jsonb not null default '[]'::jsonb,
   -- Soma do arquivo: { "linhas", "gr", "nr", "despesa", "capex" }
-  totais         jsonb not null default '{}'::jsonb
+  totais         jsonb not null default '{}'::jsonb,
+
+  -- ---------- Liberacao do template (FP&A BU's / Corporate) ----------
+  -- O checklist diz se o arquivo esta tecnicamente apto; a liberacao e a
+  -- decisao de quem responde pelo numero. Sem ela o template fica esperando.
+  liberacao      text not null default 'aguardando'
+                 check (liberacao in ('aguardando', 'liberado', 'devolvido')),
+  liberado_por   text,                       -- e-mail de quem decidiu
+  liberado_em    timestamptz,
+  liberacao_obs  text                        -- motivo, obrigatorio ao devolver
 );
 
+-- As colunas de liberacao para quem ja tinha criado a tabela antes desta
+-- versao do arquivo. Em banco novo nao fazem nada: o create acima ja as tem.
+alter table importacao
+  add column if not exists liberacao     text not null default 'aguardando',
+  add column if not exists liberado_por  text,
+  add column if not exists liberado_em   timestamptz,
+  add column if not exists liberacao_obs text;
+
 create index if not exists importacao_criado_em_idx on importacao (criado_em desc);
+create index if not exists importacao_liberacao_idx on importacao (liberacao);
 
 alter table importacao enable row level security;
 

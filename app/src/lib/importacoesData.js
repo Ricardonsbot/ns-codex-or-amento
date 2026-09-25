@@ -289,6 +289,38 @@ export async function marcarDesfeito(id, tipo) {
 }
 
 /**
+ * A liberação do template: o checklist diz se o arquivo está tecnicamente
+ * apto; isto é a decisão de quem responde pelo número.
+ *
+ *   aguardando  entrou e ninguém olhou ainda
+ *   liberado    o FP&A da BU (ou o Corporate) aceitou — pode consolidar
+ *   devolvido   volta para quem enviou, com motivo
+ *
+ * Devolver exige motivo: "devolvido" sem explicação vira ping-pong.
+ */
+export const LIBERACOES = {
+  aguardando: { rotulo: 'Aguardando', cor: 'cinza' },
+  liberado: { rotulo: 'Liberado', cor: 'verde' },
+  devolvido: { rotulo: 'Devolvido', cor: 'vermelho' },
+}
+
+export async function definirLiberacao(id, { status, quem, observacao }) {
+  if (!LIBERACOES[status]) throw new Error(`Liberação "${status}" não existe.`)
+  if (status === 'devolvido' && !observacao?.trim()) throw new Error('Diga o motivo da devolução.')
+  const { error } = await supabase
+    .from('importacao')
+    .update({
+      liberacao: status,
+      liberado_por: status === 'aguardando' ? null : quem ?? null,
+      liberado_em: status === 'aguardando' ? null : new Date().toISOString(),
+      liberacao_obs: observacao?.trim() || null,
+      atualizado_em: new Date().toISOString(),
+    })
+    .eq('id', id)
+  if (error) throw error
+}
+
+/**
  * As importações, da mais nova para a mais antiga, com o nome de quem subiu
  * quando o e-mail está no cadastro de usuários.
  */
@@ -462,7 +494,7 @@ export function exemploDeHistorico() {
   const brk = [empresa('BRK', 980, 184_400_000, 95_500_000, 6_100_000)]
   const buonny = [empresa('Buonny', 260, 21_300_000, 14_800_000, 900_000)]
 
-  const linha = (id, arquivo, empresas, tipos, horas) => ({
+  const linha = (id, arquivo, empresas, tipos, horas, liberacao = {}) => ({
     id,
     criado_em: new Date(Date.now() - horas * 36e5).toISOString(),
     usuario_email: 'emerson.nakamura@nstech.com.br',
@@ -475,6 +507,8 @@ export function exemploDeHistorico() {
     tipos,
     empresas,
     totais: somaEmpresas(empresas),
+    liberacao: 'aguardando',
+    ...liberacao,
     exemplo: true,
   })
 
@@ -491,9 +525,20 @@ export function exemploDeHistorico() {
       despesa: info(380, { vazios: { subpacote: 95 }, caixa: 95_000_000 }),
       capex: info(80, { caixa: 6_000_000 }),
     }, 5),
-    linha('exemplo-3', 'Template Budget 2027 - Buonny', buonny, {
-      receita: info(150, { vazios: { cliente: 40 }, caixa: 20_000_000 }),
-      despesa: info(95, { vazios: { subpacote: 30 }, caixa: 14_500_000 }),
-    }, 26),
+    linha(
+      'exemplo-3',
+      'Template Budget 2027 - Buonny',
+      buonny,
+      {
+        receita: info(150, { vazios: { cliente: 40 }, caixa: 20_000_000 }),
+        despesa: info(95, { vazios: { subpacote: 30 }, caixa: 14_500_000 }),
+      },
+      26,
+      {
+        liberacao: 'liberado',
+        liberado_por: 'ricardo.battistuta@nstech.com.br',
+        liberado_em: new Date(Date.now() - 20 * 36e5).toISOString(),
+      }
+    ),
   ]
 }
