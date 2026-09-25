@@ -7,6 +7,8 @@ import ChecklistImportacao from '../components/ChecklistImportacao'
 import AlertaStatus from '../components/AlertaStatus'
 import TutorialImportacao from '../components/TutorialImportacao'
 import HistoricoImportacoes from '../components/HistoricoImportacoes'
+import SeletorFormato from '../components/SeletorFormato'
+import CardTargetsPacote from '../components/CardTargetsPacote'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
@@ -19,6 +21,8 @@ import {
   desfazer,
 } from '../lib/importarTemplateOrcamento'
 import { registrarImportacao, marcarDesfeito, resumoDaImportacao } from '../lib/importacoesData'
+import { FORMATOS, conferirFormato, detectarFormato, nomesDasAbas } from '../lib/formatosTemplate'
+import { lerTargetsPacote } from '../lib/lerTemplatePacoteiro'
 import { useUnidade } from '../components/UnidadeProvider'
 
 const ROTULO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
@@ -451,6 +455,10 @@ export default function GestaoImportacao() {
   const showToast = useToast()
   const inputRef = useRef(null)
   const [arquivo, setArquivo] = useState('')
+  // Qual dos quatro templates é este arquivo, e por que a ferramenta acha isso.
+  const [formato, setFormato] = useState('empresas')
+  const [deteccao, setDeteccao] = useState(null)
+  const [targets, setTargets] = useState(null)
   const [lendo, setLendo] = useState(false)
   const [segundos, setSegundos] = useState(0)
   const [wizardAberto, setWizardAberto] = useState(false)
@@ -469,6 +477,8 @@ export default function GestaoImportacao() {
   // seguintes acrescentam. A fila impede dois cards de criarem dois registros
   // ao confirmar quase juntos.
   const registro = useRef({ id: null, fila: Promise.resolve() })
+  // O File fica guardado para reler quando a pessoa troca o formato na mão.
+  const arquivoRef = useRef(null)
 
   useEffect(() => {
     tabelaDisponivel().then(setPodeSolicitar)
@@ -486,18 +496,43 @@ export default function GestaoImportacao() {
     e.target.value = ''
     if (!file) return
 
-    setLendo(true)
     setArquivo(file.name)
     setTamanho(file.size)
+    arquivoRef.current = file
     registro.current = { id: null, fila: Promise.resolve() }
     setGravados(0)
+
+    // O formato antes da leitura pesada: é ele que diz o que ler. Só os nomes
+    // das abas são abertos aqui, sem parsear nenhuma — é rápido.
+    let escolhido = 'empresas'
+    try {
+      const d = detectarFormato(nomesDasAbas(await file.arrayBuffer()), file.name)
+      escolhido = d.formato
+      setDeteccao(d)
+    } catch {
+      setDeteccao(null)
+    }
+    setFormato(escolhido)
+    await ler(file, escolhido)
+  }
+
+  /** Lê o arquivo do jeito que o formato pede. */
+  async function ler(file, formatoId) {
+    setLendo(true)
     setTodos(null)
+    setTargets(null)
     setEstrutura(null)
     setErroLeitura(null)
-    setWizardAberto(true)
+    const paraTarget = FORMATOS[formatoId]?.destino === 'target'
+    setWizardAberto(!paraTarget)
     try {
-      const resultado = await lerTodosOsTiposEmWorker(await file.arrayBuffer(), setEstrutura)
-      setTodos(resultado)
+      if (paraTarget) {
+        // O template de pacoteiro é uma linha por pacote: cabe na thread
+        // principal, sem worker nem assistente de etapas.
+        setTargets(lerTargetsPacote(await file.arrayBuffer()))
+      } else {
+        setTodos(await lerTodosOsTiposEmWorker(await file.arrayBuffer(), setEstrutura))
+      }
       setChave((c) => c + 1)
       setWizardAberto(false)
     } catch (err) {
@@ -506,6 +541,13 @@ export default function GestaoImportacao() {
     } finally {
       setLendo(false)
     }
+  }
+
+  /** Trocar o formato na mão relê o arquivo: o que se lê depende dele. */
+  async function trocarFormato(novo) {
+    setFormato(novo)
+    setDeteccao(null)
+    if (arquivoRef.current) await ler(arquivoRef.current, novo)
   }
 
   function registrar(tipo, dados) {
@@ -518,6 +560,7 @@ export default function GestaoImportacao() {
         arquivo,
         tamanho,
         origem: 'gestao',
+        formato,
         usuarioEmail: sessao?.user?.email,
       })
       setVersaoHistorico((n) => n + 1)
@@ -534,7 +577,7 @@ export default function GestaoImportacao() {
   }
 
   // 1 sem arquivo · 2 escolhendo · 3 lendo · 4 conferindo · 5 gravado
-  const etapaTutorial = gravados ? 5 : todos ? 4 : lendo ? 3 : 1
+  const etapaTutorial = gravados ? 5 : todos || targets ? 4 : lendo ? 3 : 1
 
   const tiposComDado = todos ? ORDEM.filter((t) => !todos[t].erro && todos[t].linhas.length > 0) : []
   const tiposVazios = todos ? ORDEM.filter((t) => !todos[t].erro && !todos[t].linhas.length) : []
@@ -545,7 +588,10 @@ export default function GestaoImportacao() {
       <header className="topbar">
         <div className="topbar-title">
           <h1>Gestão de Importação</h1>
-          <p>Suba o Template Budget uma vez — Receita, Despesa e Capex são conferidos e importados juntos.</p>
+          <p>
+            Suba o template uma vez — a ferramenta reconhece qual dos quatro é e confere o que aquele formato tem de
+            trazer.
+          </p>
         </div>
         <button className="btn btn-secondary btn-sm" type="button" onClick={() => setTutorialAberto(true)}>
           ? Como importar
@@ -574,7 +620,20 @@ export default function GestaoImportacao() {
       />
 
       <div className="content">
-        {!todos && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
+        {(todos || targets) && (
+          <SeletorFormato
+            formato={formato}
+            deteccao={deteccao}
+            aviso={todos ? conferirFormato(formato, todos) : null}
+            onChange={trocarFormato}
+          />
+        )}
+
+        {!todos && !targets && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
+
+        {targets && (
+          <CardTargetsPacote lido={targets} arquivo={arquivo} onGravado={() => setGravados((n) => n + 1)} />
+        )}
 
         {todos && (
           <>
