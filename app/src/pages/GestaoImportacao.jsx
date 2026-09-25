@@ -7,7 +7,6 @@ import ChecklistImportacao from '../components/ChecklistImportacao'
 import AlertaStatus from '../components/AlertaStatus'
 import TutorialImportacao from '../components/TutorialImportacao'
 import HistoricoImportacoes from '../components/HistoricoImportacoes'
-import SeletorFormato from '../components/SeletorFormato'
 import CardTargetsPacote from '../components/CardTargetsPacote'
 import CargaCadastros from '../components/CargaCadastros'
 import { useToast } from '../components/ToastProvider'
@@ -22,9 +21,7 @@ import {
   desfazer,
 } from '../lib/importarTemplateOrcamento'
 import { registrarImportacao, marcarDesfeito, resumoDaImportacao } from '../lib/importacoesData'
-import { FORMATOS, conferirFormato, detectarFormato, nomesDasAbas } from '../lib/formatosTemplate'
-import { lim } from '../lib/lerTemplateOrcamento'
-import { lerTargetsPacote } from '../lib/lerTemplatePacoteiro'
+import { temMapaDeFornecedores } from '../lib/lerMapaFornecedores'
 import { useUnidade } from '../components/UnidadeProvider'
 
 const ROTULO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
@@ -457,13 +454,11 @@ export default function GestaoImportacao() {
   const showToast = useToast()
   const inputRef = useRef(null)
   const [arquivo, setArquivo] = useState('')
-  // Qual dos quatro templates é este arquivo, e por que a ferramenta acha isso.
-  const [formato, setFormato] = useState('empresas')
-  const [deteccao, setDeteccao] = useState(null)
-  const [targets, setTargets] = useState(null)
-  // O File fica no estado, e não só na ref, porque a carga de cadastros relê
-  // o arquivo por conta própria — as abas de cadastro não passam pela leitura
-  // dos lançamentos.
+  // O template é um só; o que muda é o papel de quem preencheu. Marcado, o
+  // arquivo entra como target do pacote em vez de lançamento.
+  const [comoTarget, setComoTarget] = useState(false)
+  // O File fica guardado porque a carga de cadastros relê o arquivo por conta
+  // própria — as abas de cadastro não passam pela leitura dos lançamentos.
   const [blob, setBlob] = useState(null)
   const [temMapaFornecedores, setTemMapaFornecedores] = useState(false)
   const [lendo, setLendo] = useState(false)
@@ -484,8 +479,6 @@ export default function GestaoImportacao() {
   // seguintes acrescentam. A fila impede dois cards de criarem dois registros
   // ao confirmar quase juntos.
   const registro = useRef({ id: null, fila: Promise.resolve() })
-  // O File fica guardado para reler quando a pessoa troca o formato na mão.
-  const arquivoRef = useRef(null)
 
   useEffect(() => {
     tabelaDisponivel().then(setPodeSolicitar)
@@ -505,45 +498,26 @@ export default function GestaoImportacao() {
 
     setArquivo(file.name)
     setTamanho(file.size)
-    arquivoRef.current = file
     setBlob(file)
     registro.current = { id: null, fila: Promise.resolve() }
     setGravados(0)
 
-    // O formato antes da leitura pesada: é ele que diz o que ler. Só os nomes
-    // das abas são abertos aqui, sem parsear nenhuma — é rápido.
-    let escolhido = 'empresas'
+    // Só os nomes das abas, sem parsear nenhuma: é o que diz se este arquivo
+    // traz também os cadastros.
     try {
-      const abas = nomesDasAbas(await file.arrayBuffer())
-      setTemMapaFornecedores(abas.some((a) => lim(a) === 'MAPA FORNECEDORES'))
-      const d = detectarFormato(abas, file.name)
-      escolhido = d.formato
-      setDeteccao(d)
+      setTemMapaFornecedores(temMapaDeFornecedores(await file.arrayBuffer()))
     } catch {
-      setDeteccao(null)
       setTemMapaFornecedores(false)
     }
-    setFormato(escolhido)
-    await ler(file, escolhido)
-  }
+    setComoTarget(false)
 
-  /** Lê o arquivo do jeito que o formato pede. */
-  async function ler(file, formatoId) {
     setLendo(true)
     setTodos(null)
-    setTargets(null)
     setEstrutura(null)
     setErroLeitura(null)
-    const paraTarget = FORMATOS[formatoId]?.destino === 'target'
-    setWizardAberto(!paraTarget)
+    setWizardAberto(true)
     try {
-      if (paraTarget) {
-        // O template de pacoteiro é uma linha por pacote: cabe na thread
-        // principal, sem worker nem assistente de etapas.
-        setTargets(lerTargetsPacote(await file.arrayBuffer()))
-      } else {
-        setTodos(await lerTodosOsTiposEmWorker(await file.arrayBuffer(), setEstrutura))
-      }
+      setTodos(await lerTodosOsTiposEmWorker(await file.arrayBuffer(), setEstrutura))
       setChave((c) => c + 1)
       setWizardAberto(false)
     } catch (err) {
@@ -552,13 +526,6 @@ export default function GestaoImportacao() {
     } finally {
       setLendo(false)
     }
-  }
-
-  /** Trocar o formato na mão relê o arquivo: o que se lê depende dele. */
-  async function trocarFormato(novo) {
-    setFormato(novo)
-    setDeteccao(null)
-    if (arquivoRef.current) await ler(arquivoRef.current, novo)
   }
 
   function registrar(tipo, dados) {
@@ -571,7 +538,6 @@ export default function GestaoImportacao() {
         arquivo,
         tamanho,
         origem: 'gestao',
-        formato,
         usuarioEmail: sessao?.user?.email,
       })
       setVersaoHistorico((n) => n + 1)
@@ -588,7 +554,7 @@ export default function GestaoImportacao() {
   }
 
   // 1 sem arquivo · 2 escolhendo · 3 lendo · 4 conferindo · 5 gravado
-  const etapaTutorial = gravados ? 5 : todos || targets ? 4 : lendo ? 3 : 1
+  const etapaTutorial = gravados ? 5 : todos ? 4 : lendo ? 3 : 1
 
   const tiposComDado = todos ? ORDEM.filter((t) => !todos[t].erro && todos[t].linhas.length > 0) : []
   const tiposVazios = todos ? ORDEM.filter((t) => !todos[t].erro && !todos[t].linhas.length) : []
@@ -631,24 +597,39 @@ export default function GestaoImportacao() {
       />
 
       <div className="content">
-        {(todos || targets) && (
-          <SeletorFormato
-            formato={formato}
-            deteccao={deteccao}
-            aviso={todos ? conferirFormato(formato, todos) : null}
-            onChange={trocarFormato}
-          />
-        )}
+        {!todos && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
 
-        {!todos && !targets && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
-
-        {targets && (
-          <CardTargetsPacote lido={targets} arquivo={arquivo} onGravado={() => setGravados((n) => n + 1)} />
+        {todos && (
+          <div className="painel-formato" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 13 }}>
+              <input
+                type="checkbox"
+                checked={comoTarget}
+                onChange={(e) => setComoTarget(e.target.checked)}
+                style={{ marginRight: 6 }}
+              />
+              <strong>Este template é o target do pacoteiro</strong>
+            </label>
+            <p style={{ fontSize: 12, opacity: 0.8, margin: '6px 0 0' }}>
+              O arquivo é o mesmo de sempre; muda o papel de quem preencheu. Marcado, o total por pacote entra como
+              teto do ano em vez de virar lançamento — gravar os dois somaria o gasto do pacote duas vezes.
+            </p>
+          </div>
         )}
 
         {temMapaFornecedores && blob && <CargaCadastros arquivo={blob} nomeArquivo={arquivo} />}
 
-        {todos && (
+        {todos && comoTarget && (
+          <CardTargetsPacote
+            linhas={todos.despesa?.linhas ?? []}
+            anoTemplate={todos.despesa?.ano}
+            arquivo={arquivo}
+            responsavel={sessao?.user?.email}
+            onGravado={() => setGravados((n) => n + 1)}
+          />
+        )}
+
+        {todos && !comoTarget && (
           <>
             {tiposComErro.length > 0 && (
               <div className="proto-banner" style={{ marginBottom: 16 }}>

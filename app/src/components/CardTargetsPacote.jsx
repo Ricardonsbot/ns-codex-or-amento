@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useToast } from './ToastProvider'
 import { useUnidade } from './UnidadeProvider'
@@ -6,23 +6,54 @@ import BotaoUnidade from './BotaoUnidade'
 import { contarTargetsPacote, gravarTargetsPacote, pacotesCadastrados } from '../lib/targetsData'
 
 /**
- * Conferência e gravação do Template Pacoteiros.
+ * O template do pacoteiro, importado como target em vez de lançamento.
  *
- * É o único dos quatro formatos que não vira lançamento: o número aqui é o
- * teto do ano por pacote, e vai para o outro lado do quadro Target × Bottom
- * Up. Por isso esta tela não fala de empresa, conta nem centro de custo — nada
- * disso existe num target — e fala de duas coisas que as outras não têm: se o
- * pacote existe no cadastro e quem é o responsável por ele.
+ * O arquivo é o mesmo Template Budget de todo mundo — o que muda é o papel de
+ * quem preencheu. O pacoteiro fecha o pacote inteiro por cima; as empresas
+ * constroem o mesmo pacote por baixo. Gravar o dele como lançamento somaria os
+ * dois e contaria o gasto duas vezes; então aqui o total por pacote vira o
+ * target, e o confronto acontece no quadro Target × Bottom Up.
+ *
+ * O responsável é quem subiu o arquivo: é o pacoteiro, e é a quem se cobra a
+ * diferença depois.
  */
-export default function CardTargetsPacote({ lido, arquivo, onGravado }) {
+export default function CardTargetsPacote({ linhas, anoTemplate, arquivo, responsavel, onGravado }) {
   const showToast = useToast()
   const { comMoeda } = useUnidade()
-  const [ano, setAno] = useState(lido.ano ?? new Date().getFullYear())
+  const [ano, setAno] = useState(anoTemplate ?? new Date().getFullYear())
   const [jaExistem, setJaExistem] = useState(null)
   const [substituir, setSubstituir] = useState(true)
   const [gravando, setGravando] = useState(false)
   const [gravado, setGravado] = useState(0)
   const [cadastro, setCadastro] = useState(null)
+
+  // Uma linha por pacote: o template abre por conta, centro de custo e
+  // fornecedor, e nada disso é target — target é do pacote.
+  const porPacote = useMemo(() => {
+    const mapa = new Map()
+    let semPacote = 0
+    for (const l of linhas) {
+      const nome = (l.pacote ?? '').trim()
+      const total = (l.valores ?? []).reduce((a, v) => a + (v.valor ?? 0), 0)
+      if (!total) continue
+      if (!nome) {
+        semPacote += 1
+        continue
+      }
+      const atual = mapa.get(nome)
+      // A leitura já inverteu o sinal do gasto; o target é um teto de gasto e
+      // fica positivo, como o bottom up do quadro.
+      mapa.set(nome, {
+        pacote: nome,
+        valor: (atual?.valor ?? 0) + Math.abs(total),
+        linhas: (atual?.linhas ?? 0) + 1,
+      })
+    }
+    return {
+      lista: [...mapa.values()].sort((a, b) => a.pacote.localeCompare(b.pacote, 'pt-BR')),
+      semPacote,
+    }
+  }, [linhas])
 
   useEffect(() => {
     contarTargetsPacote(ano).then(setJaExistem)
@@ -32,18 +63,19 @@ export default function CardTargetsPacote({ lido, arquivo, onGravado }) {
     pacotesCadastrados().then(setCadastro)
   }, [])
 
-  // Tabela ainda não criada: contar devolve null, e é o mesmo sinal de que
-  // gravar vai falhar. Melhor dizer antes.
   const semTabela = jaExistem === null
   const conhecidos = cadastro === null ? null : new Set(cadastro)
-  const fora = conhecidos === null ? [] : lido.linhas.filter((l) => !conhecidos.has(l.pacote))
-  const total = lido.linhas.reduce((a, l) => a + l.valor, 0)
-  const semDono = lido.linhas.filter((l) => !l.responsavel).length
+  const fora = conhecidos === null ? [] : porPacote.lista.filter((l) => !conhecidos.has(l.pacote))
+  const total = porPacote.lista.reduce((a, l) => a + l.valor, 0)
 
   async function handleGravar() {
     setGravando(true)
     try {
-      const n = await gravarTargetsPacote(ano, lido.linhas, { substituir })
+      const n = await gravarTargetsPacote(
+        ano,
+        porPacote.lista.map((l) => ({ ...l, responsavel, observacao: `Template ${arquivo}` })),
+        { substituir }
+      )
       showToast(`${n} target(s) gravados para ${ano}.`, 'success')
       setGravado((x) => x + 1)
       onGravado?.()
@@ -59,7 +91,7 @@ export default function CardTargetsPacote({ lido, arquivo, onGravado }) {
       <div className="panel-header">
         <div>
           <h2>🎯 Target por pacote</h2>
-          <p>aba {lido.aba} · o teto do ano, não lançamento</p>
+          <p>o total deste template por pacote — entra como teto do ano, não como lançamento</p>
         </div>
         <BotaoUnidade />
       </div>
@@ -67,24 +99,21 @@ export default function CardTargetsPacote({ lido, arquivo, onGravado }) {
         {semTabela && (
           <div className="proto-banner" style={{ marginBottom: 12 }}>
             ✕ A tabela de targets ainda não existe no banco — falta rodar
-            supabase/migrations/2026-09-22-historico-de-importacao.sql. Dá para conferir o arquivo aqui, mas gravar só
-            depois disso.
+            supabase/migrations/2026-09-22-historico-de-importacao.sql. Dá para conferir aqui, mas gravar só depois
+            disso.
           </div>
         )}
 
         <div className="flex-row" style={{ gap: 20, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
           <label style={{ fontSize: 12 }}>
             Ano do target{' '}
-            <input
-              type="number"
-              value={ano}
-              onChange={(e) => setAno(Number(e.target.value))}
-              style={{ width: 90 }}
-            />
+            <input type="number" value={ano} onChange={(e) => setAno(Number(e.target.value))} style={{ width: 90 }} />
           </label>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>{lido.linhas.length}</div>
-            <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6 }}>pacotes</div>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>{porPacote.lista.length}</div>
+            <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6 }}>
+              pacotes
+            </div>
           </div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700 }}>{comMoeda(total)}</div>
@@ -92,28 +121,25 @@ export default function CardTargetsPacote({ lido, arquivo, onGravado }) {
               target do ano
             </div>
           </div>
+          <div>
+            <div style={{ fontSize: 13 }}>{responsavel || '—'}</div>
+            <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6 }}>
+              responsável
+            </div>
+          </div>
         </div>
 
-        {!lido.ano && (
+        {porPacote.semPacote > 0 && (
           <div className="proto-banner" style={{ marginBottom: 12 }}>
-            ⓘ O arquivo não diz de que ano é o target — confira o campo acima antes de gravar.
-          </div>
-        )}
-        {lido.ignoradas > 0 && (
-          <div className="proto-banner" style={{ marginBottom: 12 }}>
-            ⓘ {lido.ignoradas} linha(s) têm pacote escrito e nenhum valor — ficam de fora.
+            ⚠ {porPacote.semPacote} linha(s) têm valor e nenhum pacote preenchido — ficam de fora do target. Sem a
+            coluna Pacote não há a que comparar.
           </div>
         )}
         {fora.length > 0 && (
           <div className="proto-banner" style={{ marginBottom: 12 }}>
-            ⚠ {fora.length} pacote(s) do arquivo não estão no cadastro: {fora.slice(0, 5).map((f) => f.pacote).join(', ')}
-            {fora.length > 5 ? '…' : ''}. O target entra assim mesmo, mas o bottom up só vai casar se o nome for o
-            mesmo do template de gasto — confira em <Link to="/cadastros/pacotes">Cadastros → Pacotes</Link>.
-          </div>
-        )}
-        {semDono > 0 && (
-          <div className="proto-banner" style={{ marginBottom: 12 }}>
-            ⓘ {semDono} pacote(s) sem responsável no arquivo — sem ele não fica registrado a quem cobrar a diferença.
+            ⚠ {fora.length} pacote(s) fora do cadastro: {fora.slice(0, 5).map((f) => f.pacote).join(', ')}
+            {fora.length > 5 ? '…' : ''}. O target entra assim mesmo, mas o nome tem de ser o mesmo que as empresas
+            usam, senão o bottom up não casa — confira em <Link to="/cadastros/pacotes">Cadastros → Pacotes</Link>.
           </div>
         )}
         {jaExistem > 0 && (
@@ -126,7 +152,7 @@ export default function CardTargetsPacote({ lido, arquivo, onGravado }) {
                 onChange={(e) => setSubstituir(e.target.checked)}
                 style={{ marginRight: 6 }}
               />
-              Apagar os de {ano} antes de gravar — é o que tira pacote que saiu desta versão do arquivo
+              Apagar os de {ano} antes de gravar — é o que tira pacote que saiu desta versão do template
             </label>
           </div>
         )}
@@ -136,13 +162,12 @@ export default function CardTargetsPacote({ lido, arquivo, onGravado }) {
             <thead>
               <tr>
                 <th>PACOTE</th>
-                <th>RESPONSÁVEL</th>
+                <th className="text-right">LINHAS</th>
                 <th className="text-right">TARGET DO ANO</th>
-                <th>OBSERVAÇÃO</th>
               </tr>
             </thead>
             <tbody>
-              {lido.linhas.map((l) => (
+              {porPacote.lista.map((l) => (
                 <tr key={l.pacote}>
                   <td>
                     <strong>{l.pacote}</strong>
@@ -150,9 +175,8 @@ export default function CardTargetsPacote({ lido, arquivo, onGravado }) {
                       <span style={{ color: 'var(--color-danger, #c0392b)', fontSize: 12 }}> · fora do cadastro</span>
                     )}
                   </td>
-                  <td style={{ fontSize: 12 }}>{l.responsavel || '—'}</td>
+                  <td className="text-right">{l.linhas}</td>
                   <td className="text-right">{comMoeda(l.valor)}</td>
-                  <td style={{ fontSize: 12, opacity: 0.8 }}>{l.observacao || ''}</td>
                 </tr>
               ))}
             </tbody>
@@ -164,16 +188,15 @@ export default function CardTargetsPacote({ lido, arquivo, onGravado }) {
             className="btn btn-primary"
             type="button"
             onClick={handleGravar}
-            disabled={gravando || semTabela || !lido.linhas.length}
+            disabled={gravando || semTabela || !porPacote.lista.length}
           >
-            {gravando ? 'Gravando…' : `Gravar targets de ${ano}`}
+            {gravando ? 'Gravando…' : `Gravar target de ${ano}`}
           </button>
           {gravado > 0 && (
             <span style={{ fontSize: 12 }}>
               ✓ Gravado — veja em <Link to="/resultado">Resultado → Target × Bottom Up</Link>.
             </span>
           )}
-          <span style={{ fontSize: 12, opacity: 0.7 }}>{arquivo}</span>
         </div>
       </div>
     </div>

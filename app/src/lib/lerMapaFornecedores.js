@@ -38,6 +38,15 @@ function acharCabecalho(bruto, r) {
   return -1
 }
 
+/**
+ * Se o arquivo tem a aba de cadastros, sem parsear nenhuma delas — é o que
+ * decide mostrar ou não o card de carga.
+ */
+export function temMapaDeFornecedores(arrayBuffer) {
+  const nomes = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', bookSheets: true }).SheetNames ?? []
+  return nomes.some((n) => lim(n) === lim(ABA_MAPA))
+}
+
 export function lerCadastrosDoTemplate(arrayBuffer) {
   const wb = XLSX.read(new Uint8Array(arrayBuffer), {
     type: 'array',

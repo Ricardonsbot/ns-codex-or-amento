@@ -15,14 +15,14 @@ const PASSOS = [
     n: 1,
     titulo: 'Prepare o arquivo',
     texto:
-      'São quatro templates, e cada um cobra o que é dele: Empresas (Receita, Base Gastos e Capex), Corporate Non Labor, Corporate Labor e Pacoteiros. Use o do ano (.xlsb, .xlsx ou .xlsm) e não renomeie as abas nem as colunas: é por elas que a leitura se orienta.',
-    dica: 'Deixe o formato no nome do arquivo — "Corporate Non Labor 2027" — e a ferramenta já abre no formato certo. Dá para trocar na mão depois.',
+      'O template é um só, o mesmo para empresas, corporate e pacoteiros: o Template Budget do ano (.xlsb, .xlsx ou .xlsm), com as abas Receita e Base Gastos. Não renomeie as abas nem as colunas: é por elas que a leitura se orienta.',
+    dica: 'O ano do cabeçalho do template decide o ciclo de destino — 2027 entra no ciclo 2027, não no ciclo aberto.',
   },
   {
     n: 2,
     titulo: 'Selecione o template',
     texto:
-      'Clique em "Selecionar Template" e escolha o arquivo. Um upload só serve para Receita, Despesa e Capex. Confira a faixa de formato no topo antes de seguir — o Pacoteiros não grava lançamento, grava o target do ano.',
+      'Clique em "Selecionar Template" e escolha o arquivo. Um upload só serve para Receita, Despesa e Capex. Se quem preencheu foi o pacoteiro, marque no topo "este template é o target do pacoteiro": aí o total por pacote entra como teto do ano, e não como lançamento.',
   },
   {
     n: 3,

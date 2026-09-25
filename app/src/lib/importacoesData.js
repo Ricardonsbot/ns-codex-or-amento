@@ -223,7 +223,6 @@ export async function registrarImportacao({
   somouEmCima,
   cadastros,
   usuarioEmail,
-  formato,
 }) {
   if (!(await historicoDisponivel())) return null
   const empresasTipo = resumirLinhas(linhas, tipo)
@@ -265,7 +264,6 @@ export async function registrarImportacao({
       arquivo,
       tamanho_bytes: tamanho ?? null,
       origem,
-      formato: formato ?? null,
       ano: ano ?? null,
       ciclo_id: ciclo?.id ?? null,
       versao_id: versao?.id ?? null,
@@ -529,7 +527,6 @@ export function exemploDeHistorico() {
     arquivo,
     tamanho_bytes: 6_200_000,
     origem: 'gestao',
-    formato: 'empresas',
     ano: 2027,
     versao_nome: 'B27 - Ciclo 1 - v2',
     tipos,

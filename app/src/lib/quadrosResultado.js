@@ -783,13 +783,13 @@ function targetPacote(ctx) {
     grupos,
     linhas,
     notas: [
-      'Target vem do Template Pacoteiros, importado na Gestão de Importação; dá para ajustar à mão em Cadastros → Targets por Pacote.',
+      'Target vem do template do pacoteiro, marcado como target na importação; dá para ajustar à mão em Cadastros → Targets por Pacote.',
       'Bottom up é a soma dos lançamentos pela coluna Pacote do template; ∆ positivo é gasto acima do target.',
       ...(semTarget ? [`${semTarget} pacote(s) com lançamento e sem target cadastrado.`] : []),
       ...(semLancamento ? [`${semLancamento} pacote(s) com target e nenhum lançamento até aqui.`] : []),
       ...(targets?.length
         ? []
-        : ['Nenhum target para este ano — importe o Template Pacoteiros na Gestão de Importação.']),
+        : ['Nenhum target para este ano — importe o template do pacoteiro marcando-o como target na Gestão de Importação.']),
     ],
   }
 }

@@ -7,7 +7,6 @@ import {
   LIBERACOES,
   listarImportacoes,
 } from '../lib/importacoesData'
-import { FORMATOS } from '../lib/formatosTemplate'
 import { useAuth } from './AuthProvider'
 import { useToast } from './ToastProvider'
 import FiltroBotoes from './FiltroBotoes'
@@ -252,9 +251,6 @@ export default function HistoricoImportacoes({ versao }) {
                             <Detalhe rotulo="Data Import">{quando(r.criado_em)}</Detalhe>
                             <Detalhe rotulo="User">
                               <span className="detalhe-email">{r.usuario_email ?? r.usuario_nome ?? '—'}</span>
-                            </Detalhe>
-                            <Detalhe rotulo="Formato">
-                              {FORMATOS[r.formato]?.rotulo ?? '—'}
                             </Detalhe>
                             <Detalhe rotulo="Ciclo">
                               {[r.ano, r.versao_nome].filter(Boolean).join(' - ') || '—'}
