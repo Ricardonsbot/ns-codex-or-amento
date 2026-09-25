@@ -91,6 +91,18 @@ export const CADASTROS_SIMPLES = {
       { key: 'descricao', label: 'Descrição' },
     ],
   },
+  'targets-pacote': {
+    titulo: 'Targets por Pacote',
+    tabela: 'target_pacote',
+    tela: 'TargetPacote',
+    campos: [
+      { key: 'ano', label: 'Ano', obrigatorio: true },
+      { key: 'pacote', label: 'Pacote', obrigatorio: true },
+      { key: 'valor', label: 'Target do ano (R$)', obrigatorio: true },
+      { key: 'responsavel', label: 'Responsável' },
+      { key: 'observacao', label: 'Observação' },
+    ],
+  },
   subpacotes: {
     titulo: 'Subpacotes',
     tabela: 'subpacote',

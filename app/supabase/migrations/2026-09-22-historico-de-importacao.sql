@@ -46,6 +46,9 @@ create table if not exists importacao (
   ciclo_id       uuid references ciclo(id) on delete set null,
   versao_id      uuid references versao(id) on delete set null,
   versao_nome    text,                       -- guardado a parte: a versao pode ser apagada
+  -- Qual dos quatro templates: empresas, corporate-non-labor,
+  -- corporate-labor ou pacoteiros. Muda o que se cobra do arquivo.
+  formato        text,
   -- Por tipo: { "receita": { "linhas": 120, "total": 1.0e7, "apagados": 0, "desfeito": false }, ... }
   tipos          jsonb not null default '{}'::jsonb,
   -- Por empresa: [{ "id", "nome", "linhas", "gr", "nr", "despesa", "capex" }]
@@ -66,6 +69,7 @@ create table if not exists importacao (
 -- As colunas de liberacao para quem ja tinha criado a tabela antes desta
 -- versao do arquivo. Em banco novo nao fazem nada: o create acima ja as tem.
 alter table importacao
+  add column if not exists formato       text,
   add column if not exists liberacao     text not null default 'aguardando',
   add column if not exists liberado_por  text,
   add column if not exists liberado_em   timestamptz,
@@ -143,3 +147,31 @@ create policy subpacote_tudo on subpacote for all to authenticated using (true) 
 
 drop policy if exists fornecedor_grupo_tudo on fornecedor_grupo;
 create policy fornecedor_grupo_tudo on fornecedor_grupo for all to authenticated using (true) with check (true);
+
+-- ============================================================================
+-- Target por pacote (pacoteiros) x bottom up
+-- ============================================================================
+--
+-- O QUE FAZ
+--   `target_pacote`: o teto que o dono do pacote (o "pacoteiro") combinou
+--   para o ano, por pacote. E o outro lado da conta: o bottom up sai da soma
+--   dos lancamentos, e a tela compara os dois.
+--
+--   Um target por ano e pacote; o responsavel fica registrado para saber a
+--   quem cobrar a diferenca.
+-- ============================================================================
+
+create table if not exists target_pacote (
+  id          uuid primary key default gen_random_uuid(),
+  ano         int not null,
+  pacote      text not null,          -- nome do pacote, como no cadastro
+  valor       numeric(16, 2) not null default 0,
+  responsavel text,
+  observacao  text,
+  unique (ano, pacote)
+);
+
+alter table target_pacote enable row level security;
+
+drop policy if exists target_pacote_tudo on target_pacote;
+create policy target_pacote_tudo on target_pacote for all to authenticated using (true) with check (true);

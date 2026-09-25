@@ -8,6 +8,7 @@ import { useToast } from '../components/ToastProvider'
 import { fetchVersaoAtual } from '../lib/lancamentosData'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../lib/dashboardData'
 import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
+import { fetchTargetsPacote } from '../lib/targetsData'
 import { MESES, MEDIDAS_MOM, janela } from '../lib/demonstrativo'
 import { ABAS, montarQuadro, quadroParaExportar, bigNumbers } from '../lib/quadrosResultado'
 import Indicadores from '../components/Indicadores'
@@ -98,6 +99,7 @@ export default function Resultado() {
   const [medida, setMedida] = useState('nr')
   const [areaPacote, setAreaPacote] = useState('')
   const [dimensaoBridge, setDimensaoBridge] = useState('driver')
+  const [targets, setTargets] = useState([])
   const [modoEmpresa, setModoEmpresa] = useState('mes')
   const [empresaPl, setEmpresaPl] = useState('')
   const [exportacao, setExportacao] = useState(null)
@@ -127,6 +129,12 @@ export default function Resultado() {
   }, [])
 
   const ciclo = ciclos.find((c) => c.id === cicloId) ?? null
+
+  // Os targets do ano: o outro lado do quadro Target × Bottom Up.
+  useEffect(() => {
+    if (!ciclo?.ano) return
+    fetchTargetsPacote(ciclo.ano).then(setTargets)
+  }, [ciclo?.ano])
   const versao = versaoReferencia(ciclo)
   const cicloLy = ciclo ? ciclos.find((c) => c.ano === ciclo.ano - 1) : null
   const versaoLy = versaoReferencia(cicloLy)
@@ -168,6 +176,7 @@ export default function Resultado() {
         medida,
         areaPacote,
         dimensaoBridge,
+        targets,
         modoEmpresa,
         empresaPl,
         rotuloVersao: versao ? `${ciclo?.ano} · ${versao.nome}` : 'Actual',
@@ -175,7 +184,7 @@ export default function Resultado() {
         rotuloLy: versaoLy ? `LY ${cicloLy.ano}` : null,
       },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dados, comp, ly, mes, medida, areaPacote, dimensaoBridge, modoEmpresa, empresaPl]
+    [dados, comp, ly, mes, medida, areaPacote, dimensaoBridge, targets, modoEmpresa, empresaPl]
   )
   /**
    * Base empilhada: os lançamentos gravados da versão, no mesmo recorte da

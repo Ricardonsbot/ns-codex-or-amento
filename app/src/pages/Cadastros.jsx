@@ -8,6 +8,7 @@ const ITENS = [
   { label: 'Centros de Custo', icon: '🏷️', to: '/cadastros/centros-de-custo' },
   { label: 'Pacotes', icon: '📦', to: '/cadastros/pacotes' },
   { label: 'Subpacotes', icon: '🗃️', to: '/cadastros/subpacotes' },
+  { label: 'Targets por Pacote', icon: '🎯', to: '/cadastros/targets-pacote' },
   { label: 'Diretorias', icon: '🏢', to: '/cadastros/diretorias' },
   { label: 'Operações', icon: '⚙️', to: '/cadastros/operacoes' },
   { label: 'Produtos', icon: '📦', to: '/cadastros/produtos' },

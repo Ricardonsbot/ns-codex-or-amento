@@ -705,6 +705,95 @@ function bridgeReceita(ctx) {
   }
 }
 
+/**
+ * Target × Bottom Up: o teto combinado com o pacoteiro contra o que os
+ * lançamentos somam, pacote a pacote.
+ *
+ * O bottom up sai do mesmo lugar do quadro "Gastos por pacote" — a coluna
+ * Pacote do template —, então inclui o que ainda não tem conta cadastrada.
+ * Estouro é gasto acima do target, e é o que a cor marca.
+ */
+function targetPacote(ctx) {
+  const { mes } = ctx
+  const targets = ctx.targets
+  const grupos = [
+    {
+      rotulo: `Target × Bottom Up · YTD ${MESES[mes - 1]}`,
+      colunas: [
+        { key: 'target', label: 'Target', fmt: 'mi' },
+        { key: 'bottom', label: 'Bottom up', fmt: 'mi', papel: 'atual' },
+        { key: 'd', label: '∆', fmt: 'mi' },
+        { key: 'dp', label: '∆%', fmt: 'pct', semaforo: true },
+      ],
+    },
+  ]
+
+  if (targets === null) {
+    return {
+      grupos,
+      linhas: [],
+      notas: [
+        'O cadastro de targets ainda não existe no banco — falta rodar a migração 2026-09-22-historico-de-importacao.sql.',
+      ],
+    }
+  }
+
+  const porPacote = new Map()
+  for (const p of ctx.dados.pacotes ?? []) porPacote.set(p.nome, -janela(p.valores, 'YTD', mes))
+  const porTarget = new Map((targets ?? []).map((t) => [t.pacote, t]))
+  const nomes = [...new Set([...porTarget.keys(), ...porPacote.keys()])].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
+  const linha = (rotulo, tipo, target, bottom, extra) => ({
+    rotulo,
+    tipo,
+    ...extra,
+    v: {
+      target,
+      bottom,
+      d: bottom - target,
+      // Sem target não há % que faça sentido: mostrar 100% seria mentira.
+      dp: target ? ((bottom - target) / Math.abs(target)) * 100 : null,
+    },
+  })
+
+  const linhas = []
+  let somaTarget = 0
+  let somaBottom = 0
+  for (const nome of nomes) {
+    const t = porTarget.get(nome)
+    const target = t?.valor ?? 0
+    const bottom = porPacote.get(nome) ?? 0
+    somaTarget += target
+    somaBottom += bottom
+    const semTarget = !t
+    linhas.push(
+      linha(semTarget ? `${nome} · sem target` : nome, semTarget ? 'alerta' : 'linha', target, bottom, {
+        fmtDelta: 'mi',
+      })
+    )
+    if (t?.responsavel) {
+      linhas.push({ rotulo: `responsável: ${t.responsavel}`, tipo: 'filha', v: {} })
+    }
+  }
+  linhas.push({ tipo: 'respiro' }, linha('= Total', 'subtotal', somaTarget, somaBottom))
+
+  const semTarget = nomes.filter((n) => !porTarget.has(n)).length
+  const semLancamento = [...porTarget.keys()].filter((n) => !porPacote.has(n)).length
+  return {
+    grupos,
+    linhas,
+    notas: [
+      'Target vem do Template Pacoteiros, importado na Gestão de Importação; dá para ajustar à mão em Cadastros → Targets por Pacote.',
+      'Bottom up é a soma dos lançamentos pela coluna Pacote do template; ∆ positivo é gasto acima do target.',
+      ...(semTarget ? [`${semTarget} pacote(s) com lançamento e sem target cadastrado.`] : []),
+      ...(semLancamento ? [`${semLancamento} pacote(s) com target e nenhum lançamento até aqui.`] : []),
+      ...(targets?.length
+        ? []
+        : ['Nenhum target para este ano — importe o Template Pacoteiros na Gestão de Importação.']),
+    ],
+  }
+}
+
 /** Gastos por pacote: pacote e subpacote, no YTD, com o % RoL. */
 function pacotes(ctx) {
   const { mes } = ctx
@@ -756,6 +845,7 @@ export const ABAS = [
   { valor: 'resumo', rotulo: 'Painel Resumo', montar: resumo },
   { valor: 'mensal', rotulo: 'Budget mês a mês', montar: budgetMesAMes },
   { valor: 'pacotes', rotulo: 'Gastos por pacote', montar: pacotes, foraDaMaster: true },
+  { valor: 'target', rotulo: 'Target × Bottom Up', montar: targetPacote, foraDaMaster: true },
 ]
 
 export function montarQuadro(aba, ctx) {
