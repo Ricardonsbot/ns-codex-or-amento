@@ -89,3 +89,57 @@ create policy importacao_criar on importacao
 drop policy if exists importacao_atualizar on importacao;
 create policy importacao_atualizar on importacao
   for update to authenticated using (true) with check (true);
+
+-- ============================================================================
+-- Parametros que faltavam: pacotes e grupos de fornecedor
+-- ============================================================================
+--
+-- O QUE FAZ
+--   `pacote` e `subpacote`: a lista oficial dos pacotes de gasto. Ate aqui o
+--   pacote era texto solto vindo do template, sem lista para conferir — por
+--   isso o checklist da importacao nao conseguia validar.
+--
+--   `fornecedor_grupo` e a coluna `fornecedor.grupo`: o agrupamento de
+--   fornecedores, para somar gasto por grupo economico em vez de por razao
+--   social.
+--
+-- O QUE NAO FAZ
+--   Nao mexe em lancamento nem em dado gravado. Rodar duas vezes nao da erro.
+-- ============================================================================
+
+create table if not exists pacote (
+  id        uuid primary key default gen_random_uuid(),
+  nome      text not null unique,
+  descricao text,
+  ativo     boolean not null default true
+);
+
+create table if not exists subpacote (
+  id        uuid primary key default gen_random_uuid(),
+  pacote    text not null,           -- nome do pacote, como vem no template
+  nome      text not null,
+  descricao text,
+  unique (pacote, nome)
+);
+
+create table if not exists fornecedor_grupo (
+  id        uuid primary key default gen_random_uuid(),
+  nome      text not null unique,
+  descricao text
+);
+
+-- O grupo no proprio fornecedor: e por ele que o gasto soma por grupo.
+alter table fornecedor add column if not exists grupo text;
+
+alter table pacote enable row level security;
+alter table subpacote enable row level security;
+alter table fornecedor_grupo enable row level security;
+
+drop policy if exists pacote_tudo on pacote;
+create policy pacote_tudo on pacote for all to authenticated using (true) with check (true);
+
+drop policy if exists subpacote_tudo on subpacote;
+create policy subpacote_tudo on subpacote for all to authenticated using (true) with check (true);
+
+drop policy if exists fornecedor_grupo_tudo on fornecedor_grupo;
+create policy fornecedor_grupo_tudo on fornecedor_grupo for all to authenticated using (true) with check (true);

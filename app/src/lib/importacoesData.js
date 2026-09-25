@@ -75,6 +75,8 @@ const norm = (v) =>
 /** O valor que cada dimensão tem na linha, por tipo de template. */
 const DIMENSOES = {
   centroCusto: (p) => p.centro_custo_nome || p.centroCusto,
+  pacote: (p) => p.pacote,
+  subpacote: (p) => p.subpacote,
   fornecedor: (p) => p.fornecedor,
   produto: (p) => p.produto_analitico || p.produto_sintetico,
   cliente: (p) => p.cliente,
@@ -121,6 +123,7 @@ function conferirCadastros(linhas, cadastros) {
 const PREENCHIMENTO = {
   valor: (p) => (p.total ?? 0) !== 0,
   centroCusto: (p) => Boolean(p.centro_custo_nome || p.centroCusto),
+  pacote: (p) => Boolean(p.pacote),
   contaContabil: (p) => Boolean(p.conta),
   empresa: (p) => Boolean(typeof p.empresa === 'object' ? p.empresa?.id : p.empresa),
   mrr: (p) => Boolean(p.mrr),
@@ -402,7 +405,10 @@ export function avaliar(registro, escopo = 'arquivo') {
   // nome que não existe no cadastro não serve para consolidar.
   const foraEmpresa = somar('fora')
   const semConta = somar('marcadas')
-  const ccFora = usados.reduce((a, x) => a + (tipos[x]?.cadastros?.centroCusto?.linhas ?? 0), 0)
+  const foraDoCadastro = (dim) => usados.reduce((a, x) => a + (tipos[x]?.cadastros?.[dim]?.linhas ?? 0), 0)
+  const ccFora = foraDoCadastro('centroCusto')
+  const pacoteFora = foraDoCadastro('pacote')
+  const subFora = foraDoCadastro('subpacote')
   const essenciais = [
     item('valor', 'Valor', vazio('valor')),
     item(
@@ -411,6 +417,14 @@ export function avaliar(registro, escopo = 'arquivo') {
       vazio('centroCusto') + ccFora,
       vazio('centroCusto') + ccFora
         ? `${vazio('centroCusto')} sem preencher · ${ccFora} fora do cadastro`
+        : 'preenchido e cadastrado'
+    ),
+    item(
+      'pacote',
+      'Pacote',
+      vazio('pacote') + pacoteFora,
+      vazio('pacote') + pacoteFora
+        ? `${vazio('pacote')} sem preencher · ${pacoteFora} fora do cadastro de Pacotes`
         : 'preenchido e cadastrado'
     ),
     item(
@@ -434,7 +448,18 @@ export function avaliar(registro, escopo = 'arquivo') {
     ['subpacote', 'Subpacote'],
   ]
     .filter(([campo]) => temCampo(campo) && vazio(campo) < linhas) // campo que o template não traz não vira item
-    .map(([campo, rotulo]) => item(campo, rotulo, vazio(campo)))
+    .map(([campo, rotulo]) =>
+      campo === 'subpacote'
+        ? item(
+            campo,
+            rotulo,
+            vazio(campo) + subFora,
+            vazio(campo) + subFora
+              ? `${vazio(campo)} sem preencher · ${subFora} fora do cadastro de Subpacotes`
+              : 'preenchido e cadastrado'
+          )
+        : item(campo, rotulo, vazio(campo))
+    )
 
   const impedimentos = essenciais.filter((i) => !i.ok)
   const pendencias = ideais.filter((i) => !i.ok)

@@ -68,6 +68,37 @@ export const CADASTROS_SIMPLES = {
       { key: 'nome', label: 'Nome', obrigatorio: true },
       { key: 'documento', label: 'CNPJ/CPF' },
       { key: 'contato', label: 'Contato' },
+      // O grupo é texto: a lista oficial fica em "Grupos de Fornecedor", e
+      // digitar aqui é o que amarra um ao outro enquanto não há seleção.
+      { key: 'grupo', label: 'Grupo' },
+    ],
+  },
+  'grupos-de-fornecedor': {
+    titulo: 'Grupos de Fornecedor',
+    tabela: 'fornecedor_grupo',
+    tela: 'FornecedorGrupo',
+    campos: [
+      { key: 'nome', label: 'Nome', obrigatorio: true },
+      { key: 'descricao', label: 'Descrição' },
+    ],
+  },
+  pacotes: {
+    titulo: 'Pacotes',
+    tabela: 'pacote',
+    tela: 'Pacote',
+    campos: [
+      { key: 'nome', label: 'Nome', obrigatorio: true },
+      { key: 'descricao', label: 'Descrição' },
+    ],
+  },
+  subpacotes: {
+    titulo: 'Subpacotes',
+    tabela: 'subpacote',
+    tela: 'Subpacote',
+    campos: [
+      { key: 'pacote', label: 'Pacote', obrigatorio: true },
+      { key: 'nome', label: 'Nome', obrigatorio: true },
+      { key: 'descricao', label: 'Descrição' },
     ],
   },
   layouts: {

@@ -126,12 +126,14 @@ export async function conferir(lido) {
   // produto, cliente e diretoria entram como texto no lançamento, e ninguém
   // percebe quando o template traz um valor que não existe no cadastro.
   // Tabela que ainda não existe não derruba a conferência — fica sem o item.
-  const [ccs, forns, prods, clis, dirs] = await Promise.all([
+  const [ccs, forns, prods, clis, dirs, pacs, subs2] = await Promise.all([
     supabase.from('centro_de_custo').select('codigo, nome'),
     supabase.from('fornecedor').select('nome'),
     supabase.from('produto').select('codigo, nome'),
     supabase.from('cliente').select('nome'),
     supabase.from('diretoria').select('nome'),
+    supabase.from('pacote').select('nome'),
+    supabase.from('subpacote').select('nome'),
   ])
   const cadastros = {
     centroCusto: ccs.error ? null : (ccs.data ?? []).flatMap((x) => [x.codigo, x.nome]),
@@ -139,6 +141,8 @@ export async function conferir(lido) {
     produto: prods.error ? null : (prods.data ?? []).flatMap((x) => [x.codigo, x.nome]),
     cliente: clis.error ? null : (clis.data ?? []).map((x) => x.nome),
     diretoria: dirs.error ? null : (dirs.data ?? []).map((x) => x.nome),
+    pacote: pacs.error ? null : (pacs.data ?? []).map((x) => x.nome),
+    subpacote: subs2.error ? null : (subs2.data ?? []).map((x) => x.nome),
   }
 
   const nomeDe = (lista) => new Map(lista.map((x) => [x.id, x.nome]))
