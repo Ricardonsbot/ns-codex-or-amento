@@ -30,6 +30,13 @@ import {
   GRUPOS_CAPEX,
 } from './demonstrativo.js'
 
+/**
+ * O rótulo do bloco do ano fechado. A ferramenta é de orçamento: o que se
+ * compara com o Budget é o ano inteiro, e o mês de referência serve para o
+ * bloco do mês (MTD) e para destacar a coluna dele.
+ */
+const rotuloFY = (ctx) => (ctx.ano ? `FY ${ctx.ano}` : 'FY')
+
 const NIVEL = ['bu', 'torre', 'sub', 'empresa']
 const NOME_NIVEL = { consolidado: 'Consolidado', bu: 'BU', torre: 'Torre', sub: 'Sub Torre', empresa: 'Empresa' }
 const demoDoNo = (no) => (no ? demonstrativo((c) => no.base?.get(c)) : null)
@@ -110,10 +117,9 @@ const temValor = (demo, s) => demo && demo[s]?.some((x) => x)
 
 /**
  * Visão Torres (o Painel Resultado MoM da Master): a estrutura inteira, mês a
- * mês, de uma medida. O bloco da direita é o ano fechado (FY), não o YTD do
- * mês escolhido: este é o quadro do orçamento, e o que se compara com o
- * Budget é o ano inteiro. O mês do filtro continua marcando a coluna do mês
- * na faixa da esquerda.
+ * mês, de uma medida. O bloco da direita é o ano fechado: este é o quadro
+ * do orçamento, e o que se compara com o Budget é o ano inteiro. O mês do
+ * filtro continua marcando a coluna do mês na faixa da esquerda.
  *
  * O FY tem a coluna % NR ao lado: nos gastos e subtotais, sobre a Net
  * Revenue da própria linha (torre, sub torre...); na medida Net Revenue,
@@ -202,13 +208,13 @@ function plPorEmpresaMoM(ctx) {
   return { grupos, linhas }
 }
 
-/** A variante com as empresas lado a lado, no período YTD do mês escolhido. */
+/** A variante com as empresas lado a lado, no ano fechado. */
 function plEmpresasLadoALado(ctx) {
   const { mes } = ctx
   const empresas = ctx.dados.empresas ?? []
   const grupos = [
     {
-      rotulo: `Empresas · YTD ${MESES[mes - 1]}`,
+      rotulo: `Empresas · ${rotuloFY(ctx)}`,
       colunas: empresas.flatMap((e) => [
         { key: `e:${e.id ?? e.nome}`, label: e.nome, fmt: 'mi' },
         { key: `e:${e.id ?? e.nome}:nr`, label: '% NR', fmt: 'pct' },
@@ -222,12 +228,12 @@ function plEmpresasLadoALado(ctx) {
       ],
     },
   ]
-  const ytd = (demo, s) => janela(demo[s], 'YTD', mes)
+  const fy = (demo, s) => janela(demo[s], 'FY', mes)
   const linhas = []
   for (const l of PL_CONTABIL) {
     if (l.soComValor && !temValor(ctx.dados.demo, l.s)) continue
     const comNR = !semNR.has(l.s)
-    const cons = ytd(ctx.dados.demo, l.s)
+    const cons = fy(ctx.dados.demo, l.s)
     const v = { cons, consnr: comNR ? pctNR(cons, ytd(ctx.dados.demo, 'nr')) : null }
     for (const e of empresas) {
       const k = `e:${e.id ?? e.nome}`
@@ -239,18 +245,18 @@ function plEmpresasLadoALado(ctx) {
   return { grupos, linhas }
 }
 
-/** P&L Contábil: MTD e YTD lado a lado, cada um com Budget e Last Year. */
+/** P&L Contábil: o mês e o ano fechado lado a lado, com Budget e Last Year. */
 function plContabil(ctx) {
   const { mes } = ctx
   const comBudget = Boolean(ctx.comp)
   const comLy = Boolean(ctx.ly)
   const { A, B, L } = versoes(ctx)
-  const grupos = ['MTD', 'YTD'].map((per) => ({
-    rotulo: `${per} · ${per === 'MTD' ? MESES[mes - 1] : `Jan–${MESES[mes - 1]}`}`,
+  const grupos = ['MTD', 'FY'].map((per) => ({
+    rotulo: per === 'MTD' ? `MTD · ${MESES[mes - 1]}` : rotuloFY(ctx),
     colunas: colunasBloco(per, { comBudget, comLy }),
   }))
   const bases = Object.fromEntries(
-    ['MTD', 'YTD'].map((per) => [
+    ['MTD', 'FY'].map((per) => [
       per,
       {
         nrA: janela(A.nr, per, mes),
@@ -264,7 +270,7 @@ function plContabil(ctx) {
   for (const l of PL_CONTABIL) {
     if (l.soComValor && !temValor(A, l.s) && !temValor(B, l.s) && !temValor(L, l.s)) continue
     const v = {}
-    for (const per of ['MTD', 'YTD']) {
+    for (const per of ['MTD', 'FY']) {
       Object.assign(
         v,
         valoresBloco(per, {
@@ -282,7 +288,7 @@ function plContabil(ctx) {
   linhas.push(
     ...alertas(ctx, (serie) => {
       const v = {}
-      for (const per of ['MTD', 'YTD']) v[`${per}.a`] = janela(serie, per, mes)
+      for (const per of ['MTD', 'FY']) v[`${per}.a`] = janela(serie, per, mes)
       return v
     })
   )
@@ -291,7 +297,7 @@ function plContabil(ctx) {
 
 /**
  * Um quadro por estrutura (Consolidado → BU → Torre → Sub Torre → Empresa),
- * com um bloco por medida. É o Capex (YTD) e o painel da conferência de
+ * com um bloco por medida. É o Capex (FY) e o painel da conferência de
  * importação.
  */
 function quadroEstrutura(ctx, medidas, periodo) {
@@ -330,13 +336,13 @@ function quadroEstrutura(ctx, medidas, periodo) {
   return { grupos, linhas, comIndice: true }
 }
 
-function capexYtd(ctx) {
-  return quadroEstrutura(ctx, GRUPOS_CAPEX.map((g) => ({ ...g, comNR: true })), 'YTD')
+function capexFy(ctx) {
+  return quadroEstrutura(ctx, GRUPOS_CAPEX.map((g) => ({ ...g, comNR: true })), 'FY')
 }
 
 /**
  * Performance Overview: Net Revenue, EBITDA After Capex e a margem, no mês e
- * no YTD, Actual contra Budget e Last Year. A tela desenha em barras.
+ * no ano fechado, Actual contra Budget e Last Year. A tela desenha em barras.
  */
 function performance(ctx) {
   const { mes } = ctx
@@ -348,8 +354,8 @@ function performance(ctx) {
     { rotulo: 'EBITDA After CAPEX', fmt: 'mi', f: (d, per) => serie(d, 'eac', per) },
     { rotulo: '% Margin', fmt: 'pct', f: margem },
   ]
-  const grupos = ['MTD', 'YTD'].map((per) => ({
-    rotulo: per === 'MTD' ? `Mês · ${MESES[mes - 1]}` : `YTD · Jan–${MESES[mes - 1]}`,
+  const grupos = ['MTD', 'FY'].map((per) => ({
+    rotulo: per === 'MTD' ? `Mês · ${MESES[mes - 1]}` : rotuloFY(ctx),
     colunas: [
       { key: `${per}.a`, label: 'Actual', papel: 'atual' },
       ...(B ? [{ key: `${per}.b`, label: 'Budget', papel: 'orcado' }] : []),
@@ -358,7 +364,7 @@ function performance(ctx) {
   }))
   const linhas = blocos.map((b) => {
     const v = {}
-    for (const per of ['MTD', 'YTD']) {
+    for (const per of ['MTD', 'FY']) {
       v[`${per}.a`] = b.f(A, per)
       if (B) v[`${per}.b`] = b.f(B, per)
       if (L) v[`${per}.l`] = b.f(L, per)
@@ -368,7 +374,7 @@ function performance(ctx) {
   return { grupos, linhas, grafico: true }
 }
 
-/** Painel Resumo: as sete linhas da Master, MTD e YTD, contra Budget e LY. */
+/** Painel Resumo: as sete linhas da Master, no mês e no ano, contra Budget e LY. */
 function resumo(ctx) {
   const { mes } = ctx
   const { A, B, L } = versoes(ctx)
@@ -391,11 +397,11 @@ function resumo(ctx) {
   ]
   const grupos = [
     { rotulo: `MTD · ${MESES[mes - 1]}`, colunas: col('MTD') },
-    { rotulo: `YTD · Jan–${MESES[mes - 1]}`, colunas: col('YTD') },
+    { rotulo: rotuloFY(ctx), colunas: col('FY') },
   ]
   const linhas = RESUMO.map((r) => {
     const v = {}
-    for (const per of ['MTD', 'YTD']) {
+    for (const per of ['MTD', 'FY']) {
       const x = (d) => {
         if (!d) return null
         return r.pct ? pctNR(janela(d[r.pct], per, mes), janela(d.nr, per, mes)) : janela(d[r.s], per, mes)
@@ -518,7 +524,7 @@ const DEGRAUS_BRIDGE = 15
  * mais perto disso que os dados permitem.
  */
 function bridgePorDriver(ctx, mes) {
-  const ytd = (v) => janela(v ?? [], 'YTD', mes)
+  const ytd = (v) => janela(v ?? [], 'FY', mes)
   const mapa = (dados) => new Map((dados?.clienteProduto ?? []).map((x) => [x.chave, x]))
   const atual = mapa(ctx.dados)
   const budget = mapa(ctx.comp)
@@ -566,7 +572,7 @@ function bridgeReceita(ctx) {
   const dim = DIMENSOES_BRIDGE[ctx.dimensaoBridge] ?? DIMENSOES_BRIDGE.produto
   const grupos = [
     {
-      rotulo: `Bridge de Receita · YTD ${MESES[mes - 1]}`,
+      rotulo: `Bridge de Receita · ${rotuloFY(ctx)}`,
       colunas: porDriver
         ? [
             { key: 'd', label: '∆', fmt: 'mi' },
@@ -589,7 +595,7 @@ function bridgeReceita(ctx) {
     }
   }
 
-  const ytd = (valores) => janela(valores ?? [], 'YTD', mes)
+  const ytd = (valores) => janela(valores ?? [], 'FY', mes)
   const nrDe = (dados) => ytd(dados?.demo?.nr)
 
   if (porDriver) {
@@ -729,7 +735,7 @@ function targetPacote(ctx) {
   const targets = ctx.targets
   const grupos = [
     {
-      rotulo: `Target × Bottom Up · YTD ${MESES[mes - 1]}`,
+      rotulo: `Target × Bottom Up · ${rotuloFY(ctx)}`,
       colunas: [
         { key: 'target', label: 'Target', fmt: 'mi' },
         { key: 'bottom', label: 'Bottom up', fmt: 'mi', papel: 'atual' },
@@ -750,7 +756,7 @@ function targetPacote(ctx) {
   }
 
   const porPacote = new Map()
-  for (const p of ctx.dados.pacotes ?? []) porPacote.set(p.nome, -janela(p.valores, 'YTD', mes))
+  for (const p of ctx.dados.pacotes ?? []) porPacote.set(p.nome, -janela(p.valores, 'FY', mes))
   const porTarget = new Map((targets ?? []).map((t) => [t.pacote, t]))
   const nomes = [...new Set([...porTarget.keys(), ...porPacote.keys()])].sort((a, b) => a.localeCompare(b, 'pt-BR'))
 
@@ -872,20 +878,20 @@ function empilhado(ctx) {
   }
 }
 
-/** Gastos por pacote: pacote e subpacote, no YTD, com o % RoL. */
+/** Gastos por pacote: pacote e subpacote, no ano fechado, com o % RoL. */
 function pacotes(ctx) {
   const { mes } = ctx
   // `area` vazia é "todas": o quadro soma o pacote inteiro. Com uma área
   // escolhida (G&A, CoGS, R&D...), cada pacote entra só com a parte dela.
   const area = ctx.areaPacote || ''
   const serie = (x) => (area ? x.areas?.[area] ?? [] : x.valores)
-  const nr = janela(ctx.dados.demo.nr, 'YTD', mes)
-  const rotuloGrupo = area ? `Gastos · ${area} · YTD ${MESES[mes - 1]}` : `Gastos · YTD ${MESES[mes - 1]}`
+  const nr = janela(ctx.dados.demo.nr, 'FY', mes)
+  const rotuloGrupo = area ? `Gastos · ${area} · ${rotuloFY(ctx)}` : `Gastos · ${rotuloFY(ctx)}`
   const grupos = [{ rotulo: rotuloGrupo, colunas: [{ key: 'a', label: 'Actual', fmt: 'mi', papel: 'atual' }, { key: 'nr', label: '% RoL', fmt: 'pct' }] }]
   const linhas = []
   let total = 0
   for (const p of ctx.dados.pacotes ?? []) {
-    const t = -janela(serie(p), 'YTD', mes)
+    const t = -janela(serie(p), 'FY', mes)
     // Com filtro, pacote sem gasto na área escolhida sai da tabela: deixá-lo
     // zerado esconderia os que importam no meio de dezenas de linhas vazias.
     if (area && !t) continue
@@ -893,7 +899,7 @@ function pacotes(ctx) {
     if (linhas.length) linhas.push({ tipo: 'respiro' })
     linhas.push({ rotulo: p.nome, tipo: 'grupo', v: { a: t, nr: pctNR(t, nr) } })
     for (const s of p.subpacotes) {
-      const x = -janela(serie(s), 'YTD', mes)
+      const x = -janela(serie(s), 'FY', mes)
       if (area && !x) continue
       linhas.push({ rotulo: s.nome, tipo: 'filha', v: { a: x, nr: pctNR(x, nr) } })
     }
@@ -919,7 +925,7 @@ export const ABAS = [
   { valor: 'empilhado', rotulo: 'Empilhado', montar: empilhado },
   { valor: 'pl', rotulo: 'P&L Contábil', montar: plContabil },
   { valor: 'bridge', rotulo: 'Bridge de Receita', montar: bridgeReceita, foraDaMaster: true },
-  { valor: 'capex', rotulo: 'Capex (YTD)', montar: capexYtd },
+  { valor: 'capex', rotulo: 'Capex (FY)', montar: capexFy },
   { valor: 'performance', rotulo: 'Performance Overview', montar: performance },
   { valor: 'resumo', rotulo: 'Painel Resumo', montar: resumo },
   { valor: 'mensal', rotulo: 'Budget mês a mês', montar: budgetMesAMes },
@@ -968,7 +974,7 @@ export function quadroParaExportar(quadro, { aba, recorte }) {
 
 /**
  * Os big numbers: Net Revenue, Gross Margin, Expenses, Labor, Non Labor e EAC
- * no YTD do mês de referência, cada um com o % RoL. Expenses é o "(-)
+ * no ano fechado, cada um com o % RoL. Expenses é o "(-)"
  * Expenses" da Master (sem o COGS); Labor é a parte dele marcada como Labor
  * na Linha P&L da Base Gastos; Non Labor, o resto. Gastos saem positivos
  * aqui — é um número de destaque, não uma linha do P&L.
@@ -981,9 +987,9 @@ export function bigNumbers(ctx) {
   const med = (dados) => {
     if (!dados) return null
     const d = dados.demo
-    const y = (s) => janela(d[s], 'YTD', mes)
+    const y = (s) => janela(d[s], 'FY', mes)
     const expenses = -y('expenses')
-    const labor = janela(dados.laborExpenses ?? [], 'YTD', mes)
+    const labor = janela(dados.laborExpenses ?? [], 'FY', mes)
     // Capex sai positivo, como Expenses: é gasto, e o sinal da Master o traz
     // negativo.
     return { nr: y('nr'), gm: y('gm'), expenses, labor, nonLabor: expenses - labor, capex: -y('capex'), eac: y('eac') }

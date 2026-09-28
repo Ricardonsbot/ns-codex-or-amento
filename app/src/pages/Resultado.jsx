@@ -38,7 +38,7 @@ function Performance({ quadro }) {
         <div key={l.rotulo} className="performance-card">
           <h3>{l.rotulo}</h3>
           {quadro.grupos.map((g, gi) => {
-            const per = gi === 0 ? 'MTD' : 'YTD'
+            const per = gi === 0 ? 'MTD' : 'FY'
             const vals = papeis.map(([k]) => l.v[`${per}.${k}`]).filter((x) => x !== undefined && x !== null)
             const max = Math.max(1e-9, ...vals.map((x) => Math.abs(x)))
             return (
@@ -75,8 +75,8 @@ function Performance({ quadro }) {
  *
  * Três versões entram em cada quadro: a do ano escolhido (Actual), a versão
  * de "Comparar com" (Budget) e o budget do ano anterior (Last Year), que é
- * achado sozinho pelo ciclo `ano − 1`. O mês de referência faz o MTD e o YTD;
- * com dezembro, o YTD é o ano todo.
+ * achado sozinho pelo ciclo `ano − 1`. O mês de referência faz o bloco do mês
+ * (MTD) e destaca a coluna dele; o outro bloco é sempre o ano fechado.
  */
 export default function Resultado() {
   const showToast = useToast()
@@ -322,7 +322,7 @@ export default function Resultado() {
                   semTodas
                 />
                 <FiltroBotoes
-                  label="Mês de referência (MTD / YTD)"
+                  label="Mês de referência (MTD)"
                   valor={String(mes)}
                   opcoes={MESES.map((m, i) => ({ valor: String(i + 1), rotulo: m }))}
                   onChange={(v) => setMes(Number(v))}
@@ -398,10 +398,10 @@ export default function Resultado() {
             <Indicadores itens={bigNumbers(ctx)} />
 
             <BridgeOrcamento
-              receita={janela(dados.demo.nr, 'YTD', mes)}
-              despesa={janela(dados.demo.nr, 'YTD', mes) - janela(dados.demo.adjEbitda, 'YTD', mes)}
-              capex={-janela(dados.demo.capex, 'YTD', mes)}
-              subtitulo={`${recorte} · ${ciclo.ano} ${versao.nome} · YTD ${MESES[mes - 1]}`}
+              receita={janela(dados.demo.nr, 'FY', mes)}
+              despesa={janela(dados.demo.nr, 'FY', mes) - janela(dados.demo.adjEbitda, 'FY', mes)}
+              capex={-janela(dados.demo.capex, 'FY', mes)}
+              subtitulo={`${recorte} · ${ciclo.ano} ${versao.nome} · FY ${ciclo.ano}`}
             />
 
             {semConta !== 0 && (

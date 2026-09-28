@@ -39,7 +39,7 @@ const AREA = {
   'OTHERS INCOME AND EXPENSE': 'others',
 }
 
-/** Categoria do Capex no quadro "Capex (YTD)" da Master, pela conta. */
+/** Categoria do Capex no quadro "Capex (FY)" da Master, pela conta. */
 export function categoriaCapex(conta) {
   const d = digitos(conta?.codigo)
   if (!d || d.startsWith('1207')) return 'software' // intangível, e a ativação de salário
@@ -268,7 +268,7 @@ export const MEDIDAS_MOM = [
   { valor: 'eac', rotulo: 'Adj. EBITDA After Capex' },
 ]
 
-/** Os grupos do Capex (YTD) da Master. */
+/** Os grupos do Capex (FY) da Master. */
 export const GRUPOS_CAPEX = [
   { s: 'capex', rotulo: 'Capex Total' },
   { s: 'capexSoftwareTotal', rotulo: 'Software' },
