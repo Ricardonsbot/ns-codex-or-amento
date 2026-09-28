@@ -119,13 +119,20 @@ export function montarExportacaoReceita(lancamentos, { bus, torres, empresas, re
  * Os valores saem em R$ cheios, com o sinal de quem lançou (gasto positivo),
  * como no resto da exportação.
  */
-export function montarExportacaoEmpilhada(lancamentos, { bus, torres, subs = [], empresas, recorte, rotuloVersao, ano }) {
+export function montarExportacaoEmpilhada(
+  lancamentos,
+  { bus, torres, subs = [], empresas, versoes = [], recorte, rotuloVersao, ano }
+) {
   const nomeDe = (lista, id) => lista.find((x) => x.id === id)?.nome ?? ''
+  // Com mais de uma versão no mesmo arquivo, a coluna Versão sai de cada
+  // linha; com uma só, do rótulo de quem chamou.
+  const versaoDa = (l) => nomeDe(versoes, l.versao_id) || rotuloVersao || ''
   const TIPO = { receita: 'Receita', despesa: 'Despesa', capex: 'Capex' }
 
   const campos = [
     ['Ano', () => ano ?? ''],
-    ['Versão', () => rotuloVersao ?? ''],
+    ['Versão', (l) => versaoDa(l)],
+    ['Tipo de versão', (l) => versoes.find((v) => v.id === l.versao_id)?.tipo ?? ''],
     ['Tipo', (l) => TIPO[l.tipo] ?? l.tipo],
     ['BU', (l) => nomeDe(bus, l.bu_id)],
     ['Torre', (l) => nomeDe(torres, l.torre_id) || l.torre_texto || ''],
@@ -180,8 +187,11 @@ export function montarExportacaoEmpilhada(lancamentos, { bus, torres, subs = [],
       linhas.push(saida)
     }
   }
+  // Versão primeiro: com várias no mesmo arquivo, intercalar as linhas
+  // tornaria a base ilegível para quem abre sem tabela dinâmica.
   linhas.sort(
     (a, b) =>
+      String(a['Versão']).localeCompare(String(b['Versão']), 'pt-BR') ||
       String(a.Empresa).localeCompare(String(b.Empresa), 'pt-BR') ||
       String(a['Código da conta']).localeCompare(String(b['Código da conta'])) ||
       a['Mês (nº)'] - b['Mês (nº)']

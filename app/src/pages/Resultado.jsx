@@ -192,23 +192,39 @@ export default function Resultado() {
    * tela. Não sai do quadro — o quadro já vem somado — e por isso busca os
    * três tipos no banco.
    */
+  /**
+   * Base empilhada: os lançamentos gravados de TODAS as versões do ciclo, no
+   * mesmo recorte da tela. Vão juntas num arquivo só, separadas pela coluna
+   * Versão — assim uma tabela dinâmica sobre a base reproduz o quadro
+   * Empilhado, com Budget e Actual lado a lado, sem precisar juntar dois
+   * arquivos na mão.
+   */
   async function exportarEmpilhada() {
     setPreparando(true)
     try {
-      const filtros = { versaoId: versao.id, buId: buId || null, torreId: torreId || null, empresaId: empresaId || null }
-      const porTipo = await Promise.all(
-        ['receita', 'despesa', 'capex'].map((tipo) => fetchLancamentosParaExportar({ ...filtros, tipo }))
+      const versoesDoCiclo = ciclo?.versao?.length ? ciclo.versao : [versao]
+      const filtros = { buId: buId || null, torreId: torreId || null, empresaId: empresaId || null }
+      const pedidos = versoesDoCiclo.flatMap((v) =>
+        ['receita', 'despesa', 'capex'].map((tipo) =>
+          fetchLancamentosParaExportar({ ...filtros, tipo, versaoId: v.id })
+        )
       )
-      const lancamentos = porTipo.flat()
+      const lancamentos = (await Promise.all(pedidos)).flat()
       if (!lancamentos.length) {
         showToast('Nenhum lançamento gravado nesse recorte para exportar.', 'warning')
         return
       }
+      const comDado = new Set(lancamentos.map((l) => l.versao_id)).size
+      showToast(
+        `${lancamentos.length} lançamento(s) de ${comDado} versão(ões) do ciclo ${ciclo.ano}.`,
+        'info'
+      )
       setExportacao(
         montarExportacaoEmpilhada(lancamentos, {
           bus,
           torres,
           empresas,
+          versoes: versoesDoCiclo,
           recorte,
           rotuloVersao: versao.nome,
           ano: ciclo.ano,
@@ -422,7 +438,8 @@ export default function Resultado() {
                     {
                       valor: 'empilhada',
                       rotulo: 'Base empilhada',
-                      descricao: 'Um lançamento por mês em cada linha, para tabela dinâmica e Power BI',
+                      descricao:
+                        'Todas as versões do ciclo num arquivo só, um lançamento por mês em cada linha — para tabela dinâmica e Power BI',
                     },
                   ]}
                   onEscolher={(f) =>
