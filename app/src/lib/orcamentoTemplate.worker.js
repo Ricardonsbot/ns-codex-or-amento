@@ -1,5 +1,5 @@
 import { lerPlanilha, lerTodosOsTipos, checarEstrutura } from './lerTemplateOrcamento'
-import { lerCadastrosDoTemplate } from './lerMapaFornecedores'
+import { lerCadastrosDoTemplate } from './lerCadastrosTemplate'
 
 // O parse do Template Budget leva dezenas de segundos. Rodar aqui mantém a tela
 // respondendo enquanto isso.

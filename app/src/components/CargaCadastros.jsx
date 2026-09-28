@@ -22,6 +22,9 @@ const TABELAS = [
   { id: 'subpacote', rotulo: 'Subpacotes', onde: '/cadastros/subpacotes' },
   { id: 'grupo', rotulo: 'Grupos de fornecedor', onde: '/cadastros/grupos-de-fornecedor' },
   { id: 'fornecedor', rotulo: 'Fornecedores', onde: '/cadastros/fornecedores' },
+  { id: 'centroCusto', rotulo: 'Centros de custo', onde: '/cadastros/centros-de-custo' },
+  { id: 'diretoria', rotulo: 'Diretorias', onde: '/cadastros/diretorias' },
+  { id: 'empresa', rotulo: 'Empresas e hierarquia', onde: '/cadastros/estrutura-organizacional' },
 ]
 
 export default function CargaCadastros({ arquivo, nomeArquivo }) {
@@ -31,7 +34,15 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
   const [plano, setPlano] = useState(null)
   const [erro, setErro] = useState(null)
   const [incluirMarcadores, setIncluirMarcadores] = useState(false)
-  const [selecao, setSelecao] = useState({ pacote: true, subpacote: true, grupo: true, fornecedor: true })
+  const [selecao, setSelecao] = useState({
+    pacote: true,
+    subpacote: true,
+    grupo: true,
+    fornecedor: true,
+    centroCusto: true,
+    diretoria: true,
+    empresa: true,
+  })
   const [gravando, setGravando] = useState(false)
   const [progresso, setProgresso] = useState(null)
   const [feito, setFeito] = useState(null)
@@ -77,7 +88,8 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
   const indisponiveis = plano ? TABELAS.filter((t) => !plano.disponivel[t.id]) : []
   const totalNovos = plano
     ? TABELAS.reduce((a, t) => a + (selecao[t.id] ? plano[t.id].novos.length : 0), 0) +
-      (selecao.fornecedor ? plano.fornecedor.completar.length : 0)
+      (selecao.fornecedor ? plano.fornecedor.completar.length : 0) +
+      (selecao.empresa ? plano.empresa.completar.length : 0)
     : 0
 
   return (
@@ -86,8 +98,8 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
         <div>
           <h2>📇 Cadastros do template</h2>
           <p>
-            A aba Mapa Fornecedores deste arquivo é a lista oficial de pacote, subpacote e agrupamento de fornecedor —
-            dá para carregar direto dela, em vez de digitar.
+            Este arquivo traz os mapas oficiais de pacote, fornecedor, centro de custo e hierarquia de empresas — dá
+            para carregar direto deles, em vez de digitar.
           </p>
         </div>
         {!plano && (
@@ -102,11 +114,27 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
 
         {lido && (
           <p style={{ fontSize: 12, opacity: 0.8, marginTop: 0 }}>
-            {lido.linhas.toLocaleString('pt-BR')} linhas no mapa de {nomeArquivo}.
+            {lido.linhas.toLocaleString('pt-BR')} linhas no mapa de fornecedores de {nomeArquivo}.
             {lido.temErp
               ? ' O CNPJ de cada fornecedor vem da aba ERP do mesmo arquivo.'
               : ' Este arquivo não tem a aba ERP, então os fornecedores entram sem CNPJ.'}
           </p>
+        )}
+
+        {plano?.conflitosDeCentro > 0 && (
+          <div className="proto-banner" style={{ marginBottom: 12 }}>
+            ⓘ {plano.conflitosDeCentro} linha(s) repetem um código de centro de custo com outro nome — o código é
+            único dentro da empresa, não no grupo. Entra o primeiro nome que aparece no mapa.
+          </div>
+        )}
+
+        {plano?.empresa?.renomear?.length > 0 && (
+          <div className="proto-banner" style={{ marginBottom: 12 }}>
+            ⚠ {plano.empresa.renomear.length} empresa(s) parecem ter mudado de nome no mapa:{' '}
+            {plano.empresa.renomear.slice(0, 3).map((r) => `${r.de} → ${r.para}`).join('; ')}
+            {plano.empresa.renomear.length > 3 ? '…' : ''}. A carga não renomeia nada — renomear muda o que os
+            lançamentos já gravados apontam, e isso é decisão de quem responde pelo número.
+          </div>
         )}
 
         {indisponiveis.length > 0 && (
@@ -170,6 +198,20 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
                               + {p.completar.length} já cadastrados ganham grupo ou CNPJ que estava vazio
                             </div>
                           )}
+                          {t.id === 'empresa' && p.completar.length > 0 && (
+                            <div style={{ fontSize: 12, opacity: 0.8 }}>
+                              + {p.completar.length} já cadastradas ganham torre ou subtorre que estava vazia
+                            </div>
+                          )}
+                          {t.id === 'empresa' &&
+                            (p.hierarquia.bu.length > 0 ||
+                              p.hierarquia.torre.length > 0 ||
+                              p.hierarquia.subTorre.length > 0) && (
+                              <div style={{ fontSize: 12, opacity: 0.8 }}>
+                                + {p.hierarquia.bu.length} BU, {p.hierarquia.torre.length} torre(s) e{' '}
+                                {p.hierarquia.subTorre.length} subtorre(s) criadas junto
+                              </div>
+                            )}
                         </td>
                         <td className="text-right">{p.novos.length + p.jaExistem}</td>
                         <td className="text-right">{p.jaExistem}</td>
@@ -196,8 +238,9 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
 
             {feito && (
               <div className="proto-banner" style={{ marginTop: 12 }}>
-                ✓ Entraram {feito.pacote} pacote(s), {feito.subpacote} subpacote(s), {feito.grupo} grupo(s) e{' '}
-                {feito.fornecedor} fornecedor(es).
+                ✓ Entraram {feito.pacote} pacote(s), {feito.subpacote} subpacote(s), {feito.grupo} grupo(s),{' '}
+                {feito.fornecedor} fornecedor(es), {feito.centroCusto} centro(s) de custo, {feito.diretoria}{' '}
+                diretoria(s) e {feito.empresa} empresa(s).
                 {feito.completados > 0 && ` ${feito.completados} fornecedor(es) ganharam grupo ou CNPJ.`}
               </div>
             )}

@@ -21,7 +21,7 @@ import {
   desfazer,
 } from '../lib/importarTemplateOrcamento'
 import { registrarImportacao, marcarDesfeito, resumoDaImportacao } from '../lib/importacoesData'
-import { temMapaDeFornecedores } from '../lib/lerMapaFornecedores'
+import { temMapasDeCadastro } from '../lib/lerCadastrosTemplate'
 import { useUnidade } from '../components/UnidadeProvider'
 
 const ROTULO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
@@ -460,7 +460,7 @@ export default function GestaoImportacao() {
   // O File fica guardado porque a carga de cadastros relê o arquivo por conta
   // própria — as abas de cadastro não passam pela leitura dos lançamentos.
   const [blob, setBlob] = useState(null)
-  const [temMapaFornecedores, setTemMapaFornecedores] = useState(false)
+  const [temMapas, setTemMapas] = useState(false)
   const [lendo, setLendo] = useState(false)
   const [segundos, setSegundos] = useState(0)
   const [wizardAberto, setWizardAberto] = useState(false)
@@ -505,9 +505,9 @@ export default function GestaoImportacao() {
     // Só os nomes das abas, sem parsear nenhuma: é o que diz se este arquivo
     // traz também os cadastros.
     try {
-      setTemMapaFornecedores(temMapaDeFornecedores(await file.arrayBuffer()))
+      setTemMapas(temMapasDeCadastro(await file.arrayBuffer()))
     } catch {
-      setTemMapaFornecedores(false)
+      setTemMapas(false)
     }
     setComoTarget(false)
 
@@ -617,7 +617,7 @@ export default function GestaoImportacao() {
           </div>
         )}
 
-        {temMapaFornecedores && blob && <CargaCadastros arquivo={blob} nomeArquivo={arquivo} />}
+        {temMapas && blob && <CargaCadastros arquivo={blob} nomeArquivo={arquivo} />}
 
         {todos && comoTarget && (
           <CardTargetsPacote
