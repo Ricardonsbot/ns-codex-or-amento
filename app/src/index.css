@@ -62,7 +62,6 @@
   color-scheme: light;
 }
 
-
 * { box-sizing: border-box; }
 
 html, body {
@@ -1372,58 +1371,6 @@ tfoot td {
   border-radius: 999px;
 }
 
-/* ==========================================================================
-   Gráfico Bridge (cascata) — Receita → Despesas → EBITDA → Capex → EBITDA after Capex
-   ========================================================================== */
-
-.bridge-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 22px;
-  padding: 6px 10px 0;
-}
-
-.bridge-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.bridge-value {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--color-text);
-  white-space: nowrap;
-}
-
-.bridge-track {
-  position: relative;
-  width: 100%;
-  max-width: 64px;
-  height: 190px;
-}
-
-.bridge-bar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  border-radius: 6px;
-}
-
-.bridge-bar.receita { background: var(--color-receita); }
-.bridge-bar.despesa { background: var(--color-despesa); }
-.bridge-bar.subtotal { background: #ccd3e0; }
-.bridge-bar.capex { background: var(--color-capex); }
-.bridge-bar.final { background: var(--color-primary); }
-
-.bridge-label {
-  font-size: 11.5px;
-  color: var(--color-text-muted);
-  text-align: center;
-}
-
 /* ---------- Faixa de acesso rápido (Inserir / Cadastrar / Exportar) ----------
    Atalho, não conteúdo: fica numa faixa baixa no alto do Dashboard, para o
    resumo do orçamento não nascer empurrado para fora da tela. */
@@ -1495,7 +1442,6 @@ tfoot td {
 
 @media (max-width: 480px) {
   .action-strip { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-  .bridge-chart { overflow-x: auto; }
 }
 
 /* ---------- Grade de categorias de Cadastro (admin) ---------- */
@@ -1556,12 +1502,6 @@ tfoot td {
 
 .hub-card.hub-exportar .hub-icon { background: var(--color-surface-raised); color: #4b5566; }
 
-.bridge-sign {
-  font-weight: 700;
-  opacity: .7;
-  margin-right: 3px;
-}
-
 /* ---------- Tabela de relatório por BU / Torre ---------- */
 
 .report-table tbody tr.report-bu-row td {
@@ -1584,74 +1524,6 @@ tfoot td {
 }
 .report-table tfoot td.up { color: #7be2b3; }
 .report-table tfoot td.down { color: #ffb3b3; }
-
-/* ---------- Linhas conectoras do bridge (estilo "escada" da cascata) ---------- */
-
-.bridge-connector {
-  flex: 0 0 22px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.bridge-connector .bridge-value,
-.bridge-connector .bridge-label {
-  visibility: hidden;
-}
-
-.bridge-connector-track {
-  position: relative;
-  width: 100%;
-  height: 190px;
-}
-
-.bridge-connector-line {
-  position: absolute;
-  left: -13px;
-  right: -13px;
-  height: 0;
-  border-top: 2px dashed #b7c0d1;
-}
-
-/* ---------- Bridge detalhado por Torre (denso, mais colunas) ---------- */
-
-.bridge-torres .bridge-chart {
-  gap: 0;
-}
-
-.bridge-torres .bridge-track,
-.bridge-torres .bridge-connector-track {
-  height: 220px;
-}
-
-.bridge-torres .bridge-track {
-  max-width: 38px;
-}
-
-.bridge-torres .bridge-connector {
-  flex: 0 0 12px;
-}
-
-.bridge-torres .bridge-connector-line {
-  left: -8px;
-  right: -8px;
-}
-
-.bridge-torres .bridge-value {
-  font-size: 11px;
-  white-space: normal;
-  text-align: center;
-}
-
-.bridge-torres .bridge-label {
-  font-size: 10.5px;
-  line-height: 1.25;
-}
-
-.bridge-torres .bridge-bar.anchor { background: var(--color-dark); }
-.bridge-torres .bridge-bar.torre-up { background: var(--color-receita); }
-.bridge-torres .bridge-bar.torre-down { background: var(--color-despesa); }
 
 .bridge-axis-break {
   position: absolute;
@@ -2901,7 +2773,6 @@ tfoot td {
 
 /* ---------- Flag e checklist do template importado ---------- */
 
-
 /* ---------- Lista de templates importados e a janela de status ---------- */
 
 .bolinha {
@@ -3068,6 +2939,13 @@ tfoot td {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
+}
+
+/* Dentro de um painel que já tem moldura e título. */
+.grafico-bridge.sem-moldura {
+  margin: 0;
+  padding: 0;
+  border: none;
 }
 
 /* As duas pontas: cinza cheio, como no Farol. */
