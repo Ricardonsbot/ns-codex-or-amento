@@ -617,6 +617,7 @@ function bridgeReceita(ctx) {
       linhas,
       // O gráfico em cascata desenha isto; a tabela abaixo é o detalhe.
       cascata: {
+        titulo: `Net Revenue · ${ctx.rotuloVersao ?? 'Actual'} vs ${ctx.rotuloComp ?? 'Budget'}`,
         inicio: { rotulo: ctx.rotuloComp ?? 'Budget', valor: totalB },
         degraus: Object.values(drivers).map((d) => ({ rotulo: d.rotulo, valor: d.total })),
         fim: { rotulo: ctx.rotuloVersao ?? 'Actual', valor: totalA },
@@ -693,6 +694,7 @@ function bridgeReceita(ctx) {
     grupos,
     linhas,
     cascata: {
+      titulo: `Net Revenue · ${ctx.rotuloVersao ?? 'Actual'} vs ${ctx.rotuloComp ?? 'Budget'}`,
       inicio: { rotulo: ctx.rotuloComp ?? 'Budget', valor: totalB },
       degraus: degrausGrafico,
       fim: { rotulo: ctx.rotuloVersao ?? 'Actual', valor: totalA },

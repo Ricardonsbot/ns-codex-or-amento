@@ -1,19 +1,45 @@
 import { useUnidade } from './UnidadeProvider'
 
 /**
- * A cascata da Bridge de Receita: a barra do Budget, um degrau por variação e
- * a barra da versão atual. Cada degrau começa onde o anterior parou, e o fio
- * pontilhado liga um ao outro — é o que faz ler como ponte, e não como sete
- * barras soltas.
+ * A cascata da bridge, no formato que o time usa no Farol: as duas pontas em
+ * barra cinza cheia, cada variação como uma caixinha flutuante verde ou
+ * vermelha, o fio pontilhado ligando um degrau ao outro, e o salto total num
+ * selo em cima.
  *
  * `cascata` é { inicio, degraus, fim }, cada um { rotulo, valor }; o valor dos
  * degraus é a variação, com sinal.
+ *
+ * A escala é cortada de propósito quando todas as pontas estão longe do zero
+ * — é o que deixa os degraus legíveis em vez de virarem riscos no topo de
+ * duas barras gigantes. O corte é declarado no desenho, com a marca de
+ * quebra no pé das barras cinzas; sem ela o gráfico mentiria sobre a
+ * proporção.
  */
-const ALTURA = 210
-const PASSO = 128
-const LARGURA_BARRA = 66
+const ALTURA = 230
+const TOPO = 58
+const RODAPE = 58
+const PASSO = 112
+const BARRA = 58
+const ALTURA_MINIMA_CAIXA = 22
 
-export default function GraficoBridge({ cascata }) {
+/** Quebra o rótulo em linhas curtas, para caber embaixo da coluna. */
+function emLinhas(rotulo, limite = 14) {
+  const palavras = String(rotulo).replace(/ · /g, ' ').split(' ')
+  const linhas = []
+  let atual = ''
+  for (const p of palavras) {
+    if (!atual) atual = p
+    else if (`${atual} ${p}`.length <= limite) atual += ` ${p}`
+    else {
+      linhas.push(atual)
+      atual = p
+    }
+  }
+  if (atual) linhas.push(atual)
+  return linhas.slice(0, 3)
+}
+
+export default function GraficoBridge({ cascata, titulo }) {
   const { numero, u } = useUnidade()
   if (!cascata?.degraus?.length) return null
 
@@ -30,56 +56,114 @@ export default function GraficoBridge({ cascata }) {
     { rotulo: fim.rotulo, de: 0, ate: fim.valor, valor: fim.valor, tipo: 'total' },
   ]
 
-  const teto = Math.max(...barras.flatMap((b) => [b.de, b.ate]), 0)
-  const piso = Math.min(...barras.flatMap((b) => [b.de, b.ate]), 0)
-  const escala = (v) => ALTURA - ((v - piso) / (teto - piso || 1)) * ALTURA
+  // Os extremos do que precisa aparecer — o zero das barras de ponta não
+  // conta, senão a escala volta a nascer nele.
+  const pontos = barras.flatMap((b) => (b.tipo === 'total' ? [b.ate] : [b.de, b.ate]))
+  const maior = Math.max(...pontos)
+  const menor = Math.min(...pontos)
+  const faixa = maior - menor || Math.abs(maior) || 1
+
+  // Só corta a escala quando tudo está do mesmo lado do zero e longe dele.
+  const cortada = menor > 0 && menor > faixa * 0.6
+  const piso = cortada ? menor - faixa * 1.1 : Math.min(0, menor)
+  const teto = maior + faixa * 0.18
+
+  const escala = (v) => TOPO + ALTURA - ((v - piso) / (teto - piso || 1)) * ALTURA
   const largura = PASSO * barras.length
-  const x = (i) => i * PASSO + (PASSO - LARGURA_BARRA) / 2
+  const x = (i) => i * PASSO + (PASSO - BARRA) / 2
+  const meio = (i) => x(i) + BARRA / 2
+  const base = escala(piso)
+
+  const salto = fim.valor - inicio.valor
+  const yArco = TOPO - 18
+  const ultimo = barras.length - 1
 
   return (
     <div className="grafico-bridge">
       <svg
-        viewBox={`0 0 ${largura} ${ALTURA + 62}`}
+        viewBox={`0 0 ${largura} ${TOPO + ALTURA + RODAPE}`}
         preserveAspectRatio="xMidYMid meet"
         style={{ width: '100%', height: 'auto', display: 'block' }}
         role="img"
-        aria-label="Cascata da bridge de receita"
+        aria-label={titulo ? `Cascata: ${titulo}` : 'Cascata da bridge'}
       >
-        <line x1="0" y1={escala(0)} x2={largura} y2={escala(0)} stroke="currentColor" opacity="0.25" />
+        {titulo && (
+          <text className="bridge-titulo" x={largura / 2} y="18" textAnchor="middle">
+            {titulo}
+          </text>
+        )}
+
+        {/* O arco do salto total: sai do topo da primeira ponta e desce na
+            última, com o selo do número no meio. */}
+        <g className="bridge-arco">
+          <path
+            d={`M${meio(0)} ${escala(inicio.valor) - 8} V${yArco} H${meio(ultimo)} V${escala(fim.valor) - 14}`}
+            fill="none"
+          />
+          <path d={`M${meio(ultimo) - 4} ${escala(fim.valor) - 18} L${meio(ultimo)} ${escala(fim.valor) - 11} L${meio(ultimo) + 4} ${escala(fim.valor) - 18}`} fill="none" />
+        </g>
+        <g className={`bridge-selo ${salto >= 0 ? 'sobe' : 'desce'}`}>
+          <rect x={largura / 2 - 34} y={yArco - 11} width="68" height="22" rx="11" />
+          <text x={largura / 2} y={yArco + 4} textAnchor="middle">
+            {`${salto >= 0 ? '+' : '−'}${numero(Math.abs(salto))}`}
+          </text>
+        </g>
 
         {barras.map((b, i) => {
-          const topo = escala(Math.max(b.de, b.ate))
-          const alturaBarra = Math.max(Math.abs(escala(b.de) - escala(b.ate)), 2)
           const anterior = barras[i - 1]
+          const topo = escala(Math.max(b.de, b.ate))
+          const fundo = b.tipo === 'total' ? base : escala(Math.min(b.de, b.ate))
+          // Caixa curta demais para o número: cresce para baixo o mínimo
+          // necessário, sem mexer no topo, que é o que o degrau significa.
+          const alturaCaixa = Math.max(fundo - topo, b.tipo === 'total' ? 2 : ALTURA_MINIMA_CAIXA)
+
           return (
             <g key={`${b.rotulo}-${i}`}>
               {anterior && (
                 <line
+                  className="bridge-fio"
                   x1={x(i - 1)}
                   y1={escala(anterior.ate)}
-                  x2={x(i) + LARGURA_BARRA}
+                  x2={x(i) + BARRA}
                   y2={escala(anterior.ate)}
-                  stroke="currentColor"
-                  strokeDasharray="3 3"
-                  opacity="0.35"
                 />
               )}
-              <rect x={x(i)} y={topo} width={LARGURA_BARRA} height={alturaBarra} rx="2" className={`barra-${b.tipo}`} />
-              <text x={x(i) + LARGURA_BARRA / 2} y={topo - 7} textAnchor="middle" fontSize="12" fill="currentColor">
-                {b.tipo === 'total' ? numero(b.valor) : `${b.valor > 0 ? '+' : ''}${numero(b.valor)}`}
-              </text>
-              {/* O rótulo quebra em duas linhas: "(+) Novo", "Cliente · Produto". */}
-              {b.rotulo.split(' · ').map((parte, j) => (
+
+              <rect className={`barra-${b.tipo}`} x={x(i)} y={topo} width={BARRA} height={alturaCaixa} />
+
+              {/* Marca de quebra: diz que a barra não começa no zero. */}
+              {b.tipo === 'total' && cortada && (
+                <g className="bridge-quebra">
+                  <rect x={x(i) - 3} y={base - 26} width={BARRA + 6} height="12" className="bridge-quebra-vao" />
+                  <path d={`M${x(i) - 3} ${base - 14} L${x(i) + BARRA + 3} ${base - 22}`} />
+                  <path d={`M${x(i) - 3} ${base - 18} L${x(i) + BARRA + 3} ${base - 26}`} />
+                </g>
+              )}
+
+              {b.tipo === 'total' ? (
+                <text className="bridge-valor-total" x={meio(i)} y={topo - 8} textAnchor="middle">
+                  {numero(b.valor)}
+                </text>
+              ) : (
+                <text
+                  className={`bridge-valor-degrau ${b.tipo}`}
+                  x={meio(i)}
+                  y={topo + alturaCaixa / 2 + 4}
+                  textAnchor="middle"
+                >
+                  {numero(Math.abs(b.valor))}
+                </text>
+              )}
+
+              {emLinhas(b.rotulo).map((linha, j) => (
                 <text
                   key={j}
-                  x={x(i) + LARGURA_BARRA / 2}
-                  y={ALTURA + 20 + j * 14}
+                  className={`bridge-rotulo${b.tipo === 'total' ? ' ponta' : ''}`}
+                  x={meio(i)}
+                  y={TOPO + ALTURA + 18 + j * 12}
                   textAnchor="middle"
-                  fontSize="11"
-                  fill="currentColor"
-                  opacity="0.7"
                 >
-                  {parte.length > 20 ? `${parte.slice(0, 19)}…` : parte}
+                  {linha}
                 </text>
               ))}
             </g>

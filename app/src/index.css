@@ -3079,9 +3079,81 @@ tfoot td {
   background: var(--color-surface);
 }
 
-.grafico-bridge .barra-total { fill: var(--xl-escuro, #404040); }
-.grafico-bridge .barra-sobe { fill: var(--color-receita); }
-.grafico-bridge .barra-desce { fill: var(--color-despesa); }
+/* As duas pontas: cinza cheio, como no Farol. */
+.grafico-bridge .barra-total { fill: #7c848c; }
+
+/* Os degraus são caixinhas: fundo pastel e contorno na cor, para o número
+   caber dentro e a caixa não competir com as pontas. */
+.grafico-bridge .barra-sobe {
+  fill: var(--color-receita-bg);
+  stroke: var(--color-receita);
+  stroke-width: 1;
+}
+
+.grafico-bridge .barra-desce {
+  fill: var(--color-despesa-bg);
+  stroke: var(--color-despesa);
+  stroke-width: 1;
+}
+
+.grafico-bridge .bridge-titulo {
+  font-size: 12.5px;
+  font-weight: 700;
+  fill: var(--color-text);
+  text-decoration: underline;
+}
+
+/* O fio que liga o topo de um degrau ao começo do seguinte: é ele que faz
+   ler como ponte, e não como barras soltas. */
+.grafico-bridge .bridge-fio {
+  stroke: var(--color-text-faint);
+  stroke-dasharray: 3 3;
+  opacity: .8;
+}
+
+.grafico-bridge .bridge-arco path {
+  stroke: var(--color-border-forte);
+  stroke-width: 1;
+}
+
+.grafico-bridge .bridge-selo rect { fill: var(--color-receita); }
+.grafico-bridge .bridge-selo.desce rect { fill: var(--color-despesa); }
+.grafico-bridge .bridge-selo text {
+  fill: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* A quebra de escala: um vão branco atravessando a barra e dois riscos. */
+.grafico-bridge .bridge-quebra-vao { fill: var(--color-surface); stroke: none; }
+.grafico-bridge .bridge-quebra path {
+  stroke: var(--color-text-faint);
+  stroke-width: 1;
+  fill: none;
+}
+
+.grafico-bridge .bridge-valor-total {
+  font-size: 12.5px;
+  font-weight: 700;
+  fill: var(--color-text);
+}
+
+.grafico-bridge .bridge-valor-degrau {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.grafico-bridge .bridge-valor-degrau.sobe { fill: var(--color-receita); }
+.grafico-bridge .bridge-valor-degrau.desce { fill: var(--color-despesa); }
+
+.grafico-bridge .bridge-rotulo {
+  font-size: 10.5px;
+  fill: var(--color-text-muted);
+}
+.grafico-bridge .bridge-rotulo.ponta {
+  font-weight: 700;
+  fill: var(--color-text);
+}
+
 .grafico-bridge-unidade { text-align: right; font-size: 11px; color: var(--color-text-muted); padding: 0 6px 4px; }
 
 /* Setinha que abre o detalhe por empresa, sem disparar o clique da linha. */

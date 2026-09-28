@@ -500,7 +500,7 @@ export default function Resultado() {
                   </div>
                 )}
                 {quadro?.erro && <div className="empty-hint">Não consegui montar este quadro: {quadro.erro}</div>}
-                {quadro?.cascata && <GraficoBridge cascata={quadro.cascata} />}
+                {quadro?.cascata && <GraficoBridge cascata={quadro.cascata} titulo={quadro.cascata.titulo} />}
                 {quadro && !quadro.erro && (quadro.grafico ? <Performance quadro={quadro} /> : <TabelaQuadro quadro={quadro} />)}
                 {quadro?.notas?.map((n) => (
                   <p key={n} className="nota-tabela">
