@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import Icone from './Icone'
 import { useAuth } from './AuthProvider'
 import { sair } from '../lib/authData'
 import { useToast } from './ToastProvider'
@@ -7,38 +8,38 @@ import { useToast } from './ToastProvider'
 const NAV_SECTIONS = [
   {
     label: 'Visão geral',
-    items: [{ to: '/dashboard', icon: '▦', text: 'Dashboard' }],
+    items: [{ to: '/dashboard', icone: 'dashboard', text: 'Dashboard' }],
   },
   {
     label: 'Orçamento',
     items: [
-      { to: '/orcamento/receita', icon: '▲', cor: 'receita', text: '(+) Revenue' },
-      { to: '/orcamento/despesa', icon: '▼', cor: 'despesa', text: '(−) Expenses' },
-      { to: '/orcamento/capex', icon: '🏗️', text: '(−) Capex' },
-      { to: '/gestao-importacao', icon: '⭱', text: 'Gestão de Importação' },
+      { to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: '(+) Revenue' },
+      { to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: '(−) Expenses' },
+      { to: '/orcamento/capex', icone: 'capex', text: '(−) Capex' },
+      { to: '/gestao-importacao', icone: 'importar', text: 'Gestão de Importação' },
     ],
   },
   {
     label: 'Fluxo',
     items: [
-      { to: '/aprovacoes', icon: '✓', text: 'Aprovações' },
-      { to: '/pendencia-cadastros', icon: '⧗', text: 'Pendência de Cadastros' },
+      { to: '/aprovacoes', icone: 'aprovacao', text: 'Aprovações' },
+      { to: '/pendencia-cadastros', icone: 'pendencia', text: 'Pendência de Cadastros' },
     ],
   },
   {
     label: 'Análise',
     items: [
-      { to: '/resultado', icon: '◱', text: 'Resultado' },
-      { to: '/relatorios', icon: '▤', text: 'Relatórios' },
+      { to: '/resultado', icone: 'resultado', text: 'Resultado' },
+      { to: '/relatorios', icone: 'relatorio', text: 'Relatórios' },
     ],
   },
   {
     label: 'Administração',
-    items: [{ to: '/cadastros', icon: '👤', text: 'Cadastros' }],
+    items: [{ to: '/cadastros', icone: 'cadastros', text: 'Cadastros' }],
   },
   {
     label: 'Budget - Settings',
-    items: [{ to: '/budget-settings', icon: '⚙', text: 'Ciclos & Versões' }],
+    items: [{ to: '/budget-settings', icone: 'ciclos', text: 'Ciclos & Versões' }],
   },
 ]
 
@@ -144,7 +145,9 @@ export default function Layout({ children }) {
                     to={item.to}
                     className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
                   >
-                    <span className={`nav-icon${item.cor ? ` ${item.cor}` : ''}`}>{item.icon}</span>{' '}
+                    <span className={`nav-icon${item.cor ? ` ${item.cor}` : ''}`}>
+                      <Icone nome={item.icone} />
+                    </span>{' '}
                     <span className="nav-label">{item.text}</span>
                   </NavLink>
                 ))}
@@ -154,7 +157,10 @@ export default function Layout({ children }) {
 
         <div className="sidebar-section-label sidebar-section-label-fixo">Conta</div>
         <div className="nav-item" onClick={handleSair} style={{ cursor: 'pointer' }}>
-          <span className="nav-icon">⎋</span> <span className="nav-label">Sair</span>
+          <span className="nav-icon">
+            <Icone nome="sair" />
+          </span>{' '}
+          <span className="nav-label">Sair</span>
         </div>
 
         <div className="sidebar-footer">
