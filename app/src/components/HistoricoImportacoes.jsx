@@ -61,7 +61,7 @@ function LiberacaoCelula({ registro, apto, ocupado, onDecidir }) {
         {estado !== 'liberado' && (
           <button
             type="button"
-            className="btn btn-secondary btn-sm"
+            className="btn btn-gold btn-sm"
             disabled={ocupado || !apto}
             title={apto ? 'Liberar para consolidar' : 'O template não está apto: resolva as pendências vermelhas'}
             onClick={() => onDecidir('liberado')}

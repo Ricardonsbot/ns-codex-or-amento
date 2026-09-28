@@ -4,18 +4,35 @@
    ========================================================================== */
 
 :root {
-  --color-bg: #f4f6f9;
+  /* Paleta nstech, do design system do NS Planner:
+     laranja é ação, navy é estrutura, branco é interface, cinza organiza.
+     O laranja fica nos lugares de ação — botão primário, item ativo, foco de
+     campo, link — e nunca como fundo de área grande. */
+  --color-bg: #f4f6f7;
   --color-surface: #ffffff;
+  --color-surface-raised: #e5e9ec;   /* hover e painel leve */
+  /* Mesmo tom, com o nome que os componentes já usavam no style inline. */
+  --color-surface-alt: #e5e9ec;
   --color-sidebar: #ffffff;
-  --color-sidebar-active: #fff1ec;
-  --color-primary: #ff3d03;
-  --color-primary-dark: #cc3102;
-  --color-text: #20242d;
-  --color-text-muted: #6b7280;
-  --color-border: #e3e7ee;
-  --color-border-forte: #cdd3dc;  /* moldura que precisa aparecer sobre branco */
-  --color-dark: #20242d;
+  --color-sidebar-active: var(--color-primary-soft);   /* laranja pastel do item ativo */
+  --color-primary: #ff5a00;
+  --color-primary-light: #ff8a3d;
+  --color-primary-dark: #e84300;
+  --color-primary-soft: #fff1ec;     /* fundo pastel de hover laranja */
 
+  /* Três níveis de texto, e só três: forte, corpo e auxiliar. */
+  --color-text: #0a1e3f;
+  --color-text-muted: #44515c;
+  --color-text-faint: #66727c;
+  --color-navy: #172b3a;             /* estrutura escura: avatar, botão gold */
+  --color-dark: #172b3a;
+
+  --color-border: #e5e9ec;
+  --color-border-forte: #b8c0c6;     /* moldura que precisa aparecer sobre branco */
+  --color-input-border: #d9e0e5;
+
+  /* Cor como dado, não como enfeite: estas dizem o que o número é, e por isso
+     não vêm do design system — ele só tem laranja, navy e o vermelho de ação. */
   --color-receita: #1a9c6a;
   --color-receita-bg: #e5f7ef;
   --color-despesa: #d64545;
@@ -27,17 +44,24 @@
   --color-warning-bg: #fdf3d9;
   --color-success: #1a9c6a;
   --color-success-bg: #e5f7ef;
-  --color-danger: #d64545;
+  /* Ação destrutiva, separada do vermelho de despesa: um é botão, o outro é
+     número, e misturar os dois fazia "excluir" e "gasto" terem a mesma cor. */
+  --color-danger: #dc2626;
   --color-danger-bg: #fbe9e9;
   --color-info: #1f4fd6;
   --color-info-bg: #e8edfc;
 
-  --radius-sm: 6px;
+  /* 8 em input, 10 em botão, 18 em card, 999 em pill. */
+  --radius-sm: 8px;
   --radius-md: 10px;
-  --radius-lg: 14px;
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --radius-lg: 18px;
+  /* O design system separa por borda de 1px, não por sombra. */
+  --shadow-card: none;
   --sidebar-width: 250px;
+
+  color-scheme: light;
 }
+
 
 * { box-sizing: border-box; }
 
@@ -255,18 +279,28 @@ a { color: inherit; text-decoration: none; }
   color: var(--color-text-muted);
 }
 
-select, input[type="text"], input[type="number"], input[type="date"], textarea {
+/* E-mail e senha entram aqui também: sem eles a tela de login ficava com a
+   caixa cinza padrão do navegador, quadrada, no meio de uma interface
+   arredondada. */
+select,
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea {
   font-family: inherit;
   font-size: 13.5px;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
+  padding: 9px 11px;
+  border: 1px solid var(--color-input-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text);
 }
 
 select:focus, input:focus, textarea:focus {
-  outline: 2px solid #ffd6c2;
+  outline: 1px solid var(--color-primary);
   border-color: var(--color-primary);
 }
 
@@ -277,9 +311,9 @@ select:focus, input:focus, textarea:focus {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: 600;
-  padding: 9px 16px;
-  border-radius: var(--radius-sm);
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
@@ -292,14 +326,19 @@ select:focus, input:focus, textarea:focus {
   background: var(--color-primary);
   color: #fff;
 }
-.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:hover { background: var(--color-primary-dark); }
 
+/* A borda do secundário é mais escura que a dos painéis de propósito: sobre
+   branco, a borda clara sumia e o botão não parecia clicável. */
 .btn-secondary {
   background: var(--color-surface);
-  color: var(--color-text);
-  border-color: var(--color-border);
+  color: var(--color-text-muted);
+  border-color: var(--color-border-forte);
 }
-.btn-secondary:hover { background: #f0f2f6; }
+.btn-secondary:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
 
 .btn-success {
   background: var(--color-success);
@@ -308,11 +347,19 @@ select:focus, input:focus, textarea:focus {
 .btn-success:hover { filter: brightness(1.08); }
 
 .btn-danger {
-  background: var(--color-surface);
+  background: transparent;
   color: var(--color-danger);
-  border-color: #f1c4c4;
+  border-color: var(--color-danger);
 }
-.btn-danger:hover { background: var(--color-danger-bg); }
+.btn-danger:hover { background: rgba(220, 38, 38, 0.08); }
+
+/* Ação especial que não deve competir com o laranja: liberar um template,
+   promover uma versão. Navy, o tom de estrutura. */
+.btn-gold {
+  background: var(--color-navy);
+  color: #fff;
+}
+.btn-gold:hover { filter: brightness(1.25); }
 
 .btn-ghost {
   background: transparent;
@@ -320,12 +367,12 @@ select:focus, input:focus, textarea:focus {
   border-color: transparent;
   padding: 6px 8px;
 }
-.btn-ghost:hover { background: #fff1ec; }
+.btn-ghost:hover { background: var(--color-primary-soft); }
 
 .btn-sm { padding: 6px 10px; font-size: 12px; }
 
 .btn:disabled {
-  opacity: .5;
+  opacity: .35;
   cursor: not-allowed;
 }
 
@@ -381,7 +428,6 @@ select:focus, input:focus, textarea:focus {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
   margin-bottom: 22px;
 }
 
@@ -491,8 +537,9 @@ thead th {
   text-align: left;
   font-size: 11.5px;
   text-transform: uppercase;
-  letter-spacing: .03em;
-  color: var(--color-text-muted);
+  letter-spacing: .05em;
+  /* Terceiro nível de texto: cabeçalho de tabela é rótulo, não conteúdo. */
+  color: var(--color-text-faint);
   padding: 10px 12px;
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
@@ -537,7 +584,7 @@ tfoot td {
   white-space: nowrap;
 }
 
-.badge.status-rascunho { background: #eef0f4; color: #4b5566; }
+.badge.status-rascunho { background: var(--color-surface-raised); color: #4b5566; }
 .badge.status-em-aprovacao { background: var(--color-warning-bg); color: var(--color-warning); }
 .badge.status-aprovado { background: var(--color-success-bg); color: var(--color-success); }
 .badge.status-reprovado { background: var(--color-danger-bg); color: var(--color-danger); }
@@ -677,7 +724,7 @@ tfoot td {
   align-items: flex-start;
   gap: 10px;
   padding: 9px 4px;
-  border-bottom: 1px solid var(--color-border, #e3e7ee);
+  border-bottom: 1px solid var(--color-border, var(--color-border));
 }
 
 .etapa-importacao:last-child { border-bottom: none; }
@@ -709,12 +756,12 @@ tfoot td {
 }
 
 .etapa-marcador.etapa-pendente {
-  border: 2px solid var(--color-border, #e3e7ee);
+  border: 2px solid var(--color-border, var(--color-border));
 }
 
 .etapa-marcador.etapa-carregando {
-  border: 2px solid var(--color-border, #e3e7ee);
-  border-top-color: var(--color-primary, #ff3d03);
+  border: 2px solid var(--color-border, var(--color-border));
+  border-top-color: var(--color-primary, var(--color-primary));
   animation: etapa-girar 0.7s linear infinite;
 }
 
@@ -997,7 +1044,7 @@ tfoot td {
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ff7a4d, #ff3d03);
+  background: linear-gradient(135deg, #ff7a4d, var(--color-primary));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1132,7 +1179,7 @@ tfoot td {
 .hub-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 26px rgba(16, 24, 40, 0.12);
-  border-color: #ffd6c2;
+  border-color: var(--color-primary-light);
 }
 
 .hub-card .hub-icon {
@@ -1355,7 +1402,7 @@ tfoot td {
 .admin-item:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 26px rgba(16, 24, 40, 0.12);
-  border-color: #ffd6c2;
+  border-color: var(--color-primary-light);
 }
 
 .admin-item-icon {
@@ -1382,7 +1429,7 @@ tfoot td {
   .admin-grid { grid-template-columns: 1fr; }
 }
 
-.hub-card.hub-exportar .hub-icon { background: #eef0f4; color: #4b5566; }
+.hub-card.hub-exportar .hub-icon { background: var(--color-surface-raised); color: #4b5566; }
 
 .bridge-sign {
   font-weight: 700;
@@ -1776,9 +1823,9 @@ tfoot td {
 }
 
 .month-toggle-btn:hover {
-  background: #fff1ec;
+  background: var(--color-primary-soft);
   color: var(--color-primary);
-  border-color: #ffd6c2;
+  border-color: var(--color-primary-light);
 }
 
 .month-toggle-icon {
@@ -1801,7 +1848,7 @@ tfoot td {
 /* ---------- Campo travado (preenchido a partir de uma sugestão) ---------- */
 
 .input-readonly {
-  background: #eef0f4 !important;
+  background: var(--color-surface-raised) !important;
   color: var(--color-text-muted) !important;
   cursor: not-allowed;
 }
