@@ -19,6 +19,26 @@ const LOTE = 500
 const limpo = (v) => String(v ?? '').trim()
 const chave = (v) => limpo(v).toLocaleLowerCase('pt-BR')
 
+/**
+ * Lê uma tabela inteira, em páginas.
+ *
+ * O PostgREST devolve no máximo mil linhas por requisição, e ignora um limit
+ * maior. Sem paginar, a carga só enxergava as mil primeiras e concluía que o
+ * resto do template era novidade: com centro de custo (quase 2 mil linhas)
+ * isso significava tentar inserir de novo o que já estava lá — erro de chave
+ * única no melhor caso, duplicata numa tabela sem chave única no pior.
+ */
+const PAGINA = 1000
+async function tudo(tabela, select) {
+  const linhas = []
+  for (let de = 0; ; de += PAGINA) {
+    const { data, error } = await supabase.from(tabela).select(select).range(de, de + PAGINA - 1)
+    if (error) return { error }
+    linhas.push(...(data ?? []))
+    if ((data?.length ?? 0) < PAGINA) return { data: linhas }
+  }
+}
+
 /** Insere em lotes; devolve quantos entraram. */
 async function inserir(tabela, registros, aoProgresso) {
   let feitos = 0
@@ -37,12 +57,13 @@ async function inserir(tabela, registros, aoProgresso) {
  * ainda não rodou, e a tela precisa dizer isso em vez de tentar gravar.
  */
 async function existentes() {
+  // Fornecedor e centro de custo passam de mil linhas: os dois vão paginados.
   const [pac, sub, gru, forn, cc, dir, emp, bu, torre, subTorre] = await Promise.all([
     supabase.from('pacote').select('nome'),
     supabase.from('subpacote').select('pacote, nome'),
     supabase.from('fornecedor_grupo').select('nome'),
-    supabase.from('fornecedor').select('id, nome, grupo, documento'),
-    supabase.from('centro_de_custo').select('codigo, nome'),
+    tudo('fornecedor', 'id, nome, grupo, documento'),
+    tudo('centro_de_custo', 'codigo, nome'),
     supabase.from('diretoria').select('nome'),
     supabase.from('empresa').select('id, nome, bu_id, torre_id, sub_torre_id'),
     supabase.from('bu').select('id, nome'),
@@ -53,7 +74,7 @@ async function existentes() {
   // Sem ela o select inteiro falha, e seria um engano concluir que não dá
   // para cadastrar fornecedor — dá, só não dá para gravar o grupo.
   const semColunaGrupo = Boolean(forn.error)
-  const forn2 = semColunaGrupo ? await supabase.from('fornecedor').select('id, nome, documento') : forn
+  const forn2 = semColunaGrupo ? await tudo('fornecedor', 'id, nome, documento') : forn
   return {
     semColunaGrupo: semColunaGrupo && !forn2.error,
     pacote: pac.error ? null : (pac.data ?? []).map((x) => x.nome),
