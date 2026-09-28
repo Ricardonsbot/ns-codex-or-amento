@@ -37,8 +37,8 @@ export default function Login() {
   return (
     <div className="login-shell">
       <div className="login-brand-header">
-        {/* O logo já traz "NS BUDGET" escrito: nome e subtítulo embaixo seriam eco. */}
-        <img className="logo-mark" src="/logo.png" alt="NS Budget" width="96" height="96" />
+        {/* O logo já traz "NS PLANNER" escrito: nome e subtítulo embaixo seriam eco. */}
+        <img className="logo-mark" src="/logo.png" alt="NS Planner" width="96" height="96" />
       </div>
 
       <div className="login-card">

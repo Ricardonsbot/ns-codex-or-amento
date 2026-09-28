@@ -1,4 +1,4 @@
-# NS Budget — App React
+# NS Planner — App React
 
 App de orçamento corporativo (React + [Supabase](https://supabase.com)), migrado do protótipo estático (pasta raiz do repositório).
 

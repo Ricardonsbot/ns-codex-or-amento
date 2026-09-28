@@ -100,9 +100,9 @@ export default function Layout({ children }) {
       <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
         <div className="sidebar-brand">
           <NavLink to="/dashboard" className="sidebar-brand-link">
-            <img className="logo-mark" src="/logo-64.png" alt="NS Budget" width="34" height="34" />
+            <img className="logo-mark" src="/logo-64.png" alt="NS Planner" width="34" height="34" />
             <div className="brand-text">
-              <strong><span className="brand-ns">NS</span> <span className="brand-rest">Budget</span></strong>
+              <strong><span className="brand-ns">NS</span> <span className="brand-rest">Planner</span></strong>
             </div>
           </NavLink>
           <button
