@@ -18,12 +18,12 @@ import { useUnidade } from './UnidadeProvider'
  * quebra no pé das barras cinzas; sem ela o gráfico mentiria sobre a
  * proporção.
  */
-const ALTURA = 170
-const TOPO = 46
-const RODAPE = 50
-const PASSO = 92
-const BARRA = 46
-const ALTURA_MINIMA_CAIXA = 20
+const ALTURA = 200
+const TOPO = 52
+const RODAPE = 54
+const PASSO = 104
+const BARRA = 52
+const ALTURA_MINIMA_CAIXA = 21
 
 /** Quebra o rótulo em linhas curtas, para caber embaixo da coluna. */
 function emLinhas(rotulo, limite = 14) {
