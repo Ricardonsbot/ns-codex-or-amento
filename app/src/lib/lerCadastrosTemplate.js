@@ -140,7 +140,8 @@ function lerEmpresas(wb) {
 
   const { r, txt } = leitor(aba)
   const { linha, col } = achado
-  const cEmpresa = col['EMPRESA DEPOIS']
+  // "Empresa Depois" na v1 do template 2027, "Empresa" na definitiva.
+  const cEmpresa = col['EMPRESA DEPOIS'] ?? col.EMPRESA
   if (cEmpresa === undefined) return []
 
   const mapa = new Map()

@@ -61,6 +61,8 @@ export const MAPA_COLUNAS = {
   'LINHA P L': 'linha_pl_template',
   'LINHA P L AJUSTADA': 'linha_pl_ajustada',
   'GRUPO CAIXA': 'grupo_caixa',
+  // O mesmo campo, renomeado no template definitivo de 2027.
+  'GRUPO FCO': 'grupo_caixa',
   'ALOCACAO PNL AREA': 'area',
   'ALOCACAO PNL AJUSTADO AREA': 'area_ajustada',
 
