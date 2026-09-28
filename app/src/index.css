@@ -97,6 +97,13 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   padding: 20px 0;
+  /* A barra rola por conta própria: com as seções abertas ela passa da
+     altura da tela, e sem isso o menu empurrava a página inteira. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .sidebar-brand {
@@ -106,6 +113,14 @@ a { color: inherit; text-decoration: none; }
   padding: 0 20px 20px;
   border-bottom: 1px solid var(--color-border);
   margin-bottom: 12px;
+}
+
+.sidebar-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-brand .logo-mark {
@@ -121,34 +136,77 @@ a { color: inherit; text-decoration: none; }
   font-size: 15px;
 }
 
+/* A marca escrita segue o design system: caixa alta com espaçamento, "NS" em
+   laranja e o resto em navy. */
 .sidebar-brand .brand-text span {
-  font-size: 11px;
+  font-size: 13.5px;
+  font-weight: 800;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: .05em;
+  letter-spacing: .08em;
 }
 
 .brand-ns { color: var(--color-primary) !important; }
 .brand-rest { color: var(--color-text) !important; }
 
+/* O rótulo da seção é um botão: clicar abre e fecha os itens dela. */
 .sidebar-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
   font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .06em;
-  color: var(--color-text-muted);
-  padding: 14px 20px 6px;
+  color: var(--color-text-faint);
+  padding: 16px 20px 8px;
+  cursor: pointer;
+  text-align: left;
 }
+
+.sidebar-section-label:hover { color: var(--color-text); }
+
+/* O "Conta", que não recolhe nada, não finge ser clicável — mas alinha com
+   os outros rótulos, que têm o espaço do chevron à esquerda. */
+.sidebar-section-label-fixo { cursor: default; padding-left: 35px; }
+.sidebar-section-label-fixo:hover { color: var(--color-text-faint); }
+
+/* Um triângulo só, girado: assim abrir e fechar é o mesmo desenho virando,
+   e não dois símbolos diferentes piscando no lugar um do outro. */
+.secao-chevron {
+  font-size: 10px;
+  width: 10px;
+  line-height: 1;
+  color: var(--color-border-forte);
+  transition: transform .15s ease, color .15s ease;
+}
+
+.sidebar-section-label:hover .secao-chevron { color: var(--color-primary); }
+.sidebar-section.fechada .secao-chevron { transform: rotate(-90deg); }
+
+/* Seção fechada não precisa do respiro de quem tem itens embaixo. */
+.sidebar-section.fechada .sidebar-section-label { padding-bottom: 4px; }
+
+/* Uma linha fininha entre grupos: separa sem pesar, como o design system
+   pede — borda em vez de sombra. */
+.sidebar-section + .sidebar-section { border-top: 1px solid var(--color-border); }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 20px;
-  margin: 2px 10px;
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
+  padding: 9px 12px;
+  margin: 1px 10px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
   font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background .12s ease, color .12s ease;
 }
 
 .nav-item .nav-icon {
@@ -162,13 +220,14 @@ a { color: inherit; text-decoration: none; }
 .nav-item .nav-icon.despesa { color: var(--color-despesa); opacity: 1; }
 
 .nav-item:hover {
-  background: var(--color-bg);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
 }
 
 .nav-item.active {
   background: var(--color-sidebar-active);
   color: var(--color-primary);
-  font-weight: 600;
+  font-weight: 700;
   box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
@@ -873,7 +932,17 @@ tfoot td {
 
 @media (max-width: 720px) {
   .app-shell { flex-direction: column; }
-  .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; }
+  /* Em tela estreita a barra vira uma faixa no topo: nada de 100vh nem de
+     grudar na lateral. */
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 10px;
+    position: static;
+    height: auto;
+  }
   .sidebar-brand, .sidebar-footer, .sidebar-section-label { display: none; }
   .nav-item { white-space: nowrap; }
   .kpi-grid { grid-template-columns: 1fr; }
@@ -1647,7 +1716,22 @@ tfoot td {
 
 .sidebar.collapsed { width: 68px; }
 
-.sidebar.collapsed .sidebar-brand { justify-content: center; padding: 0 10px 20px; }
+/* Recolhida, a marca vira uma coluna: a logo em cima, o botão de expandir
+   embaixo. Lado a lado eles não cabem nos 68px, e a logo saía cortada pela
+   borda da barra. */
+.sidebar.collapsed .sidebar-brand {
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 16px;
+}
+
+.sidebar.collapsed .sidebar-brand-link {
+  flex: none;
+  justify-content: center;
+}
+
+.sidebar.collapsed .logo-mark { width: 32px; height: 32px; }
 .sidebar.collapsed .brand-text,
 .sidebar.collapsed .sidebar-section-label,
 .sidebar.collapsed .nav-label,
