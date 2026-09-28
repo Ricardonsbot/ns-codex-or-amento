@@ -219,13 +219,20 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
   async function handleExportar(formato) {
     setPreparando(true)
     try {
-      const dados = await fetchLancamentosParaExportar({
-        tipo,
+      // A base empilhada leva os três tipos, não só o da tela: quem exporta
+      // para tabela dinâmica quer o orçamento inteiro, e abrir três telas
+      // para juntar três arquivos é o trabalho que ela existe para evitar.
+      // O formato em colunas continua sendo só da tela, porque as colunas
+      // dele são as da Receita.
+      const tipos = formato === 'empilhada' ? ['receita', 'despesa', 'capex'] : [tipo]
+      const filtros = {
         versaoId: versaoAtual.versao.id,
         buId: selectedBuId || null,
         torreId: selectedTorreId || null,
         empresaId: selectedEmpresaId || null,
-      })
+      }
+      const partes = await Promise.all(tipos.map((t) => fetchLancamentosParaExportar({ ...filtros, tipo: t })))
+      const dados = partes.flat()
       if (!dados.length) {
         showToast('Nenhum lançamento gravado nesse recorte para exportar.', 'warning')
         return
@@ -243,6 +250,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
               bus,
               torres,
               empresas,
+              versoes: [versaoAtual.versao],
               recorte,
               rotuloVersao: versaoAtual.versao.nome,
               ano: versaoAtual.ciclo?.ano,
@@ -326,7 +334,8 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
                 {
                   valor: 'empilhada',
                   rotulo: 'Base empilhada',
-                  descricao: 'Um lançamento por mês em cada linha, para tabela dinâmica e Power BI',
+                  descricao:
+                    'Receita, Despesa e Capex juntos, um lançamento por mês em cada linha — para tabela dinâmica e Power BI',
                 },
               ]}
               onEscolher={handleExportar}
