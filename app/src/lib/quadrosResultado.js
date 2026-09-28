@@ -52,11 +52,11 @@ const noEm = (dados, chave) => dados?.estrutura?.find((x) => x.chave === chave) 
  * O bloco de comparação de uma medida: Actual, Budget, ∆ e Last Year, com os
  * % NR opcionais. `ids` prefixa as chaves para dois blocos não colidirem.
  */
-function colunasBloco(id, { comNR = true, comBudget, comLy, comDeltaPct = true }) {
+function colunasBloco(id, { comNR = true, comBudget, comLy, comDeltaPct = true, rotuloBudget = 'Budget' }) {
   const c = [{ key: `${id}.a`, label: 'Actual', fmt: 'mi', papel: 'atual' }]
   if (comNR) c.push({ key: `${id}.anr`, label: '% NR', fmt: 'pct' })
   if (comBudget) {
-    c.push({ key: `${id}.b`, label: 'Budget', fmt: 'mi', papel: 'orcado' })
+    c.push({ key: `${id}.b`, label: rotuloBudget, fmt: 'mi', papel: 'orcado' })
     if (comNR) c.push({ key: `${id}.bnr`, label: '% NR', fmt: 'pct' })
     c.push({ key: `${id}.bd`, label: '∆', fmt: 'mi' })
     if (comDeltaPct) c.push({ key: `${id}.bdp`, label: '∆%', fmt: 'pct', semaforo: true })
@@ -110,9 +110,14 @@ const temValor = (demo, s) => demo && demo[s]?.some((x) => x)
 
 /**
  * Visão Torres (o Painel Resultado MoM da Master): a estrutura inteira, mês a
- * mês, de uma medida. O YTD tem a coluna % NR ao lado: nos gastos e
- * subtotais, sobre a Net Revenue da própria linha (torre, sub torre...); na
- * medida Net Revenue, sobre a do consolidado — quanto a linha é do total.
+ * mês, de uma medida. O bloco da direita é o ano fechado (FY), não o YTD do
+ * mês escolhido: este é o quadro do orçamento, e o que se compara com o
+ * Budget é o ano inteiro. O mês do filtro continua marcando a coluna do mês
+ * na faixa da esquerda.
+ *
+ * O FY tem a coluna % NR ao lado: nos gastos e subtotais, sobre a Net
+ * Revenue da própria linha (torre, sub torre...); na medida Net Revenue,
+ * sobre a do consolidado — quanto a linha é do total.
  */
 function painelMoM(ctx) {
   const { mes } = ctx
@@ -125,14 +130,18 @@ function painelMoM(ctx) {
       colunas: MESES.map((m, i) => ({ key: `m${i}`, label: m, fmt: 'mi', papel: i === mes - 1 ? 'atual' : undefined })),
     },
     {
-      rotulo: `YTD ${MESES[mes - 1]}`,
-      colunas: colunasBloco('ytd', { comBudget, comLy }),
+      rotulo: ctx.ano ? `FY ${ctx.ano}` : 'FY',
+      colunas: colunasBloco('ytd', {
+        comBudget,
+        comLy,
+        rotuloBudget: ctx.ano ? `Budget ${ctx.ano}` : 'Budget',
+      }),
     },
   ]
   const { A, B, L } = versoes(ctx)
-  const nrYtd = (d) => janela(d?.nr ?? [], 'YTD', mes)
+  const nrFy = (d) => janela(d?.nr ?? [], 'FY', mes)
   // Net Revenue sobre ela mesma daria 100% em toda linha: vira participação no consolidado.
-  const base = (d, cons) => nrYtd(medida === 'nr' ? cons : d)
+  const base = (d, cons) => nrFy(medida === 'nr' ? cons : d)
   const linha = (rotulo, tipo, nivel, indice, dA, dB, dL) => {
     const serie = dA?.[medida] ?? []
     const v = {}
@@ -140,11 +149,11 @@ function painelMoM(ctx) {
     Object.assign(
       v,
       valoresBloco('ytd', {
-        a: janela(serie, 'YTD', mes),
+        a: janela(serie, 'FY', mes),
         nrA: base(dA, A),
-        b: comBudget ? janela(dB?.[medida] ?? [], 'YTD', mes) : undefined,
+        b: comBudget ? janela(dB?.[medida] ?? [], 'FY', mes) : undefined,
         nrB: base(dB, B),
-        l: comLy ? janela(dL?.[medida] ?? [], 'YTD', mes) : undefined,
+        l: comLy ? janela(dL?.[medida] ?? [], 'FY', mes) : undefined,
         nrL: base(dL, L),
       })
     )
@@ -796,6 +805,73 @@ function targetPacote(ctx) {
   }
 }
 
+/**
+ * Empilhado (a aba "Empillhado" da Master): uma medida por bloco, com as
+ * versões empilhadas uma sobre a outra — mês a mês e no ano fechado.
+ *
+ * Na Master são cinco linhas por bloco (Actual 24, Actual 25, Budget 26,
+ * Forecast 26, Actual 26). Aqui são as duas versões que a tela tem em mãos,
+ * o Budget e o Actual do mesmo ano, mais a diferença entre elas em valor e
+ * em percentual — que é a linha "% 26 (Act) x 26 (Bgt)" de lá.
+ *
+ * Sem comparativo escolhido o quadro mostra só o Actual e diz o que falta.
+ */
+function empilhado(ctx) {
+  const { mes } = ctx
+  const ano = ctx.ano
+  const { A, B } = versoes(ctx)
+  const rotuloA = ano ? `Actual ${ano}` : 'Actual'
+  const rotuloB = ano ? `Budget ${ano}` : 'Budget'
+
+  const grupos = [
+    {
+      rotulo: ano ? `${ano} · mês a mês` : 'Mês a mês',
+      colunas: MESES.map((m, i) => ({ key: `m${i}`, label: m, fmt: 'mi', papel: i === mes - 1 ? 'atual' : undefined })),
+    },
+    {
+      rotulo: 'Ano',
+      colunas: [{ key: 'fy', label: 'Full Year', fmt: 'mi', papel: 'atual' }],
+    },
+  ]
+
+  /** Uma linha de série: os doze meses e o ano fechado. */
+  const linhaSerie = (rotulo, tipo, serie, extra) => {
+    const v = {}
+    MESES.forEach((_, i) => (v[`m${i}`] = serie[i] ?? 0))
+    v.fy = janela(serie, 'FY', 12)
+    return { rotulo, tipo, ...extra, v }
+  }
+
+  const linhas = []
+  for (const m of MEDIDAS_MOM) {
+    const a = A?.[m.valor] ?? []
+    const b = B?.[m.valor] ?? []
+    linhas.push({ rotulo: m.rotulo, tipo: 'grupo', v: {} })
+    if (B) linhas.push(linhaSerie(rotuloB, 'linha', b))
+    linhas.push(linhaSerie(rotuloA, 'linha', a))
+    if (B) {
+      linhas.push(linhaSerie('∆', 'linha', MESES.map((_, i) => (a[i] ?? 0) - (b[i] ?? 0))))
+      const pct = { rotulo: '∆%', tipo: 'pct', fmt: 'pct', v: {} }
+      MESES.forEach((_, i) => (pct.v[`m${i}`] = delta(a[i] ?? 0, b[i] ?? 0).p))
+      pct.v.fy = delta(janela(a, 'FY', 12), janela(b, 'FY', 12)).p
+      linhas.push(pct)
+    }
+    linhas.push({ tipo: 'respiro' })
+  }
+  linhas.pop()
+
+  return {
+    grupos,
+    linhas,
+    notas: [
+      B
+        ? 'Cada bloco empilha as duas versões do ano e a diferença entre elas; ∆% é a linha "% (Act) x (Bgt)" da Master.'
+        : 'Sem comparativo escolhido só dá para mostrar o Actual — escolha uma versão em "Comparar com" para ver o Budget empilhado embaixo.',
+      'O ano fechado soma os doze meses, não o acumulado até o mês do filtro.',
+    ],
+  }
+}
+
 /** Gastos por pacote: pacote e subpacote, no YTD, com o % RoL. */
 function pacotes(ctx) {
   const { mes } = ctx
@@ -840,6 +916,7 @@ function pacotes(ctx) {
 export const ABAS = [
   { valor: 'mom', rotulo: 'Visão Torres', montar: painelMoM },
   { valor: 'plEmpresa', rotulo: 'Visão P&L', montar: plPorEmpresaMoM },
+  { valor: 'empilhado', rotulo: 'Empilhado', montar: empilhado },
   { valor: 'pl', rotulo: 'P&L Contábil', montar: plContabil },
   { valor: 'bridge', rotulo: 'Bridge de Receita', montar: bridgeReceita, foraDaMaster: true },
   { valor: 'capex', rotulo: 'Capex (YTD)', montar: capexYtd },

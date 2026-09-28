@@ -173,6 +173,7 @@ export default function Resultado() {
         comp,
         ly,
         mes,
+        ano: ciclo?.ano ?? null,
         medida,
         areaPacote,
         dimensaoBridge,

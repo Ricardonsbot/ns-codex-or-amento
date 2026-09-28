@@ -2194,14 +2194,10 @@ tfoot td {
 .tabela-xl thead tr.rotulos th.atual {
   background: var(--xl-pessego);
   color: var(--xl-laranja);
-  border-left: 1px solid var(--xl-linha);
-  border-right: 1px solid var(--xl-linha);
 }
 
 .tabela-xl thead tr.rotulos th.orcado {
   color: var(--xl-rotulo);
-  border-left: 1px solid var(--xl-linha);
-  border-right: 1px solid var(--xl-linha);
 }
 
 /* Last Year: o budget do ano anterior, no lugar do LY da Master. Mesmo peso
@@ -2209,20 +2205,15 @@ tfoot td {
 .tabela-xl thead tr.rotulos th.ly {
   color: var(--xl-rotulo);
   font-style: italic;
-  border-left: 1px solid var(--xl-linha);
-  border-right: 1px solid var(--xl-linha);
 }
 
 /* Linha "% NR" do Budget mes a mes e margens do Painel Resumo. */
 .tabela-xl tr.pct > td { color: var(--xl-medio); font-style: italic; }
 
 /* ---- corpo ---- */
-/* As colunas de valor (Actual, Budget) levam fio dos dois lados; Delta e
-   Delta% ficam soltos, como na planilha. */
-.tabela-xl td.valor {
-  border-left: 1px solid var(--xl-linha);
-  border-right: 1px solid var(--xl-linha);
-}
+/* Sem fio vertical entre as colunas: com doze meses lado a lado, um risco a
+   cada número virava grade e cansava a leitura. O que separa um bloco do
+   outro é a coluna de vao, e o que separa os niveis e o fio horizontal. */
 
 .tabela-xl td.rotulo,
 .tabela-xl th.rotulo {
