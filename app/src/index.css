@@ -77,6 +77,7 @@ body {
   color: var(--color-text);
   font-size: 14px;
   line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -351,11 +352,23 @@ input[type="search"],
 textarea {
   font-family: inherit;
   font-size: 13.5px;
+  /* Sem isto o select mantém a seta nativa do sistema, que destoa do resto.
+     A seta volta logo abaixo, desenhada, para o campo continuar dizendo que
+     é uma lista. */
+  appearance: none;
+  -webkit-appearance: none;
   padding: 9px 11px;
   border: 1px solid var(--color-input-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text);
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2366727c' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
 }
 
 select:focus, input:focus, textarea:focus {
@@ -427,6 +440,23 @@ select:focus, input:focus, textarea:focus {
   padding: 6px 8px;
 }
 .btn-ghost:hover { background: var(--color-primary-soft); }
+
+/* Ação leve dentro de uma linha de tabela ou lista — "Remover", "Desfazer".
+   Mais discreta que o btn-ghost, que tem caixa e respiro de botão. */
+.btn-link {
+  background: none;
+  border: none;
+  padding: 4px 0;
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.btn-link:hover { color: var(--color-primary-dark); text-decoration: underline; }
+.btn-link:disabled { opacity: .35; cursor: not-allowed; text-decoration: none; }
 
 .btn-sm { padding: 6px 10px; font-size: 12px; }
 
@@ -608,7 +638,21 @@ tbody td {
   padding: 10px 12px;
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
+  /* Tom de corpo na célula comum; o tom forte fica para o que se destaca,
+     via .strong. Com tudo no tom forte a tabela não tem hierarquia. */
+  color: var(--color-text-muted);
 }
+
+tbody td.strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+/* A grade do Resultado é a tela de números: ali tudo fica no tom forte, para
+   a leitura não perder contraste numa tabela densa. */
+.tabela-xl tbody td { color: var(--color-text); }
 
 tbody tr:hover {
   background: #fafbfd;
@@ -719,12 +763,17 @@ tfoot td {
 
 .modal-overlay.open { display: flex; }
 
+/* Borda no lugar da sombra pesada, como no resto da interface. O teto de
+   altura não é estética: o checklist de importação e o tutorial são janelas
+   longas, e sem ele estouravam a tela em monitor baixo. */
 .modal {
   background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 460px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  max-width: 520px;
+  max-height: 86vh;
+  overflow-y: auto;
 }
 
 .modal-header {
