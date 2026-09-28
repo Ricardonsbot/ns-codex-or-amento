@@ -18,12 +18,12 @@ import { useUnidade } from './UnidadeProvider'
  * quebra no pé das barras cinzas; sem ela o gráfico mentiria sobre a
  * proporção.
  */
-const ALTURA = 230
-const TOPO = 58
-const RODAPE = 58
-const PASSO = 112
-const BARRA = 58
-const ALTURA_MINIMA_CAIXA = 22
+const ALTURA = 170
+const TOPO = 46
+const RODAPE = 50
+const PASSO = 92
+const BARRA = 46
+const ALTURA_MINIMA_CAIXA = 20
 
 /** Quebra o rótulo em linhas curtas, para caber embaixo da coluna. */
 function emLinhas(rotulo, limite = 14) {
@@ -81,6 +81,10 @@ export default function GraficoBridge({ cascata, titulo, moldura = true }) {
   const meio = (i) => x(i) + BARRA / 2
   const base = escala(piso)
 
+  // Nunca maior que o tamanho natural: com width 100% num painel largo o
+  // desenho inteiro era esticado junto, e a cascata virava um cartaz.
+  const estilo = { width: '100%', maxWidth: largura, height: 'auto', display: 'block', margin: '0 auto' }
+
   const salto = fim.valor - inicio.valor
   const textoSalto = `${salto >= 0 ? '+' : '−'}${numero(Math.abs(salto))}`
   // O selo acompanha o número: com 68 fixos, "−1.234,5" transbordava.
@@ -93,7 +97,7 @@ export default function GraficoBridge({ cascata, titulo, moldura = true }) {
       <svg
         viewBox={`0 0 ${largura} ${TOPO + ALTURA + RODAPE}`}
         preserveAspectRatio="xMidYMid meet"
-        style={{ width: '100%', height: 'auto', display: 'block' }}
+        style={estilo}
         role="img"
         aria-label={titulo ? `Cascata: ${titulo}` : 'Cascata da bridge'}
       >
@@ -119,8 +123,20 @@ export default function GraficoBridge({ cascata, titulo, moldura = true }) {
           </text>
         </g>
 
+        {/* Os fios vêm todos antes das barras: desenhados junto, o fio do
+            degrau seguinte passava por cima da caixa do anterior. */}
+        {barras.slice(1).map((_, k) => (
+          <line
+            key={`fio-${k}`}
+            className="bridge-fio"
+            x1={x(k)}
+            y1={escala(barras[k].ate)}
+            x2={x(k + 1) + BARRA}
+            y2={escala(barras[k].ate)}
+          />
+        ))}
+
         {barras.map((b, i) => {
-          const anterior = barras[i - 1]
           const topo = escala(Math.max(b.de, b.ate))
           const fundo = b.tipo === 'total' ? base : escala(Math.min(b.de, b.ate))
           // Caixa curta demais para o número: cresce para baixo o mínimo
@@ -129,16 +145,6 @@ export default function GraficoBridge({ cascata, titulo, moldura = true }) {
 
           return (
             <g key={`${b.rotulo}-${i}`}>
-              {anterior && (
-                <line
-                  className="bridge-fio"
-                  x1={x(i - 1)}
-                  y1={escala(anterior.ate)}
-                  x2={x(i) + BARRA}
-                  y2={escala(anterior.ate)}
-                />
-              )}
-
               <rect className={`barra-${b.tipo}`} x={x(i)} y={topo} width={BARRA} height={alturaCaixa} />
 
               {/* Marca de quebra: diz que a barra não começa no zero. */}
