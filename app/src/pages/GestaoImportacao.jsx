@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import ImportWizard from '../components/ImportWizard'
@@ -45,7 +45,7 @@ const semCadastro = (m) =>
  * só que aqui os três correm a partir de UM upload já lido, em vez de três
  * telas com um "Importar Template" cada uma.
  */
-function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar, onDesfeito }) {
+function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar, onDesfeito }) {
   const showToast = useToast()
   const { comMoeda } = useUnidade()
   const { sessao } = useAuth()
@@ -207,6 +207,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
         tipo,
         linhas: [...previa.prontas, ...previa.marcadas],
         fora: previa.fora.length,
+        textoEmNumero: previa.fora.filter((f) => f.naoNumericos?.length).length,
         marcadas: previa.marcadas.length,
         apagados: 0,
         somouEmCima: Boolean(previa.jaExistem) && !substituir,
@@ -224,10 +225,23 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
   const semVersao = previa && !previa.versao
   const paraAprovacao = previa ? agruparParaCadastro(previa.marcadas.filter(semCadastro), tipo, arquivo) : []
 
+  // O "Importar o template inteiro" da tela chama isto em cada card, um
+  // depois do outro. Cada módulo continua com a conferência e a gravação que
+  // já tinha; o que muda é quem aperta o botão.
+  useImperativeHandle(
+    ref,
+    () => ({
+      pronto: Boolean(previa && aImportar.length && !semVersao && !gravando),
+      confirmar: handleConfirmar,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [previa, aImportar.length, semVersao, gravando]
+  )
+
   return (
     <div className="panel" style={{ marginBottom: 16 }}>
       <div className="panel-header">
-        <BotaoRecolher chave="gestao-importacao-1" />
+        <BotaoRecolher chave={`gestao-importacao-${tipo}`} rotulo={ROTULO[tipo]} />
         <div>
           <h2>{ROTULO[tipo]}</h2>
           <p>
@@ -513,6 +527,9 @@ export default function GestaoImportacao() {
   const [tutorialAberto, setTutorialAberto] = useState(false)
   // Quantos tipos já foram gravados neste upload: leva o passo a passo ao fim.
   const [gravados, setGravados] = useState(0)
+  // Qual módulo o "importar tudo" está gravando agora; null quando parado.
+  const [importandoTudo, setImportandoTudo] = useState(null)
+  const cards = useRef({})
   const { sessao } = useAuth()
   // Um registro de histórico por upload: o primeiro tipo importado cria, os
   // seguintes acrescentam. A fila impede dois cards de criarem dois registros
@@ -565,6 +582,22 @@ export default function GestaoImportacao() {
     } finally {
       setLendo(false)
     }
+  }
+
+  /** Grava os três módulos numa passada só, na ordem Receita → Despesa → Capex. */
+  async function importarTudo() {
+    for (const t of tiposComDado) {
+      const card = cards.current[t]
+      if (!card?.pronto) continue
+      setImportandoTudo(t)
+      try {
+        await card.confirmar()
+      } catch (err) {
+        showToast(`Parei em ${ROTULO[t]}: ${err.message}`, 'error')
+        break
+      }
+    }
+    setImportandoTudo(null)
   }
 
   function registrar(tipo, dados) {
@@ -686,9 +719,35 @@ export default function GestaoImportacao() {
               </div>
             )}
 
+            {tiposComDado.length > 1 && (
+              <div className="painel-formato flex-row" style={{ marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 320px' }}>
+                  <strong>Importar o template inteiro</strong>
+                  <p style={{ fontSize: 12, opacity: 0.8, margin: '6px 0 0' }}>
+                    Grava {tiposComDado.map((t) => ROTULO[t]).join(', ')} numa passada só, nesta ordem, e tudo entra
+                    como uma importação só no histórico. Cada módulo continua com o seu card abaixo, se você preferir
+                    conferir um de cada vez.
+                  </p>
+                </div>
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  onClick={importarTudo}
+                  disabled={Boolean(importandoTudo)}
+                >
+                  {importandoTudo
+                    ? `Importando ${ROTULO[importandoTudo]}…`
+                    : `Importar os ${tiposComDado.length} módulos`}
+                </button>
+              </div>
+            )}
+
             {tiposComDado.map((t) => (
               <CardTipo
                 key={`${chave}-${t}`}
+                ref={(el) => {
+                  cards.current[t] = el
+                }}
                 tipo={t}
                 lido={todos[t]}
                 arquivo={arquivo}
