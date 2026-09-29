@@ -22,6 +22,43 @@ export async function historicoDisponivel() {
   return existe
 }
 
+/**
+ * A coluna que amarra o lançamento ao arquivo que o trouxe existe? Veio na
+ * migração 2026-09-29, à parte da tabela do histórico: ter uma e não a outra
+ * é normal, e cada uma é probada sozinha.
+ */
+let temAmarracao = null
+export async function amarracaoDisponivel() {
+  if (temAmarracao !== null) return temAmarracao
+  const { error } = await supabase.from('lancamento').select('importacao_id').limit(1)
+  temAmarracao = !error
+  return temAmarracao
+}
+
+/**
+ * Carimba nos lançamentos recém-criados o registro de importação que os
+ * trouxe. É o que deixa o Deep Dive listar arquivos em vez de empresas.
+ *
+ * Vai em blocos porque o `in (...)` de milhares de ids estoura a URL do
+ * PostgREST. Sem a coluna, não faz nada e não reclama: a importação em si já
+ * está gravada, e quem chama trata falha aqui como aviso.
+ */
+export async function amarrarLancamentos(importacaoId, ids) {
+  if (!importacaoId || !ids?.length) return 0
+  if (!(await amarracaoDisponivel())) return 0
+  let feitos = 0
+  for (let i = 0; i < ids.length; i += 400) {
+    const { data, error } = await supabase
+      .from('lancamento')
+      .update({ importacao_id: importacaoId })
+      .in('id', ids.slice(i, i + 400))
+      .select('id')
+    if (error) throw error
+    feitos += data?.length ?? 0
+  }
+  return feitos
+}
+
 const zero = () => ({ linhas: 0, gr: 0, nr: 0, despesa: 0, capex: 0 })
 const soma = (v) => (v ?? []).reduce((a, x) => a + Number(x.valor ?? x ?? 0), 0)
 

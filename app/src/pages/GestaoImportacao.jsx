@@ -20,7 +20,7 @@ import {
   apagarDoTipo,
   desfazer,
 } from '../lib/importarTemplateOrcamento'
-import { registrarImportacao, marcarDesfeito, resumoDaImportacao } from '../lib/importacoesData'
+import { registrarImportacao, marcarDesfeito, resumoDaImportacao, amarrarLancamentos } from '../lib/importacoesData'
 import { temMapasDeCadastro } from '../lib/lerCadastrosTemplate'
 import { useUnidade } from '../components/UnidadeProvider'
 
@@ -133,6 +133,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
       // desfaz nem invalida a importação, que já está no banco.
       try {
         await onRegistrar?.(tipo, {
+          ids,
           linhas: [...previa.prontas, ...previa.marcadas],
           apagados,
           fora: previa.fora.length,
@@ -540,6 +541,9 @@ export default function GestaoImportacao() {
         origem: 'gestao',
         usuarioEmail: sessao?.user?.email,
       })
+      // Qual arquivo trouxe cada linha: é por aqui que o Deep Dive lista
+      // templates de verdade em vez de agrupar por empresa.
+      await amarrarLancamentos(r.id, dados.ids)
       setVersaoHistorico((n) => n + 1)
     })
     r.fila = passo.catch(() => {})

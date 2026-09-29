@@ -6,7 +6,8 @@ import { useToast } from '../components/ToastProvider'
 import { useUnidade } from '../components/UnidadeProvider'
 import { fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
 import { fetchVersaoAtual } from '../lib/lancamentosData'
-import { fetchDeepDive, agruparTemplates, rodarChecks, piorCor } from '../lib/deepDive'
+import { fetchDeepDive, fetchTemplatesImportados, agruparTemplates, rodarChecks, piorCor } from '../lib/deepDive'
+import { LIBERACOES } from '../lib/importacoesData'
 import { exportarExcel } from '../lib/excelUtils'
 
 const umaCasa = (v) => Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -54,6 +55,9 @@ export default function DeepDive() {
   const [cicloId, setCicloId] = useState('')
   const [versaoId, setVersaoId] = useState('')
   const [linhas, setLinhas] = useState(null)
+  const [registros, setRegistros] = useState([])
+  // Por que a lista pode não ter arquivo nenhum: as duas migrações.
+  const [faltaMigracao, setFaltaMigracao] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [templateId, setTemplateId] = useState(null)
   const [checkId, setCheckId] = useState(null)
@@ -81,9 +85,11 @@ export default function DeepDive() {
     ;(async () => {
       setCarregando(true)
       try {
-        const dados = await fetchDeepDive(versao.id)
+        const [dados, tpl] = await Promise.all([fetchDeepDive(versao.id), fetchTemplatesImportados(versao.id)])
         if (cancelado) return
         setLinhas(dados)
+        setRegistros(tpl.registros)
+        setFaltaMigracao(tpl.temHistorico && tpl.temAmarracao ? null : tpl)
         setTemplateId(null)
         setCheckId(null)
       } catch (err) {
@@ -98,7 +104,8 @@ export default function DeepDive() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [versao?.id])
 
-  const templates = useMemo(() => (linhas ? agruparTemplates(linhas) : []), [linhas])
+  const templates = useMemo(() => (linhas ? agruparTemplates(linhas, registros) : []), [linhas, registros])
+  const quantosArquivos = templates.filter((t) => t.origem === 'arquivo').length
   // O consolidado é um "template" a mais, no topo: é por ele que se olha a
   // regra em si, antes de saber quem foi que errou.
   const consolidado = useMemo(() => {
@@ -211,13 +218,28 @@ export default function DeepDive() {
           </div>
         )}
 
+        {!carregando && faltaMigracao && linhas?.length > 0 && (
+          <div className="painel-formato">
+            A lista está por empresa porque o banco ainda não sabe qual arquivo trouxe cada lançamento. Falta rodar{' '}
+            {!faltaMigracao.temHistorico && <code>2026-09-22-historico-de-importacao.sql</code>}
+            {!faltaMigracao.temHistorico && !faltaMigracao.temAmarracao && ' e '}
+            {!faltaMigracao.temAmarracao && <code>2026-09-29-lancamento-da-importacao.sql</code>}. Depois disso, cada
+            template importado aparece aqui pelo nome do arquivo, com quem subiu e a liberação — o que já está no banco
+            hoje continua por empresa, porque essa amarração não existia quando foi importado.
+          </div>
+        )}
+
         {!carregando && linhas?.length > 0 && (
           <div className="dd-grid">
             <div className="panel dd-coluna">
               <div className="panel-header">
                 <div>
                   <h2>Templates</h2>
-                  <p>{templates.length} empresa(s) nesta versão</p>
+                  <p>
+                    {quantosArquivos
+                      ? `${quantosArquivos} arquivo(s) importado(s)`
+                      : `${templates.length} empresa(s) nesta versão`}
+                  </p>
                 </div>
               </div>
               <div className="panel-body">
@@ -235,11 +257,17 @@ export default function DeepDive() {
                         <Farol cor={t.cor} />
                         <span className="dd-item-nome">
                           {t.nome}
+                          {t.detalhe && <em>{t.detalhe}</em>}
                           <em>
                             {t.nFora
                               ? `${t.nFora} linha(s) fora · ${numero(t.valorFora)} ${u.faixa}`
                               : 'nada fora das regras'}
                           </em>
+                          {t.liberacao && (
+                            <span className={`flag-liberacao flag-${LIBERACOES[t.liberacao]?.cor ?? 'cinza'}`}>
+                              {LIBERACOES[t.liberacao]?.rotulo ?? t.liberacao}
+                            </span>
+                          )}
                         </span>
                       </button>
                     </li>

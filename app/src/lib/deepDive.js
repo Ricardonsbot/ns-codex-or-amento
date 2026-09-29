@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient'
+import { amarracaoDisponivel, historicoDisponivel, listarImportacoes } from './importacoesData'
 
 /**
  * Deep Dive: a conferência das regras de classificação do orçamento.
@@ -344,13 +345,14 @@ async function sondarTemplate() {
  * Pagina de mil em mil — o PostgREST corta aí e não avisa.
  */
 export async function fetchDeepDive(versaoId) {
-  const completo = await sondarTemplate()
+  const [completo, comArquivo] = await Promise.all([sondarTemplate(), amarracaoDisponivel()])
   const campos =
     'id, tipo, descricao, fornecedor, area, empresa_id, empresa:empresa_id(nome), ' +
     'conta:conta_id(codigo, nome, linha_pl), lancamento_valor_mensal(valor)' +
     (completo
       ? ', pacote, subpacote, area_ajustada, linha_pl_template, detalhamento, centro_custo_nome, torre_texto, diretoria'
-      : '')
+      : '') +
+    (comArquivo ? ', importacao_id' : '')
 
   const brutas = []
   for (let de = 0; ; de += 1000) {
@@ -367,6 +369,7 @@ export async function fetchDeepDive(versaoId) {
   return brutas.map((l) => ({
     id: l.id,
     tipo: l.tipo,
+    importacaoId: l.importacao_id ?? null,
     empresaId: l.empresa_id ?? null,
     empresa: l.empresa?.nome ?? 'Sem empresa',
     conta_codigo: l.conta?.codigo ?? '',
@@ -387,27 +390,86 @@ export async function fetchDeepDive(versaoId) {
 }
 
 /**
- * Um "template" da lista é o que uma empresa mandou: na prática o arquivo de
- * uma empresa vira as linhas dela dentro da versão, e é esse o conjunto que
- * alguém corrige e reenvia. Vem ordenado pelo que tem mais gasto fora da
- * regra — quem abre a tela quer ver primeiro o que mais dói.
+ * Os templates importados nesta versão: arquivo, quem subiu, quando e a
+ * liberação. Devolve também por que a lista pode vir vazia — a tela diz isso
+ * em vez de fingir que não há arquivo nenhum.
  */
-export function agruparTemplates(linhas) {
-  const porEmpresa = new Map()
-  for (const l of linhas) {
-    const chave = l.empresaId ?? l.empresa
-    if (!porEmpresa.has(chave)) porEmpresa.set(chave, { id: chave, nome: l.empresa, linhas: [] })
-    porEmpresa.get(chave).linhas.push(l)
+export async function fetchTemplatesImportados(versaoId) {
+  const [temHistorico, temAmarracao] = await Promise.all([historicoDisponivel(), amarracaoDisponivel()])
+  if (!temHistorico || !temAmarracao) return { registros: [], temHistorico, temAmarracao }
+  const todos = await listarImportacoes(300)
+  return { registros: todos.filter((r) => r.versao_id === versaoId), temHistorico, temAmarracao }
+}
+
+/** Monta um item da lista: o recorte, os checks dele e a bandeira. */
+function montarTemplate(base, linhas) {
+  const checks = rodarChecks(linhas)
+  return {
+    ...base,
+    linhas,
+    checks,
+    cor: piorCor(checks),
+    nFora: checks.reduce((a, c) => a + c.nFora, 0),
+    valorFora: checks.reduce((a, c) => a + c.valorFora, 0),
   }
-  const templates = [...porEmpresa.values()].map((t) => {
-    const checks = rodarChecks(t.linhas)
-    return {
-      ...t,
-      checks,
-      cor: piorCor(checks),
-      nFora: checks.reduce((a, c) => a + c.nFora, 0),
-      valorFora: checks.reduce((a, c) => a + c.valorFora, 0),
-    }
-  })
-  return templates.sort((a, b) => b.valorFora - a.valorFora || a.nome.localeCompare(b.nome, 'pt-BR'))
+}
+
+const quando = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : null)
+
+/**
+ * A lista de templates da esquerda.
+ *
+ * Um template é o arquivo que alguém subiu — é o que uma pessoa preenche,
+ * corrige e reenvia, e é por arquivo que se devolve. O lançamento sabe de
+ * qual arquivo veio pela coluna `importacao_id` (migração 2026-09-29).
+ *
+ * O que ficou sem arquivo — importado antes dessa amarração existir, ou por
+ * um caminho que não registrou histórico — não some da tela: vira um item
+ * por empresa, marcado como tal. Some-los num "outros" esconderia a maior
+ * parte da base enquanto a migração não roda.
+ *
+ * Ordena pelo valor fora da regra: quem abre a tela quer o que mais dói.
+ */
+export function agruparTemplates(linhas, registros = []) {
+  const usadas = new Set()
+  const porArquivo = []
+
+  for (const r of registros) {
+    const doArquivo = linhas.filter((l) => l.importacaoId === r.id)
+    if (!doArquivo.length) continue
+    for (const l of doArquivo) usadas.add(l.id)
+    const tipos = Object.keys(r.tipos ?? {}).filter((t) => !r.tipos[t]?.desfeito)
+    porArquivo.push(
+      montarTemplate(
+        {
+          id: r.id,
+          origem: 'arquivo',
+          nome: r.arquivo,
+          detalhe: [quando(r.criado_em), r.usuario_nome || r.usuario_email, tipos.join(' + ')]
+            .filter(Boolean)
+            .join(' · '),
+          liberacao: r.liberacao ?? 'aguardando',
+        },
+        doArquivo
+      )
+    )
+  }
+
+  const soltas = linhas.filter((l) => !usadas.has(l.id))
+  const porEmpresa = new Map()
+  for (const l of soltas) {
+    const chave = l.empresaId ?? l.empresa
+    if (!porEmpresa.has(chave)) porEmpresa.set(chave, [])
+    porEmpresa.get(chave).push(l)
+  }
+
+  const semArquivo = [...porEmpresa.entries()].map(([chave, doGrupo]) =>
+    montarTemplate(
+      { id: `empresa:${chave}`, origem: 'empresa', nome: doGrupo[0].empresa, detalhe: 'sem arquivo registrado' },
+      doGrupo
+    )
+  )
+
+  const porDor = (a, b) => b.valorFora - a.valorFora || a.nome.localeCompare(b.nome, 'pt-BR')
+  return [...porArquivo.sort(porDor), ...semArquivo.sort(porDor)]
 }

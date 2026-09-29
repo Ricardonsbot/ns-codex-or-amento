@@ -22,7 +22,7 @@ import {
   desfazer,
   TEMPLATE,
 } from '../lib/importarTemplateOrcamento'
-import { registrarImportacao, marcarDesfeito, resumoDaImportacao } from '../lib/importacoesData'
+import { registrarImportacao, marcarDesfeito, resumoDaImportacao, amarrarLancamentos } from '../lib/importacoesData'
 
 const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
@@ -265,6 +265,8 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
           cadastros: previa.cadastros,
           usuarioEmail: email,
         })
+        // Qual arquivo trouxe cada linha, para o Deep Dive listar por arquivo.
+        await amarrarLancamentos(registroId, ids)
       } catch (err) {
         showToast(`Importado, mas não consegui registrar no histórico: ${err.message}`, 'warning')
       }
