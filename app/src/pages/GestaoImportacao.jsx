@@ -214,6 +214,10 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
     : null
 
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
+  // As duas recusas são de natureza diferente e o aviso precisa dizer qual é:
+  // texto numa coluna de valor não é empresa fora do cadastro.
+  const recusadasPorTexto = previa?.fora.filter((f) => f.naoNumericos?.length) ?? []
+  const recusadasSemEmpresa = previa?.fora.filter((f) => !f.naoNumericos?.length) ?? []
   const total = aImportar.reduce((a, p) => a + p.total, 0)
   const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
   const semVersao = previa && !previa.versao
@@ -367,7 +371,20 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
 
             {previa.fora.length > 0 && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ⓘ {previa.fora.length} linha(s) não entram: sem empresa cadastrada não há como gravar.
+                ⓘ {previa.fora.length} linha(s) <strong>não entram</strong>
+                {recusadasPorTexto.length > 0 && (
+                  <>
+                    {' '}
+                    — {recusadasPorTexto.length} com texto onde era para ter número
+                  </>
+                )}
+                {recusadasSemEmpresa.length > 0 && (
+                  <>
+                    {recusadasPorTexto.length ? ' e ' : ' — '}
+                    {recusadasSemEmpresa.length} sem empresa cadastrada
+                  </>
+                )}
+                . Estão listadas no começo da tabela, com o número da linha da planilha.
               </div>
             )}
 
@@ -395,11 +412,12 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
               </div>
             </div>
 
-            {(previa.prontas.length > 0 || previa.marcadas.length > 0) && (
+            {(previa.prontas.length > 0 || previa.marcadas.length > 0 || previa.fora.length > 0) && (
               <div className="rolagem-x">
                 <table className="data-table">
                   <thead>
                     <tr>
+                      <th>LINHA</th>
                       <th>EMPRESA</th>
                       <th>CONTA</th>
                       <th className="text-right">TOTAL ANO</th>
@@ -407,22 +425,38 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
                     </tr>
                   </thead>
                   <tbody>
-                    {previa.prontas.slice(0, 200).map((p) => (
-                      <tr key={`ok-${p.linha}`}>
-                        <td><strong>{p.empresa.nome}</strong></td>
-                        <td style={{ fontSize: 12 }}>{p.conta.codigo} {p.conta.nome}</td>
+                    {/* Primeiro o que dá problema, e com o número da linha da
+                        planilha: é o que a pessoa vai procurar no Excel para
+                        corrigir. O que está certo vem depois. */}
+                    {previa.fora.map((p) => (
+                      <tr key={`fora-${p.linha}`} style={{ background: 'var(--color-danger-bg, #fdecea)' }}>
+                        <td>{p.linha}</td>
+                        <td>{typeof p.empresa === 'object' ? p.empresa?.nome : p.empresa || '—'}</td>
+                        <td style={{ fontSize: 12 }}>{p.contaCodigo || p.contaRotulo || '—'}</td>
                         <td className="text-right">{brl(p.total)}</td>
-                        <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ resolvida</td>
+                        <td style={{ color: 'var(--color-danger, #c0392b)', fontSize: 12 }}>
+                          ✕ recusada — {p.falhas.join(' · ')}
+                        </td>
                       </tr>
                     ))}
                     {previa.marcadas.map((p) => (
                       <tr key={`marcada-${p.linha}`} style={{ background: 'var(--color-surface-alt, #fff6f4)' }}>
+                        <td>{p.linha}</td>
                         <td>{typeof p.empresa === 'object' ? p.empresa?.nome : p.empresa}</td>
                         <td style={{ fontSize: 12 }}>{p.contaCodigo || p.contaRotulo || '—'}</td>
                         <td className="text-right">{brl(p.total)}</td>
                         <td style={{ color: 'var(--color-danger, #c0392b)', fontSize: 12 }}>
                           ⚠ entra sem conta — {p.falhas.join(' · ')}
                         </td>
+                      </tr>
+                    ))}
+                    {previa.prontas.slice(0, 200).map((p) => (
+                      <tr key={`ok-${p.linha}`}>
+                        <td>{p.linha}</td>
+                        <td><strong>{p.empresa.nome}</strong></td>
+                        <td style={{ fontSize: 12 }}>{p.conta.codigo} {p.conta.nome}</td>
+                        <td className="text-right">{brl(p.total)}</td>
+                        <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ resolvida</td>
                       </tr>
                     ))}
                   </tbody>

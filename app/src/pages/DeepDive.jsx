@@ -22,6 +22,8 @@ const umaCasa = (v) => Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionD
 /** Quantas linhas fora a tabela mostra antes de mandar exportar. */
 const LIMITE_TABELA = 100
 
+const MODULO = { receita: '(+) Revenue', despesa: '(−) Expenses', capex: '(−) Capex' }
+
 const ESTADO = {
   ok: { marca: '✓', rotulo: 'dentro da regra' },
   fora: { marca: '✕', rotulo: 'fora da regra' },
@@ -76,6 +78,8 @@ export default function DeepDive() {
   const [checkId, setCheckId] = useState(null)
   // No detalhe: só as reprovadas, ou todas as linhas que a regra olhou.
   const [verTudo, setVerTudo] = useState(false)
+  // Drill down por módulo: Revenue, Expenses ou Capex separados.
+  const [tipo, setTipo] = useState('')
   const [porVersao, setPorVersao] = useState(new Map())
 
   useEffect(() => {
@@ -140,23 +144,27 @@ export default function DeepDive() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [versao?.id])
 
-  const templates = useMemo(() => (linhas ? agruparTemplates(linhas, registros) : []), [linhas, registros])
+  // O recorte por módulo vale para tudo abaixo: a lista de templates, as
+  // bandeiras e os checks são recalculados só com as linhas do tipo escolhido.
+  const doTipo = useMemo(() => (linhas ? (tipo ? linhas.filter((l) => l.tipo === tipo) : linhas) : null), [linhas, tipo])
+
+  const templates = useMemo(() => (doTipo ? agruparTemplates(doTipo, registros) : []), [doTipo, registros])
   const quantosArquivos = templates.filter((t) => t.origem === 'arquivo').length
   // O consolidado é um "template" a mais, no topo: é por ele que se olha a
   // regra em si, antes de saber quem foi que errou.
   const consolidado = useMemo(() => {
-    if (!linhas?.length) return null
-    const checks = rodarChecks(linhas)
+    if (!doTipo?.length) return null
+    const checks = rodarChecks(doTipo)
     return {
       id: '__todos',
       nome: 'Todas as empresas',
-      linhas,
+      linhas: doTipo,
       checks,
       cor: piorCor(checks),
       nFora: checks.reduce((a, c) => a + c.nFora, 0),
       valorFora: checks.reduce((a, c) => a + c.valorFora, 0),
     }
-  }, [linhas])
+  }, [doTipo])
 
   const lista = consolidado ? [consolidado, ...templates] : []
   const template = lista.find((t) => t.id === templateId) ?? null
@@ -234,6 +242,18 @@ export default function DeepDive() {
                     setVersaoId('')
                   }}
                 />
+                <FiltroBotoes
+                  label="Módulo"
+                  valor={tipo}
+                  rotuloTodas="Todos"
+                  semCorte
+                  opcoes={Object.entries(MODULO).map(([valor, rotulo]) => ({ valor, rotulo }))}
+                  onChange={(v) => {
+                    setTipo(v)
+                    setTemplateId(null)
+                    setCheckId(null)
+                  }}
+                />
                 {versoes.length > 0 && (
                   <FiltroBotoes
                     label="Versão (lançamentos)"
@@ -253,6 +273,12 @@ export default function DeepDive() {
 
         {carregando && <div className="empty-hint">Lendo os lançamentos…</div>}
 
+        {!carregando && linhas?.length > 0 && !doTipo?.length && (
+          <div className="empty-hint">
+            Nenhum lançamento de <strong>{MODULO[tipo] ?? tipo}</strong> nesta versão — escolha outro módulo acima.
+          </div>
+        )}
+
         {!carregando && !linhas?.length && (
           <div className="empty-hint">
             Nenhum lançamento na versão <strong>{versao?.nome ?? '—'}</strong>
@@ -262,7 +288,7 @@ export default function DeepDive() {
           </div>
         )}
 
-        {!carregando && faltaMigracao && linhas?.length > 0 && (
+        {!carregando && faltaMigracao && doTipo?.length > 0 && (
           <div className="painel-formato">
             A lista está por empresa porque o banco ainda não sabe qual arquivo trouxe cada lançamento. Falta rodar{' '}
             {!faltaMigracao.temHistorico && <code>2026-09-22-historico-de-importacao.sql</code>}
@@ -273,7 +299,7 @@ export default function DeepDive() {
           </div>
         )}
 
-        {!carregando && linhas?.length > 0 && (
+        {!carregando && doTipo?.length > 0 && (
           <div className="dd-grid">
             <div className="panel dd-coluna">
               <div className="panel-header">
