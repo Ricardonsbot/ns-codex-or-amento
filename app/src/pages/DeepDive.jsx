@@ -11,6 +11,8 @@ import {
   fetchTemplatesImportados,
   contarPorVersao,
   agruparTemplates,
+  agruparPorDimensao,
+  DIMENSOES,
   rodarChecks,
   piorCor,
 } from '../lib/deepDive'
@@ -80,6 +82,9 @@ export default function DeepDive() {
   const [verTudo, setVerTudo] = useState(false)
   // Drill down por módulo: Revenue, Expenses ou Capex separados.
   const [tipo, setTipo] = useState('')
+  // Por onde a lista da esquerda abre: o arquivo, ou qualquer dimensão de
+  // texto do lançamento.
+  const [dimensao, setDimensao] = useState('template')
   const [porVersao, setPorVersao] = useState(new Map())
 
   useEffect(() => {
@@ -148,7 +153,11 @@ export default function DeepDive() {
   // bandeiras e os checks são recalculados só com as linhas do tipo escolhido.
   const doTipo = useMemo(() => (linhas ? (tipo ? linhas.filter((l) => l.tipo === tipo) : linhas) : null), [linhas, tipo])
 
-  const templates = useMemo(() => (doTipo ? agruparTemplates(doTipo, registros) : []), [doTipo, registros])
+  const templates = useMemo(() => {
+    if (!doTipo) return []
+    return dimensao === 'template' ? agruparTemplates(doTipo, registros) : agruparPorDimensao(doTipo, dimensao)
+  }, [doTipo, registros, dimensao])
+  const rotuloDimensao = DIMENSOES.find((d) => d.valor === dimensao)?.rotulo ?? 'Template'
   const quantosArquivos = templates.filter((t) => t.origem === 'arquivo').length
   // O consolidado é um "template" a mais, no topo: é por ele que se olha a
   // regra em si, antes de saber quem foi que errou.
@@ -175,6 +184,8 @@ export default function DeepDive() {
   function exportar() {
     if (!visiveis.length) return
     const colunas = [
+      'BU',
+      'Torre',
       'Empresa',
       'Tipo',
       'Conta',
@@ -190,6 +201,8 @@ export default function DeepDive() {
       'Valor (R$)',
     ].map((key) => ({ key }))
     const dados = visiveis.map((l) => ({
+      BU: l.bu,
+      Torre: l.torre,
       Empresa: l.empresa,
       Tipo: l.tipo,
       Conta: l.conta_codigo,
@@ -240,6 +253,17 @@ export default function DeepDive() {
                   onChange={(v) => {
                     setCicloId(v)
                     setVersaoId('')
+                  }}
+                />
+                <FiltroBotoes
+                  label="Abrir por"
+                  valor={dimensao}
+                  semTodas
+                  opcoes={DIMENSOES}
+                  onChange={(v) => {
+                    setDimensao(v)
+                    setTemplateId(null)
+                    setCheckId(null)
                   }}
                 />
                 <FiltroBotoes
@@ -304,11 +328,13 @@ export default function DeepDive() {
             <div className="panel dd-coluna">
               <div className="panel-header">
                 <div>
-                  <h2>Templates</h2>
+                  <h2>{dimensao === 'template' ? 'Templates' : rotuloDimensao}</h2>
                   <p>
-                    {quantosArquivos
-                      ? `${quantosArquivos} arquivo(s) importado(s)`
-                      : `${templates.length} empresa(s) nesta versão`}
+                    {dimensao !== 'template'
+                      ? `${templates.length} ${rotuloDimensao.toLowerCase()}(s) com lançamento`
+                      : quantosArquivos
+                        ? `${quantosArquivos} arquivo(s) importado(s)`
+                        : `${templates.length} empresa(s) nesta versão`}
                   </p>
                 </div>
               </div>
@@ -472,6 +498,8 @@ export default function DeepDive() {
                             <thead>
                               <tr>
                                 <th aria-label="Situação" />
+                                <th>BU</th>
+                                <th>Torre</th>
                                 <th>Empresa</th>
                                 <th>Conta</th>
                                 <th>Área</th>
@@ -487,6 +515,8 @@ export default function DeepDive() {
                                   <td className="dd-marca" title={ESTADO[l.estado]?.rotulo}>
                                     {ESTADO[l.estado]?.marca}
                                   </td>
+                                  <td>{l.bu || '—'}</td>
+                                  <td>{l.torre || '—'}</td>
                                   <td>{l.empresa}</td>
                                   <td>{[l.conta_codigo, l.conta_nome].filter(Boolean).join(' · ')}</td>
                                   <td>{l.area_ajustada || l.area || '—'}</td>

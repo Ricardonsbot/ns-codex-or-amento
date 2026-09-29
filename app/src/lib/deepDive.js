@@ -382,6 +382,7 @@ export async function fetchDeepDive(versaoId) {
   const [completo, comArquivo] = await Promise.all([sondarTemplate(), amarracaoDisponivel()])
   const campos =
     'id, tipo, descricao, fornecedor, area, empresa_id, empresa:empresa_id(nome), ' +
+    'bu:bu_id(nome), torre:torre_id(nome), sub_torre:sub_torre_id(nome), ' +
     'conta:conta_id(codigo, nome, linha_pl), lancamento_valor_mensal(valor)' +
     (completo
       ? ', pacote, subpacote, area_ajustada, linha_pl_template, detalhamento, centro_custo_nome, torre_texto, diretoria'
@@ -417,7 +418,12 @@ export async function fetchDeepDive(versaoId) {
     detalhamento: l.detalhamento ?? '',
     descricao: l.descricao ?? '',
     centro_custo_nome: l.centro_custo_nome ?? '',
-    torre: l.torre_texto ?? '',
+    // A torre do cadastro manda sobre a escrita no template: é ela que a
+    // estrutura organizacional conhece. O texto do template fica de reserva
+    // para quando a empresa ainda não está amarrada a uma torre.
+    bu: l.bu?.nome ?? '',
+    torre: l.torre?.nome || l.torre_texto || '',
+    subTorre: l.sub_torre?.nome ?? '',
     diretoria: l.diretoria ?? '',
     valor: (l.lancamento_valor_mensal ?? []).reduce((a, v) => a + Number(v.valor ?? 0), 0),
   }))
@@ -454,6 +460,65 @@ export async function fetchTemplatesImportados(versaoId) {
   if (!temHistorico || !temAmarracao) return { registros: [], temHistorico, temAmarracao }
   const todos = await listarImportacoes(300)
   return { registros: todos.filter((r) => r.versao_id === versaoId), temHistorico, temAmarracao }
+}
+
+/**
+ * Por onde dá para abrir a conferência. São as colunas de texto do
+ * lançamento — o mesmo conjunto que o template preenche —, mais a hierarquia
+ * do cadastro: empresa, torre e BU.
+ *
+ * "Template" não é campo: é o arquivo que trouxe a linha, e tem regra
+ * própria (ver `agruparTemplates`).
+ */
+export const DIMENSOES = [
+  { valor: 'template', rotulo: 'Template' },
+  { valor: 'empresa', rotulo: 'Empresa' },
+  { valor: 'torre', rotulo: 'Torre' },
+  { valor: 'bu', rotulo: 'BU' },
+  { valor: 'subTorre', rotulo: 'Sub-torre' },
+  { valor: 'diretoria', rotulo: 'Diretoria' },
+  { valor: 'centro_custo_nome', rotulo: 'Centro de custo' },
+  { valor: 'pacote', rotulo: 'Pacote' },
+  { valor: 'subpacote', rotulo: 'Subpacote' },
+  { valor: 'area', rotulo: 'Área' },
+  { valor: 'conta_nome', rotulo: 'Conta' },
+  { valor: 'fornecedor', rotulo: 'Fornecedor' },
+]
+
+/** O valor de uma dimensão numa linha. A área é a resolvida, não a crua. */
+export function valorDaDimensao(l, dim) {
+  if (dim === 'area') return areaDe(l) ?? ''
+  return String(l[dim] ?? '').trim()
+}
+
+/**
+ * Abre a conferência por uma dimensão qualquer: cada valor distinto vira um
+ * item da lista, com os onze checks rodados só nas linhas dele.
+ *
+ * O grupo vazio não é escondido — "Sem pacote" costuma ser o maior problema
+ * da base, e some se a gente só listar quem preencheu.
+ */
+export function agruparPorDimensao(linhas, dim) {
+  const rotulo = DIMENSOES.find((d) => d.valor === dim)?.rotulo ?? dim
+  const grupos = new Map()
+  for (const l of linhas) {
+    const chave = valorDaDimensao(l, dim)
+    if (!grupos.has(chave)) grupos.set(chave, [])
+    grupos.get(chave).push(l)
+  }
+  return [...grupos.entries()]
+    .map(([chave, doGrupo]) =>
+      montarTemplate(
+        {
+          id: `${dim}:${chave}`,
+          origem: 'dimensao',
+          nome: chave || `Sem ${rotulo.toLowerCase()}`,
+          detalhe: `${doGrupo.length.toLocaleString('pt-BR')} linha(s)`,
+        },
+        doGrupo
+      )
+    )
+    .sort((a, b) => b.valorFora - a.valorFora || a.nome.localeCompare(b.nome, 'pt-BR'))
 }
 
 /** Monta um item da lista: o recorte, os checks dele e a bandeira. */
