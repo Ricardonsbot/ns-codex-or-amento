@@ -36,5 +36,21 @@ begin
   end if;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- O que aconteceu com a tentativa
+--
+-- Ate aqui so o que entrou virava registro. Template recusado nao deixava
+-- rastro nenhum: nao da para saber quem tentou subir o que, nem quantas
+-- vezes o mesmo arquivo voltou. Com isto, a tentativa recusada entra na
+-- mesma lista, com o motivo e com quem tentou.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if exists (select 1 from information_schema.tables where table_name = 'importacao') then
+    alter table importacao add column if not exists resultado text not null default 'importado';
+    alter table importacao add column if not exists recusa_motivo text;
+  end if;
+end $$;
+
 -- O Deep Dive filtra por arquivo; sem indice isso varre a tabela inteira.
 create index if not exists lancamento_importacao_id_idx on lancamento (importacao_id);

@@ -20,7 +20,13 @@ import {
   apagarDoTipo,
   desfazer,
 } from '../lib/importarTemplateOrcamento'
-import { registrarImportacao, marcarDesfeito, resumoDaImportacao, amarrarLancamentos } from '../lib/importacoesData'
+import {
+  registrarImportacao,
+  registrarTentativaRecusada,
+  marcarDesfeito,
+  resumoDaImportacao,
+  amarrarLancamentos,
+} from '../lib/importacoesData'
 import { temMapasDeCadastro } from '../lib/lerCadastrosTemplate'
 import { useUnidade } from '../components/UnidadeProvider'
 import BotaoRecolher from '../components/BotaoRecolher'
@@ -573,14 +579,49 @@ export default function GestaoImportacao() {
     setErroLeitura(null)
     setWizardAberto(true)
     try {
-      setTodos(await lerTodosOsTiposEmWorker(await file.arrayBuffer(), setEstrutura))
+      const lidos = await lerTodosOsTiposEmWorker(await file.arrayBuffer(), setEstrutura)
+      setTodos(lidos)
       setChave((c) => c + 1)
       setWizardAberto(false)
+      // Arquivo lido, mas sem nada para trazer, é recusa igual: fica na lista
+      // com o motivo, senão ninguém sabe que a pessoa tentou.
+      const comDado = ORDEM.filter((t) => !lidos[t].erro && lidos[t].linhas.length > 0)
+      if (!comDado.length) {
+        const comErro = ORDEM.filter((t) => lidos[t].erro)
+        registrarRecusa(
+          comErro.length
+            ? `Nenhuma aba pôde ser lida — ${comErro.map((t) => `${ROTULO[t]}: ${lidos[t].erro}`).join(' · ')}`
+            : 'Nenhuma das três abas tinha linha com valor preenchido.',
+          file.name,
+          file.size
+        )
+      }
     } catch (err) {
       setErroLeitura(err.message)
       showToast(`Não consegui ler a planilha: ${err.message}`, 'error')
+      registrarRecusa(`Não consegui ler a planilha — ${err.message}`, file.name, file.size)
     } finally {
       setLendo(false)
+    }
+  }
+
+  /**
+   * A tentativa que não virou importação entra na mesma lista, com quem
+   * tentou e o motivo. Falhar aqui não pode virar um segundo erro na tela de
+   * quem já está lidando com o primeiro.
+   */
+  async function registrarRecusa(motivo, nome, bytes) {
+    try {
+      const id = await registrarTentativaRecusada({
+        arquivo: nome,
+        tamanho: bytes,
+        origem: 'gestao',
+        usuarioEmail: sessao?.user?.email,
+        motivo,
+      })
+      if (id) setVersaoHistorico((n) => n + 1)
+    } catch {
+      // O registro da recusa é acessório: o erro de verdade já foi mostrado.
     }
   }
 

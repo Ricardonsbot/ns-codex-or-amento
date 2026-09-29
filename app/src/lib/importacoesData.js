@@ -59,6 +59,50 @@ export async function amarrarLancamentos(importacaoId, ids) {
   return feitos
 }
 
+/**
+ * A coluna que diz o que aconteceu com a tentativa existe? Veio na migração
+ * 2026-09-29, depois da tabela: ter a tabela e não ter a coluna é normal.
+ */
+let temResultado = null
+export async function resultadoDisponivel() {
+  if (temResultado !== null) return temResultado
+  const { error } = await supabase.from('importacao').select('resultado').limit(1)
+  temResultado = !error
+  return temResultado
+}
+
+/**
+ * Registra a tentativa que não virou importação: arquivo que não dá para
+ * ler, ou que não tinha nenhuma linha para trazer.
+ *
+ * Fica na mesma lista dos importados, com quem tentou e o motivo. Sem isso,
+ * template recusado não deixa rastro nenhum — e é justamente o que alguém
+ * vai reenviar corrigido, ou reclamar que mandou.
+ *
+ * Devolve null quando a tabela ou a coluna ainda não existem: registrar a
+ * recusa é acessório, e não pode virar um segundo erro na tela de quem já
+ * está lidando com o primeiro.
+ */
+export async function registrarTentativaRecusada({ arquivo, tamanho, origem, ano, usuarioEmail, motivo }) {
+  if (!(await historicoDisponivel())) return null
+  if (!(await resultadoDisponivel())) return null
+  const { data, error } = await supabase
+    .from('importacao')
+    .insert({
+      usuario_email: usuarioEmail ?? null,
+      arquivo,
+      tamanho_bytes: tamanho ?? null,
+      origem: origem ?? 'gestao',
+      ano: ano ?? null,
+      resultado: 'recusado',
+      recusa_motivo: motivo,
+    })
+    .select('id')
+    .single()
+  if (error) throw error
+  return data.id
+}
+
 const zero = () => ({ linhas: 0, gr: 0, nr: 0, despesa: 0, capex: 0 })
 const soma = (v) => (v ?? []).reduce((a, x) => a + Number(x.valor ?? x ?? 0), 0)
 
