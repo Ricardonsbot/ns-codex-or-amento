@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useToast } from './ToastProvider'
 import { lerCadastrosEmWorker } from '../lib/importarTemplateOrcamento'
 import { executarCarga, planejarCarga } from '../lib/cargaCadastros'
+import BotaoRecolher from './BotaoRecolher'
 
 /**
  * Carga dos cadastros a partir do próprio template.
@@ -95,6 +96,7 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
   return (
     <div className="panel" style={{ marginBottom: 16 }}>
       <div className="panel-header">
+        <BotaoRecolher chave="carga-cadastros-1" />
         <div>
           <h2>📇 Cadastros do template</h2>
           <p>

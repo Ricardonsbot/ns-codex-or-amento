@@ -5,6 +5,7 @@ import { useToast } from '../../components/ToastProvider'
 import ImportExportBar from '../../components/ImportExportBar'
 import { fetchAll, criar, atualizar, remover } from '../../lib/cadastroSimplesData'
 import { MODULOS, nomeArquivoExportacao } from '../../lib/modulos'
+import BotaoRecolher from '../../components/BotaoRecolher'
 
 const ICONES = { bu: '🏢', torre: '🏗️', sub_torre: '📂', empresa: '🏬' }
 
@@ -132,6 +133,7 @@ function SecaoNivel({ titulo, tabela, itens, paisConfig, onRecarregar, showToast
   return (
     <div className="panel">
       <div className="panel-header">
+        <BotaoRecolher chave="estrutura-organizacional-1" />
         <div>
           <h2>{titulo}</h2>
           <p>{itens.length} registro(s)</p>
@@ -333,6 +335,7 @@ export default function EstruturaOrganizacional() {
         {aba === 'hierarquia' ? (
           <div className="panel" style={{ marginTop: 16 }}>
             <div className="panel-header">
+              <BotaoRecolher chave="estrutura-organizacional-2" />
               <div>
                 <h2>Hierarquia Organizacional</h2>
                 <p>

@@ -5,6 +5,7 @@ import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
 import { fetchPendentes, aprovar, reprovar, tabelaDisponivel } from '../lib/contasPendentesData'
 import { PREFIXO_PL } from '../lib/linhasPl'
+import BotaoRecolher from '../components/BotaoRecolher'
 
 const brl = (v) =>
   `R$ ${Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -139,6 +140,7 @@ export default function PendenciaCadastros() {
             {emAnalise && (
               <div className="panel" style={{ marginBottom: 18 }}>
                 <div className="panel-header">
+                  <BotaoRecolher chave="pendencia-cadastros-1" />
                   <div>
                     <h2>Cadastrar “{emAnalise.rotulo}”</h2>
                     <p>

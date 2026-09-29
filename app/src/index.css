@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    Protótipo visual - App de Orçamento Corporativo (BU / Torres / Corporate)
    Apenas front-end estático para simular a experiência do usuário.
    ========================================================================== */
@@ -3199,3 +3199,52 @@ tfoot td {
 .dd-linha-ok .dd-marca { color: var(--color-success); }
 .dd-linha-fora .dd-marca { color: var(--color-danger); }
 .dd-linha-dispensada { opacity: 0.6; }
+
+/* ---------------------------------------------- Recolher painel
+   O botão fica à esquerda do título, e quem esconde o corpo é o seletor
+   :has() abaixo, lendo o aria-expanded do próprio botão — sem classe posta
+   em pai nenhum por JavaScript. */
+.painel-recolher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  flex: none;
+  order: -1;
+}
+
+.painel-recolher:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+.painel-recolher span {
+  transition: transform 0.15s ease;
+}
+
+.painel-recolher[aria-expanded='false'] span {
+  transform: rotate(-90deg);
+}
+
+/* O título encosta no botão; o que for ação continua indo para a direita. */
+.panel-header > .painel-recolher + * {
+  margin-right: auto;
+}
+
+/* Recolhido: some tudo o que não é o cabeçalho. */
+.panel:has(> .panel-header > .painel-recolher[aria-expanded='false']) > *:not(.panel-header) {
+  display: none;
+}
+
+.panel:has(> .panel-header > .painel-recolher[aria-expanded='false']) > .panel-header {
+  border-bottom: none;
+}

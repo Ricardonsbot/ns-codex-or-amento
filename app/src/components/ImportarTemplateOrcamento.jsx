@@ -23,6 +23,7 @@ import {
   TEMPLATE,
 } from '../lib/importarTemplateOrcamento'
 import { registrarImportacao, marcarDesfeito, resumoDaImportacao, amarrarLancamentos } from '../lib/importacoesData'
+import BotaoRecolher from './BotaoRecolher'
 
 const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
@@ -533,6 +534,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
       {previa && (
         <div className="panel" style={{ marginTop: 14 }}>
           <div className="panel-header">
+            <BotaoRecolher chave="importar-template-orcamento-1" />
             <div>
               <h2>Conferência da importação</h2>
               <p>
@@ -723,6 +725,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
             {quadros && (
               <div className="panel" style={{ marginBottom: 16 }}>
                 <div className="panel-header">
+                  <BotaoRecolher chave="importar-template-orcamento-2" />
                   <div>
                     <h2>Como entra no P&amp;L</h2>
                     <p>
@@ -740,6 +743,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
             {classificacao.length > 0 && (
               <div className="panel" style={{ marginBottom: 16 }}>
                 <div className="panel-header">
+                  <BotaoRecolher chave="importar-template-orcamento-3" />
                   <div>
                     <h2>O que cada conta representa</h2>
                     <p>
@@ -798,6 +802,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
             {quadros && (
               <div className="panel" style={{ marginBottom: 16 }}>
                 <div className="panel-header">
+                  <BotaoRecolher chave="importar-template-orcamento-4" />
                   <div>
                     <h2>Como fica o resultado</h2>
                     <p>O que estas {aImportar.length} linha(s) somam por estrutura, antes de gravar</p>

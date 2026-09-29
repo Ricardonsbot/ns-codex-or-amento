@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { useToast } from '../../components/ToastProvider'
 import { fetchIndices, createIndice, updateIndice, deleteIndice, fetchValoresMensais, salvarValoresMensais } from '../../lib/indicesData'
+import BotaoRecolher from '../../components/BotaoRecolher'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
@@ -129,6 +130,7 @@ export default function Indices() {
 
         <div className="panel">
           <div className="panel-header">
+            <BotaoRecolher chave="indices-1" />
             <div>
               <h2>Índices Cadastrados</h2>
               <p>Clique em uma linha para ver/editar os valores mensais abaixo</p>
@@ -206,6 +208,7 @@ export default function Indices() {
         {selecionado && valores && (
           <div className="panel aux-panel">
             <div className="panel-header">
+              <BotaoRecolher chave="indices-2" />
               <div>
                 <h2>Valores Mensais</h2>
                 <p>Índice selecionado: <strong>{selecionado.tipo} · {selecionado.aplicacao} · {selecionado.ano}</strong></p>

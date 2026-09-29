@@ -5,6 +5,7 @@ import SeletorColunas from '../../components/SeletorColunas'
 import { exportarExcel } from '../../lib/excelUtils'
 import { nomeArquivoExportacao, MODULOS } from '../../lib/modulos'
 import dados from '../../data/alcadas-aprovacao.json'
+import BotaoRecolher from '../../components/BotaoRecolher'
 
 const VISOES = [
   { chave: 'bu', rotulo: 'BU' },
@@ -139,6 +140,7 @@ export default function AlcadasAprovacao() {
         {organograma.map(({ grupo, linhas }) => (
           <div className="panel" key={grupo}>
             <div className="panel-header">
+              <BotaoRecolher chave="alcadas-aprovacao-1" />
               <div>
                 <h2>{grupo}</h2>
                 <p>

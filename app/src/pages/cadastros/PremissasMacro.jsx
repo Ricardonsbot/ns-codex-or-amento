@@ -6,6 +6,7 @@ import { useToast } from '../../components/ToastProvider'
 import { exportarExcel } from '../../lib/excelUtils'
 import { nomeArquivoExportacao, MODULOS } from '../../lib/modulos'
 import { MESES, fetchAnos, fetchPremissas, salvarValor, acumular, formatar } from '../../lib/premissasData'
+import BotaoRecolher from '../../components/BotaoRecolher'
 
 export default function PremissasMacro() {
   const [exportacao, setExportacao] = useState(null)
@@ -95,6 +96,7 @@ export default function PremissasMacro() {
       <div className="content">
         <div className="panel">
           <div className="panel-header">
+            <BotaoRecolher chave="premissas-macro-1" />
             <div>
               <h2>Índices e câmbio {ano ?? ''}</h2>
               <p>

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useUnidade } from './UnidadeProvider'
+import BotaoRecolher from './BotaoRecolher'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
@@ -65,6 +66,7 @@ export default function ResumoLancamentos({ linhas, rotulo }) {
   return (
     <div className="panel">
       <div className="panel-header">
+        <BotaoRecolher chave="resumo-lancamentos-1" />
         <div>
           <h2>Resumo de {rotulo}</h2>
           <p>

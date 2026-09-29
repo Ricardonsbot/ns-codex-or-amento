@@ -24,6 +24,7 @@ import {
   duplicarLancamento,
   fetchLancamentosParaExportar,
 } from '../../lib/lancamentosData'
+import BotaoRecolher from '../../components/BotaoRecolher'
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
@@ -318,6 +319,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
 
         <div className="panel launch-context-panel">
           <div className="panel-header">
+            <BotaoRecolher chave="orcamento-entry-1" />
             <div>
               <h2>Contexto</h2>
               <p>
@@ -386,6 +388,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
         {temGrade && (
         <div className="panel">
           <div className="panel-header">
+            <BotaoRecolher chave="orcamento-entry-2" />
             <div>
               <h2>Lançamento de {rotulo}</h2>
               <p>Valores mensais em R$. Clique em 💾 para salvar a linha após editar.</p>

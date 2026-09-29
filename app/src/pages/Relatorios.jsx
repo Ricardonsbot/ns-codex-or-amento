@@ -5,6 +5,7 @@ import { fetchVersaoAtual } from '../lib/lancamentosData'
 import { fetchRelatorio } from '../lib/relatoriosData'
 import BotaoUnidade from '../components/BotaoUnidade'
 import { useUnidade } from '../components/UnidadeProvider'
+import BotaoRecolher from '../components/BotaoRecolher'
 
 const CLASSE_NIVEL = ['report-bu-row', 'report-torre-row', 'report-subtorre-row', 'report-empresa-row']
 
@@ -62,6 +63,7 @@ export default function Relatorios() {
         {versaoAtual?.versao && (
           <div className="panel">
             <div className="panel-header">
+              <BotaoRecolher chave="relatorios-1" />
               <div>
                 <h2>Receita, Despesa, Capex e EBITDA por estrutura</h2>
                 <p>{loading ? 'Carregando…' : `${linhas.length} linha(s)`}</p>

@@ -18,6 +18,7 @@ import {
 } from '../lib/deepDive'
 import { LIBERACOES } from '../lib/importacoesData'
 import { exportarExcel } from '../lib/excelUtils'
+import BotaoRecolher from '../components/BotaoRecolher'
 
 const umaCasa = (v) => Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
@@ -236,6 +237,7 @@ export default function DeepDive() {
       <div className="content folha">
         <div className="panel recorte">
           <div className="panel-header">
+            <BotaoRecolher chave="deep-dive-1" />
             <div>
               <h2>Recorte</h2>
               <p>Ano e versão do orçamento que vai ser conferido</p>
@@ -327,6 +329,7 @@ export default function DeepDive() {
           <div className="dd-grid">
             <div className="panel dd-coluna">
               <div className="panel-header">
+                <BotaoRecolher chave="deep-dive-2" />
                 <div>
                   <h2>{dimensao === 'template' ? 'Templates' : rotuloDimensao}</h2>
                   <p>
@@ -377,6 +380,7 @@ export default function DeepDive() {
             {template && (
               <div className="panel dd-coluna">
                 <div className="panel-header">
+                  <BotaoRecolher chave="deep-dive-3" />
                   <div>
                     <h2>{template.nome}</h2>
                     <p>
@@ -414,6 +418,7 @@ export default function DeepDive() {
             {check && (
               <div className="panel dd-detalhe">
                 <div className="panel-header">
+                  <BotaoRecolher chave="deep-dive-4" />
                   <div>
                     <h2>{check.titulo}</h2>
                     <p>{check.regra}</p>

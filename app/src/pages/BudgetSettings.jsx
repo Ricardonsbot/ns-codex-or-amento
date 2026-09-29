@@ -12,6 +12,7 @@ import {
   reprovarVersao,
   duplicarVersao,
 } from '../lib/ciclosData'
+import BotaoRecolher from '../components/BotaoRecolher'
 
 const STATUS_CICLO = {
   em_elaboracao: { label: 'Em elaboração', classe: 'status-rascunho' },
@@ -163,6 +164,7 @@ export default function BudgetSettings() {
       <div className="content">
         <div className="panel">
           <div className="panel-header">
+            <BotaoRecolher chave="budget-settings-1" />
             <div>
               <h2>Ciclos</h2>
               <p>Um Ciclo por ano de orçamento — clique em um para ver suas versões</p>
@@ -215,6 +217,7 @@ export default function BudgetSettings() {
         {cicloSelecionado && (
           <div className="panel">
             <div className="panel-header">
+              <BotaoRecolher chave="budget-settings-2" />
               <div>
                 <h2>Versões — Ciclo {cicloSelecionado.ano}</h2>
                 <p>Histórico de versões deste ciclo, da mais recente para a mais antiga</p>

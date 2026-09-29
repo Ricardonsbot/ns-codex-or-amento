@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import BotaoRecolher from './BotaoRecolher'
 
 /**
  * Passo a passo de como submeter um Template Budget.
@@ -85,6 +86,7 @@ export default function TutorialImportacao({ etapa = 1, janela, onFechar }) {
     return (
       <div className="panel">
         <div className="panel-header">
+          <BotaoRecolher chave="tutorial-importacao-1" />
           <div>
             <h2>Como submeter um template</h2>
             <p>Cinco passos, do arquivo até o orçamento gravado</p>

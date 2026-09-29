@@ -5,6 +5,7 @@ import { useToast } from '../../components/ToastProvider'
 import ImportExportBar from '../../components/ImportExportBar'
 import { fetchContas, createConta, updateConta, deleteConta } from '../../lib/contasData'
 import { MODULOS, nomeArquivoExportacao } from '../../lib/modulos'
+import BotaoRecolher from '../../components/BotaoRecolher'
 
 const CAMPOS_VAZIOS = { codigo: '', nome: '', linha_pl: '', categoria: '' }
 const COLUNAS = [
@@ -123,6 +124,7 @@ export default function ContasContabeis() {
       <div className="content">
         <div className="panel">
           <div className="panel-header">
+            <BotaoRecolher chave="contas-contabeis-1" />
             <div>
               <h2>Nova Conta</h2>
               <p>Cadastre uma conta contábil para uso no plano de contas</p>
@@ -175,6 +177,7 @@ export default function ContasContabeis() {
 
         <div className="panel">
           <div className="panel-header">
+            <BotaoRecolher chave="contas-contabeis-2" />
             <div>
               <h2>Contas Cadastradas</h2>
               <p>{loading ? 'Carregando…' : `${contas.length} conta(s)`}</p>

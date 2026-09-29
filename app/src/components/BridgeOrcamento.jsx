@@ -1,5 +1,6 @@
 import { computeBridge } from '../lib/dashboardData'
 import GraficoBridge from './GraficoBridge'
+import BotaoRecolher from './BotaoRecolher'
 
 /**
  * A ponte Revenue → EBITDA after Capex.
@@ -28,6 +29,7 @@ export default function BridgeOrcamento({ receita, despesa, capex, titulo, subti
   return (
     <div className="panel">
       <div className="panel-header">
+        <BotaoRecolher chave="bridge-orcamento-1" />
         <div>
           <h2>{titulo ?? 'Resumo do Orçamento — Revenue → EBITDA after Capex'}</h2>
           {subtitulo && <p>{subtitulo}</p>}

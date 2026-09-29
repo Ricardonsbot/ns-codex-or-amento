@@ -6,6 +6,7 @@ import ImportExportBar from '../../components/ImportExportBar'
 import { fetchAll, criar, atualizar, remover } from '../../lib/cadastroSimplesData'
 import { CADASTROS_SIMPLES } from '../../lib/cadastrosSimplesConfig'
 import { MODULOS, nomeArquivoExportacao } from '../../lib/modulos'
+import BotaoRecolher from '../../components/BotaoRecolher'
 
 function campoVazio(campos) {
   return Object.fromEntries(campos.map((c) => [c.key, '']))
@@ -130,6 +131,7 @@ export default function CadastroSimples() {
       <div className="content">
         <div className="panel">
           <div className="panel-header">
+            <BotaoRecolher chave="cadastro-simples-1" />
             <div>
               <h2>Novo registro</h2>
             </div>
@@ -160,6 +162,7 @@ export default function CadastroSimples() {
 
         <div className="panel">
           <div className="panel-header">
+            <BotaoRecolher chave="cadastro-simples-2" />
             <div>
               <h2>Registros</h2>
               <p>{loading ? 'Carregando…' : `${itens.length} registro(s)`}</p>

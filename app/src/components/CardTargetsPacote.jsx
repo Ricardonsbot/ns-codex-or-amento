@@ -4,6 +4,7 @@ import { useToast } from './ToastProvider'
 import { useUnidade } from './UnidadeProvider'
 import BotaoUnidade from './BotaoUnidade'
 import { contarTargetsPacote, gravarTargetsPacote, pacotesCadastrados } from '../lib/targetsData'
+import BotaoRecolher from './BotaoRecolher'
 
 /**
  * O template do pacoteiro, importado como target em vez de lançamento.
@@ -89,6 +90,7 @@ export default function CardTargetsPacote({ linhas, anoTemplate, arquivo, respon
   return (
     <div className="panel" style={{ marginBottom: 16 }}>
       <div className="panel-header">
+        <BotaoRecolher chave="card-targets-pacote-1" />
         <div>
           <h2>🎯 Target por pacote</h2>
           <p>o total deste template por pacote — entra como teto do ano, não como lançamento</p>

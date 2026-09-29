@@ -13,6 +13,7 @@ import FiltroBotoes from './FiltroBotoes'
 import ChecklistImportacao from './ChecklistImportacao'
 import BotaoUnidade from './BotaoUnidade'
 import { useUnidade } from './UnidadeProvider'
+import BotaoRecolher from './BotaoRecolher'
 
 const TIPOS = [
   { valor: 'receita', rotulo: 'Revenue' },
@@ -165,6 +166,7 @@ export default function HistoricoImportacoes({ versao }) {
   return (
     <div className="panel" style={{ marginTop: 16 }}>
       <div className="panel-header">
+        <BotaoRecolher chave="historico-importacoes-1" />
         <div>
           <h2>Templates importados</h2>
           <p>Clique num template para ver o status · valores {u.faixa}, ano inteiro</p>

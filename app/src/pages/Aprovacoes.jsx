@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useToast } from '../components/ToastProvider'
 import { fetchTodasVersoesPendentes, ativarVersao, reprovarVersao } from '../lib/ciclosData'
+import BotaoRecolher from '../components/BotaoRecolher'
 
 export default function Aprovacoes() {
   const showToast = useToast()
@@ -60,6 +61,7 @@ export default function Aprovacoes() {
 
         <div className="panel">
           <div className="panel-header">
+            <BotaoRecolher chave="aprovacoes-1" />
             <div>
               <h2>Pendentes de Aprovação</h2>
               <p>{loading ? 'Carregando…' : `${pendentes.length} versão(ões) em rascunho`}</p>

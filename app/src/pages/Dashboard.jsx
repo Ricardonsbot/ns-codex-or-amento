@@ -7,6 +7,7 @@ import BotaoUnidade from '../components/BotaoUnidade'
 import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
 import { bigNumbers } from '../lib/quadrosResultado'
 import Indicadores from '../components/Indicadores'
+import BotaoRecolher from '../components/BotaoRecolher'
 
 // Escolha de quem está olhando, não dado do orçamento: fica no navegador.
 const CHAVE_ACESSO_RAPIDO = 'ns-budget:acesso-rapido-aberto'
@@ -187,6 +188,7 @@ export default function Dashboard() {
 
         <div className="panel">
           <div className="panel-header">
+            <BotaoRecolher chave="dashboard-1" />
             <div>
               <h2>Acesso Rápido</h2>
               <p>Navegue pelas funcionalidades do orçamento sem sair do menu</p>

@@ -20,6 +20,7 @@ import MenuExportar from '../components/MenuExportar'
 import { montarExportacaoEmpilhada } from '../lib/exportarResultado'
 import { fetchLancamentosParaExportar } from '../lib/lancamentosData'
 import { useUnidade } from '../components/UnidadeProvider'
+import BotaoRecolher from '../components/BotaoRecolher'
 
 const umaCasa = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 const brl = (v) => Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -303,6 +304,7 @@ export default function Resultado() {
       <div className="content folha">
         <div className="panel recorte">
           <div className="panel-header">
+            <BotaoRecolher chave="resultado-1" />
             <div>
               <h2>Recorte</h2>
               <p>Ano, mês de referência, BU, Torre, Empresa e unidade — vale para todas as visões abaixo</p>
@@ -451,6 +453,7 @@ export default function Resultado() {
 
             <div className="panel" style={{ marginBottom: 18 }}>
               <div className="panel-header">
+                <BotaoRecolher chave="resultado-2" />
                 <div>
                   <h2>{abaAtual.rotulo}</h2>
                   <p>

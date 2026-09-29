@@ -23,6 +23,7 @@ import {
 import { registrarImportacao, marcarDesfeito, resumoDaImportacao, amarrarLancamentos } from '../lib/importacoesData'
 import { temMapasDeCadastro } from '../lib/lerCadastrosTemplate'
 import { useUnidade } from '../components/UnidadeProvider'
+import BotaoRecolher from '../components/BotaoRecolher'
 
 const ROTULO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
 const NOME = { receita: 'receita', despesa: 'despesa', capex: 'capex' }
@@ -226,6 +227,7 @@ function CardTipo({ tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar
   return (
     <div className="panel" style={{ marginBottom: 16 }}>
       <div className="panel-header">
+        <BotaoRecolher chave="gestao-importacao-1" />
         <div>
           <h2>{ROTULO[tipo]}</h2>
           <p>
