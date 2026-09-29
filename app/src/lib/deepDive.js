@@ -291,7 +291,14 @@ export function rodarChecks(linhas) {
     const noEscopo = linhas.filter(r.escopo)
     const dispensadas = r.dispensa ? noEscopo.filter(r.dispensa) : []
     const dentro = r.dispensa ? noEscopo.filter((l) => !r.dispensa(l)) : noEscopo
-    const fora = dentro.filter((l) => !r.conforme(l)).map((l) => ({ ...l, motivo: porQue(r, l) }))
+    // Cada linha do escopo sai carimbada com o que aconteceu com ela. A tela
+    // mostra tanto só as reprovadas quanto o conjunto inteiro: sem ver o que
+    // passou não dá para saber se o check olhou o que devia.
+    const avaliadas = [
+      ...dentro.map((l) => ({ ...l, estado: r.conforme(l) ? 'ok' : 'fora', motivo: r.conforme(l) ? null : porQue(r, l) })),
+      ...dispensadas.map((l) => ({ ...l, estado: 'dispensada', motivo: 'exceção da própria regra' })),
+    ]
+    const fora = avaliadas.filter((l) => l.estado === 'fora')
     const valorEscopo = valorDe(dentro)
     const valorFora = valorDe(fora)
     return {
@@ -300,9 +307,9 @@ export function rodarChecks(linhas) {
       regra: r.regra,
       fonte: r.fonte,
       area: r.area ?? null,
-      linhas: dentro,
+      linhas: avaliadas,
       fora,
-      dispensadas: dispensadas.length,
+      nDispensadas: dispensadas.length,
       nEscopo: dentro.length,
       nFora: fora.length,
       valorEscopo,
@@ -387,6 +394,27 @@ export async function fetchDeepDive(versaoId) {
     diretoria: l.diretoria ?? '',
     valor: (l.lancamento_valor_mensal ?? []).reduce((a, v) => a + Number(v.valor ?? 0), 0),
   }))
+}
+
+/**
+ * Quantos lançamentos cada versão do ciclo tem.
+ *
+ * A tela usa isso para abrir já numa versão que tenha dado: a versão de
+ * referência do ciclo pode estar vazia (o Budget Base 2026, por exemplo), e
+ * aí o Deep Dive abria dizendo "nenhum lançamento" como se não houvesse nada
+ * a conferir no ano inteiro.
+ */
+export async function contarPorVersao(versoes) {
+  const pares = await Promise.all(
+    (versoes ?? []).map(async (v) => {
+      const { count, error } = await supabase
+        .from('lancamento')
+        .select('id', { count: 'exact', head: true })
+        .eq('versao_id', v.id)
+      return [v.id, error ? 0 : count ?? 0]
+    })
+  )
+  return new Map(pares)
 }
 
 /**

@@ -6,7 +6,14 @@ import { useToast } from '../components/ToastProvider'
 import { useUnidade } from '../components/UnidadeProvider'
 import { fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
 import { fetchVersaoAtual } from '../lib/lancamentosData'
-import { fetchDeepDive, fetchTemplatesImportados, agruparTemplates, rodarChecks, piorCor } from '../lib/deepDive'
+import {
+  fetchDeepDive,
+  fetchTemplatesImportados,
+  contarPorVersao,
+  agruparTemplates,
+  rodarChecks,
+  piorCor,
+} from '../lib/deepDive'
 import { LIBERACOES } from '../lib/importacoesData'
 import { exportarExcel } from '../lib/excelUtils'
 
@@ -14,6 +21,12 @@ const umaCasa = (v) => Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionD
 
 /** Quantas linhas fora a tabela mostra antes de mandar exportar. */
 const LIMITE_TABELA = 100
+
+const ESTADO = {
+  ok: { marca: '✓', rotulo: 'dentro da regra' },
+  fora: { marca: '✕', rotulo: 'fora da regra' },
+  dispensada: { marca: '–', rotulo: 'dispensada pela exceção' },
+}
 
 const DIZ = {
   verde: 'dentro da regra',
@@ -61,6 +74,9 @@ export default function DeepDive() {
   const [carregando, setCarregando] = useState(true)
   const [templateId, setTemplateId] = useState(null)
   const [checkId, setCheckId] = useState(null)
+  // No detalhe: só as reprovadas, ou todas as linhas que a regra olhou.
+  const [verTudo, setVerTudo] = useState(false)
+  const [porVersao, setPorVersao] = useState(new Map())
 
   useEffect(() => {
     ;(async () => {
@@ -78,6 +94,26 @@ export default function DeepDive() {
   const ciclo = ciclos.find((c) => c.id === cicloId) ?? null
   const versoes = ciclo?.versao ?? []
   const versao = versoes.find((v) => v.id === versaoId) ?? versaoReferencia(ciclo)
+
+  // Quantos lançamentos cada versão tem: é o que deixa a tela abrir numa que
+  // tenha dado, em vez de na versão de referência do ciclo, que pode estar
+  // vazia — e também é o que o botão de cada versão mostra.
+  useEffect(() => {
+    if (!versoes.length) return
+    let cancelado = false
+    contarPorVersao(versoes).then((mapa) => {
+      if (cancelado) return
+      setPorVersao(mapa)
+      const atual = versao?.id ? mapa.get(versao.id) ?? 0 : 0
+      if (atual) return
+      const cheia = [...mapa.entries()].sort((a, b) => b[1] - a[1])[0]
+      if (cheia?.[1]) setVersaoId(cheia[0])
+    })
+    return () => {
+      cancelado = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cicloId, versoes.length])
 
   useEffect(() => {
     if (!versao?.id) return
@@ -125,9 +161,11 @@ export default function DeepDive() {
   const lista = consolidado ? [consolidado, ...templates] : []
   const template = lista.find((t) => t.id === templateId) ?? null
   const check = template?.checks.find((c) => c.id === checkId) ?? null
+  // O que a tabela mostra — e é também o que a exportação leva.
+  const visiveis = check ? (verTudo ? check.linhas : check.fora) : []
 
   function exportar() {
-    if (!check?.fora.length) return
+    if (!visiveis.length) return
     const colunas = [
       'Empresa',
       'Tipo',
@@ -140,10 +178,10 @@ export default function DeepDive() {
       'Fornecedor',
       'Centro de custo',
       'Detalhamento',
-      'Por que caiu',
+      'Situação',
       'Valor (R$)',
     ].map((key) => ({ key }))
-    const dados = check.fora.map((l) => ({
+    const dados = visiveis.map((l) => ({
       Empresa: l.empresa,
       Tipo: l.tipo,
       Conta: l.conta_codigo,
@@ -155,7 +193,7 @@ export default function DeepDive() {
       Fornecedor: l.fornecedor,
       'Centro de custo': l.centro_custo_nome,
       Detalhamento: l.detalhamento || l.descricao,
-      'Por que caiu': l.motivo,
+      'Situação': l.motivo ?? 'dentro da regra',
       'Valor (R$)': l.valor,
     }))
     exportarExcel(`deep-dive-${check.id}`, dados, colunas)
@@ -196,12 +234,15 @@ export default function DeepDive() {
                     setVersaoId('')
                   }}
                 />
-                {versoes.length > 1 && (
+                {versoes.length > 0 && (
                   <FiltroBotoes
-                    label="Versão"
+                    label="Versão (lançamentos)"
                     valor={versao?.id ?? ''}
                     semTodas
-                    opcoes={versoes.map((v) => ({ valor: v.id, rotulo: v.nome }))}
+                    opcoes={versoes.map((v) => ({
+                      valor: v.id,
+                      rotulo: `${v.nome} · ${(porVersao.get(v.id) ?? 0).toLocaleString('pt-BR')}`,
+                    }))}
                     onChange={setVersaoId}
                   />
                 )}
@@ -214,7 +255,10 @@ export default function DeepDive() {
 
         {!carregando && !linhas?.length && (
           <div className="empty-hint">
-            Nenhum lançamento nessa versão. Importe um template em Gestão de Importação, ou escolha outra versão.
+            Nenhum lançamento na versão <strong>{versao?.nome ?? '—'}</strong>
+            {[...porVersao.entries()].some(([, n]) => n > 0)
+              ? ' — escolha outra versão acima: a contagem ao lado do nome diz quantos lançamentos cada uma tem.'
+              : '. Importe um template em Gestão de Importação.'}
           </div>
         )}
 
@@ -297,7 +341,10 @@ export default function DeepDive() {
                         <button
                           type="button"
                           className={`dd-item${c.id === checkId ? ' ativo' : ''}`}
-                          onClick={() => setCheckId(c.id)}
+                          onClick={() => {
+                            setCheckId(c.id)
+                            setVerTudo(false)
+                          }}
                         >
                           <Farol cor={c.cor} />
                           <span className="dd-item-nome">
@@ -319,9 +366,9 @@ export default function DeepDive() {
                     <h2>{check.titulo}</h2>
                     <p>{check.regra}</p>
                   </div>
-                  {check.fora.length > 0 && (
+                  {visiveis.length > 0 && (
                     <button type="button" className="btn btn-secondary btn-sm" onClick={exportar}>
-                      Exportar linhas
+                      Exportar {verTudo ? 'todas' : 'as reprovadas'}
                     </button>
                   )}
                 </div>
@@ -351,9 +398,9 @@ export default function DeepDive() {
                         <span>{check.medida.rotulo}</span>
                       </div>
                     )}
-                    {check.dispensadas > 0 && (
+                    {check.nDispensadas > 0 && (
                       <div>
-                        <strong>{check.dispensadas}</strong>
+                        <strong>{check.nDispensadas}</strong>
                         <span>dispensadas pela exceção</span>
                       </div>
                     )}
@@ -366,45 +413,75 @@ export default function DeepDive() {
                     </p>
                   )}
 
-                  {check.nEscopo > 0 && check.nFora === 0 && <p className="text-muted">Tudo dentro da regra.</p>}
-
-                  {check.nFora > 0 && (
+                  {check.nEscopo > 0 && (
                     <>
-                      <div className="table-wrap">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Empresa</th>
-                              <th>Conta</th>
-                              <th>Área</th>
-                              <th>Subpacote</th>
-                              <th>Fornecedor / detalhe</th>
-                              <th>Por que caiu</th>
-                              <th className="text-right">{u.faixa}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {check.fora.slice(0, LIMITE_TABELA).map((l) => (
-                              <tr key={l.id}>
-                                <td>{l.empresa}</td>
-                                <td>
-                                  {[l.conta_codigo, l.conta_nome].filter(Boolean).join(' · ')}
-                                </td>
-                                <td>{l.area_ajustada || l.area || '—'}</td>
-                                <td>{l.subpacote || '—'}</td>
-                                <td>
-                                  {[l.fornecedor, l.detalhamento || l.descricao].filter(Boolean).join(' · ') || '—'}
-                                </td>
-                                <td className="dd-motivo">{l.motivo}</td>
-                                <td className="text-right">{numero(l.valor)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      {/* As duas visões: o que reprovou, e tudo que a regra
+                          olhou. Sem a segunda não dá para saber se o check
+                          pegou as linhas certas — e é ela que mostra o que
+                          passou e o que a exceção dispensou. */}
+                      <div className="dd-abas">
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${verTudo ? 'btn-ghost' : 'btn-secondary'}`}
+                          onClick={() => setVerTudo(false)}
+                        >
+                          Fora da regra ({check.nFora})
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${verTudo ? 'btn-secondary' : 'btn-ghost'}`}
+                          onClick={() => setVerTudo(true)}
+                        >
+                          Todas as linhas do check ({check.linhas.length})
+                        </button>
                       </div>
-                      {check.fora.length > LIMITE_TABELA && (
+
+                      {!visiveis.length && (
+                        <p className="text-muted">Tudo dentro da regra — nenhuma linha reprovada.</p>
+                      )}
+
+                      {visiveis.length > 0 && (
+                        <div className="table-wrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th aria-label="Situação" />
+                                <th>Empresa</th>
+                                <th>Conta</th>
+                                <th>Área</th>
+                                <th>Subpacote</th>
+                                <th>Fornecedor / detalhe</th>
+                                <th>Situação</th>
+                                <th className="text-right">{u.faixa}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {visiveis.slice(0, LIMITE_TABELA).map((l) => (
+                                <tr key={l.id} className={`dd-linha-${l.estado}`}>
+                                  <td className="dd-marca" title={ESTADO[l.estado]?.rotulo}>
+                                    {ESTADO[l.estado]?.marca}
+                                  </td>
+                                  <td>{l.empresa}</td>
+                                  <td>{[l.conta_codigo, l.conta_nome].filter(Boolean).join(' · ')}</td>
+                                  <td>{l.area_ajustada || l.area || '—'}</td>
+                                  <td>{l.subpacote || '—'}</td>
+                                  <td>
+                                    {[l.fornecedor, l.detalhamento || l.descricao].filter(Boolean).join(' · ') || '—'}
+                                  </td>
+                                  <td className={l.estado === 'fora' ? 'dd-motivo' : 'text-muted'}>
+                                    {l.motivo ?? 'dentro da regra'}
+                                  </td>
+                                  <td className="text-right">{numero(l.valor)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {visiveis.length > LIMITE_TABELA && (
                         <p className="text-muted">
-                          Mostrando {LIMITE_TABELA} de {check.fora.length}. Exporte para ver todas.
+                          Mostrando {LIMITE_TABELA} de {visiveis.length}. Exporte para ver todas.
                         </p>
                       )}
                     </>

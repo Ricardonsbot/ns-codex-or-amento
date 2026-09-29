@@ -3187,3 +3187,15 @@ tfoot td {
 .dd-detalhe .table-wrap { max-height: 480px; overflow: auto; }
 
 .dd-motivo { color: var(--color-danger); font-size: 12px; }
+
+/* As duas visões do check: só as reprovadas, ou o escopo inteiro. */
+.dd-abas {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.dd-marca { text-align: center; font-weight: 700; width: 24px; }
+.dd-linha-ok .dd-marca { color: var(--color-success); }
+.dd-linha-fora .dd-marca { color: var(--color-danger); }
+.dd-linha-dispensada { opacity: 0.6; }
