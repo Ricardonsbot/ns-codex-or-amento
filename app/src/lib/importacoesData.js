@@ -377,7 +377,7 @@ export function resumoDaImportacao({ ano, versao, tipo, linhas, fora, marcadas, 
  *
  *   Essencial     o que o consolidado precisa para fechar. Falhou, o template
  *                 fica "Não liberado" e vira impedimento.
- *   Ideal         o que enriquece a análise (MRR, cliente, churn, subpacote).
+ *   Ideal         o que enriquece a análise (MRR, cliente, churn).
  *                 Falhou, é pendência: consolida do mesmo jeito.
  *   Medidas       Net Revenue, Gasto, Capex e Fluxo de Caixa, com o sinal de
  *                 que o arquivo trouxe cada um.
@@ -389,7 +389,13 @@ export function avaliar(registro, escopo = 'arquivo') {
   const t = registro?.totais ?? {}
   const usados = ['receita', 'despesa', 'capex'].filter((x) => tipos[x])
   const linhas = usados.reduce((a, x) => a + (tipos[x]?.linhas ?? 0), 0)
-  const vazio = (campo) => usados.reduce((a, x) => a + (tipos[x]?.vazios?.[campo] ?? 0), 0)
+  // Pacote e subpacote só existem nas abas de gasto. Contar as linhas de
+  // Receita como "sem pacote" acusaria o arquivo inteiro por uma coluna que
+  // a aba da Receita nem tem — e num template só de receita o item some.
+  const SO_GASTO = new Set(['pacote', 'subpacote'])
+  const tiposCom = (campo) => (SO_GASTO.has(campo) ? usados.filter((x) => x !== 'receita') : usados)
+  const linhasCom = (campo) => tiposCom(campo).reduce((a, x) => a + (tipos[x]?.linhas ?? 0), 0)
+  const vazio = (campo) => tiposCom(campo).reduce((a, x) => a + (tipos[x]?.vazios?.[campo] ?? 0), 0)
   const temCampo = (campo) => usados.some((x) => tipos[x]?.vazios?.[campo] !== undefined)
   const somar = (campo) => usados.reduce((a, x) => a + (tipos[x]?.[campo] ?? 0), 0)
 
@@ -424,7 +430,17 @@ export function avaliar(registro, escopo = 'arquivo') {
       'Pacote',
       vazio('pacote') + pacoteFora,
       vazio('pacote') + pacoteFora
-        ? `${vazio('pacote')} sem preencher · ${pacoteFora} fora do cadastro de Pacotes`
+        ? `${vazio('pacote')} de ${linhasCom('pacote')} sem preencher · ${pacoteFora} fora do cadastro de Pacotes`
+        : 'preenchido e cadastrado'
+    ),
+    // Subpacote é essencial junto com o pacote: é por ele que o gasto abre
+    // dentro do pacote, e sem ele o dono do pacote não sabe do que é a conta.
+    item(
+      'subpacote',
+      'Subpacote',
+      vazio('subpacote') + subFora,
+      vazio('subpacote') + subFora
+        ? `${vazio('subpacote')} de ${linhasCom('subpacote')} sem preencher · ${subFora} fora do cadastro de Subpacotes`
         : 'preenchido e cadastrado'
     ),
     item(
@@ -445,21 +461,9 @@ export function avaliar(registro, escopo = 'arquivo') {
     ['mrr', 'MRR'],
     ['cliente', 'Cliente'],
     ['churn', 'Churn'],
-    ['subpacote', 'Subpacote'],
   ]
     .filter(([campo]) => temCampo(campo) && vazio(campo) < linhas) // campo que o template não traz não vira item
-    .map(([campo, rotulo]) =>
-      campo === 'subpacote'
-        ? item(
-            campo,
-            rotulo,
-            vazio(campo) + subFora,
-            vazio(campo) + subFora
-              ? `${vazio(campo)} sem preencher · ${subFora} fora do cadastro de Subpacotes`
-              : 'preenchido e cadastrado'
-          )
-        : item(campo, rotulo, vazio(campo))
-    )
+    .map(([campo, rotulo]) => item(campo, rotulo, vazio(campo)))
 
   const impedimentos = essenciais.filter((i) => !i.ok)
   const pendencias = ideais.filter((i) => !i.ok)
@@ -547,7 +551,7 @@ export function exemploDeHistorico() {
     // Essencial ok, mas falta preencher campos do Ideal: pendência.
     linha('exemplo-2', 'Template Budget 2027 - BRK', brk, {
       receita: info(520, { vazios: { mrr: 120, cliente: 60 }, caixa: 173_000_000 }),
-      despesa: info(380, { vazios: { subpacote: 95 }, caixa: 95_000_000 }),
+      despesa: info(380, { caixa: 95_000_000 }),
       capex: info(80, { caixa: 6_000_000 }),
     }, 5),
     linha(
@@ -556,7 +560,7 @@ export function exemploDeHistorico() {
       buonny,
       {
         receita: info(150, { vazios: { cliente: 40 }, caixa: 20_000_000 }),
-        despesa: info(95, { vazios: { subpacote: 30 }, caixa: 14_500_000 }),
+        despesa: info(95, { caixa: 14_500_000 }),
       },
       26,
       {
