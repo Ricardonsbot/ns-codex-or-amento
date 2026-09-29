@@ -204,6 +204,22 @@ export const REGRAS = [
     },
   },
   {
+    id: 'sinal',
+    titulo: 'Gasto lançado como positivo',
+    rigor: 'qualquer',
+    regra:
+      'No template, gasto e capex são escritos como negativo. Linha positiva entra no P&L reduzindo a despesa — e a ferramenta não conserta o sinal sozinha: ela aponta a linha, porque quem sabe se aquilo é erro de digitação ou um crédito de verdade é quem lançou.',
+    fonte: 'Convenção do Template Budget · Base Gastos e Capex (a leitura nega o valor, não tira o módulo)',
+    escopo: (l) => l.tipo !== 'receita',
+    conforme: (l) => l.valor >= 0,
+    motivo: (l) => {
+      const pista = PISTA_CREDITO.exec(livre(l))
+      return pista
+        ? `positivo no template · o texto diz "${pista[0]}" — pode ser crédito, confira`
+        : 'positivo no template · gasto deveria vir negativo'
+    },
+  },
+  {
     id: 'ativacao',
     titulo: '% de ativação',
     regra: 'Em projetos em andamento, é o campo de área do P&L que diz se o gasto foi ativado. A conta contábil respeita a natureza original — então área em branco deixa o projeto sem definição.',
@@ -252,6 +268,13 @@ const contaDeCyber = (l) => contaEh(l, '4703004006', '4703004008') || norm(l.sub
 /** Serviço ou licença lançado na conta que é só de seguro. */
 const seguroTrocado = (l) => contaEh(l, '4703004006') && /servic|licenc|consultor/.test(livre(l))
 
+/**
+ * Palavras que explicam um gasto positivo. Não decidem nada — só põem na
+ * frente de quem confere o que a própria linha diz, para separar o estorno
+ * legítimo do sinal digitado errado.
+ */
+const PISTA_CREDITO = /estorno|credito|reembolso|devoluc|recuperac|glosa|cancelament|ressarcim|abatiment/
+
 /** Ativado = virou Capex/Intangível, e não despesa do período. */
 const ehAtivacao = (l) => l.tipo === 'capex' || /ativa/.test(norm(l.area_ajustada || l.area)) || /capex|intangible/.test(norm(l.linha_pl_template))
 
@@ -268,9 +291,13 @@ const parte = (subconjunto, todos) => {
  * o corte é pelo valor fora, não pela contagem: uma linha errada de R$ 2 mi
  * pesa mais que dez de R$ 200.
  */
-function bandeira(nEscopo, valorFora, valorEscopo) {
+function bandeira(nEscopo, valorFora, valorEscopo, rigor) {
   if (!nEscopo) return 'cinza'
   if (!valorFora) return 'verde'
+  // Regra de rigor "qualquer": uma linha já é vermelho. Vale para o sinal
+  // invertido, que num universo de milhares de linhas de gasto nunca chegaria
+  // a 5% do valor e ficaria amarelo para sempre.
+  if (rigor === 'qualquer') return 'vermelho'
   return valorFora / (valorEscopo || valorFora) > 0.05 ? 'vermelho' : 'amarelo'
 }
 
@@ -315,7 +342,7 @@ export function rodarChecks(linhas) {
       valorEscopo,
       valorFora,
       medida: r.medida ? { rotulo: r.medida.rotulo, valor: r.medida.calcular(dentro) } : null,
-      cor: bandeira(dentro.length, valorFora, valorEscopo),
+      cor: bandeira(dentro.length, valorFora, valorEscopo, r.rigor),
     }
   })
 }

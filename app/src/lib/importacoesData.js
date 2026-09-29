@@ -99,7 +99,8 @@ export function resumirLinhas(linhas, tipo) {
  *   semArea       linhas de gasto operacional sem área de alocação — sem ela
  *                 o valor não vira CoGS, G&A, S&M nem R&D
  *   mesesVazios   empresas com algum mês sem valor nenhum: budget com buraco
- *   sinaisTrocados linhas de gasto com total negativo (ou receita negativa)
+ *   sinaisTrocados linhas de gasto que vieram positivas no template (aqui
+ *                  ficam negativas), e receita negativa que não seja dedução
  */
 const norm = (v) =>
   String(v ?? '')
@@ -186,9 +187,13 @@ export function medirLinhas(linhas, tipo, cadastros) {
     const total = p.total ?? soma(p.valores)
     for (const [chave, tem] of Object.entries(PREENCHIMENTO)) if (!tem({ ...p, total })) vazios[chave] += 1
     for (const v of p.valores ?? []) caixa += Number(v?.valor_caixa ?? 0)
-    if (tipo !== 'receita' && total < 0) sinaisTrocados += 1
-    if (tipo === 'receita' && total < 0) sinaisTrocados += 1
     const chave = classificar({ tipo, conta: p.conta, area: p.area, area_ajustada: p.area_ajustada })
+    // Gasto e capex são guardados como magnitude positiva: negativo aqui quer
+    // dizer que a linha veio positiva no template, e assim ela entra no P&L
+    // reduzindo a despesa. A dedução de receita é negativa por natureza e
+    // estava sendo contada como sinal trocado — falso positivo em todo
+    // template que traz receita.
+    if (total < 0 && (tipo !== 'receita' || chave !== 'ded')) sinaisTrocados += 1
     if (tipo !== 'capex' && chave === 'semArea') semArea += 1
     if (p.conta && (!chave || String(chave).startsWith('fora:'))) {
       plDesconhecida += 1
@@ -501,6 +506,22 @@ export function avaliar(registro, escopo = 'arquivo') {
   ]
     .filter(([campo]) => temCampo(campo) && vazio(campo) < linhas) // campo que o template não traz não vira item
     .map(([campo, rotulo]) => item(campo, rotulo, vazio(campo)))
+
+  // Sinal do valor: não é impedimento — um estorno no meio dos gastos é
+  // positivo de propósito, e a ferramenta não decide isso por ninguém. Mas
+  // ninguém pode decidir sem antes saber que a linha existe, e até aqui o
+  // número era contado e nunca mostrado.
+  const sinais = somar('sinaisTrocados')
+  ideais.push(
+    item(
+      'sinal',
+      'Sinal do valor',
+      sinais,
+      sinais
+        ? `${sinais} linha(s) de gasto positivas no template — confira se é crédito ou sinal trocado`
+        : 'todas com o sinal esperado'
+    )
+  )
 
   const impedimentos = essenciais.filter((i) => !i.ok)
   const pendencias = ideais.filter((i) => !i.ok)
