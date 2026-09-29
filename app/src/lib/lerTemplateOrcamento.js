@@ -626,7 +626,22 @@ function lerAba(aba, cfg, tipo) {
     // "x" e "xx" são as colunas/linhas separadoras do template, não dado
     if (lim(empresa) === 'X') continue
 
-    const valores = meses.map((c, i) => ({ mes: i + 1, valor: (numero(l, c) ?? 0) * cfg.sinal }))
+    // Texto onde era para ter número não pode virar zero em silêncio: uma
+    // frase escrita na célula do mês sumiria como R$ 0 e a linha entraria no
+    // orçamento como se estivesse preenchida. Aqui só se anota; quem recusa
+    // é o casamento.
+    const naoNumericos = []
+    const anotarTexto = (c, rotulo) => {
+      const bruta = texto(l, c)
+      // O cabeçalho das colunas de mês é um serial do Excel (46388), que não
+      // diz nada a quem vai corrigir: ali o rótulo vem pronto de quem chama.
+      if (util(bruta)) naoNumericos.push({ coluna: rotulo || texto(cab, c) || `coluna ${c + 1}`, valor: bruta })
+    }
+    const valores = meses.map((c, i) => {
+      const n = numero(l, c)
+      if (n === null) anotarTexto(c, `mês ${i + 1}`)
+      return { mes: i + 1, valor: (n ?? 0) * cfg.sinal }
+    })
     const t = (nome) => (col[nome] === undefined ? '' : texto(l, col[nome]))
     const campos = cfg.monta(t)
 
@@ -653,6 +668,7 @@ function lerAba(aba, cfg, tipo) {
       if (alvoNumero) {
         const n = numero(l, c)
         if (n !== null) doBanco[alvoNumero] = n
+        else anotarTexto(c)
         continue
       }
       const v = texto(l, c)
@@ -661,8 +677,13 @@ function lerAba(aba, cfg, tipo) {
       else curinga[rotuloDe[k] ?? k] = paraTexto(bruto(l, c)?.v, k)
     }
 
-    if (!valores.some((v) => v.valor !== 0)) {
-      if (util(empresa) || util(campos.contaCodigo) || util(campos.contaRotulo)) ignoradas += 1
+    const temIdentidade = util(empresa) || util(campos.contaCodigo) || util(campos.contaRotulo)
+    // A linha sem valor nenhum é descartada, como sempre — menos quando ela
+    // tem texto onde era para ter número: essa precisa chegar viva ao
+    // casamento para ser recusada com explicação, em vez de sumir na
+    // contagem das ignoradas.
+    if (!valores.some((v) => v.valor !== 0) && !(naoNumericos.length && temIdentidade)) {
+      if (temIdentidade) ignoradas += 1
       continue
     }
 
@@ -674,11 +695,13 @@ function lerAba(aba, cfg, tipo) {
       cols.forEach((c, i) => {
         const n = numero(l, c)
         if (n !== null) porMes[i][campo] = n * escala
+        else anotarTexto(c, `mês ${i + 1} · ${campo}`)
       })
     }
 
     linhas.push({
       linha: l,
+      naoNumericos: naoNumericos.length ? naoNumericos : null,
       empresa,
       ...campos,
       // Depois de `campos` de propósito: o que veio direto da planilha manda

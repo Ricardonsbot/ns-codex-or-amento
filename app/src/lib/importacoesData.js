@@ -261,6 +261,7 @@ export async function registrarImportacao({
   linhas,
   apagados,
   fora,
+  textoEmNumero,
   marcadas,
   somouEmCima,
   cadastros,
@@ -275,6 +276,10 @@ export async function registrarImportacao({
     // O que a conferência apontou, para o checklist da flag: linhas que não
     // entraram por falta de empresa cadastrada e linhas que entraram sem conta.
     fora: fora ?? 0,
+    // Quantas das recusadas foram por texto numa coluna de valor. Vem à
+    // parte porque é impedimento de outra natureza — e sem separar, o item
+    // "Empresa" contaria essas linhas como empresa fora do cadastro.
+    textoEmNumero: textoEmNumero ?? 0,
     marcadas: marcadas ?? 0,
     somouEmCima: Boolean(somouEmCima),
     ...medirLinhas(linhas, tipo, cadastros),
@@ -384,7 +389,18 @@ export async function listarImportacoes(limite = 200) {
  * o banco. Serve ao checklist que aparece na tela logo depois de gravar —
  * assim ele funciona mesmo antes de a migração do histórico ter rodado.
  */
-export function resumoDaImportacao({ ano, versao, tipo, linhas, fora, marcadas, apagados, somouEmCima, cadastros }) {
+export function resumoDaImportacao({
+  ano,
+  versao,
+  tipo,
+  linhas,
+  fora,
+  textoEmNumero,
+  marcadas,
+  apagados,
+  somouEmCima,
+  cadastros,
+}) {
   const empresas = resumirLinhas(linhas, tipo)
   return {
     ano: ano ?? null,
@@ -394,6 +410,7 @@ export function resumoDaImportacao({ ano, versao, tipo, linhas, fora, marcadas, 
         linhas: linhas.length,
         apagados: apagados ?? 0,
         fora: fora ?? 0,
+        textoEmNumero: textoEmNumero ?? 0,
         marcadas: marcadas ?? 0,
         somouEmCima: Boolean(somouEmCima),
         ...medirLinhas(linhas, tipo, cadastros),
@@ -451,7 +468,11 @@ export function avaliar(registro, escopo = 'arquivo') {
 
   // Essenciais. Empresa e conta olham também o cadastro: campo preenchido com
   // nome que não existe no cadastro não serve para consolidar.
-  const foraEmpresa = somar('fora')
+  // As recusadas por texto saem da conta da empresa: são o mesmo `fora`, mas
+  // por outro motivo, e somá-las ali faria o item acusar empresa não
+  // cadastrada onde o problema era outro.
+  const comTexto = somar('textoEmNumero')
+  const foraEmpresa = Math.max(0, somar('fora') - comTexto)
   const semConta = somar('marcadas')
   const foraDoCadastro = (dim) => usados.reduce((a, x) => a + (tipos[x]?.cadastros?.[dim]?.linhas ?? 0), 0)
   const ccFora = foraDoCadastro('centroCusto')
@@ -496,6 +517,17 @@ export function avaliar(registro, escopo = 'arquivo') {
       'Empresa',
       foraEmpresa,
       foraEmpresa ? `${foraEmpresa} linha(s) com empresa fora do cadastro` : 'todas cadastradas'
+    ),
+    // Valor tem que ser número. Frase escrita na célula do mês não entra como
+    // zero: a linha é recusada, e o template não é liberado enquanto isso
+    // estiver lá.
+    item(
+      'valorTexto',
+      'Valor em número',
+      comTexto,
+      comTexto
+        ? `${comTexto} linha(s) recusada(s) com texto numa coluna de valor`
+        : 'nenhum texto em coluna de valor'
     ),
   ]
 

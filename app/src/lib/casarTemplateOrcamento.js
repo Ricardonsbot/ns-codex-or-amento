@@ -70,7 +70,9 @@ export function montarResolvedorDeConta(contas, tipo, { aceitaTambem } = {}) {
  *              para o valor não ficar de fora do orçamento enquanto o plano de
  *              contas não acompanha a planilha
  *   fora       sem empresa — não há como gravar: `lancamento.bu_id` é
- *              obrigatório e a BU vem da empresa
+ *              obrigatório e a BU vem da empresa —, ou com texto numa coluna
+ *              de valor, que é recusa direta: ninguém adivinha quanto vale
+ *              uma frase, e deixá-la entrar como zero é pior do que barrar
  */
 /**
  * A linha da Base Gastos é Capex? Qualquer um dos três sinais basta:
@@ -110,6 +112,15 @@ export function casar({ tipo, aba, linhas }, { empresas, contas }) {
       outroModulo.push({ ...l, destino: ehCapex ? 'despesa' : 'capex' })
       continue
     }
+    // Texto onde era para ter número: recusa antes de qualquer outra coisa.
+    // Não adianta resolver empresa e conta de uma linha cujo valor ninguém
+    // sabe qual é.
+    if (l.naoNumericos?.length) {
+      const quais = l.naoNumericos.map((x) => `${x.coluna}: "${x.valor}"`).join(' · ')
+      fora.push({ ...l, falhas: [`Texto onde era para ter número — ${quais}`] })
+      continue
+    }
+
     const empresa = porEmpresa.get(lim(l.empresa))
     const { conta, erro } = (ehCapex && daBaseGastos(l) ? acharContaAtivacao : acharConta)(l.contaCodigo, l.contaRotulo)
 
