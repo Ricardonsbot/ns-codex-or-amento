@@ -416,6 +416,29 @@ function montarTemplate(base, linhas) {
 
 const quando = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : null)
 
+/** Os valores distintos de um campo, sem vazio e em ordem. */
+const distintos = (linhas, campo) =>
+  [...new Set(linhas.map((l) => (l[campo] || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
+/**
+ * O nome do template.
+ *
+ * Não dá para usar o nome do arquivo: em 2027 todo mundo preenche o mesmo
+ * "Template Budget 2027_Full", e a lista viria com vinte itens de nome
+ * idêntico. Quem identifica é o que veio dentro — a empresa, quando é uma
+ * só; a torre, quando o arquivo é de uma torre inteira. O nome do arquivo
+ * continua logo abaixo, na linha do detalhe.
+ */
+function nomeDoConjunto(linhas) {
+  const empresas = distintos(linhas, 'empresa')
+  if (empresas.length === 1) return empresas[0]
+  if (empresas.length === 2) return empresas.join(' + ')
+  const torres = distintos(linhas, 'torre')
+  if (torres.length === 1) return `${torres[0]} · ${empresas.length} empresas`
+  if (torres.length > 1 && torres.length <= 3) return `${torres.join(' + ')} · ${empresas.length} empresas`
+  return `${empresas.length} empresas`
+}
+
 /**
  * A lista de templates da esquerda.
  *
@@ -444,8 +467,8 @@ export function agruparTemplates(linhas, registros = []) {
         {
           id: r.id,
           origem: 'arquivo',
-          nome: r.arquivo,
-          detalhe: [quando(r.criado_em), r.usuario_nome || r.usuario_email, tipos.join(' + ')]
+          nome: nomeDoConjunto(doArquivo),
+          detalhe: [r.arquivo, quando(r.criado_em), r.usuario_nome || r.usuario_email, tipos.join(' + ')]
             .filter(Boolean)
             .join(' · '),
           liberacao: r.liberacao ?? 'aguardando',
