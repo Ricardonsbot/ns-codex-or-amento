@@ -7,6 +7,7 @@ import ChecklistImportacao from '../components/ChecklistImportacao'
 import AlertaStatus from '../components/AlertaStatus'
 import TutorialImportacao from '../components/TutorialImportacao'
 import HistoricoImportacoes from '../components/HistoricoImportacoes'
+import TemplatesRecusados from '../components/TemplatesRecusados'
 import CardTargetsPacote from '../components/CardTargetsPacote'
 import CargaCadastros from '../components/CargaCadastros'
 import { useToast } from '../components/ToastProvider'
@@ -806,6 +807,8 @@ export default function GestaoImportacao() {
         )}
 
         <HistoricoImportacoes versao={versaoHistorico} />
+
+        <TemplatesRecusados versao={versaoHistorico} />
 
         {tutorialAberto && (
           <TutorialImportacao etapa={etapaTutorial} janela onFechar={() => setTutorialAberto(false)} />

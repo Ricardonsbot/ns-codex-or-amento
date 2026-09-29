@@ -168,11 +168,8 @@ export default function HistoricoImportacoes({ versao }) {
       <div className="panel-header">
         <BotaoRecolher chave="historico-importacoes-1" />
         <div>
-          <h2>Templates</h2>
-          <p>
-            Importados e recusados, do mais novo para o mais antigo · clique para ver o status · valores {u.faixa},
-            ano inteiro
-          </p>
+          <h2>Templates importados</h2>
+          <p>Clique num template para ver o status · valores {u.faixa}, ano inteiro</p>
         </div>
         <FiltroBotoes
           label="Liberação"
@@ -195,7 +192,8 @@ export default function HistoricoImportacoes({ versao }) {
         {!semTabela && !erro && !registros && <div className="empty-hint">Carregando…</div>}
         {registros && !registros.length && (
           <div className="empty-hint">
-            Nenhum template ainda. Cada importação confirmada — e cada tentativa recusada — aparece aqui.
+            Nenhum template importado ainda. Cada importação confirmada aparece aqui; o que a ferramenta recusou fica
+            no painel de baixo.
           </div>
         )}
 
@@ -220,16 +218,15 @@ export default function HistoricoImportacoes({ versao }) {
               </thead>
               <tbody>
                 {registros
+                  // O recusado não entrou: não tem número, não tem liberação,
+                  // e tem painel só dele logo abaixo.
+                  .filter((r) => r.resultado !== 'recusado')
                   .filter((r) => !filtro || (r.liberacao ?? 'aguardando') === filtro)
                   .map((r) => {
                   const t = r.totais ?? {}
                   const a = avaliar(r)
                   const empresas = r.empresas ?? []
                   const estaAberto = aberto === r.id
-                  // A tentativa recusada não tem número nenhum para mostrar:
-                  // o que ela tem a dizer é quem tentou, quando, e por que
-                  // não entrou.
-                  const recusado = r.resultado === 'recusado'
                   return (
                     <Fragment key={r.id}>
                     <tr
@@ -273,30 +270,18 @@ export default function HistoricoImportacoes({ versao }) {
                         </div>
                       </td>
                       <td className="text-center" style={{ whiteSpace: 'nowrap' }}>
-                        {recusado ? (
-                          <span className="bolinha vermelho" title="Recusado" aria-hidden="true" />
-                        ) : (
-                          <>
-                            <span className={`bolinha ${a.corEssencial}`} title="Essencial" aria-hidden="true" />
-                            <span className={`bolinha ${a.corIdeal}`} title="Ideal" aria-hidden="true" />
-                          </>
-                        )}
+                        <span className={`bolinha ${a.corEssencial}`} title="Essencial" aria-hidden="true" />
+                        <span className={`bolinha ${a.corIdeal}`} title="Ideal" aria-hidden="true" />
                       </td>
-                      <td className="motivo-template">{recusado ? 'Recusado' : a.motivo}</td>
-                      <td className="motivo-template">{recusado ? r.recusa_motivo : a.apto ? 'Apto para consolidar' : 'Não apto'}</td>
+                      <td className="motivo-template">{a.motivo}</td>
+                      <td className="motivo-template">{a.apto ? 'Apto para consolidar' : 'Não apto'}</td>
                       <td onClick={(e) => e.stopPropagation()}>
-                        {recusado ? (
-                          <span className="text-muted" style={{ fontSize: 12 }}>
-                            não entrou
-                          </span>
-                        ) : (
-                          <LiberacaoCelula
-                            registro={r}
-                            apto={a.apto}
-                            ocupado={mexendo === r.id}
-                            onDecidir={(status) => decidir(r, status)}
-                          />
-                        )}
+                        <LiberacaoCelula
+                          registro={r}
+                          apto={a.apto}
+                          ocupado={mexendo === r.id}
+                          onDecidir={(status) => decidir(r, status)}
+                        />
                       </td>
                       <td>
                         <div className="flex-row" style={{ gap: 4, flexWrap: 'wrap' }}>
