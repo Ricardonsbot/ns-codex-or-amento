@@ -30,6 +30,7 @@ const NAV_SECTIONS = [
     label: 'Análise',
     items: [
       { to: '/resultado', icone: 'resultado', text: 'Resultado' },
+      { to: '/deep-dive', icone: 'lupa', text: 'Deep Dive' },
       { to: '/relatorios', icone: 'relatorio', text: 'Relatórios' },
     ],
   },

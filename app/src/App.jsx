@@ -20,6 +20,7 @@ import Aprovacoes from './pages/Aprovacoes'
 import PendenciaCadastros from './pages/PendenciaCadastros'
 import GestaoImportacao from './pages/GestaoImportacao'
 import Resultado from './pages/Resultado'
+import DeepDive from './pages/DeepDive'
 import Relatorios from './pages/Relatorios'
 import BudgetSettings from './pages/BudgetSettings'
 
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/aprovacoes" element={<RequireAuth><Aprovacoes /></RequireAuth>} />
           <Route path="/pendencia-cadastros" element={<RequireAuth><PendenciaCadastros /></RequireAuth>} />
           <Route path="/resultado" element={<RequireAuth><Resultado /></RequireAuth>} />
+          <Route path="/deep-dive" element={<RequireAuth><DeepDive /></RequireAuth>} />
           <Route path="/relatorios" element={<RequireAuth><Relatorios /></RequireAuth>} />
           <Route path="/cadastros" element={<RequireAuth><Cadastros /></RequireAuth>} />
           <Route path="/cadastros/contas" element={<RequireAuth><ContasContabeis /></RequireAuth>} />
