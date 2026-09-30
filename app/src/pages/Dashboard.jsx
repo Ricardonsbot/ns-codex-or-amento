@@ -130,6 +130,56 @@ export default function Dashboard() {
       </header>
 
       <div className="content">
+        {/* Ordem pedida: menu de acesso rápido primeiro, depois os big
+            numbers, depois os filtros — e só então os dados que eles
+            recortam. */}
+        <div className="panel">
+          <div className="panel-header">
+            <BotaoRecolher chave="dashboard-1" />
+            <div>
+              <h2>Acesso Rápido</h2>
+              <p>Navegue pelas funcionalidades do orçamento sem sair do menu</p>
+            </div>
+            <button
+              type="button"
+              className="panel-toggle"
+              aria-expanded={acessoAberto}
+              title={acessoAberto ? 'Recolher o acesso rápido' : 'Mostrar o acesso rápido'}
+              onClick={() => alternarAcesso()}
+            >
+              {acessoAberto ? '▾ Recolher' : '▸ Mostrar'}
+            </button>
+          </div>
+          <div className="panel-body" hidden={!acessoAberto}>
+            <div className="action-strip">
+              <Link to="/orcamento/despesa">
+                <div className="hub-card hub-inserir">
+                  <div className="hub-icon"><Icone nome="inserir" tamanho={22} /></div>
+                  <h3>Inserir</h3>
+                  <p>Lançar valores de Receita, Despesa e Capex.</p>
+                  <div className="hub-cta">Novo lançamento →</div>
+                </div>
+              </Link>
+              <Link to="/cadastros">
+                <div className="hub-card hub-cadastrar">
+                  <div className="hub-icon"><Icone nome="cadastros" tamanho={22} /></div>
+                  <h3>Cadastrar</h3>
+                  <p>Usuários, contas, índices, layouts e mais.</p>
+                  <div className="hub-cta">Abrir cadastros →</div>
+                </div>
+              </Link>
+              <div className="hub-card hub-exportar" onClick={() => showToast('Exportação simulada gerada', 'info')}>
+                <div className="hub-icon"><Icone nome="exportar" tamanho={22} /></div>
+                <h3>Exportar</h3>
+                <p>Baixar o resumo do orçamento do ciclo atual.</p>
+                <div className="hub-cta">Exportar dados →</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {indicadores && <Indicadores itens={indicadores} />}
+
         <div className="filter-bar">
           <div className="filter-field">
             <label>BU</label>
@@ -179,53 +229,6 @@ export default function Dashboard() {
           </div>
           <BotaoUnidade />
           {loading && <span className="text-muted">Atualizando…</span>}
-        </div>
-
-        {indicadores && <Indicadores itens={indicadores} />}
-
-        <div className="panel">
-          <div className="panel-header">
-            <BotaoRecolher chave="dashboard-1" />
-            <div>
-              <h2>Acesso Rápido</h2>
-              <p>Navegue pelas funcionalidades do orçamento sem sair do menu</p>
-            </div>
-            <button
-              type="button"
-              className="panel-toggle"
-              aria-expanded={acessoAberto}
-              title={acessoAberto ? 'Recolher o acesso rápido' : 'Mostrar o acesso rápido'}
-              onClick={() => alternarAcesso()}
-            >
-              {acessoAberto ? '▾ Recolher' : '▸ Mostrar'}
-            </button>
-          </div>
-          <div className="panel-body" hidden={!acessoAberto}>
-            <div className="action-strip">
-              <Link to="/orcamento/despesa">
-                <div className="hub-card hub-inserir">
-                  <div className="hub-icon"><Icone nome="inserir" tamanho={22} /></div>
-                  <h3>Inserir</h3>
-                  <p>Lançar valores de Receita, Despesa e Capex.</p>
-                  <div className="hub-cta">Novo lançamento →</div>
-                </div>
-              </Link>
-              <Link to="/cadastros">
-                <div className="hub-card hub-cadastrar">
-                  <div className="hub-icon"><Icone nome="cadastros" tamanho={22} /></div>
-                  <h3>Cadastrar</h3>
-                  <p>Usuários, contas, índices, layouts e mais.</p>
-                  <div className="hub-cta">Abrir cadastros →</div>
-                </div>
-              </Link>
-              <div className="hub-card hub-exportar" onClick={() => showToast('Exportação simulada gerada', 'info')}>
-                <div className="hub-icon"><Icone nome="exportar" tamanho={22} /></div>
-                <h3>Exportar</h3>
-                <p>Baixar o resumo do orçamento do ciclo atual.</p>
-                <div className="hub-cta">Exportar dados →</div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </Layout>
