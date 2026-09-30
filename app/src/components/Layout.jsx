@@ -140,7 +140,7 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar, ultimo
       <Link
         to={no.to}
         className={`nav-item${ativo ? ' active' : ''}${primeiroNivel ? '' : ' nav-item-sub'}${classeUltimo ? ' nav-item-sub-ultimo' : ''}`}
-        style={{ paddingLeft: primeiroNivel ? 12 : recuo }}
+        style={{ paddingLeft: primeiroNivel ? 4 : recuo }}
       >
         {!primeiroNivel && (
           <span className={`nav-icon${no.cor ? ` ${no.cor}` : ''}`}>
@@ -163,7 +163,7 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar, ultimo
         onClick={() => alternar(no.id)}
         aria-expanded={aberto}
         title={aberto ? 'Recolher' : 'Expandir'}
-        style={{ paddingLeft: primeiroNivel ? 10 : recuo }}
+        style={{ paddingLeft: primeiroNivel ? 4 : recuo }}
       >
         {!primeiroNivel && (
           <span className="nav-icon">
