@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import ImportWizard from '../components/ImportWizard'
 import ProgressoGravacao from '../components/ProgressoGravacao'
@@ -541,9 +541,14 @@ export default function GestaoImportacao() {
   const showToast = useToast()
   const inputRef = useRef(null)
   const [arquivo, setArquivo] = useState('')
+  // O menu tem dois links pra esta mesma tela — "Importar - Template FP&A" e
+  // "Importar - Pacote" — e é o `?modo=pacote` do segundo que já chega com o
+  // interruptor ligado, sem a pessoa precisar marcar o checkbox na mão.
+  const [searchParams] = useSearchParams()
+  const modoPacote = searchParams.get('modo') === 'pacote'
   // O template é um só; o que muda é o papel de quem preencheu. Marcado, o
   // arquivo entra como target do pacote em vez de lançamento.
-  const [comoTarget, setComoTarget] = useState(false)
+  const [comoTarget, setComoTarget] = useState(modoPacote)
   // O File fica guardado porque a carga de cadastros relê o arquivo por conta
   // própria — as abas de cadastro não passam pela leitura dos lançamentos.
   const [blob, setBlob] = useState(null)
@@ -603,7 +608,10 @@ export default function GestaoImportacao() {
     } catch {
       setTemMapas(false)
     }
-    setComoTarget(false)
+    // Volta pro modo de quem trouxe até aqui — não pro padrão fixo: quem
+    // entrou por "Importar - Pacote" continua em modo pacote ao trocar de
+    // arquivo na mesma visita, sem precisar marcar o checkbox de novo.
+    setComoTarget(modoPacote)
 
     setLendo(true)
     setTodos(null)
@@ -715,7 +723,7 @@ export default function GestaoImportacao() {
     <Layout>
       <header className="topbar">
         <div className="topbar-title">
-          <h1>Gestão de Importação</h1>
+          <h1>{modoPacote ? 'Importar - Pacote' : 'Importar - Template FP&A'}</h1>
           <p>
             Suba o template uma vez — a ferramenta reconhece qual dos quatro é e confere o que aquele formato tem de
             trazer.

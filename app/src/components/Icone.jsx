@@ -36,6 +36,8 @@ const ICONES = {
   inserir: ['M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .622.622l4.353-1.32a2 2 0 0 0 .83-.497Z', 'm15 5 4 4'],
   // seta saindo da bandeja: baixar arquivo (oposto de "importar")
   exportar: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M7 10l5 5 5-5', 'M12 15V3'],
+  // carteira: categoria Budget no menu
+  budget: ['M21 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z', 'M3 7V5a2 2 0 0 1 2-2h10', 'M17 13h.01'],
 
   // ---- cadastros (a página de parâmetros)
   contas: ['M3 5h18v14H3z', 'M3 10h18', 'M8 15h3'],

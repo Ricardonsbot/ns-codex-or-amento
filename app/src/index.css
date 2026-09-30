@@ -186,14 +186,24 @@ a { color: inherit; text-decoration: none; }
 }
 
 .sidebar-section-label:hover .secao-chevron { color: var(--color-primary); }
-.sidebar-section.fechada .secao-chevron { transform: rotate(-90deg); }
+.menu-grupo.fechado .secao-chevron { transform: rotate(-90deg); }
 
-/* Seção fechada não precisa do respiro de quem tem itens embaixo. */
-.sidebar-section.fechada .sidebar-section-label { padding-bottom: 4px; }
+/* Grupo fechado não precisa do respiro de quem tem itens embaixo. */
+.menu-grupo.fechado .menu-grupo-btn { padding-bottom: 4px; }
 
-/* Uma linha fininha entre grupos: separa sem pesar, como o design system
-   pede — borda em vez de sombra. */
-.sidebar-section + .sidebar-section { border-top: 1px solid var(--color-border); }
+/* Uma linha fininha entre grupos de primeiro nível: separa sem pesar, como
+   o design system pede — borda em vez de sombra. */
+.menu-grupo + .menu-grupo { border-top: 1px solid var(--color-border); }
+
+/* O menu agora é uma árvore: um grupo pode conter outro grupo (Análise
+   dentro de Visão Geral, Gestão de Documentos dentro de Importação). A
+   indentação em si é inline (por profundidade); aqui só a estrutura do
+   contêiner, sem repetir espaçamento a cada nível. */
+.menu-filhos { display: flex; flex-direction: column; }
+
+.menu-grupo-btn { gap: 10px; }
+.menu-grupo-btn .nav-icon { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.menu-grupo-btn .secao-chevron { margin-left: auto; }
 
 .nav-item {
   display: flex;
