@@ -273,7 +273,6 @@ export default function Layout({ children }) {
               />
             ))}
 
-        <div className="sidebar-section-label sidebar-section-label-fixo">Conta</div>
         <div className="nav-item" onClick={handleSair} style={{ cursor: 'pointer' }}>
           <span className="nav-icon">
             <Icone nome="sair" />
