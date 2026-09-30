@@ -240,9 +240,17 @@ a { color: inherit; text-decoration: none; }
 /* Grupo fechado não precisa do respiro de quem tem itens embaixo. */
 .menu-grupo.fechado .menu-grupo-btn { padding-bottom: 4px; }
 
-/* Uma linha fininha entre grupos de primeiro nível: separa sem pesar, como
-   o design system pede — borda em vez de sombra. */
-.menu-grupo + .menu-grupo { border-top: 1px solid var(--color-border); }
+/* Uma linha fininha entre categorias de primeiro nível: separa sem pesar,
+   como o design system pede — borda em vez de sombra. Antes era
+   ".menu-grupo + .menu-grupo", mas o rail quebrou essa adjacência: cada
+   categoria virou um par [ícone, conteúdo] dentro de .sidebar-rail-grid,
+   então o segundo .menu-grupo não é mais irmão direto do primeiro (tem um
+   .sidebar-rail-icone no meio). A partir do 3º filho do grid (ou seja, a
+   partir da 2ª categoria) a linha cai no ícone E no conteúdo do mesmo par,
+   formando uma régua inteira atravessando as duas colunas — e não só
+   separa, como alinha visualmente o ícone do rail com o começo do bloco de
+   menu dele. */
+.sidebar-rail-grid > div:nth-child(n + 3) { border-top: 1px solid var(--color-border); }
 
 /* O menu agora é uma árvore: um grupo pode conter outro grupo (Análise
    dentro de Visão Geral, Gestão de Documentos dentro de Importação). A
@@ -271,9 +279,13 @@ a { color: inherit; text-decoration: none; }
 .menu-grupo-btn .nav-icon { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; }
 .menu-grupo-btn .secao-chevron { margin-left: auto; }
 
-/* A linha entre grupos de primeiro nível não pode mais encostar no botão —
-   ele agora tem a mesma margem lateral de um nav-item. */
-.menu-grupo + .menu-grupo { padding-top: 7px; margin-top: 6px; }
+/* Respiro antes da régua acima (mesmo motivo: via .sidebar-rail-grid, não
+   mais ".menu-grupo + .menu-grupo"). Só margin-top, nunca padding-top: o
+   ícone já tem seu próprio padding-top calibrado pra bater com o padding
+   do botão (ver .sidebar-rail-icone) — mexer nisso aqui quebraria esse
+   alinhamento. Margin-top empurra os dois IGUALMENTE pra baixo da régua,
+   preservando a mesma distância entre eles. */
+.sidebar-rail-grid > div:nth-child(n + 3) { margin-top: 6px; }
 
 /* Submenu (profundidade > 0): só o primeiro nível leva ícone. Aqui embaixo
    o texto sozinho, menor e mais claro, já diz "isto é um item dentro de
