@@ -3427,3 +3427,9 @@ tfoot td {
 .grafico-tooltip span { display: flex; align-items: center; gap: 6px; }
 .grafico-tooltip b { margin-left: auto; font-variant-numeric: tabular-nums; }
 .grafico-linhas-unidade { text-align: right; font-size: 11px; color: var(--color-text-faint); }
+
+/* A bolinha de status dentro do chip: no chip ativo ela fica sobre o
+   laranja, e o vermelho some. O anel da cor da superfície a separa de
+   qualquer fundo. */
+.filtro-chip .bolinha { margin-right: 2px; vertical-align: -1px; }
+.filtro-chip.ativo .bolinha { box-shadow: 0 0 0 2px var(--color-surface); }

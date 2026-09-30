@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useImperativeHandle, useRef, useState } from 'react'
+﻿import { Fragment, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import ImportWizard from '../components/ImportWizard'
@@ -34,7 +34,6 @@ import {
   amarrarLancamentos,
 } from '../lib/importacoesData'
 import { temMapasDeCadastro } from '../lib/lerCadastrosTemplate'
-import { useUnidade } from '../components/UnidadeProvider'
 import BotaoRecolher from '../components/BotaoRecolher'
 
 const ROTULO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
@@ -73,7 +72,6 @@ const semCadastro = (m) =>
  */
 function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImportado, onRegistrar, onDesfeito }) {
   const showToast = useToast()
-  const { comMoeda } = useUnidade()
   const { sessao } = useAuth()
   const email = sessao?.user?.email
   const [previa, setPrevia] = useState(null)
@@ -244,8 +242,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
   // As duas recusas são de natureza diferente e o aviso precisa dizer qual é:
   // texto numa coluna de valor não é empresa fora do cadastro.
-  const total = aImportar.reduce((a, p) => a + p.total, 0)
-  const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
   const semVersao = previa && !previa.versao
   // A conferência por conta: é o que a tabela desenha. A regra mora em
   // conferenciaPorConta.js, testada à parte.
@@ -392,21 +388,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
                 onAbrir={() => setStatusPrevia(true)}
               />
             )}
-
-            <div className="flex-row" style={{ gap: 20, flexWrap: 'wrap', marginBottom: 12, padding: '10px 12px', borderRadius: 6, background: 'var(--color-surface-alt, #f2f4f7)', border: '1px solid var(--color-border, #e2e5ea)' }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700 }}>{aImportar.length}</div>
-                <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6 }}>linhas</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700 }}>{comMoeda(total)}</div>
-                <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6 }}>total do ano</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700 }}>{empresas}</div>
-                <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6 }}>empresas</div>
-              </div>
-            </div>
 
             {porConta.length > 0 && (
               <>
@@ -563,6 +544,9 @@ export default function GestaoImportacao() {
   const [gravados, setGravados] = useState(0)
   // Qual módulo o "importar tudo" está gravando agora; null quando parado.
   const [importandoTudo, setImportandoTudo] = useState(null)
+  // Qual módulo está aberto na conferência. Os três continuam montados — é
+  // deles que sai o resumo do topo, e é neles que o "importar tudo" bate.
+  const [moduloAberto, setModuloAberto] = useState(null)
   // A prévia de cada módulo, reportada pelos cards: é o que alimenta o
   // sumário de ofensas do arquivo inteiro.
   const [previas, setPrevias] = useState({})
@@ -708,6 +692,19 @@ export default function GestaoImportacao() {
   const tiposVazios = todos ? ORDEM.filter((t) => !todos[t].erro && !todos[t].linhas.length) : []
   const tiposComErro = todos ? ORDEM.filter((t) => todos[t].erro) : []
 
+  // A aba aberta, sem estado a mais: se a escolhida sumiu (outro arquivo,
+  // outro conjunto de abas), vale a primeira que tem dado.
+  const aberto = tiposComDado.includes(moduloAberto) ? moduloAberto : tiposComDado[0]
+
+  /** A bandeira do módulo na aba, pelo que a prévia dele já disse. */
+  function corDoModulo(t) {
+    const pv = previas[t]
+    if (!pv) return 'cinza'
+    if (pv.fora.length) return 'vermelho'
+    if (pv.marcadas.length || pv.prontas.some((x) => x.avisos?.length)) return 'amarelo'
+    return 'verde'
+  }
+
   // O que o arquivo traz, somado: alimenta os big numbers e o gráfico.
   const resumo = resumoDoUpload(ORDEM.map((t) => ({ tipo: t, previa: previas[t] })))
 
@@ -844,21 +841,50 @@ export default function GestaoImportacao() {
               </div>
             )}
 
+            {tiposComDado.length > 1 && (
+              <div className="filtro-botoes" style={{ marginBottom: 12 }}>
+                <span className="filtro-botoes-label">Conferir</span>
+                <div className="filtro-botoes-lista" role="tablist" aria-label="Módulos do template">
+                  {tiposComDado.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      role="tab"
+                      aria-selected={aberto === t}
+                      className={`filtro-chip${aberto === t ? ' ativo' : ''}`}
+                      onClick={() => setModuloAberto(t)}
+                    >
+                      <span className={`bolinha ${corDoModulo(t)}`} aria-hidden="true" /> {ROTULO[t]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Os três ficam montados, e só o escolhido aparece: é deles que
+                sai o resumo do topo, e é neles que o "importar o template"
+                bate quando grava os três. Desmontar os outros perderia a
+                conferência que eles já fizeram. */}
             {tiposComDado.map((t) => (
-              <CardTipo
+              <div
                 key={`${chave}-${t}`}
-                ref={(el) => {
-                  cards.current[t] = el
-                }}
-                tipo={t}
-                lido={todos[t]}
-                arquivo={arquivo}
-                podeSolicitar={podeSolicitar}
-                onPrevia={(tipoDoCard, p) => setPrevias((atual) => ({ ...atual, [tipoDoCard]: p }))}
-                onRegistrar={registrar}
-                onDesfeito={desfeito}
-                onImportado={() => setGravados((n) => n + 1)}
-              />
+                style={aberto === t ? undefined : { display: 'none' }}
+                aria-hidden={aberto !== t}
+              >
+                <CardTipo
+                  ref={(el) => {
+                    cards.current[t] = el
+                  }}
+                  tipo={t}
+                  lido={todos[t]}
+                  arquivo={arquivo}
+                  podeSolicitar={podeSolicitar}
+                  onPrevia={(tipoDoCard, pv) => setPrevias((atual) => ({ ...atual, [tipoDoCard]: pv }))}
+                  onRegistrar={registrar}
+                  onDesfeito={desfeito}
+                  onImportado={() => setGravados((n) => n + 1)}
+                />
+              </div>
             ))}
 
             {!tiposComDado.length && !tiposComErro.length && (
