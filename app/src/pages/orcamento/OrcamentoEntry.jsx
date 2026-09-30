@@ -34,7 +34,7 @@ function paddedValores(lista) {
 }
 
 
-export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse }) {
+export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse, abas, abaAtiva, onMudarAba }) {
   const showToast = useToast()
   const { comMoeda } = useUnidade()
   // Só o Capex mantém a grade linha a linha. Em Revenue e Expenses o volume
@@ -298,6 +298,16 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse 
         <div className="topbar-title">
           <h1>{titulo} <span className={`pill ${corClasse}`}>{sinal} {rotulo}</span></h1>
           <p>Selecione BU/Torre/Empresa e edite a grade de {rotulo.toLowerCase()} — os valores são salvos por linha.</p>
+          {abas && (
+            <FiltroBotoes
+              label="Ver"
+              valor={abaAtiva}
+              opcoes={abas}
+              onChange={onMudarAba}
+              semTodas
+              semCorte
+            />
+          )}
         </div>
         <ImportarTemplateOrcamento
           tipo={tipo}

@@ -46,8 +46,8 @@ const MENU = [
         text: 'Gestão de Documentos',
         icone: 'relatorio',
         filhos: [
-          { id: 'importar-template', to: '/gestao-importacao', icone: 'importar', text: 'FP&A' },
-          { id: 'importar-pacote', to: '/gestao-importacao?modo=pacote', icone: 'pacote', text: 'Importar - Pacote' },
+          { id: 'importar-template', to: '/gestao-importacao', icone: 'importar', text: 'Template FP&A' },
+          { id: 'importar-pacote', to: '/gestao-importacao?modo=pacote', icone: 'pacote', text: 'Template Pacote' },
         ],
       },
     ],
@@ -59,7 +59,6 @@ const MENU = [
     filhos: [
       { id: 'revenue', to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: '(+) Revenue' },
       { id: 'expenses', to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: '(−) Expenses' },
-      { id: 'capex', to: '/orcamento/capex', icone: 'capex', text: '(−) Capex' },
     ],
   },
   {

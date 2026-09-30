@@ -123,8 +123,10 @@ export default function ResumoLancamentos({ linhas, rotulo }) {
           </svg>
         </div>
 
-        {/* A mesma coisa em número */}
-        <div style={{ overflowX: 'auto' }}>
+        {/* A mesma coisa em número. Com muitas contas a tabela empurrava a
+            página inteira para baixo — agora tem altura própria, com
+            rolagem vertical e horizontal dentro do painel. */}
+        <div className="resumo-contas-scroll">
           <table className="data-table">
             <thead>
               <tr>
