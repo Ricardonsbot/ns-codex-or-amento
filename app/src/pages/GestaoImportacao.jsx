@@ -15,6 +15,7 @@ import { useAuth } from '../components/AuthProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import { createCiclo } from '../lib/ciclosData'
 import { agruparPorConta, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
+import { sumarioDeOfensas } from '../lib/sumarioOfensas'
 import {
   lerTodosOsTiposEmWorker,
   conferir,
@@ -67,7 +68,7 @@ const semCadastro = (m) =>
  * só que aqui os três correm a partir de UM upload já lido, em vez de três
  * telas com um "Importar Template" cada uma.
  */
-function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegistrar, onDesfeito }) {
+function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImportado, onRegistrar, onDesfeito }) {
   const showToast = useToast()
   const { comMoeda } = useUnidade()
   const { sessao } = useAuth()
@@ -100,7 +101,11 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
           await garantirCiclo(p.cicloFaltando)
           p = { ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas }
         }
-        if (!cancelado) setPrevia(p)
+        if (cancelado) return
+        setPrevia(p)
+        // A tela junta as prévias dos três módulos no sumário de ofensas: o
+        // arquivo é um só, e a ofensa é do arquivo.
+        onPrevia?.(tipo, p)
       } catch (err) {
         if (!cancelado) setErroConferencia(err.message)
       } finally {
@@ -236,71 +241,15 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
   // As duas recusas são de natureza diferente e o aviso precisa dizer qual é:
   // texto numa coluna de valor não é empresa fora do cadastro.
-  const recusadasPorTexto = previa?.fora.filter((f) => f.naoNumericos?.length) ?? []
-  const recusadasSemEmpresa = previa?.fora.filter((f) => !f.naoNumericos?.length) ?? []
-  // A linha apontada entra, mas não pode se esconder no meio das resolvidas:
-  // conta para o sumário e, na tabela, sobe junto com a conta dela.
-  const apontadas = previa?.prontas.filter((p) => p.avisos?.length) ?? []
   const total = aImportar.reduce((a, p) => a + p.total, 0)
   const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
   const semVersao = previa && !previa.versao
-  const paraAprovacao = previa ? agruparParaCadastro(previa.marcadas.filter(semCadastro), tipo, arquivo) : []
-
-  const lidas = previa ? previa.prontas.length + previa.marcadas.length + previa.fora.length : 0
-  const soma = (linhas) => linhas.reduce((a, p) => a + Math.abs(p.total ?? 0), 0)
-
-  /**
-   * O que a conferência achou de errado, do que barra para o que só avisa.
-   * Grupo vazio não vira item: o sumário é a lista do que há para resolver,
-   * não um relatório de tudo o que poderia dar errado.
-   */
   // A conferência por conta: é o que a tabela desenha. A regra mora em
   // conferenciaPorConta.js, testada à parte.
   const porConta = agruparPorConta(previa)
   const contasVisiveis = soOfensas ? porConta.filter((g) => g.ofensas > 0) : porConta
   const contasComOfensa = porConta.filter((g) => g.ofensas > 0).length
 
-  const ofensas = [
-    {
-      id: 'texto',
-      grave: true,
-      linhas: recusadasPorTexto.length,
-      valor: soma(recusadasPorTexto),
-      titulo: 'Texto onde era para ter número',
-      detalhe: 'não entram — ninguém adivinha quanto vale uma frase, e entrar como zero seria pior',
-    },
-    {
-      id: 'empresa',
-      grave: true,
-      linhas: recusadasSemEmpresa.length,
-      valor: soma(recusadasSemEmpresa),
-      titulo: 'Empresa fora do cadastro',
-      detalhe: 'não entram — sem empresa não há BU, e a BU é obrigatória no lançamento',
-    },
-    {
-      id: 'conta',
-      grave: false,
-      linhas: previa?.marcadas.length ?? 0,
-      valor: soma(previa?.marcadas ?? []),
-      titulo: 'Conta fora do plano',
-      detalhe:
-        'entram sem conta, marcadas nas observações — o valor não fica de fora, mas só volta a ser editável na grade quando a conta existir' +
-        (podeSolicitar && paraAprovacao.length
-          ? ` · ao confirmar, ${paraAprovacao.length === 1 ? '1 conta vai' : `${paraAprovacao.length} contas vão`} para aprovação`
-          : !podeSolicitar
-            ? ' · a fila de aprovação ainda não está disponível (falta a migração 2026-09-10)'
-            : ''),
-    },
-    {
-      id: 'sinal',
-      grave: false,
-      linhas: apontadas.length,
-      valor: soma(apontadas),
-      titulo: 'Sinal invertido',
-      detalhe:
-        'entram como estão — no template o valor veio positivo, e assim ele reduz a despesa no P&L; confira se é crédito ou digitação',
-    },
-  ].filter((o) => o.linhas > 0)
 
   // O "Importar o template inteiro" da tela chama isto em cada card, um
   // depois do outro. Cada módulo continua com a conferência e a gravação que
@@ -329,7 +278,15 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
         </div>
         {previa && (
           <div className="flex-row" style={{ gap: 6 }}>
-            <button className="btn btn-secondary btn-sm" type="button" onClick={() => setPrevia(null)} disabled={gravando}>
+            <button
+              className="btn btn-secondary btn-sm"
+              type="button"
+              onClick={() => {
+                setPrevia(null)
+                onPrevia?.(tipo, null)
+              }}
+              disabled={gravando}
+            >
               Ignorar
             </button>
             <button
@@ -420,38 +377,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
             {semVersao && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
                 ⓘ O ciclo {previa.ano} não tem versão. Crie uma em Budget-Settings antes de importar.
-              </div>
-            )}
-
-            {/* Sumário de ofensas: tudo o que a conferência achou de errado
-                neste arquivo, num lugar só e em ordem de gravidade. Antes eram
-                avisos soltos, cada um numa faixa, e quem lia o terceiro já
-                tinha esquecido o primeiro. */}
-            {ofensas.length > 0 ? (
-              <div className="sumario-ofensas">
-                <div className="sumario-ofensas-topo">
-                  <strong>Sumário de ofensas</strong>
-                  <span>
-                    {ofensas.reduce((a, o) => a + o.linhas, 0)} de {lidas} linha(s) do arquivo
-                  </span>
-                </div>
-                <ul>
-                  {ofensas.map((o) => (
-                    <li key={o.id} className={o.grave ? 'grave' : ''}>
-                      <span className="ofensa-marca" aria-hidden="true">{o.grave ? '✕' : '⚠'}</span>
-                      <span className="ofensa-linhas">{o.linhas}</span>
-                      <span className="ofensa-oque">
-                        <strong>{o.titulo}</strong>
-                        <em>{o.detalhe}</em>
-                      </span>
-                      <span className="ofensa-valor">{brl(o.valor)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ✓ Nenhuma ofensa: as {lidas} linha(s) do arquivo entram resolvidas.
               </div>
             )}
 
@@ -643,6 +568,9 @@ export default function GestaoImportacao() {
   const [gravados, setGravados] = useState(0)
   // Qual módulo o "importar tudo" está gravando agora; null quando parado.
   const [importandoTudo, setImportandoTudo] = useState(null)
+  // A prévia de cada módulo, reportada pelos cards: é o que alimenta o
+  // sumário de ofensas do arquivo inteiro.
+  const [previas, setPrevias] = useState({})
   const cards = useRef({})
   const { sessao } = useAuth()
   // Um registro de histórico por upload: o primeiro tipo importado cria, os
@@ -671,6 +599,7 @@ export default function GestaoImportacao() {
     setBlob(file)
     registro.current = { id: null, fila: Promise.resolve() }
     setGravados(0)
+    setPrevias({})
 
     // Só os nomes das abas, sem parsear nenhuma: é o que diz se este arquivo
     // traz também os cadastros.
@@ -784,6 +713,10 @@ export default function GestaoImportacao() {
   const tiposVazios = todos ? ORDEM.filter((t) => !todos[t].erro && !todos[t].linhas.length) : []
   const tiposComErro = todos ? ORDEM.filter((t) => todos[t].erro) : []
 
+  // O sumário de ofensas é do arquivo, não de cada módulo: junta o que os
+  // três cards conferiram.
+  const sumario = sumarioDeOfensas(ORDEM.map((t) => ({ tipo: t, rotulo: ROTULO[t], previa: previas[t] })))
+
   return (
     <Layout>
       <header className="topbar">
@@ -868,6 +801,42 @@ export default function GestaoImportacao() {
               </div>
             )}
 
+            {sumario.ofensas.length > 0 && (
+              <div className="sumario-ofensas">
+                <div className="sumario-ofensas-topo">
+                  <strong>Sumário de ofensas</strong>
+                  <span>
+                    {sumario.ofendidas} de {sumario.lidas} linha(s) do arquivo, nos {sumario.modulos} módulo(s)
+                    conferidos
+                  </span>
+                </div>
+                <ul>
+                  {sumario.ofensas.map((o) => (
+                    <li key={o.id} className={o.grave ? 'grave' : ''}>
+                      <span className="ofensa-marca" aria-hidden="true">{o.grave ? '✕' : '⚠'}</span>
+                      <span className="ofensa-linhas">{o.linhas}</span>
+                      <span className="ofensa-oque">
+                        <strong>{o.titulo}</strong>
+                        <em>{o.detalhe}</em>
+                        {o.porModulo.length > 1 && (
+                          <em className="ofensa-modulos">
+                            {o.porModulo.map((m) => `${m.rotulo}: ${m.linhas}`).join(' · ')}
+                          </em>
+                        )}
+                      </span>
+                      <span className="ofensa-valor">{brl(o.valor)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {sumario.modulos > 0 && !sumario.ofensas.length && (
+              <div className="proto-banner" style={{ marginBottom: 16 }}>
+                ✓ Nenhuma ofensa: as {sumario.lidas} linha(s) do arquivo entram resolvidas.
+              </div>
+            )}
+
             {tiposComDado.length > 1 && (
               <div className="painel-formato flex-row" style={{ marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 320px' }}>
@@ -901,6 +870,7 @@ export default function GestaoImportacao() {
                 lido={todos[t]}
                 arquivo={arquivo}
                 podeSolicitar={podeSolicitar}
+                onPrevia={(tipoDoCard, p) => setPrevias((atual) => ({ ...atual, [tipoDoCard]: p }))}
                 onRegistrar={registrar}
                 onDesfeito={desfeito}
                 onImportado={() => setGravados((n) => n + 1)}

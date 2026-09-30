@@ -3339,3 +3339,5 @@ tfoot td {
 
 .linha-da-conta > td { background: var(--color-surface-alt); font-size: 12.5px; }
 .conta-filha { padding-left: 28px !important; color: var(--color-text-muted); }
+
+.ofensa-modulos { color: var(--color-text-faint) !important; }
