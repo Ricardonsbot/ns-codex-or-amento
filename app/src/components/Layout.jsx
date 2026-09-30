@@ -57,8 +57,8 @@ const MENU = [
     text: 'Budget',
     icone: 'budget',
     filhos: [
-      { id: 'revenue', to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: '(+) Revenue' },
-      { id: 'expenses', to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: '(−) Expenses' },
+      { id: 'revenue', to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: 'Revenue' },
+      { id: 'expenses', to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: 'Expenses' },
     ],
   },
   {
@@ -119,9 +119,10 @@ function temDescendenteAtivo(no, pathname, search) {
   return (no.filhos ?? []).some((filho) => temDescendenteAtivo(filho, pathname, search))
 }
 
-// Alinha o texto de quem não tem ícone por baixo do TEXTO do nível acima
-// (não do ícone dele) — é o que faz o submenu ficar "recuado", como no
-// modelo, em vez de flutuar solto à esquerda.
+// Recuo de quem está abaixo do primeiro nível: alinha o ÍCONE do submenu
+// (menor que o do nível acima) por baixo do TEXTO do nível acima — é o
+// que faz o submenu ficar "recuado", como no modelo, em vez de flutuar
+// solto à esquerda.
 const RECUO_SEM_ICONE = 34
 const RECUO_POR_NIVEL = 14
 
@@ -137,11 +138,9 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
         className={`nav-item${ativo ? ' active' : ''}${primeiroNivel ? '' : ' nav-item-sub'}`}
         style={{ paddingLeft: primeiroNivel ? 12 : recuo }}
       >
-        {primeiroNivel && (
-          <span className={`nav-icon${no.cor ? ` ${no.cor}` : ''}`}>
-            <Icone nome={no.icone} />
-          </span>
-        )}
+        <span className={`nav-icon${no.cor ? ` ${no.cor}` : ''}`}>
+          <Icone nome={no.icone} tamanho={primeiroNivel ? 18 : 14} />
+        </span>
         <span className="nav-label">{no.text}</span>
       </Link>
     )
@@ -160,11 +159,9 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
         title={aberto ? 'Recolher' : 'Expandir'}
         style={{ paddingLeft: primeiroNivel ? 10 : recuo }}
       >
-        {primeiroNivel && (
-          <span className="nav-icon">
-            <Icone nome={no.icone} />
-          </span>
-        )}
+        <span className="nav-icon">
+          <Icone nome={no.icone} tamanho={primeiroNivel ? 18 : 14} />
+        </span>
         <span className="nav-label menu-grupo-label">{no.text}</span>
         <span className="secao-chevron" aria-hidden="true">
           ▾
