@@ -126,16 +126,20 @@ function temDescendenteAtivo(no, pathname, search) {
 const RECUO_SEM_ICONE = 34
 const RECUO_POR_NIVEL = 14
 
-function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
+function NoMenu({ no, profundidade, pathname, search, fechadas, alternar, ultimo }) {
   const primeiroNivel = profundidade === 0
   const recuo = primeiroNivel ? 0 : RECUO_SEM_ICONE + (profundidade - 1) * RECUO_POR_NIVEL
+  // Só o último item de cada grupo fecha a linha em curva (o "└"); os do
+  // meio ficam com o tronco reto passando por trás (o "├"), como numa
+  // árvore de seleção de verdade.
+  const classeUltimo = !primeiroNivel && ultimo ? '-ultimo' : ''
 
   if (!no.filhos) {
     const ativo = ehAtivo(no.to, pathname, search)
     return (
       <Link
         to={no.to}
-        className={`nav-item${ativo ? ' active' : ''}${primeiroNivel ? '' : ' nav-item-sub'}`}
+        className={`nav-item${ativo ? ' active' : ''}${primeiroNivel ? '' : ' nav-item-sub'}${classeUltimo ? ' nav-item-sub-ultimo' : ''}`}
         style={{ paddingLeft: primeiroNivel ? 12 : recuo }}
       >
         {!primeiroNivel && (
@@ -155,7 +159,7 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
     <div className={`menu-grupo${aberto ? '' : ' fechado'}`}>
       <button
         type="button"
-        className={`sidebar-section-label menu-grupo-btn${primeiroNivel ? '' : ' menu-grupo-btn-sub'}`}
+        className={`sidebar-section-label menu-grupo-btn${primeiroNivel ? '' : ' menu-grupo-btn-sub'}${classeUltimo ? ' menu-grupo-btn-sub-ultimo' : ''}`}
         onClick={() => alternar(no.id)}
         aria-expanded={aberto}
         title={aberto ? 'Recolher' : 'Expandir'}
@@ -176,7 +180,7 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
           className="menu-filhos"
           style={{ '--linha-recuo': `${RECUO_SEM_ICONE + profundidade * RECUO_POR_NIVEL - 14}px` }}
         >
-          {no.filhos.map((filho) => (
+          {no.filhos.map((filho, indice) => (
             <NoMenu
               key={filho.id}
               no={filho}
@@ -185,6 +189,7 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
               search={search}
               fechadas={fechadas}
               alternar={alternar}
+              ultimo={indice === no.filhos.length - 1}
             />
           ))}
         </div>

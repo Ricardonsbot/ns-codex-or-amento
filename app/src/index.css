@@ -277,24 +277,62 @@ a { color: inherit; text-decoration: none; }
   padding-bottom: 7px;
 }
 
-/* Cada subitem recebe o próprio "L" arredondado — desce do topo da sua
-   linha até a metade dela e curva em direção ao texto — em vez de um
-   traço único compartilhado pelo grupo inteiro. Assim todo item, não só
-   o último do grupo, mostra que é um subitem. A posição acompanha o
-   recuo de cada nível via --linha-recuo (herdado de .menu-filhos). */
+/* Seletor combinado (em vez de só ".nav-item-sub") pra garantir que isso
+   vence o gap/margem de ".nav-item", que no arquivo vem depois e empataria
+   em especificidade. Sem margem vertical o tronco da árvore (::before)
+   fica encostado no item de baixo — não "espaçado" — e com gap menor o
+   ícone cola no texto em vez de flutuar longe dele. */
+.nav-item.nav-item-sub {
+  gap: 6px;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Árvore de seleção de verdade: o tronco passa RETO por trás de todo item
+   do meio do grupo (::before, altura cheia — sem essa reta contínua a
+   linha parecia "espaçada", quebrada item a item) e um traço curto liga
+   esse tronco ao ícone (::after, na metade da altura do item — o "├").
+   Só o ÚLTIMO item do grupo fecha o tronco numa curva (o "└"), via
+   .nav-item-sub-ultimo / .menu-grupo-btn-sub-ultimo logo abaixo. A posição
+   acompanha o recuo de cada nível via --linha-recuo (herdado de
+   .menu-filhos). */
 .nav-item-sub::before,
 .sidebar-section-label.menu-grupo-btn-sub::before {
   content: '';
   position: absolute;
   left: var(--linha-recuo, 20px);
   top: 0;
-  width: 12px;
-  height: 50%;
+  width: 10px;
+  height: 100%;
   border-left: 2px solid var(--color-border-forte);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.nav-item-sub::after,
+.sidebar-section-label.menu-grupo-btn-sub::after {
+  content: '';
+  position: absolute;
+  left: var(--linha-recuo, 20px);
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  background: var(--color-border-forte);
+  opacity: 0.4;
+  transform: translateY(-1px);
+  pointer-events: none;
+}
+
+.nav-item-sub.nav-item-sub-ultimo::before,
+.sidebar-section-label.menu-grupo-btn-sub.menu-grupo-btn-sub-ultimo::before {
+  height: 50%;
   border-bottom: 2px solid var(--color-border-forte);
   border-bottom-left-radius: 8px;
-  opacity: 0.45;
-  pointer-events: none;
+}
+
+.nav-item-sub.nav-item-sub-ultimo::after,
+.sidebar-section-label.menu-grupo-btn-sub.menu-grupo-btn-sub-ultimo::after {
+  display: none;
 }
 
 .nav-item-sub:hover { color: var(--color-text-muted); background: var(--color-surface-raised); }
@@ -313,6 +351,9 @@ a { color: inherit; text-decoration: none; }
   font-size: 12.5px;
   font-weight: 500;
   color: var(--color-text-faint);
+  gap: 6px;
+  margin-top: 0;
+  margin-bottom: 0;
   padding-top: 7px;
   padding-bottom: 7px;
 }
