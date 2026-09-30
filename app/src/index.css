@@ -201,9 +201,30 @@ a { color: inherit; text-decoration: none; }
    contêiner, sem repetir espaçamento a cada nível. */
 .menu-filhos { display: flex; flex-direction: column; }
 
-.menu-grupo-btn { gap: 10px; }
+/* O botão de primeiro nível (Visão Geral, Importação, Budget...) não é uma
+   legenda pequena — é um item de menu de verdade, do mesmo tamanho e peso
+   de um link comum, só que com seta pra abrir/fechar em vez de navegar.
+   Por isso desfaz aqui o texto-de-legenda que .sidebar-section-label
+   define (maiúsculas, 11px, cor apagada). */
+.menu-grupo-btn {
+  gap: 10px;
+  width: calc(100% - 20px);
+  margin: 1px 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.menu-grupo-btn:hover { background: var(--color-surface-raised); color: var(--color-text); }
 .menu-grupo-btn .nav-icon { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; }
 .menu-grupo-btn .secao-chevron { margin-left: auto; }
+
+/* A linha entre grupos de primeiro nível não pode mais encostar no botão —
+   ele agora tem a mesma margem lateral de um nav-item. */
+.menu-grupo + .menu-grupo { padding-top: 7px; margin-top: 6px; }
 
 /* Submenu (profundidade > 0): só o primeiro nível leva ícone. Aqui embaixo
    o texto sozinho, menor e mais claro, já diz "isto é um item dentro de
