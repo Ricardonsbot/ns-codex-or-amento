@@ -263,6 +263,7 @@ function CardTipo({
           nem o que deixar de fora — as três abas entram juntas ou nenhuma
           entra, e meio arquivo no banco não é um estado que alguém queira. */}
       <div className="modulo-conferencia-topo">
+        <BotaoRecolher chave={`conferencia-${tipo}`} rotulo={ROTULO[tipo]} />
         <h3>{ROTULO[tipo]}</h3>
         <span>
           aba {lido.aba}
@@ -818,7 +819,7 @@ export default function GestaoImportacao() {
                 >
                   {importandoTudo
                     ? `Importando ${ROTULO[importandoTudo]}…`
-                    : `Importar o template (${tiposComDado.length} módulo(s))`}
+                    : 'Importar o template'}
                 </button>
               </div>
             )}
