@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Icone from './Icone'
 import { useAuth } from './AuthProvider'
@@ -138,9 +138,11 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
         className={`nav-item${ativo ? ' active' : ''}${primeiroNivel ? '' : ' nav-item-sub'}`}
         style={{ paddingLeft: primeiroNivel ? 12 : recuo }}
       >
-        <span className={`nav-icon${no.cor ? ` ${no.cor}` : ''}`}>
-          <Icone nome={no.icone} tamanho={primeiroNivel ? 18 : 14} />
-        </span>
+        {!primeiroNivel && (
+          <span className={`nav-icon${no.cor ? ` ${no.cor}` : ''}`}>
+            <Icone nome={no.icone} tamanho={14} />
+          </span>
+        )}
         <span className="nav-label">{no.text}</span>
       </Link>
     )
@@ -159,9 +161,11 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
         title={aberto ? 'Recolher' : 'Expandir'}
         style={{ paddingLeft: primeiroNivel ? 10 : recuo }}
       >
-        <span className="nav-icon">
-          <Icone nome={no.icone} tamanho={primeiroNivel ? 18 : 14} />
-        </span>
+        {!primeiroNivel && (
+          <span className="nav-icon">
+            <Icone nome={no.icone} tamanho={14} />
+          </span>
+        )}
         <span className="nav-label menu-grupo-label">{no.text}</span>
         <span className="secao-chevron" aria-hidden="true">
           ▾
@@ -243,10 +247,11 @@ export default function Layout({ children }) {
           </button>
         </div>
 
-        {collapsed
-          ? // Recolhida, a barra vira ícone puro: sem o rótulo não há como
-            // expandir um grupo, então mostra tudo achatado, sem a árvore.
-            MENU.flatMap(function achatar(no) {
+        {collapsed ? (
+          <>
+            {/* Recolhida, a barra vira ícone puro: sem o rótulo não há como
+                expandir um grupo, então mostra tudo achatado, sem a árvore. */}
+            {MENU.flatMap(function achatar(no) {
               return no.filhos ? no.filhos.flatMap(achatar) : [no]
             }).map((folha) => (
               <Link
@@ -259,25 +264,50 @@ export default function Layout({ children }) {
                 </span>{' '}
                 <span className="nav-label">{folha.text}</span>
               </Link>
-            ))
-          : MENU.map((no) => (
-              <NoMenu
-                key={no.id}
-                no={no}
-                profundidade={0}
-                pathname={pathname}
-                search={search}
-                fechadas={fechadas}
-                alternar={alternar}
-              />
             ))}
-
-        <div className="nav-item" onClick={handleSair} style={{ cursor: 'pointer' }}>
-          <span className="nav-icon">
-            <Icone nome="sair" />
-          </span>{' '}
-          <span className="nav-label">Sair</span>
-        </div>
+            <div className="nav-item" onClick={handleSair} style={{ cursor: 'pointer' }}>
+              <span className="nav-icon">
+                <Icone nome="sair" />
+              </span>{' '}
+              <span className="nav-label">Sair</span>
+            </div>
+          </>
+        ) : (
+          // Expandida, cada categoria de primeiro nível ganha um ícone no
+          // "rail" — a coluna fina à esquerda, com uma linha contínua
+          // passando por trás — em vez do ícone dentro do próprio botão.
+          // O conteúdo (botão + árvore de filhos) fica na coluna da direita.
+          <div className="sidebar-rail-grid">
+            {MENU.map((no) => (
+              <Fragment key={no.id}>
+                <div className="sidebar-rail-icone">
+                  <Icone nome={no.icone} tamanho={18} />
+                </div>
+                <div className="sidebar-rail-conteudo">
+                  <NoMenu
+                    no={no}
+                    profundidade={0}
+                    pathname={pathname}
+                    search={search}
+                    fechadas={fechadas}
+                    alternar={alternar}
+                  />
+                </div>
+              </Fragment>
+            ))}
+            <div className="sidebar-rail-icone">
+              <Icone nome="sair" tamanho={18} />
+            </div>
+            <div className="sidebar-rail-conteudo">
+              <div className="nav-item" onClick={handleSair} style={{ cursor: 'pointer' }}>
+                <span className="nav-icon">
+                  <Icone nome="sair" />
+                </span>{' '}
+                <span className="nav-label">Sair</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="sidebar-footer">
           <div className="user-chip">

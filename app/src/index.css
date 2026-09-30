@@ -149,6 +149,50 @@ a { color: inherit; text-decoration: none; }
 .brand-ns { color: var(--color-primary) !important; }
 .brand-rest { color: var(--color-text) !important; }
 
+/* O "rail": coluna fina à esquerda do menu com o ícone de cada categoria
+   de primeiro nível (Visão Geral, Importação... até Sair), e uma linha
+   contínua passando por trás de todos — a espinha dorsal da navegação,
+   separada da árvore de drilldown que cada categoria abre à direita. Grid
+   de 2 colunas: cada categoria entra como um par [ícone, conteúdo], e o
+   auto-flow do grid já casa as duas na mesma linha, não importa quantas
+   linhas o conteúdo (com os filhos abertos) ocupe. */
+.sidebar-rail-grid {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  position: relative;
+}
+
+.sidebar-rail-grid::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--color-border-forte);
+  opacity: 0.35;
+  border-radius: 999px;
+}
+
+.sidebar-rail-icone {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+}
+
+.sidebar-rail-icone svg {
+  position: relative;
+  z-index: 1;
+  background: var(--color-sidebar);
+  color: var(--color-text-muted);
+  border-radius: 50%;
+  padding: 5px;
+  box-sizing: content-box;
+}
+
+.sidebar-rail-conteudo { min-width: 0; }
+
 /* O rótulo da seção é um botão: clicar abre e fecha os itens dela. */
 .sidebar-section-label {
   display: flex;
