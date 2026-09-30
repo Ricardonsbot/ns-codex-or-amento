@@ -2069,12 +2069,15 @@ tfoot td {
 
 .filtro-botoes {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
 }
 
 .filtro-botoes-label {
+  flex: none;
+  white-space: nowrap;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .04em;
@@ -2085,6 +2088,10 @@ tfoot td {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  /* Na horizontal, a lista é que ocupa o espaço que sobra ao lado do
+     rótulo — sem isso ela só ficaria do tamanho do próprio conteúdo. */
+  flex: 1;
+  min-width: 0;
   /* Empresa chega a dezenas de opções; acima disso a lista rola em vez de
      empurrar a grade para fora da tela. */
   max-height: 132px;
