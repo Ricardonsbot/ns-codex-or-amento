@@ -30,7 +30,6 @@ const MENU = [
         icone: 'resultado',
         filhos: [
           { id: 'resultado', to: '/resultado', icone: 'resultado', text: 'Resultado' },
-          { id: 'deep-dive', to: '/deep-dive', icone: 'lupa', text: 'Deep Dive' },
           { id: 'relatorios', to: '/relatorios', icone: 'relatorio', text: 'Relatórios' },
         ],
       },
@@ -49,6 +48,12 @@ const MENU = [
           { id: 'importar-template', to: '/gestao-importacao', icone: 'importar', text: 'Template FP&A' },
           { id: 'importar-pacote', to: '/gestao-importacao?modo=pacote', icone: 'pacote', text: 'Template Pacote' },
         ],
+      },
+      {
+        id: 'validacao',
+        text: 'Validação',
+        icone: 'lupa',
+        filhos: [{ id: 'deep-dive', to: '/deep-dive', icone: 'lupa', text: 'Deep Dive' }],
       },
     ],
   },
