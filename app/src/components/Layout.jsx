@@ -46,7 +46,7 @@ const MENU = [
         text: 'Gestão de Documentos',
         icone: 'relatorio',
         filhos: [
-          { id: 'importar-template', to: '/gestao-importacao', icone: 'importar', text: 'Importar - Template FP&A' },
+          { id: 'importar-template', to: '/gestao-importacao', icone: 'importar', text: 'FP&A' },
           { id: 'importar-pacote', to: '/gestao-importacao?modo=pacote', icone: 'pacote', text: 'Importar - Pacote' },
         ],
       },
