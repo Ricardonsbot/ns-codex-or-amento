@@ -3341,3 +3341,89 @@ tfoot td {
 .conta-filha { padding-left: 28px !important; color: var(--color-text-muted); }
 
 .ofensa-modulos { color: var(--color-text-faint) !important; }
+
+/* ------------------------------------------------ Séries mensais em linha
+   As cores das séries são próprias, não as da interface: o verde e o
+   vermelho de Receita e Despesa ficam indistinguíveis para quem tem
+   deuteranopia. Ver o comentário em GraficoLinhas.jsx. */
+:root {
+  --serie-receita: #1a9c6a;
+  --serie-despesa: #c2410c;
+  --serie-capex: #6d4bc7;
+}
+
+.grafico-linhas {
+  position: relative;
+  margin-bottom: 16px;
+  padding: 12px 14px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.grafico-linhas-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.grafico-linhas-topo strong { font-size: 13.5px; }
+.grafico-linhas-topo span { font-size: 12px; color: var(--color-text-muted); margin-left: 8px; }
+
+.grafico-legenda {
+  list-style: none;
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.grafico-legenda li { display: inline-flex; align-items: center; gap: 6px; }
+
+.legenda-marca {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+  flex: none;
+}
+
+.grafico-linhas-svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+.grafico-grade { stroke: var(--color-border); stroke-width: 1; }
+.grafico-cruz { stroke: var(--color-border-forte); stroke-width: 1; stroke-dasharray: 3 3; }
+.grafico-linha { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.grafico-ponto { stroke: var(--color-surface); stroke-width: 2; }
+.grafico-ponto.ativo { stroke-width: 2.5; }
+.grafico-marca { font-size: 10px; fill: var(--color-text-faint); }
+.grafico-nome { font-size: 11px; font-weight: 600; }
+.grafico-mes { font-size: 10.5px; fill: var(--color-text-muted); }
+.grafico-mes.ativo { fill: var(--color-text); font-weight: 700; }
+
+/* O valor de cada série no mês sob o cursor. */
+.grafico-tooltip {
+  position: absolute;
+  top: 40px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-forte);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 14px rgb(15 23 42 / 12%);
+  padding: 8px 10px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.grafico-tooltip span { display: flex; align-items: center; gap: 6px; }
+.grafico-tooltip b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.grafico-linhas-unidade { text-align: right; font-size: 11px; color: var(--color-text-faint); }

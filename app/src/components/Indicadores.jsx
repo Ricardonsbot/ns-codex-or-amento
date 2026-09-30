@@ -25,13 +25,15 @@ function DeltaIndicador({ d, contra, menorEMelhor }) {
   )
 }
 
-function Indicador({ rotulo, valor, pct, vsBudget, vsLy, menorEMelhor }) {
+function Indicador({ rotulo, valor, pct, vsBudget, vsLy, menorEMelhor, formato }) {
   const { numero } = useUnidade()
+  // Contagem não é dinheiro: em "milhões", cinco linhas viravam "0,0".
+  const texto = formato === 'inteiro' ? Number(valor ?? 0).toLocaleString('pt-BR') : numero(valor)
   return (
     <div className="indicador">
       <div className="indicador-rotulo">{rotulo}</div>
       <div className="indicador-linha">
-        <span className="indicador-valor">{numero(valor)}</span>
+        <span className="indicador-valor">{texto}</span>
         {pct !== null && pct !== undefined && isFinite(pct) && (
           <>
             <span className="indicador-barra" aria-hidden="true">|</span>

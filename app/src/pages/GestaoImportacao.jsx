@@ -15,7 +15,10 @@ import { useAuth } from '../components/AuthProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import { createCiclo } from '../lib/ciclosData'
 import { agruparPorConta, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
-import { sumarioDeOfensas } from '../lib/sumarioOfensas'
+import { resumoDoUpload } from '../lib/resumoDoUpload'
+import Indicadores from '../components/Indicadores'
+import GraficoLinhas from '../components/GraficoLinhas'
+import { MESES } from '../lib/demonstrativo'
 import {
   lerTodosOsTiposEmWorker,
   conferir,
@@ -278,6 +281,10 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
         </div>
         {previa && (
           <div className="flex-row" style={{ gap: 6 }}>
+            {/* A importação é do template inteiro, num botão só, acima dos
+                cards: módulo por módulo deixava meio arquivo no banco e meio
+                fora, sem ninguém notar. Aqui só se tira o módulo da leva. */}
+            {gravando && <span className="text-muted" style={{ fontSize: 12 }}>Importando…</span>}
             <button
               className="btn btn-secondary btn-sm"
               type="button"
@@ -287,19 +294,7 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
               }}
               disabled={gravando}
             >
-              Ignorar
-            </button>
-            <button
-              className="btn btn-primary btn-sm"
-              type="button"
-              onClick={handleConfirmar}
-              disabled={gravando || !aImportar.length || semVersao}
-            >
-              {gravando
-                ? 'Importando…'
-                : substituir && previa.jaExistem
-                ? `Substituir ${previa.jaExistem} e importar ${aImportar.length}`
-                : `Importar ${aImportar.length} linha(s)`}
+              Ignorar este módulo
             </button>
           </div>
         )}
@@ -713,9 +708,8 @@ export default function GestaoImportacao() {
   const tiposVazios = todos ? ORDEM.filter((t) => !todos[t].erro && !todos[t].linhas.length) : []
   const tiposComErro = todos ? ORDEM.filter((t) => todos[t].erro) : []
 
-  // O sumário de ofensas é do arquivo, não de cada módulo: junta o que os
-  // três cards conferiram.
-  const sumario = sumarioDeOfensas(ORDEM.map((t) => ({ tipo: t, rotulo: ROTULO[t], previa: previas[t] })))
+  // O que o arquivo traz, somado: alimenta os big numbers e o gráfico.
+  const resumo = resumoDoUpload(ORDEM.map((t) => ({ tipo: t, previa: previas[t] })))
 
   return (
     <Layout>
@@ -801,50 +795,40 @@ export default function GestaoImportacao() {
               </div>
             )}
 
-            {sumario.ofensas.length > 0 && (
-              <div className="sumario-ofensas">
-                <div className="sumario-ofensas-topo">
-                  <strong>Sumário de ofensas</strong>
-                  <span>
-                    {sumario.ofendidas} de {sumario.lidas} linha(s) do arquivo, nos {sumario.modulos} módulo(s)
-                    conferidos
-                  </span>
-                </div>
-                <ul>
-                  {sumario.ofensas.map((o) => (
-                    <li key={o.id} className={o.grave ? 'grave' : ''}>
-                      <span className="ofensa-marca" aria-hidden="true">{o.grave ? '✕' : '⚠'}</span>
-                      <span className="ofensa-linhas">{o.linhas}</span>
-                      <span className="ofensa-oque">
-                        <strong>{o.titulo}</strong>
-                        <em>{o.detalhe}</em>
-                        {o.porModulo.length > 1 && (
-                          <em className="ofensa-modulos">
-                            {o.porModulo.map((m) => `${m.rotulo}: ${m.linhas}`).join(' · ')}
-                          </em>
-                        )}
-                      </span>
-                      <span className="ofensa-valor">{brl(o.valor)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {resumo.tipos.length > 0 && (
+              <>
+                <Indicadores
+                  itens={[
+                    { chave: 'linhas', rotulo: 'linhas a importar', valor: resumo.linhas, formato: 'inteiro' },
+                    { chave: 'receita', rotulo: '(+) Revenue', valor: resumo.totais.receita ?? 0 },
+                    { chave: 'despesa', rotulo: '(−) Expenses', valor: resumo.totais.despesa ?? 0 },
+                    { chave: 'capex', rotulo: '(−) Capex', valor: resumo.totais.capex ?? 0 },
+                    { chave: 'empresas', rotulo: 'empresas', valor: resumo.empresas, formato: 'inteiro' },
+                    { chave: 'contas', rotulo: 'contas', valor: resumo.contas, formato: 'inteiro' },
+                  ]}
+                />
+
+                <GraficoLinhas
+                  titulo="O arquivo mês a mês"
+                  subtitulo="o que vai ser gravado, sem as linhas recusadas"
+                  rotulos={MESES}
+                  series={[
+                    { id: 'receita', rotulo: 'Revenue', cor: 'var(--serie-receita)', valores: resumo.porMes.receita },
+                    { id: 'despesa', rotulo: 'Expenses', cor: 'var(--serie-despesa)', valores: resumo.porMes.despesa },
+                    { id: 'capex', rotulo: 'Capex', cor: 'var(--serie-capex)', valores: resumo.porMes.capex },
+                  ].filter((x) => x.valores)}
+                />
+              </>
             )}
 
-            {sumario.modulos > 0 && !sumario.ofensas.length && (
-              <div className="proto-banner" style={{ marginBottom: 16 }}>
-                ✓ Nenhuma ofensa: as {sumario.lidas} linha(s) do arquivo entram resolvidas.
-              </div>
-            )}
-
-            {tiposComDado.length > 1 && (
+            {tiposComDado.length > 0 && (
               <div className="painel-formato flex-row" style={{ marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 320px' }}>
                   <strong>Importar o template inteiro</strong>
                   <p style={{ fontSize: 12, opacity: 0.8, margin: '6px 0 0' }}>
                     Grava {tiposComDado.map((t) => ROTULO[t]).join(', ')} numa passada só, nesta ordem, e tudo entra
-                    como uma importação só no histórico. Cada módulo continua com o seu card abaixo, se você preferir
-                    conferir um de cada vez.
+                    como uma importação só no histórico. É o único jeito de importar: módulo por módulo deixava meio
+                    arquivo no banco e meio fora. Para deixar um de fora, use o "Ignorar este módulo" no card dele.
                   </p>
                 </div>
                 <button
@@ -855,7 +839,7 @@ export default function GestaoImportacao() {
                 >
                   {importandoTudo
                     ? `Importando ${ROTULO[importandoTudo]}…`
-                    : `Importar os ${tiposComDado.length} módulos`}
+                    : `Importar o template (${tiposComDado.length} módulo(s))`}
                 </button>
               </div>
             )}
