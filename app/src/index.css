@@ -196,25 +196,6 @@ a { color: inherit; text-decoration: none; }
    contêiner, sem repetir espaçamento a cada nível. */
 .menu-filhos { display: flex; flex-direction: column; position: relative; }
 
-/* Um "L" arredondado (desce e curva à direita) marcando visualmente que
-   este bloco inteiro é um drilldown de quem abriu o grupo — não é o
-   indicador de ativo (esse continua sendo o box-shadow do .active), é só o
-   "trilho" da hierarquia, descendo até perto do último item e virando em
-   direção ao texto dele. A posição acompanha o recuo de cada nível via
-   --linha-recuo, calculado junto com o padding do texto em NoMenu. */
-.menu-filhos::before {
-  content: '';
-  position: absolute;
-  left: var(--linha-recuo, 20px);
-  top: 2px;
-  width: 12px;
-  height: calc(100% - 16px);
-  border-left: 2px solid var(--color-border-forte);
-  border-bottom: 2px solid var(--color-border-forte);
-  border-bottom-left-radius: 10px;
-  opacity: 0.45;
-}
-
 /* O botão de primeiro nível (Visão Geral, Importação, Budget...) não é uma
    legenda pequena — é um item de menu de verdade, do mesmo tamanho e peso
    de um link comum, só que com seta pra abrir/fechar em vez de navegar.
@@ -244,11 +225,32 @@ a { color: inherit; text-decoration: none; }
    o texto sozinho, menor e mais claro, já diz "isto é um item dentro de
    outro" — sem precisar repetir o ícone do pai em cada filho. */
 .nav-item-sub {
+  position: relative;
   font-size: 12.5px;
   font-weight: 500;
   color: var(--color-text-faint);
   padding-top: 7px;
   padding-bottom: 7px;
+}
+
+/* Cada subitem recebe o próprio "L" arredondado — desce do topo da sua
+   linha até a metade dela e curva em direção ao texto — em vez de um
+   traço único compartilhado pelo grupo inteiro. Assim todo item, não só
+   o último do grupo, mostra que é um subitem. A posição acompanha o
+   recuo de cada nível via --linha-recuo (herdado de .menu-filhos). */
+.nav-item-sub::before,
+.sidebar-section-label.menu-grupo-btn-sub::before {
+  content: '';
+  position: absolute;
+  left: var(--linha-recuo, 20px);
+  top: 0;
+  width: 12px;
+  height: 50%;
+  border-left: 2px solid var(--color-border-forte);
+  border-bottom: 2px solid var(--color-border-forte);
+  border-bottom-left-radius: 8px;
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 .nav-item-sub:hover { color: var(--color-text-muted); background: var(--color-surface-raised); }
@@ -261,6 +263,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .sidebar-section-label.menu-grupo-btn-sub {
+  position: relative;
   text-transform: none;
   letter-spacing: normal;
   font-size: 12.5px;
