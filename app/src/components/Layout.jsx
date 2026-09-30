@@ -1,51 +1,90 @@
 import { useState } from 'react'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Icone from './Icone'
 import { useAuth } from './AuthProvider'
 import { sair } from '../lib/authData'
 import { useToast } from './ToastProvider'
 
-const NAV_SECTIONS = [
+/**
+ * O menu em árvore, quantos níveis forem precisos: um nó com `filhos` é um
+ * grupo que só expande/recolhe (não navega — igual "Importação" e
+ * "Configuração"); um nó sem `filhos` é uma tela de verdade, com `to`.
+ *
+ * "Importar - Template FP&A" e "Importar - Pacote" apontam para a MESMA
+ * rota (GestaoImportacao.jsx é uma tela só, com um interruptor interno de
+ * "é o target do pacoteiro?") — o `?modo=pacote` na segunda é o que liga
+ * esse interruptor ao entrar, e o que distingue qual das duas fica
+ * destacada no menu (ver `ehAtivo` abaixo).
+ */
+const MENU = [
   {
-    label: 'Visão geral',
-    items: [{ to: '/dashboard', icone: 'dashboard', text: 'Dashboard' }],
-  },
-  {
-    label: 'Orçamento',
-    items: [
-      { to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: '(+) Revenue' },
-      { to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: '(−) Expenses' },
-      { to: '/orcamento/capex', icone: 'capex', text: '(−) Capex' },
-      { to: '/gestao-importacao', icone: 'importar', text: 'Gestão de Importação' },
+    id: 'visao-geral',
+    text: 'Visão Geral',
+    icone: 'dashboard',
+    filhos: [
+      { id: 'dashboard', to: '/dashboard', icone: 'dashboard', text: 'Dashboard' },
+      { id: 'notes', to: '/notes', icone: 'nota', text: 'Notes' },
+      {
+        id: 'analise',
+        text: 'Análise',
+        icone: 'resultado',
+        filhos: [
+          { id: 'resultado', to: '/resultado', icone: 'resultado', text: 'Resultado' },
+          { id: 'deep-dive', to: '/deep-dive', icone: 'lupa', text: 'Deep Dive' },
+          { id: 'relatorios', to: '/relatorios', icone: 'relatorio', text: 'Relatórios' },
+        ],
+      },
     ],
   },
   {
-    label: 'Fluxo',
-    items: [
-      { to: '/aprovacoes', icone: 'aprovacao', text: 'Aprovações' },
-      { to: '/pendencia-cadastros', icone: 'pendencia', text: 'Pendência de Cadastros' },
+    id: 'importacao',
+    text: 'Importação',
+    icone: 'importar',
+    filhos: [
+      {
+        id: 'gestao-documentos',
+        text: 'Gestão de Documentos',
+        icone: 'relatorio',
+        filhos: [
+          { id: 'importar-template', to: '/gestao-importacao', icone: 'importar', text: 'Importar - Template FP&A' },
+          { id: 'importar-pacote', to: '/gestao-importacao?modo=pacote', icone: 'pacote', text: 'Importar - Pacote' },
+        ],
+      },
     ],
   },
   {
-    label: 'Análise',
-    items: [
-      { to: '/resultado', icone: 'resultado', text: 'Resultado' },
-      { to: '/deep-dive', icone: 'lupa', text: 'Deep Dive' },
-      { to: '/relatorios', icone: 'relatorio', text: 'Relatórios' },
+    id: 'budget',
+    text: 'Budget',
+    icone: 'budget',
+    filhos: [
+      { id: 'revenue', to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: '(+) Revenue' },
+      { id: 'expenses', to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: '(−) Expenses' },
+      { id: 'capex', to: '/orcamento/capex', icone: 'capex', text: '(−) Capex' },
     ],
   },
   {
-    label: 'Administração',
-    items: [{ to: '/cadastros', icone: 'cadastros', text: 'Cadastros' }],
+    id: 'fluxo-aprovacao',
+    text: 'Fluxo de Aprovação',
+    icone: 'aprovacao',
+    filhos: [
+      { id: 'aprovacoes', to: '/aprovacoes', icone: 'aprovacao', text: 'Aprovações' },
+      { id: 'pendencia-cadastros', to: '/pendencia-cadastros', icone: 'pendencia', text: 'Pendência de Cadastros' },
+    ],
   },
   {
-    label: 'Budget - Settings',
-    items: [{ to: '/budget-settings', icone: 'ciclos', text: 'Ciclos & Versões' }],
+    id: 'configuracao',
+    text: 'Configuração',
+    icone: 'operacao',
+    filhos: [
+      { id: 'cadastros', to: '/cadastros', icone: 'cadastros', text: 'Cadastros' },
+      { id: 'ciclos', to: '/budget-settings', icone: 'ciclos', text: 'Ciclos & Versões' },
+      { id: 'contas', to: '/cadastros/contas', icone: 'contas', text: 'Contas' },
+    ],
   },
 ]
 
 /**
- * Quais seções o menu guarda fechadas, por navegador.
+ * Quais grupos o menu guarda fechados, por navegador.
  *
  * É preferência de quem olha, não dado da ferramenta: fica no localStorage e
  * não vai para o banco. Um armazenamento bloqueado não pode derrubar o menu,
@@ -62,10 +101,86 @@ function lerFechadas() {
   }
 }
 
+/**
+ * Se `to` é a tela aberta agora. Rota simples (`/cadastros`) casa com ela e
+ * com o que vem depois (`/cadastros/contas`) — é o que mantém "Cadastros"
+ * destacado nas sub-telas dele. Rota com `?query` (os dois links que
+ * apontam para Gestão de Importação) só casa exata: é o query string que
+ * distingue qual dos dois está com o modo ligado.
+ */
+function ehAtivo(to, pathname, search) {
+  const [rota, query] = to.split('?')
+  if (pathname !== rota) return pathname.startsWith(`${rota}/`)
+  return (search.replace(/^\?/, '') || '') === (query || '')
+}
+
+/** Algum descendente (folha) deste nó é a tela aberta agora? */
+function temDescendenteAtivo(no, pathname, search) {
+  if (no.to) return ehAtivo(no.to, pathname, search)
+  return (no.filhos ?? []).some((filho) => temDescendenteAtivo(filho, pathname, search))
+}
+
+function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
+  if (!no.filhos) {
+    const ativo = ehAtivo(no.to, pathname, search)
+    return (
+      <Link
+        to={no.to}
+        className={`nav-item${ativo ? ' active' : ''}`}
+        style={{ paddingLeft: 12 + profundidade * 16 }}
+      >
+        <span className={`nav-icon${no.cor ? ` ${no.cor}` : ''}`}>
+          <Icone nome={no.icone} />
+        </span>{' '}
+        <span className="nav-label">{no.text}</span>
+      </Link>
+    )
+  }
+
+  const aqui = temDescendenteAtivo(no, pathname, search)
+  const aberto = aqui || !fechadas.has(no.id)
+
+  return (
+    <div className={`menu-grupo${aberto ? '' : ' fechado'}`}>
+      <button
+        type="button"
+        className="sidebar-section-label menu-grupo-btn"
+        onClick={() => alternar(no.id)}
+        aria-expanded={aberto}
+        title={aberto ? 'Recolher' : 'Expandir'}
+        style={{ paddingLeft: 10 + profundidade * 16 }}
+      >
+        <span className="nav-icon">
+          <Icone nome={no.icone} />
+        </span>
+        <span className="nav-label menu-grupo-label">{no.text}</span>
+        <span className="secao-chevron" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+      {aberto && (
+        <div className="menu-filhos">
+          {no.filhos.map((filho) => (
+            <NoMenu
+              key={filho.id}
+              no={filho}
+              profundidade={profundidade + 1}
+              pathname={pathname}
+              search={search}
+              fechadas={fechadas}
+              alternar={alternar}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Layout({ children }) {
   const [collapsed, setCollapsed] = useState(false)
   const [fechadas, setFechadas] = useState(lerFechadas)
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const { sessao } = useAuth()
   const navigate = useNavigate()
   const showToast = useToast()
@@ -73,12 +188,12 @@ export default function Layout({ children }) {
   const email = sessao?.user?.email ?? ''
   const iniciais = email ? email.slice(0, 2).toUpperCase() : '—'
 
-  /** Abre ou fecha uma seção do menu, e lembra da escolha. */
-  function alternarSecao(label) {
+  /** Abre ou fecha um grupo do menu, em qualquer nível, e lembra a escolha. */
+  function alternar(id) {
     setFechadas((atual) => {
       const nova = new Set(atual)
-      if (nova.has(label)) nova.delete(label)
-      else nova.add(label)
+      if (nova.has(id)) nova.delete(id)
+      else nova.add(id)
       try {
         window.localStorage.setItem(CHAVE_SECOES, JSON.stringify([...nova]))
       } catch {
@@ -101,12 +216,12 @@ export default function Layout({ children }) {
     <div className="app-shell">
       <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
         <div className="sidebar-brand">
-          <NavLink to="/dashboard" className="sidebar-brand-link">
+          <Link to="/dashboard" className="sidebar-brand-link">
             <img className="logo-mark" src="/logo-64.png" alt="NS Planner" width="34" height="34" />
             <div className="brand-text">
               <strong><span className="brand-ns">NS</span> <span className="brand-rest">Planner</span></strong>
             </div>
-          </NavLink>
+          </Link>
           <button
             className="sidebar-toggle"
             onClick={() => setCollapsed((c) => !c)}
@@ -116,45 +231,34 @@ export default function Layout({ children }) {
           </button>
         </div>
 
-        {NAV_SECTIONS.map((section) => {
-          // A seção da página aberta nunca fica fechada: some de vista onde a
-          // pessoa está, e o menu passa a mentir sobre onde ela está.
-          const aqui = section.items.some((i) => pathname.startsWith(i.to))
-          // Com a barra recolhida o rótulo não aparece, e sem ele não há como
-          // reabrir a seção: ali tudo fica visível.
-          const aberta = collapsed || aqui || !fechadas.has(section.label)
-          return (
-            <div key={section.label} className={`sidebar-section${aberta ? '' : ' fechada'}`}>
-              <button
-                type="button"
-                className="sidebar-section-label"
-                onClick={() => alternarSecao(section.label)}
-                aria-expanded={aberta}
-                title={aberta ? 'Recolher seção' : 'Expandir seção'}
+        {collapsed
+          ? // Recolhida, a barra vira ícone puro: sem o rótulo não há como
+            // expandir um grupo, então mostra tudo achatado, sem a árvore.
+            MENU.flatMap(function achatar(no) {
+              return no.filhos ? no.filhos.flatMap(achatar) : [no]
+            }).map((folha) => (
+              <Link
+                key={folha.id}
+                to={folha.to}
+                className={`nav-item${ehAtivo(folha.to, pathname, search) ? ' active' : ''}`}
               >
-                {/* Sempre o mesmo triângulo: quem vira é o CSS, pela classe
-                    "fechada" da seção. */}
-                <span className="secao-chevron" aria-hidden="true">
-                  ▾
-                </span>
-                {section.label}
-              </button>
-              {aberta &&
-                section.items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                  >
-                    <span className={`nav-icon${item.cor ? ` ${item.cor}` : ''}`}>
-                      <Icone nome={item.icone} />
-                    </span>{' '}
-                    <span className="nav-label">{item.text}</span>
-                  </NavLink>
-                ))}
-            </div>
-          )
-        })}
+                <span className={`nav-icon${folha.cor ? ` ${folha.cor}` : ''}`}>
+                  <Icone nome={folha.icone} />
+                </span>{' '}
+                <span className="nav-label">{folha.text}</span>
+              </Link>
+            ))
+          : MENU.map((no) => (
+              <NoMenu
+                key={no.id}
+                no={no}
+                profundidade={0}
+                pathname={pathname}
+                search={search}
+                fechadas={fechadas}
+                alternar={alternar}
+              />
+            ))}
 
         <div className="sidebar-section-label sidebar-section-label-fixo">Conta</div>
         <div className="nav-item" onClick={handleSair} style={{ cursor: 'pointer' }}>

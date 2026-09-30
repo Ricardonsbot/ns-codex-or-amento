@@ -8,6 +8,7 @@ import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/r
 import { bigNumbers } from '../lib/quadrosResultado'
 import Indicadores from '../components/Indicadores'
 import BotaoRecolher from '../components/BotaoRecolher'
+import Icone from '../components/Icone'
 
 // Escolha de quem está olhando, não dado do orçamento: fica no navegador.
 const CHAVE_ACESSO_RAPIDO = 'ns-budget:acesso-rapido-aberto'
@@ -129,10 +130,6 @@ export default function Dashboard() {
       </header>
 
       <div className="content">
-        <div className="proto-banner">
-          ⓘ Fase 2 da migração para React — filtros e resumo do orçamento já consultam o Supabase (dados reais de estrutura organizacional, plano de contas e lançamentos).
-        </div>
-
         <div className="filter-bar">
           <div className="filter-field">
             <label>BU</label>
@@ -207,7 +204,7 @@ export default function Dashboard() {
             <div className="action-strip">
               <Link to="/orcamento/despesa">
                 <div className="hub-card hub-inserir">
-                  <div className="hub-icon">✎</div>
+                  <div className="hub-icon"><Icone nome="inserir" tamanho={22} /></div>
                   <h3>Inserir</h3>
                   <p>Lançar valores de Receita, Despesa e Capex.</p>
                   <div className="hub-cta">Novo lançamento →</div>
@@ -215,14 +212,14 @@ export default function Dashboard() {
               </Link>
               <Link to="/cadastros">
                 <div className="hub-card hub-cadastrar">
-                  <div className="hub-icon">👤</div>
+                  <div className="hub-icon"><Icone nome="cadastros" tamanho={22} /></div>
                   <h3>Cadastrar</h3>
                   <p>Usuários, contas, índices, layouts e mais.</p>
                   <div className="hub-cta">Abrir cadastros →</div>
                 </div>
               </Link>
               <div className="hub-card hub-exportar" onClick={() => showToast('Exportação simulada gerada', 'info')}>
-                <div className="hub-icon">⭳</div>
+                <div className="hub-icon"><Icone nome="exportar" tamanho={22} /></div>
                 <h3>Exportar</h3>
                 <p>Baixar o resumo do orçamento do ciclo atual.</p>
                 <div className="hub-cta">Exportar dados →</div>
