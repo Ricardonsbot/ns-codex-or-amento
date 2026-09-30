@@ -5,6 +5,7 @@ import UnidadeProvider from './components/UnidadeProvider'
 import RequireAuth from './components/RequireAuth'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Notes from './pages/Notes'
 import Cadastros from './pages/Cadastros'
 import ContasContabeis from './pages/cadastros/ContasContabeis'
 import Indices from './pages/cadastros/Indices'
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+          <Route path="/notes" element={<RequireAuth><Notes /></RequireAuth>} />
           <Route path="/orcamento/receita" element={<RequireAuth><Receita /></RequireAuth>} />
           <Route path="/orcamento/despesa" element={<RequireAuth><Despesa /></RequireAuth>} />
           <Route path="/orcamento/capex" element={<RequireAuth><Capex /></RequireAuth>} />

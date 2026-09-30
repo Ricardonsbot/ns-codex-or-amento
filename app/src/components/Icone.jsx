@@ -30,6 +30,12 @@ const ICONES = {
   cadastros: ['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M22 21v-2a4 4 0 0 0-3-3.9'],
   ciclos: ['M4 21v-6', 'M4 11V3', 'M12 21v-9', 'M12 8V3', 'M20 21v-4', 'M20 13V3', 'M1 15h6', 'M9 8h6', 'M17 17h6'],
   sair: ['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4', 'M16 17l5-5-5-5', 'M21 12H9'],
+  // folha com a quina dobrada: bloco de notas
+  nota: ['M21 8v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5z', 'M15 3v5h5', 'M8 13h8', 'M8 17h5'],
+  // lapis: inserir/editar um lancamento
+  inserir: ['M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .622.622l4.353-1.32a2 2 0 0 0 .83-.497Z', 'm15 5 4 4'],
+  // seta saindo da bandeja: baixar arquivo (oposto de "importar")
+  exportar: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M7 10l5 5 5-5', 'M12 15V3'],
 
   // ---- cadastros (a página de parâmetros)
   contas: ['M3 5h18v14H3z', 'M3 10h18', 'M8 15h3'],

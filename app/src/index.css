@@ -3427,3 +3427,45 @@ tfoot td {
 .grafico-tooltip span { display: flex; align-items: center; gap: 6px; }
 .grafico-tooltip b { margin-left: auto; font-variant-numeric: tabular-nums; }
 .grafico-linhas-unidade { text-align: right; font-size: 11px; color: var(--color-text-faint); }
+
+/* ---------- Notes (bloco de notas do time) ---------- */
+
+.lista-notas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nota-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.nota-item:last-child { border-bottom: none; }
+
+.nota-item label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  cursor: pointer;
+  font-size: 13.5px;
+}
+
+.nota-item.nota-feita span { color: var(--color-text-muted); text-decoration: line-through; }
+
+.nota-separador {
+  margin-top: 10px;
+  padding: 6px 4px 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  border-top: 1px solid var(--color-border);
+}

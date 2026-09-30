@@ -5,14 +5,26 @@ import { useAuth } from './AuthProvider'
 import { sair } from '../lib/authData'
 import { useToast } from './ToastProvider'
 
-const NAV_SECTIONS = [
+/**
+ * O menu em duas camadas: `categoria` é o rótulo que agrupa e recolhe
+ * (Visão Geral, Orçamento, Fluxo, Análise, Configuração); `modulos` é cada
+ * tela clicável dentro dela. "Configuração" junta o que antes eram duas
+ * categorias (Administração e Budget - Settings) — Cadastros e Ciclos &
+ * Versões são os dois módulos que aparecem em drilldown abaixo dela, do
+ * mesmo jeito que qualquer outra categoria já expande.
+ */
+const CATEGORIAS_MENU = [
   {
-    label: 'Visão geral',
-    items: [{ to: '/dashboard', icone: 'dashboard', text: 'Dashboard' }],
+    categoria: 'Visão Geral',
+    modulos: [{ to: '/dashboard', icone: 'dashboard', text: 'Dashboard' }],
   },
   {
-    label: 'Orçamento',
-    items: [
+    categoria: 'Notes',
+    modulos: [{ to: '/notes', icone: 'nota', text: 'Notes' }],
+  },
+  {
+    categoria: 'Orçamento',
+    modulos: [
       { to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: '(+) Revenue' },
       { to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: '(−) Expenses' },
       { to: '/orcamento/capex', icone: 'capex', text: '(−) Capex' },
@@ -20,27 +32,26 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Fluxo',
-    items: [
+    categoria: 'Fluxo',
+    modulos: [
       { to: '/aprovacoes', icone: 'aprovacao', text: 'Aprovações' },
       { to: '/pendencia-cadastros', icone: 'pendencia', text: 'Pendência de Cadastros' },
     ],
   },
   {
-    label: 'Análise',
-    items: [
+    categoria: 'Análise',
+    modulos: [
       { to: '/resultado', icone: 'resultado', text: 'Resultado' },
       { to: '/deep-dive', icone: 'lupa', text: 'Deep Dive' },
       { to: '/relatorios', icone: 'relatorio', text: 'Relatórios' },
     ],
   },
   {
-    label: 'Administração',
-    items: [{ to: '/cadastros', icone: 'cadastros', text: 'Cadastros' }],
-  },
-  {
-    label: 'Budget - Settings',
-    items: [{ to: '/budget-settings', icone: 'ciclos', text: 'Ciclos & Versões' }],
+    categoria: 'Configuração',
+    modulos: [
+      { to: '/cadastros', icone: 'cadastros', text: 'Cadastros' },
+      { to: '/budget-settings', icone: 'ciclos', text: 'Ciclos & Versões' },
+    ],
   },
 ]
 
@@ -73,12 +84,12 @@ export default function Layout({ children }) {
   const email = sessao?.user?.email ?? ''
   const iniciais = email ? email.slice(0, 2).toUpperCase() : '—'
 
-  /** Abre ou fecha uma seção do menu, e lembra da escolha. */
-  function alternarSecao(label) {
+  /** Abre ou fecha uma categoria do menu, e lembra da escolha. */
+  function alternarSecao(categoria) {
     setFechadas((atual) => {
       const nova = new Set(atual)
-      if (nova.has(label)) nova.delete(label)
-      else nova.add(label)
+      if (nova.has(categoria)) nova.delete(categoria)
+      else nova.add(categoria)
       try {
         window.localStorage.setItem(CHAVE_SECOES, JSON.stringify([...nova]))
       } catch {
@@ -116,40 +127,40 @@ export default function Layout({ children }) {
           </button>
         </div>
 
-        {NAV_SECTIONS.map((section) => {
-          // A seção da página aberta nunca fica fechada: some de vista onde a
-          // pessoa está, e o menu passa a mentir sobre onde ela está.
-          const aqui = section.items.some((i) => pathname.startsWith(i.to))
+        {CATEGORIAS_MENU.map((secao) => {
+          // A categoria da página aberta nunca fica fechada: some de vista
+          // onde a pessoa está, e o menu passa a mentir sobre onde ela está.
+          const aqui = secao.modulos.some((m) => pathname.startsWith(m.to))
           // Com a barra recolhida o rótulo não aparece, e sem ele não há como
-          // reabrir a seção: ali tudo fica visível.
-          const aberta = collapsed || aqui || !fechadas.has(section.label)
+          // reabrir a categoria: ali tudo fica visível.
+          const aberta = collapsed || aqui || !fechadas.has(secao.categoria)
           return (
-            <div key={section.label} className={`sidebar-section${aberta ? '' : ' fechada'}`}>
+            <div key={secao.categoria} className={`sidebar-section${aberta ? '' : ' fechada'}`}>
               <button
                 type="button"
                 className="sidebar-section-label"
-                onClick={() => alternarSecao(section.label)}
+                onClick={() => alternarSecao(secao.categoria)}
                 aria-expanded={aberta}
-                title={aberta ? 'Recolher seção' : 'Expandir seção'}
+                title={aberta ? 'Recolher categoria' : 'Expandir categoria'}
               >
                 {/* Sempre o mesmo triângulo: quem vira é o CSS, pela classe
-                    "fechada" da seção. */}
+                    "fechada" da categoria. */}
                 <span className="secao-chevron" aria-hidden="true">
                   ▾
                 </span>
-                {section.label}
+                {secao.categoria}
               </button>
               {aberta &&
-                section.items.map((item) => (
+                secao.modulos.map((modulo) => (
                   <NavLink
-                    key={item.to}
-                    to={item.to}
+                    key={modulo.to}
+                    to={modulo.to}
                     className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
                   >
-                    <span className={`nav-icon${item.cor ? ` ${item.cor}` : ''}`}>
-                      <Icone nome={item.icone} />
+                    <span className={`nav-icon${modulo.cor ? ` ${modulo.cor}` : ''}`}>
+                      <Icone nome={modulo.icone} />
                     </span>{' '}
-                    <span className="nav-label">{item.text}</span>
+                    <span className="nav-label">{modulo.text}</span>
                   </NavLink>
                 ))}
             </div>
