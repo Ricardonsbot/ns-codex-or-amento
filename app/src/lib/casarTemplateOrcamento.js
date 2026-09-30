@@ -98,16 +98,25 @@ export function montarResolvedorDeConta(contas, tipo, { aceitaTambem } = {}) {
  *              uma frase, e deixá-la entrar como zero é pior do que barrar
  */
 /**
- * A linha da Base Gastos é Capex? Qualquer um dos três sinais basta:
+ * A linha da Base Gastos é Capex? Quem diz é a **Linha P&L**, e só ela.
  *
- *   área "Capex"             a coluna Alocação PnL (Área) — é ela que diz se o
- *                            gasto é ativado, mesmo com conta de pessoal
- *   Linha P&L "CAPEX/..."    a coluna Linha P&L do template 2027
- *   conta de Capex no plano  o número da conta, quando as colunas vêm vazias
+ * A área não decide mais. Ela diz onde o gasto é alocado — COGS, G&A, S&M,
+ * R&D —, não se ele é investimento; e enquanto ela decidia, uma linha com
+ * "Capex" escrito na coluna de área saía da despesa sem que a Linha P&L
+ * tivesse dito nada, e sem aparecer para ninguém.
+ *
+ *   Linha P&L do template    a ajustada manda sobre a original, como em todo
+ *                            o resto; preenchida, é ela que decide, inclusive
+ *                            para dizer que NÃO é capex
+ *   conta de Capex no plano  a reserva de quando a coluna vem vazia: a Linha
+ *                            P&L da conta no plano de contas
  */
 export function linhaEhCapex(l, contas) {
-  if (lim(l.area) === 'CAPEX') return true
-  if (lim(l.linha_pl_template).includes('CAPEX')) return true
+  // O `|| ''` não é enfeite: sem ele, `lim(undefined)` vira "UNDEFINED", que
+  // é texto e faz a coluna vazia parecer preenchida — e aí a conta do plano,
+  // que é a reserva, nunca era consultada.
+  const daLinha = lim(l.linha_pl_ajustada || l.linha_pl_template || '')
+  if (daLinha) return daLinha.includes('CAPEX')
   const d = soDigitos(l.contaCodigo)
   if (!d) return false
   const c = contas.find((x) => soDigitos(x.codigo) === d)
