@@ -205,6 +205,39 @@ a { color: inherit; text-decoration: none; }
 .menu-grupo-btn .nav-icon { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; }
 .menu-grupo-btn .secao-chevron { margin-left: auto; }
 
+/* Submenu (profundidade > 0): só o primeiro nível leva ícone. Aqui embaixo
+   o texto sozinho, menor e mais claro, já diz "isto é um item dentro de
+   outro" — sem precisar repetir o ícone do pai em cada filho. */
+.nav-item-sub {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--color-text-faint);
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.nav-item-sub:hover { color: var(--color-text-muted); background: var(--color-surface-raised); }
+
+.nav-item-sub.active {
+  color: var(--color-primary);
+  font-weight: 600;
+  background: var(--color-sidebar-active);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.sidebar-section-label.menu-grupo-btn-sub {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--color-text-faint);
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.sidebar-section-label.menu-grupo-btn-sub:hover { color: var(--color-text-muted); }
+.menu-grupo.fechado .menu-grupo-btn-sub { padding-bottom: 7px; }
+
 .nav-item {
   display: flex;
   align-items: center;

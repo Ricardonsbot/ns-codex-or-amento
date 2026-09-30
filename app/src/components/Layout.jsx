@@ -120,18 +120,29 @@ function temDescendenteAtivo(no, pathname, search) {
   return (no.filhos ?? []).some((filho) => temDescendenteAtivo(filho, pathname, search))
 }
 
+// Alinha o texto de quem não tem ícone por baixo do TEXTO do nível acima
+// (não do ícone dele) — é o que faz o submenu ficar "recuado", como no
+// modelo, em vez de flutuar solto à esquerda.
+const RECUO_SEM_ICONE = 34
+const RECUO_POR_NIVEL = 14
+
 function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
+  const primeiroNivel = profundidade === 0
+  const recuo = primeiroNivel ? 0 : RECUO_SEM_ICONE + (profundidade - 1) * RECUO_POR_NIVEL
+
   if (!no.filhos) {
     const ativo = ehAtivo(no.to, pathname, search)
     return (
       <Link
         to={no.to}
-        className={`nav-item${ativo ? ' active' : ''}`}
-        style={{ paddingLeft: 12 + profundidade * 16 }}
+        className={`nav-item${ativo ? ' active' : ''}${primeiroNivel ? '' : ' nav-item-sub'}`}
+        style={{ paddingLeft: primeiroNivel ? 12 : recuo }}
       >
-        <span className={`nav-icon${no.cor ? ` ${no.cor}` : ''}`}>
-          <Icone nome={no.icone} />
-        </span>{' '}
+        {primeiroNivel && (
+          <span className={`nav-icon${no.cor ? ` ${no.cor}` : ''}`}>
+            <Icone nome={no.icone} />
+          </span>
+        )}
         <span className="nav-label">{no.text}</span>
       </Link>
     )
@@ -144,15 +155,17 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
     <div className={`menu-grupo${aberto ? '' : ' fechado'}`}>
       <button
         type="button"
-        className="sidebar-section-label menu-grupo-btn"
+        className={`sidebar-section-label menu-grupo-btn${primeiroNivel ? '' : ' menu-grupo-btn-sub'}`}
         onClick={() => alternar(no.id)}
         aria-expanded={aberto}
         title={aberto ? 'Recolher' : 'Expandir'}
-        style={{ paddingLeft: 10 + profundidade * 16 }}
+        style={{ paddingLeft: primeiroNivel ? 10 : recuo }}
       >
-        <span className="nav-icon">
-          <Icone nome={no.icone} />
-        </span>
+        {primeiroNivel && (
+          <span className="nav-icon">
+            <Icone nome={no.icone} />
+          </span>
+        )}
         <span className="nav-label menu-grupo-label">{no.text}</span>
         <span className="secao-chevron" aria-hidden="true">
           ▾
