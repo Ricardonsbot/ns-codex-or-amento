@@ -476,6 +476,30 @@ export function resumoDaImportacao({
 }
 
 /**
+ * Junta os resumos dos módulos num registro só — o do arquivo.
+ *
+ * O template é um arquivo, não três: o checklist que decide se ele está apto
+ * a consolidar olha Receita, Despesa e Capex juntos. `avaliar` já soma o que
+ * encontra em `tipos`; aqui só se empilha o que cada aba trouxe.
+ */
+export function resumoDoArquivo(resumos) {
+  const cheios = (resumos ?? []).filter(Boolean)
+  const tipos = {}
+  let empresas = []
+  for (const r of cheios) {
+    Object.assign(tipos, r.tipos)
+    empresas = juntarEmpresas(empresas, r.empresas ?? [])
+  }
+  return {
+    ano: cheios[0]?.ano ?? null,
+    versao_nome: cheios[0]?.versao_nome ?? null,
+    tipos,
+    empresas,
+    totais: totalizar(empresas),
+  }
+}
+
+/**
  * O quadro de status do template, em três níveis:
  *
  *   Essencial     o que o consolidado precisa para fechar. Falhou, o template

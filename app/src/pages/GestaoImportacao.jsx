@@ -16,6 +16,7 @@ import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasP
 import { createCiclo } from '../lib/ciclosData'
 import { agruparPorConta, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
 import { resumoDoUpload } from '../lib/resumoDoUpload'
+import { resumoDoArquivo } from '../lib/importacoesData'
 import Indicadores from '../components/Indicadores'
 import GraficoLinhas from '../components/GraficoLinhas'
 import { MESES } from '../lib/demonstrativo'
@@ -70,7 +71,19 @@ const semCadastro = (m) =>
  * só que aqui os três correm a partir de UM upload já lido, em vez de três
  * telas com um "Importar Template" cada uma.
  */
-function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImportado, onRegistrar, onDesfeito }) {
+function CardTipo({
+  ref,
+  tipo,
+  lido,
+  arquivo,
+  podeSolicitar,
+  substituir,
+  onSubstituir,
+  onPrevia,
+  onImportado,
+  onRegistrar,
+  onDesfeito,
+}) {
   const showToast = useToast()
   const { sessao } = useAuth()
   const email = sessao?.user?.email
@@ -79,7 +92,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
   const [erroConferencia, setErroConferencia] = useState(null)
   const [gravando, setGravando] = useState(false)
   const [progresso, setProgresso] = useState(null)
-  const [substituir, setSubstituir] = useState(false)
   const [ultima, setUltima] = useState(null)
   const [desfazendo, setDesfazendo] = useState(false)
   const [checklistAberto, setChecklistAberto] = useState(false)
@@ -87,7 +99,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
   // não têm nada a resolver.
   const [contasAbertas, setContasAbertas] = useState(() => new Set())
   const [soOfensas, setSoOfensas] = useState(false)
-  const [statusPrevia, setStatusPrevia] = useState(false)
 
   useEffect(() => {
     let cancelado = false
@@ -222,23 +233,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
     }
   }
 
-  // O status já na conferência: é aqui que dá para desistir e corrigir a
-  // planilha, em vez de descobrir o impedimento depois de gravar.
-  const resumoPrevia = previa
-    ? resumoDaImportacao({
-        ano: lido.ano,
-        versao: previa.versao,
-        tipo,
-        linhas: [...previa.prontas, ...previa.marcadas],
-        fora: previa.fora.length,
-        textoEmNumero: previa.fora.filter((f) => f.naoNumericos?.length).length,
-        marcadas: previa.marcadas.length,
-        apagados: 0,
-        somouEmCima: Boolean(previa.jaExistem) && !substituir,
-        cadastros: previa.cadastros,
-      })
-    : null
-
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
   // As duas recusas são de natureza diferente e o aviso precisa dizer qual é:
   // texto numa coluna de valor não é empresa fora do cadastro.
@@ -264,39 +258,19 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
   )
 
   return (
-    <div className="panel" style={{ marginBottom: 16 }}>
-      <div className="panel-header">
-        <BotaoRecolher chave={`gestao-importacao-${tipo}`} rotulo={ROTULO[tipo]} />
-        <div>
-          <h2>{ROTULO[tipo]}</h2>
-          <p>
-            aba {lido.aba}
-            {previa?.ciclo && ` · ciclo ${previa.ciclo.ano}`}
-            {previa?.versao && ` / versão ${previa.versao.nome}`}
-          </p>
-        </div>
-        {previa && (
-          <div className="flex-row" style={{ gap: 6 }}>
-            {/* A importação é do template inteiro, num botão só, acima dos
-                cards: módulo por módulo deixava meio arquivo no banco e meio
-                fora, sem ninguém notar. Aqui só se tira o módulo da leva. */}
-            {gravando && <span className="text-muted" style={{ fontSize: 12 }}>Importando…</span>}
-            <button
-              className="btn btn-secondary btn-sm"
-              type="button"
-              onClick={() => {
-                setPrevia(null)
-                onPrevia?.(tipo, null)
-              }}
-              disabled={gravando}
-            >
-              Ignorar este módulo
-            </button>
-          </div>
-        )}
+    <section className="modulo-conferencia">
+      {/* Seção, não painel: o template é uma coisa só. Não há o que escolher
+          nem o que deixar de fora — as três abas entram juntas ou nenhuma
+          entra, e meio arquivo no banco não é um estado que alguém queira. */}
+      <div className="modulo-conferencia-topo">
+        <h3>{ROTULO[tipo]}</h3>
+        <span>
+          aba {lido.aba}
+          {gravando && ' · importando…'}
+        </span>
       </div>
 
-      <div className="panel-body">
+      <div>
         {gravando && <ProgressoGravacao progresso={progresso} rotulo={ROTULO[tipo]} />}
 
         {lido.erro && (
@@ -348,10 +322,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
           />
         )}
 
-        {statusPrevia && resumoPrevia && (
-          <ChecklistImportacao registro={resumoPrevia} escopo="tipo" onFechar={() => setStatusPrevia(false)} />
-        )}
-
         {previa && (
           <>
             {previa.jaExistem > 0 && (
@@ -359,7 +329,12 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
                 ⚠ Esta versão já tem <strong>{previa.jaExistem}</strong> lançamento(s) de {NOME[tipo]}. Importar vai{' '}
                 <strong>somar</strong> aos que já existem, não substituir.
                 <label style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
-                  <input type="checkbox" checked={substituir} onChange={(e) => setSubstituir(e.target.checked)} style={{ marginRight: 6 }} />
+                  <input
+                    type="checkbox"
+                    checked={Boolean(substituir)}
+                    onChange={(e) => onSubstituir?.(tipo, e.target.checked)}
+                    style={{ marginRight: 6 }}
+                  />
                   Apagar os {previa.jaExistem} antes de importar
                 </label>
               </div>
@@ -378,15 +353,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
                 {previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'} acima ou abaixo — o mesmo upload entra
                 nos dois, cada um com a sua parte, sem duplicar.
               </div>
-            )}
-
-            {resumoPrevia && (
-              <AlertaStatus
-                registro={resumoPrevia}
-                escopo="tipo"
-                previa
-                onAbrir={() => setStatusPrevia(true)}
-              />
             )}
 
             {porConta.length > 0 && (
@@ -503,7 +469,7 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onPrevia, onImporta
           </>
         )}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -546,10 +512,13 @@ export default function GestaoImportacao() {
   const [importandoTudo, setImportandoTudo] = useState(null)
   // Qual módulo está aberto na conferência. Os três continuam montados — é
   // deles que sai o resumo do topo, e é neles que o "importar tudo" bate.
-  const [moduloAberto, setModuloAberto] = useState(null)
+  // Apagar o que já existe antes de importar, por módulo. Mora aqui porque o
+  // checklist do arquivo precisa saber disso para dizer se vai somar em cima.
+  const [substituir, setSubstituir] = useState({})
   // A prévia de cada módulo, reportada pelos cards: é o que alimenta o
   // sumário de ofensas do arquivo inteiro.
   const [previas, setPrevias] = useState({})
+  const [checklistDoArquivo, setChecklistDoArquivo] = useState(false)
   const cards = useRef({})
   const { sessao } = useAuth()
   // Um registro de histórico por upload: o primeiro tipo importado cria, os
@@ -579,6 +548,7 @@ export default function GestaoImportacao() {
     registro.current = { id: null, fila: Promise.resolve() }
     setGravados(0)
     setPrevias({})
+    setSubstituir({})
 
     // Só os nomes das abas, sem parsear nenhuma: é o que diz se este arquivo
     // traz também os cadastros.
@@ -692,18 +662,29 @@ export default function GestaoImportacao() {
   const tiposVazios = todos ? ORDEM.filter((t) => !todos[t].erro && !todos[t].linhas.length) : []
   const tiposComErro = todos ? ORDEM.filter((t) => todos[t].erro) : []
 
-  // A aba aberta, sem estado a mais: se a escolhida sumiu (outro arquivo,
-  // outro conjunto de abas), vale a primeira que tem dado.
-  const aberto = tiposComDado.includes(moduloAberto) ? moduloAberto : tiposComDado[0]
-
-  /** A bandeira do módulo na aba, pelo que a prévia dele já disse. */
-  function corDoModulo(t) {
-    const pv = previas[t]
-    if (!pv) return 'cinza'
-    if (pv.fora.length) return 'vermelho'
-    if (pv.marcadas.length || pv.prontas.some((x) => x.avisos?.length)) return 'amarelo'
-    return 'verde'
-  }
+  // O checklist é do arquivo, não de cada aba: o template entra inteiro, e é
+  // inteiro que ele está apto ou não a consolidar.
+  const primeira = tiposComDado.map((t) => previas[t]).find(Boolean)
+  const registroDoArquivo = tiposComDado.some((t) => previas[t])
+    ? resumoDoArquivo(
+        tiposComDado
+          .filter((t) => previas[t])
+          .map((t) =>
+            resumoDaImportacao({
+              ano: todos[t].ano,
+              versao: previas[t].versao,
+              tipo: t,
+              linhas: [...previas[t].prontas, ...previas[t].marcadas],
+              fora: previas[t].fora.length,
+              textoEmNumero: previas[t].fora.filter((f) => f.naoNumericos?.length).length,
+              marcadas: previas[t].marcadas.length,
+              apagados: 0,
+              somouEmCima: Boolean(previas[t].jaExistem) && !substituir[t],
+              cadastros: previas[t].cadastros,
+            })
+          )
+      )
+    : null
 
   // O que o arquivo traz, somado: alimenta os big numbers e o gráfico.
   const resumo = resumoDoUpload(ORDEM.map((t) => ({ tipo: t, previa: previas[t] })))
@@ -824,8 +805,9 @@ export default function GestaoImportacao() {
                   <strong>Importar o template inteiro</strong>
                   <p style={{ fontSize: 12, opacity: 0.8, margin: '6px 0 0' }}>
                     Grava {tiposComDado.map((t) => ROTULO[t]).join(', ')} numa passada só, nesta ordem, e tudo entra
-                    como uma importação só no histórico. É o único jeito de importar: módulo por módulo deixava meio
-                    arquivo no banco e meio fora. Para deixar um de fora, use o "Ignorar este módulo" no card dele.
+                    como uma importação só no histórico. O template é uma coisa só: não dá para deixar uma aba de
+                    fora, porque meio arquivo dentro do banco e meio fora não é um estado que alguém consiga defender
+                    depois.
                   </p>
                 </div>
                 <button
@@ -841,51 +823,60 @@ export default function GestaoImportacao() {
               </div>
             )}
 
-            {tiposComDado.length > 1 && (
-              <div className="filtro-botoes" style={{ marginBottom: 12 }}>
-                <span className="filtro-botoes-label">Conferir</span>
-                <div className="filtro-botoes-lista" role="tablist" aria-label="Módulos do template">
-                  {tiposComDado.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      role="tab"
-                      aria-selected={aberto === t}
-                      className={`filtro-chip${aberto === t ? ' ativo' : ''}`}
-                      onClick={() => setModuloAberto(t)}
-                    >
-                      <span className={`bolinha ${corDoModulo(t)}`} aria-hidden="true" /> {ROTULO[t]}
-                    </button>
-                  ))}
+            <div className="panel" style={{ marginBottom: 16 }}>
+              <div className="panel-header">
+                <BotaoRecolher chave="gestao-importacao-conferencia" rotulo="a conferência" />
+                <div>
+                  <h2>Conferência do template</h2>
+                  <p>
+                    {arquivo}
+                    {primeira?.ciclo && ` · ciclo ${primeira.ciclo.ano}`}
+                    {primeira?.versao && ` / versão ${primeira.versao.nome}`}
+                  </p>
                 </div>
               </div>
-            )}
+              <div className="panel-body">
+                {/* Um checklist só, do arquivo: é ele que decide se o template
+                    está apto a consolidar, e o template é um. */}
+                {registroDoArquivo && (
+                  <AlertaStatus
+                    registro={registroDoArquivo}
+                    escopo="arquivo"
+                    previa
+                    onAbrir={() => setChecklistDoArquivo(true)}
+                  />
+                )}
 
-            {/* Os três ficam montados, e só o escolhido aparece: é deles que
-                sai o resumo do topo, e é neles que o "importar o template"
-                bate quando grava os três. Desmontar os outros perderia a
-                conferência que eles já fizeram. */}
-            {tiposComDado.map((t) => (
-              <div
-                key={`${chave}-${t}`}
-                style={aberto === t ? undefined : { display: 'none' }}
-                aria-hidden={aberto !== t}
-              >
-                <CardTipo
-                  ref={(el) => {
-                    cards.current[t] = el
-                  }}
-                  tipo={t}
-                  lido={todos[t]}
-                  arquivo={arquivo}
-                  podeSolicitar={podeSolicitar}
-                  onPrevia={(tipoDoCard, pv) => setPrevias((atual) => ({ ...atual, [tipoDoCard]: pv }))}
-                  onRegistrar={registrar}
-                  onDesfeito={desfeito}
-                  onImportado={() => setGravados((n) => n + 1)}
-                />
+                {tiposComDado.map((t) => (
+                  <CardTipo
+                    key={`${chave}-${t}`}
+                    ref={(el) => {
+                      cards.current[t] = el
+                    }}
+                    tipo={t}
+                    lido={todos[t]}
+                    arquivo={arquivo}
+                    podeSolicitar={podeSolicitar}
+                    substituir={substituir[t]}
+                    onSubstituir={(tipoDoCard, valor) =>
+                      setSubstituir((atual) => ({ ...atual, [tipoDoCard]: valor }))
+                    }
+                    onPrevia={(tipoDoCard, pv) => setPrevias((atual) => ({ ...atual, [tipoDoCard]: pv }))}
+                    onRegistrar={registrar}
+                    onDesfeito={desfeito}
+                    onImportado={() => setGravados((n) => n + 1)}
+                  />
+                ))}
               </div>
-            ))}
+            </div>
+
+            {checklistDoArquivo && registroDoArquivo && (
+              <ChecklistImportacao
+                registro={registroDoArquivo}
+                escopo="arquivo"
+                onFechar={() => setChecklistDoArquivo(false)}
+              />
+            )}
 
             {!tiposComDado.length && !tiposComErro.length && (
               <div className="empty-hint">Nenhuma das três abas tinha lançamento para conferir neste arquivo.</div>

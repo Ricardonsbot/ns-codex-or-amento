@@ -3433,3 +3433,31 @@ tfoot td {
    qualquer fundo. */
 .filtro-chip .bolinha { margin-right: 2px; vertical-align: -1px; }
 .filtro-chip.ativo .bolinha { box-shadow: 0 0 0 2px var(--color-surface); }
+
+/* ------------------------------------------- Módulos como seções
+   Receita, Despesa e Capex não são painéis independentes: são partes da
+   conferência de um arquivo só. Um filete na cor do módulo separa. */
+.modulo-conferencia {
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+  margin-top: 14px;
+}
+
+.modulo-conferencia:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+
+.modulo-conferencia-topo {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.modulo-conferencia-topo h3 {
+  margin: 0;
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.modulo-conferencia-topo span { font-size: 12px; color: var(--color-text-faint); }
