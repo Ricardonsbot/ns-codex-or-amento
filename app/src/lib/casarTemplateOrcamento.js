@@ -16,6 +16,29 @@ const soDigitos = (v) => {
   return /^0*$/.test(d) ? '' : d
 }
 
+/** O valor do ano da linha, já na convenção do banco. */
+const totalDe = (l) => Number(l.total ?? (l.valores ?? []).reduce((a, v) => a + Number(v.valor ?? 0), 0))
+
+/**
+ * A linha veio com o sinal trocado?
+ *
+ * O template escreve gasto e capex como negativo, e a leitura nega o valor
+ * para guardar a magnitude. Total negativo aqui quer dizer que a linha veio
+ * positiva lá — e no P&L ela vai reduzir a despesa em vez de somar.
+ *
+ * A ferramenta não conserta: o número entra como veio e a linha sai
+ * apontada. Quem sabe se aquilo é erro de digitação ou um crédito de
+ * verdade é quem lançou.
+ *
+ * A dedução de receita é negativa por natureza e não conta.
+ */
+export function sinalInvertido(l, tipo, conta) {
+  if (totalDe(l) >= 0) return false
+  if (tipo !== 'receita') return true
+  const linha = String(conta?.linha_pl || l.linha_pl_template || '')
+  return !/deduc|deduct/i.test(linha)
+}
+
 /**
  * Monta o resolvedor de conta do tipo pedido.
  *
@@ -124,13 +147,17 @@ export function casar({ tipo, aba, linhas }, { empresas, contas }) {
     const empresa = porEmpresa.get(lim(l.empresa))
     const { conta, erro } = (ehCapex && daBaseGastos(l) ? acharContaAtivacao : acharConta)(l.contaCodigo, l.contaRotulo)
 
+    // Aviso é diferente de falha: a linha entra, e entra com o número que
+    // veio. Só não entra calada.
+    const avisos = sinalInvertido(l, tipo, conta) ? ['sinal invertido: no template o valor veio positivo'] : []
+
     if (!empresa) {
       const motivo = l.empresa ? `Empresa "${l.empresa}" não está cadastrada` : 'Linha sem empresa'
-      fora.push({ ...l, falhas: erro ? [motivo, erro] : [motivo] })
+      fora.push({ ...l, avisos, falhas: erro ? [motivo, erro] : [motivo] })
     } else if (erro) {
-      marcadas.push({ ...l, empresa, conta: null, falhas: [erro] })
+      marcadas.push({ ...l, empresa, conta: null, avisos, falhas: [erro] })
     } else {
-      prontas.push({ ...l, empresa, conta })
+      prontas.push({ ...l, empresa, conta, avisos })
     }
   }
   return { prontas, marcadas, fora, pendentes: fora, outroModulo }

@@ -845,7 +845,13 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                       )}
                       <td><Meses valores={p.valores} /></td>
                       <td className="text-right">{brl(p.total)}</td>
-                      <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ resolvida</td>
+                      {p.avisos?.length ? (
+                        <td style={{ color: 'var(--color-warning, #b26a00)', fontSize: 12 }}>
+                          ⚠ entra como está — {p.avisos.join(' · ')} ({brl(-p.total)})
+                        </td>
+                      ) : (
+                        <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ resolvida</td>
+                      )}
                     </tr>
                   ))}
                   {[...previa.marcadas, ...previa.fora].map((p) => (

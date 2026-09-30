@@ -227,6 +227,10 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
   // texto numa coluna de valor não é empresa fora do cadastro.
   const recusadasPorTexto = previa?.fora.filter((f) => f.naoNumericos?.length) ?? []
   const recusadasSemEmpresa = previa?.fora.filter((f) => !f.naoNumericos?.length) ?? []
+  // A linha apontada entra, mas não pode se esconder no meio das resolvidas:
+  // vai inteira para o topo da tabela, antes do corte das 200.
+  const apontadas = previa?.prontas.filter((p) => p.avisos?.length) ?? []
+  const semReparo = previa?.prontas.filter((p) => !p.avisos?.length) ?? []
   const total = aImportar.reduce((a, p) => a + p.total, 0)
   const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
   const semVersao = previa && !previa.versao
@@ -392,6 +396,14 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
               </div>
             )}
 
+            {apontadas.length > 0 && (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ⚠ {apontadas.length} linha(s) <strong>entram como estão</strong>, com o sinal invertido — no template
+                o valor veio positivo, e assim ele reduz a despesa no P&L. A ferramenta não corrige o número: confira
+                se é crédito ou erro de digitação. Estão no topo da tabela.
+              </div>
+            )}
+
             {previa.fora.length > 0 && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
                 ⓘ {previa.fora.length} linha(s) <strong>não entram</strong>
@@ -473,7 +485,18 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
                         </td>
                       </tr>
                     ))}
-                    {previa.prontas.slice(0, 200).map((p) => (
+                    {apontadas.map((p) => (
+                      <tr key={`aviso-${p.linha}`} style={{ background: 'var(--color-warning-bg, #fff8e1)' }}>
+                        <td>{p.linha}</td>
+                        <td><strong>{p.empresa.nome}</strong></td>
+                        <td style={{ fontSize: 12 }}>{p.conta.codigo} {p.conta.nome}</td>
+                        <td className="text-right">{brl(p.total)}</td>
+                        <td style={{ color: 'var(--color-warning, #b26a00)', fontSize: 12 }}>
+                          ⚠ entra como está — {p.avisos.join(' · ')} ({brl(-p.total)})
+                        </td>
+                      </tr>
+                    ))}
+                    {semReparo.slice(0, 200).map((p) => (
                       <tr key={`ok-${p.linha}`}>
                         <td>{p.linha}</td>
                         <td><strong>{p.empresa.nome}</strong></td>
@@ -484,10 +507,10 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
                     ))}
                   </tbody>
                 </table>
-                {previa.prontas.length > 200 && (
+                {semReparo.length > 200 && (
                   <p style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                    Mostrando as primeiras 200 de {previa.prontas.length} linhas resolvidas — o total acima já conta
-                    todas.
+                    Mostrando as primeiras 200 de {semReparo.length} linhas resolvidas — o total acima já conta
+                    todas. As linhas apontadas aparecem todas, no topo.
                   </p>
                 )}
               </div>
