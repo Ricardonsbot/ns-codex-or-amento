@@ -3,7 +3,7 @@ import Layout from '../components/Layout'
 import BotaoRecolher from '../components/BotaoRecolher'
 import FiltroBotoes from '../components/FiltroBotoes'
 import { useToast } from '../components/ToastProvider'
-import { fetchAnos } from '../lib/dashboardData'
+import { fetchAnos, fetchBUs } from '../lib/dashboardData'
 import { fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
 import { fetchMappingEmpresas, CORES_MAPPING } from '../lib/mappingData'
 
@@ -17,6 +17,7 @@ import { fetchMappingEmpresas, CORES_MAPPING } from '../lib/mappingData'
 export default function Mapping() {
   const showToast = useToast()
   const [ciclos, setCiclos] = useState([])
+  const [bus, setBus] = useState([])
   const [selectedAno, setSelectedAno] = useState(null)
   const [selectedVersaoId, setSelectedVersaoId] = useState('')
   const [linhas, setLinhas] = useState([])
@@ -25,8 +26,9 @@ export default function Mapping() {
   useEffect(() => {
     async function carregar() {
       try {
-        const [anosData, ciclosData] = await Promise.all([fetchAnos(), fetchCiclosResultado()])
+        const [anosData, ciclosData, busData] = await Promise.all([fetchAnos(), fetchCiclosResultado(), fetchBUs()])
         setCiclos(ciclosData)
+        setBus(busData)
         setSelectedAno(anosData[0] ?? null)
       } catch (err) {
         showToast(`Erro ao carregar ciclos: ${err.message}`, 'error')
@@ -70,6 +72,20 @@ export default function Mapping() {
     acc[cor] = linhas.filter((l) => l.cor === cor).length
     return acc
   }, {})
+
+  // Uma seção por BU, cada uma com o título e a grade de quadrados dela —
+  // repete pra baixo pra próxima BU. "Sem BU" no fim, só se sobrar alguém.
+  const porBu = (() => {
+    const mapa = new Map(bus.map((bu) => [bu.id, { bu, itens: [] }]))
+    const semBu = { bu: { id: null, nome: 'Sem BU' }, itens: [] }
+    for (const linha of linhas) {
+      const grupo = mapa.get(linha.empresa.bu_id) ?? semBu
+      grupo.itens.push(linha)
+    }
+    const grupos = [...mapa.values()].filter((g) => g.itens.length > 0)
+    if (semBu.itens.length) grupos.push(semBu)
+    return grupos
+  })()
 
   return (
     <Layout>
@@ -141,13 +157,20 @@ export default function Mapping() {
             ) : linhas.length === 0 ? (
               <div className="empty-hint">Nenhuma empresa cadastrada ainda.</div>
             ) : (
-              <div className="mapping-grid">
-                {linhas.map(({ empresa, cor }) => (
-                  <div key={empresa.id} className={`mapping-quadrado ${CORES_MAPPING[cor].classe}`} title={empresa.nome}>
-                    <span className="mapping-quadrado-label">{empresa.nome}</span>
+              porBu.map(({ bu, itens }) => (
+                <div key={bu.id ?? 'sem-bu'} className="mapping-bu-secao">
+                  <h3 className="mapping-bu-titulo">
+                    {bu.nome} <span className="mapping-bu-contagem">({itens.length})</span>
+                  </h3>
+                  <div className="mapping-grid">
+                    {itens.map(({ empresa, cor }) => (
+                      <div key={empresa.id} className={`mapping-quadrado ${CORES_MAPPING[cor].classe}`} title={empresa.nome}>
+                        <span className="mapping-quadrado-label">{empresa.nome}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))
             )}
           </div>
         </div>

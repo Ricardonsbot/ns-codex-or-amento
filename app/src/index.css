@@ -3736,6 +3736,20 @@ tfoot td {
   gap: 8px;
 }
 
+.mapping-bu-secao + .mapping-bu-secao { margin-top: 22px; }
+
+.mapping-bu-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--color-text);
+}
+
+.mapping-bu-contagem {
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
 .mapping-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
