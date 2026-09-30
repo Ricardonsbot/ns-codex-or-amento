@@ -129,10 +129,6 @@ export default function Dashboard() {
       </header>
 
       <div className="content">
-        <div className="proto-banner">
-          ⓘ Fase 2 da migração para React — filtros e resumo do orçamento já consultam o Supabase (dados reais de estrutura organizacional, plano de contas e lançamentos).
-        </div>
-
         <div className="filter-bar">
           <div className="filter-field">
             <label>BU</label>
