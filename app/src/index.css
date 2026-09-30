@@ -1019,6 +1019,71 @@ tfoot td {
   gap: 4px;
 }
 
+/* ---------- Log de erros ---------- */
+
+/* Só o ícone, canto da tela — não é pra chamar atenção, é pra estar lá
+   quando alguém precisar copiar um erro pra jogar numa IA. */
+.log-erros-botao {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 900;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-faint);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+.log-erros-botao:hover { color: var(--color-danger); border-color: var(--color-danger); }
+
+.log-erros-modal { max-width: 640px; }
+
+.log-erros-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.log-erros-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.log-erros-item-topo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.log-erros-contexto, .log-erros-usuario {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-surface-alt, #f2f4f7);
+}
+
+.log-erros-mensagem {
+  font-size: 13px;
+  font-family: ui-monospace, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text);
+}
+
 /* ---------- Assistente de importação (etapas) ---------- */
 
 .lista-etapas {

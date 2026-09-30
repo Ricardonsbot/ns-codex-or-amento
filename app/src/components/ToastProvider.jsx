@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import { registrarErro } from '../lib/logErroData'
 
 const ToastContext = createContext(() => {})
 
@@ -16,6 +17,10 @@ export default function ToastProvider({ children }) {
     setTimeout(() => {
       setToasts((list) => list.filter((t) => t.id !== id))
     }, 2800)
+    // Todo toast de erro vira uma linha no log — é o mesmo texto que a
+    // pessoa já viu na tela, só que guardado pra copiar e colar numa IA
+    // depois, sem precisar reproduzir o problema de novo.
+    if (type === 'error') registrarErro({ mensagem: message, contexto: window.location.pathname })
   }, [])
 
   return (
