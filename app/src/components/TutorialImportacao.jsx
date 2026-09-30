@@ -17,13 +17,13 @@ const PASSOS = [
     titulo: 'Prepare o arquivo',
     texto:
       'O template é um só, o mesmo para empresas, corporate e pacoteiros: o Template Budget do ano (.xlsb, .xlsx ou .xlsm), com as abas Receita e Base Gastos. Não renomeie as abas nem as colunas: é por elas que a leitura se orienta.',
-    dica: 'O ano do cabeçalho do template decide o ciclo de destino — 2027 entra no ciclo 2027, não no ciclo aberto.',
+    dica: 'O destino (ciclo e versão) não vem mais do ano do cabeçalho — é escolhido na etapa seguinte, antes do arquivo.',
   },
   {
     n: 2,
-    titulo: 'Selecione o template',
+    titulo: 'Escolha o destino e selecione o arquivo',
     texto:
-      'Clique em "Selecionar Template" e escolha o arquivo. Um upload só serve para Receita, Despesa e Capex. Se quem preencheu foi o pacoteiro, marque no topo "este template é o target do pacoteiro": aí o total por pacote entra como teto do ano, e não como lançamento.',
+      'Clique em "Selecionar Template": antes de liberar o campo de arquivo, a tela pede o nome do template, o ciclo e a versão de destino (só aparecem os que estão disponíveis para lançamento). Confirmado, escolha o arquivo. Um upload só serve para Receita, Despesa e Capex. Se quem preencheu foi o pacoteiro, marque no topo "este template é o target do pacoteiro": aí o total por pacote entra como teto do ano, e não como lançamento.',
   },
   {
     n: 3,

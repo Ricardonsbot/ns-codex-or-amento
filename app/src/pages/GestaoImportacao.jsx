@@ -10,6 +10,7 @@ import HistoricoImportacoes from '../components/HistoricoImportacoes'
 import TemplatesRecusados from '../components/TemplatesRecusados'
 import CardTargetsPacote from '../components/CardTargetsPacote'
 import CargaCadastros from '../components/CargaCadastros'
+import SeletorDestinoTemplate from '../components/SeletorDestinoTemplate'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
@@ -76,6 +77,8 @@ function CardTipo({
   tipo,
   lido,
   arquivo,
+  versaoEscolhidaId,
+  nomeTemplate,
   podeSolicitar,
   substituir,
   onSubstituir,
@@ -106,12 +109,14 @@ function CardTipo({
       setConferindo(true)
       setErroConferencia(null)
       try {
-        let p = { ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas }
+        let p = { ...(await conferir(lido, versaoEscolhidaId)), ano: lido.ano, ignoradas: lido.ignoradas }
         // Sem o ciclo do ano não há versão onde gravar. Cria e confere de
         // novo, em vez de parar a pessoa com um botão no meio do caminho.
+        // (Só acontece sem destino escolhido — com destino, o ciclo já
+        // existe, porque a tela só deixa escolher entre os que existem.)
         if (p.cicloFaltando) {
           await garantirCiclo(p.cicloFaltando)
-          p = { ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas }
+          p = { ...(await conferir(lido, versaoEscolhidaId)), ano: lido.ano, ignoradas: lido.ignoradas }
         }
         if (cancelado) return
         setPrevia(p)
@@ -129,7 +134,7 @@ function CardTipo({
       cancelado = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lido])
+  }, [lido, versaoEscolhidaId])
 
   async function handleConfirmar() {
     // A versão já tinha lançamentos deste tipo e a pessoa não marcou
@@ -180,6 +185,7 @@ function CardTipo({
           ano: lido.ano,
           ciclo: previa.ciclo,
           versao: previa.versao,
+          nomeTemplate,
         })
       } catch (err) {
         showToast(`Importado, mas não consegui registrar no histórico: ${err.message}`, 'warning')
@@ -489,6 +495,12 @@ export default function GestaoImportacao() {
   const showToast = useToast()
   const inputRef = useRef(null)
   const [arquivo, setArquivo] = useState('')
+  // Nome do template, ciclo e versão escolhidos ANTES do arquivo liberar —
+  // substitui a antiga detecção automática pelo ano do cabeçalho. Fica
+  // guardado por toda a sessão de upload (os três tipos usam o mesmo
+  // destino), e some quando a pessoa troca de arquivo de novo.
+  const [modalDestinoAberto, setModalDestinoAberto] = useState(false)
+  const [destino, setDestino] = useState(null)
   // O menu tem dois links pra esta mesma tela — "Importar - Template FP&A" e
   // "Importar - Pacote" — e é o `?modo=pacote` do segundo que já chega com o
   // interruptor ligado, sem a pessoa precisar marcar o checkbox na mão.
@@ -711,7 +723,12 @@ export default function GestaoImportacao() {
         <button className="btn btn-secondary btn-sm" type="button" onClick={() => setTutorialAberto(true)}>
           ? Como importar
         </button>
-        <button className="btn btn-primary btn-sm" type="button" onClick={() => inputRef.current?.click()} disabled={lendo}>
+        <button
+          className="btn btn-primary btn-sm"
+          type="button"
+          onClick={() => setModalDestinoAberto(true)}
+          disabled={lendo}
+        >
           {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Selecionar Template'}
         </button>
         <input
@@ -722,6 +739,17 @@ export default function GestaoImportacao() {
           onChange={handleArquivo}
         />
       </header>
+
+      {modalDestinoAberto && (
+        <SeletorDestinoTemplate
+          onCancelar={() => setModalDestinoAberto(false)}
+          onConfirmar={(escolha) => {
+            setDestino(escolha)
+            setModalDestinoAberto(false)
+            inputRef.current?.click()
+          }}
+        />
+      )}
 
       <ImportWizard
         aberto={wizardAberto}
@@ -838,6 +866,7 @@ export default function GestaoImportacao() {
                 <div>
                   <h2>Conferência do template</h2>
                   <p>
+                    {destino?.nomeTemplate && `${destino.nomeTemplate} · `}
                     {arquivo}
                     {primeira?.ciclo && ` · ciclo ${primeira.ciclo.ano}`}
                     {primeira?.versao && ` / versão ${primeira.versao.nome}`}
@@ -865,6 +894,8 @@ export default function GestaoImportacao() {
                     tipo={t}
                     lido={todos[t]}
                     arquivo={arquivo}
+                    versaoEscolhidaId={destino?.versao?.id}
+                    nomeTemplate={destino?.nomeTemplate}
                     podeSolicitar={podeSolicitar}
                     substituir={substituir[t]}
                     onSubstituir={(tipoDoCard, valor) =>

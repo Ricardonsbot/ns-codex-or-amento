@@ -36,6 +36,20 @@ export async function amarracaoDisponivel() {
 }
 
 /**
+ * A coluna do nome do template (escolhido na etapa de destino, antes do
+ * arquivo) existe? Veio na migração 2026-09-30-nome-do-template-na-
+ * -importacao.sql, à parte da tabela em si — sem ela, a importação grava
+ * normal, só sem esse dado.
+ */
+let temNomeTemplate = null
+export async function nomeTemplateDisponivel() {
+  if (temNomeTemplate !== null) return temNomeTemplate
+  const { error } = await supabase.from('importacao').select('nome_template').limit(1)
+  temNomeTemplate = !error
+  return temNomeTemplate
+}
+
+/**
  * Carimba nos lançamentos recém-criados o registro de importação que os
  * trouxe. É o que deixa o Deep Dive listar arquivos em vez de empresas.
  *
@@ -301,6 +315,7 @@ export async function registrarImportacao({
   ano,
   ciclo,
   versao,
+  nomeTemplate,
   tipo,
   linhas,
   apagados,
@@ -312,6 +327,7 @@ export async function registrarImportacao({
   usuarioEmail,
 }) {
   if (!(await historicoDisponivel())) return null
+  const comNomeTemplate = await nomeTemplateDisponivel()
   const empresasTipo = resumirLinhas(linhas, tipo)
   const infoTipo = {
     linhas: linhas.length,
@@ -359,6 +375,7 @@ export async function registrarImportacao({
       ciclo_id: ciclo?.id ?? null,
       versao_id: versao?.id ?? null,
       versao_nome: versao?.nome ?? null,
+      ...(comNomeTemplate ? { nome_template: nomeTemplate ?? null } : {}),
       tipos: { [tipo]: infoTipo },
       empresas,
       totais: totalizar(empresas),

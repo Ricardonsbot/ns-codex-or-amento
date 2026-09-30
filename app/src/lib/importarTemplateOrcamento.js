@@ -131,7 +131,7 @@ export function lerCadastrosEmWorker(arrayBuffer) {
  * importar o mesmo arquivo duas vezes dobra o orçamento em silêncio: a
  * gravação só insere, não procura o que já está lá.
  */
-export async function conferir(lido) {
+export async function conferir(lido, versaoEscolhidaId) {
   // A hierarquia vem junto porque a conferência mostra o Painel Resultado antes
   // de gravar, e ali as linhas precisam do NOME da BU, da torre e da sub torre —
   // a empresa só guarda os ids.
@@ -171,11 +171,21 @@ export async function conferir(lido) {
   const nomeDe = (lista) => new Map(lista.map((x) => [x.id, x.nome]))
   const hierarquia = { bu: nomeDe(bus.data), torre: nomeDe(torres.data), sub: nomeDe(subs.data) }
 
-  // O destino é o ciclo do ANO DO CABEÇALHO do template, não o ciclo aberto:
-  // é assim que o budget de outros anos entra no próprio ano e vira o Last
-  // Year do seguinte. Sem esse ciclo a tela oferece criá-lo.
-  const ciclo = cicloDoAno(ciclos.data, lido.ano)
-  const versao = versaoReferencia(ciclo)
+  // Quando quem chama já escolheu o destino (a tela de upload pergunta
+  // ciclo/versão antes de liberar o arquivo), é essa escolha que vale —
+  // procura o ciclo dono dela em vez de inferir pelo ano do cabeçalho.
+  // Sem escolha explícita (outros pontos de importação), cai no destino de
+  // sempre: o ciclo do ANO DO CABEÇALHO do template, com a versão de
+  // referência dele.
+  let ciclo
+  let versao
+  if (versaoEscolhidaId) {
+    ciclo = (ciclos.data ?? []).find((c) => (c.versao ?? []).some((v) => v.id === versaoEscolhidaId)) ?? null
+    versao = ciclo?.versao?.find((v) => v.id === versaoEscolhidaId) ?? null
+  } else {
+    ciclo = cicloDoAno(ciclos.data, lido.ano)
+    versao = versaoReferencia(ciclo)
+  }
 
   // Receita já lançada na versão: é a base do %NR quando o arquivo que está
   // entrando não traz receita — importar só a Base Gastos, por exemplo.
