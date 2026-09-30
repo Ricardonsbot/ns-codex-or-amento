@@ -39,6 +39,20 @@ const ORDEM = ['receita', 'despesa', 'capex']
 const brl = (v) => `R$ ${Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 /**
+ * Um ciclo por ano, mesmo com os três cards conferindo ao mesmo tempo.
+ *
+ * O ciclo do ano do arquivo é encanamento, não pergunta: se não existe, a
+ * conferência cria e segue. Como os três cards conferem em paralelo, os três
+ * pediriam a criação do mesmo ano ao mesmo tempo — a promessa fica guardada
+ * por ano e os outros dois esperam a primeira.
+ */
+const criacoesDeCiclo = new Map()
+function garantirCiclo(ano) {
+  if (!criacoesDeCiclo.has(ano)) criacoesDeCiclo.set(ano, createCiclo(ano))
+  return criacoesDeCiclo.get(ano)
+}
+
+/**
  * Igual ao `semCadastro` de ImportarTemplateOrcamento: só vai para aprovação
  * quem tem dado de verdade e não é só uma conta com classificação diferente.
  */
@@ -63,7 +77,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
   const [gravando, setGravando] = useState(false)
   const [progresso, setProgresso] = useState(null)
   const [substituir, setSubstituir] = useState(false)
-  const [criandoCiclo, setCriandoCiclo] = useState(false)
   const [ultima, setUltima] = useState(null)
   const [desfazendo, setDesfazendo] = useState(false)
   const [checklistAberto, setChecklistAberto] = useState(false)
@@ -75,7 +88,13 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
       setConferindo(true)
       setErroConferencia(null)
       try {
-        const p = { ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas }
+        let p = { ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas }
+        // Sem o ciclo do ano não há versão onde gravar. Cria e confere de
+        // novo, em vez de parar a pessoa com um botão no meio do caminho.
+        if (p.cicloFaltando) {
+          await garantirCiclo(p.cicloFaltando)
+          p = { ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas }
+        }
         if (!cancelado) setPrevia(p)
       } catch (err) {
         if (!cancelado) setErroConferencia(err.message)
@@ -89,19 +108,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lido])
-
-  async function handleCriarCiclo() {
-    setCriandoCiclo(true)
-    try {
-      await createCiclo(previa.cicloFaltando)
-      setPrevia({ ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas })
-      showToast(`Ciclo ${lido.ano} criado com a versão Original.`, 'success')
-    } catch (err) {
-      showToast(`Não consegui criar o ciclo: ${err.message}`, 'error')
-    } finally {
-      setCriandoCiclo(false)
-    }
-  }
 
   async function handleConfirmar() {
     // A versão já tinha lançamentos deste tipo e a pessoa não marcou
@@ -351,20 +357,10 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
               </div>
             )}
 
-            {previa.cicloFaltando ? (
+            {semVersao && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ⓘ Este arquivo é de <strong>{previa.cicloFaltando}</strong> e ainda não existe o ciclo {previa.cicloFaltando}.
-                {' '}
-                <button className="btn btn-primary btn-sm" type="button" onClick={handleCriarCiclo} disabled={criandoCiclo}>
-                  {criandoCiclo ? 'Criando…' : `Criar ciclo ${previa.cicloFaltando}`}
-                </button>
+                ⓘ O ciclo {previa.ano} não tem versão. Crie uma em Budget-Settings antes de importar.
               </div>
-            ) : (
-              semVersao && (
-                <div className="proto-banner" style={{ marginBottom: 12 }}>
-                  ⓘ O ciclo {previa.ano} não tem versão. Crie uma em Budget-Settings antes de importar.
-                </div>
-              )
             )}
 
             {previa.marcadas.length > 0 && (
