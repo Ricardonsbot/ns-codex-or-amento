@@ -1,4 +1,4 @@
-import { useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { Fragment, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import ImportWizard from '../components/ImportWizard'
@@ -14,6 +14,7 @@ import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import { createCiclo } from '../lib/ciclosData'
+import { agruparPorConta, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
 import {
   lerTodosOsTiposEmWorker,
   conferir,
@@ -80,6 +81,10 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
   const [ultima, setUltima] = useState(null)
   const [desfazendo, setDesfazendo] = useState(false)
   const [checklistAberto, setChecklistAberto] = useState(false)
+  // Quais contas estão abertas na conferência, e se a lista esconde as que
+  // não têm nada a resolver.
+  const [contasAbertas, setContasAbertas] = useState(() => new Set())
+  const [soOfensas, setSoOfensas] = useState(false)
   const [statusPrevia, setStatusPrevia] = useState(false)
 
   useEffect(() => {
@@ -234,9 +239,8 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
   const recusadasPorTexto = previa?.fora.filter((f) => f.naoNumericos?.length) ?? []
   const recusadasSemEmpresa = previa?.fora.filter((f) => !f.naoNumericos?.length) ?? []
   // A linha apontada entra, mas não pode se esconder no meio das resolvidas:
-  // vai inteira para o topo da tabela, antes do corte das 200.
+  // conta para o sumário e, na tabela, sobe junto com a conta dela.
   const apontadas = previa?.prontas.filter((p) => p.avisos?.length) ?? []
-  const semReparo = previa?.prontas.filter((p) => !p.avisos?.length) ?? []
   const total = aImportar.reduce((a, p) => a + p.total, 0)
   const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
   const semVersao = previa && !previa.versao
@@ -250,6 +254,12 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
    * Grupo vazio não vira item: o sumário é a lista do que há para resolver,
    * não um relatório de tudo o que poderia dar errado.
    */
+  // A conferência por conta: é o que a tabela desenha. A regra mora em
+  // conferenciaPorConta.js, testada à parte.
+  const porConta = agruparPorConta(previa)
+  const contasVisiveis = soOfensas ? porConta.filter((g) => g.ofensas > 0) : porConta
+  const contasComOfensa = porConta.filter((g) => g.ofensas > 0).length
+
   const ofensas = [
     {
       id: 'texto',
@@ -478,73 +488,116 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
               </div>
             </div>
 
-            {(previa.prontas.length > 0 || previa.marcadas.length > 0 || previa.fora.length > 0) && (
-              <div className="rolagem-x">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>LINHA</th>
-                      <th>EMPRESA</th>
-                      <th>CONTA</th>
-                      <th className="text-right">TOTAL ANO</th>
-                      <th>SITUAÇÃO</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* Primeiro o que dá problema, e com o número da linha da
-                        planilha: é o que a pessoa vai procurar no Excel para
-                        corrigir. O que está certo vem depois. */}
-                    {previa.fora.map((p) => (
-                      <tr key={`fora-${p.linha}`} style={{ background: 'var(--color-danger-bg, #fdecea)' }}>
-                        <td>{p.linha}</td>
-                        <td>{typeof p.empresa === 'object' ? p.empresa?.nome : p.empresa || '—'}</td>
-                        <td style={{ fontSize: 12 }}>{p.contaCodigo || p.contaRotulo || '—'}</td>
-                        <td className="text-right">{brl(p.total)}</td>
-                        <td style={{ color: 'var(--color-danger, #c0392b)', fontSize: 12 }}>
-                          ✕ recusada — {p.falhas.join(' · ')}
-                        </td>
+            {porConta.length > 0 && (
+              <>
+                <div className="flex-row" style={{ gap: 12, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+                  <strong style={{ fontSize: 13 }}>
+                    {porConta.length} conta(s) neste arquivo
+                    {contasComOfensa > 0 && ` · ${contasComOfensa} com algo a resolver`}
+                  </strong>
+                  {contasComOfensa > 0 && (
+                    <label style={{ fontSize: 12.5 }}>
+                      <input
+                        type="checkbox"
+                        checked={soOfensas}
+                        onChange={(e) => setSoOfensas(e.target.checked)}
+                        style={{ marginRight: 6 }}
+                      />
+                      Só as contas com algo a resolver
+                    </label>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() =>
+                      setContasAbertas((atual) =>
+                        atual.size ? new Set() : new Set(contasVisiveis.map((g) => g.chave))
+                      )
+                    }
+                  >
+                    {contasAbertas.size ? 'Fechar todas' : 'Abrir todas'}
+                  </button>
+                </div>
+
+                <div className="rolagem-x">
+                  <table className="data-table tabela-contas">
+                    <thead>
+                      <tr>
+                        <th>CONTA</th>
+                        <th className="text-right">LINHAS</th>
+                        <th className="text-right">TOTAL ANO</th>
+                        <th>SITUAÇÃO</th>
                       </tr>
-                    ))}
-                    {previa.marcadas.map((p) => (
-                      <tr key={`marcada-${p.linha}`} style={{ background: 'var(--color-surface-alt, #fff6f4)' }}>
-                        <td>{p.linha}</td>
-                        <td>{typeof p.empresa === 'object' ? p.empresa?.nome : p.empresa}</td>
-                        <td style={{ fontSize: 12 }}>{p.contaCodigo || p.contaRotulo || '—'}</td>
-                        <td className="text-right">{brl(p.total)}</td>
-                        <td style={{ color: 'var(--color-danger, #c0392b)', fontSize: 12 }}>
-                          ⚠ entra sem conta — {p.falhas.join(' · ')}
-                        </td>
-                      </tr>
-                    ))}
-                    {apontadas.map((p) => (
-                      <tr key={`aviso-${p.linha}`} style={{ background: 'var(--color-warning-bg, #fff8e1)' }}>
-                        <td>{p.linha}</td>
-                        <td><strong>{p.empresa.nome}</strong></td>
-                        <td style={{ fontSize: 12 }}>{p.conta.codigo} {p.conta.nome}</td>
-                        <td className="text-right">{brl(p.total)}</td>
-                        <td style={{ color: 'var(--color-warning, #b26a00)', fontSize: 12 }}>
-                          ⚠ entra como está — {p.avisos.join(' · ')} ({brl(-p.total)})
-                        </td>
-                      </tr>
-                    ))}
-                    {semReparo.slice(0, 200).map((p) => (
-                      <tr key={`ok-${p.linha}`}>
-                        <td>{p.linha}</td>
-                        <td><strong>{p.empresa.nome}</strong></td>
-                        <td style={{ fontSize: 12 }}>{p.conta.codigo} {p.conta.nome}</td>
-                        <td className="text-right">{brl(p.total)}</td>
-                        <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ resolvida</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {semReparo.length > 200 && (
-                  <p style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                    Mostrando as primeiras 200 de {semReparo.length} linhas resolvidas — o total acima já conta
-                    todas. As linhas apontadas aparecem todas, no topo.
-                  </p>
-                )}
-              </div>
+                    </thead>
+                    <tbody>
+                      {/* Uma linha por conta, da que mais pede atenção para a
+                          que não pede nenhuma. Quem quiser ver as linhas de
+                          uma conta abre só ela — são milhares no arquivo. */}
+                      {contasVisiveis.slice(0, 200).map((g) => {
+                        const aberta = contasAbertas.has(g.chave)
+                        return (
+                          <Fragment key={g.chave}>
+                            <tr
+                              className={`linha-conta ${g.ofensas ? `conta-${g.pior}` : ''}`}
+                              onClick={() =>
+                                setContasAbertas((atual) => {
+                                  const nova = new Set(atual)
+                                  if (nova.has(g.chave)) nova.delete(g.chave)
+                                  else nova.add(g.chave)
+                                  return nova
+                                })
+                              }
+                            >
+                              <td>
+                                <span className="conta-seta" aria-hidden="true">{aberta ? '▾' : '▸'}</span>
+                                <strong>{g.codigo || '(sem conta)'}</strong> {g.nome}
+                                {!g.noPlano && <span className="pill" style={{ marginLeft: 6 }}>fora do plano</span>}
+                              </td>
+                              <td className="text-right">{g.quantas}</td>
+                              <td className="text-right">{brl(g.total)}</td>
+                              <td style={{ fontSize: 12 }}>
+                                <span className={`conta-marca ${g.pior}`}>{SITUACOES[g.pior].marca}</span>{' '}
+                                {resumoDaConta(g)}
+                              </td>
+                            </tr>
+                            {aberta &&
+                              g.linhas.slice(0, 100).map((l) => (
+                                <tr key={`${g.chave}-${l.linha}`} className={`linha-da-conta ${l.situacao}`}>
+                                  <td className="conta-filha">
+                                    linha {l.linha} ·{' '}
+                                    {(typeof l.empresa === 'object' ? l.empresa?.nome : l.empresa) || '—'}
+                                  </td>
+                                  <td />
+                                  <td className="text-right">{brl(l.total)}</td>
+                                  <td style={{ fontSize: 12 }}>
+                                    <span className={`conta-marca ${l.situacao}`}>{SITUACOES[l.situacao].marca}</span>{' '}
+                                    {l.situacao === 'recusada' && `recusada — ${l.falhas.join(' · ')}`}
+                                    {l.situacao === 'semConta' && `entra sem conta — ${l.falhas.join(' · ')}`}
+                                    {l.situacao === 'apontada' &&
+                                      `entra como está — ${l.avisos.join(' · ')} (${brl(-l.total)})`}
+                                    {l.situacao === 'ok' && 'resolvida'}
+                                  </td>
+                                </tr>
+                              ))}
+                            {aberta && g.linhas.length > 100 && (
+                              <tr className="linha-da-conta">
+                                <td colSpan={4} className="conta-filha" style={{ opacity: 0.7 }}>
+                                  mostrando 100 das {g.linhas.length} linhas desta conta
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                  {contasVisiveis.length > 200 && (
+                    <p style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                      Mostrando as primeiras 200 de {contasVisiveis.length} contas — o total acima já conta todas.
+                    </p>
+                  )}
+                </div>
+              </>
             )}
           </>
         )}
