@@ -27,6 +27,12 @@ const STATUS_VERSAO = {
   reprovada: { label: 'Reprovada', classe: 'status-reprovado' },
 }
 
+// Rascunho e Ativa ainda aceitam lançamento (é para onde a importação pode
+// gravar); Encerrada e Reprovada, não. Não é uma coluna nova no banco — é
+// só o mesmo status de sempre, lido com essa pergunta em mente, porque é a
+// pergunta que a tela de upload de template precisa responder.
+const disponivelParaLancamento = (status) => status === 'rascunho' || status === 'ativa'
+
 export default function BudgetSettings() {
   const showToast = useToast()
   const [ciclos, setCiclos] = useState([])
@@ -233,6 +239,7 @@ export default function BudgetSettings() {
                     <th>Baseada em</th>
                     <th>Criada em</th>
                     <th>Status</th>
+                    <th>Disponível p/ lançamento</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -246,6 +253,11 @@ export default function BudgetSettings() {
                       <td>
                         <span className={`badge ${STATUS_VERSAO[versao.status]?.classe}`}>
                           <span className="badge-dot"></span>{STATUS_VERSAO[versao.status]?.label ?? versao.status}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge ${disponivelParaLancamento(versao.status) ? 'status-aprovado' : 'status-rascunho'}`}>
+                          <span className="badge-dot"></span>{disponivelParaLancamento(versao.status) ? 'Sim' : 'Não'}
                         </span>
                       </td>
                       <td>
@@ -264,7 +276,7 @@ export default function BudgetSettings() {
                   ))}
                   {versoes.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="empty-hint">Nenhuma versão cadastrada ainda.</td>
+                      <td colSpan={7} className="empty-hint">Nenhuma versão cadastrada ainda.</td>
                     </tr>
                   )}
                 </tbody>

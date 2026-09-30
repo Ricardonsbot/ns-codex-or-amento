@@ -56,6 +56,7 @@ const MENU = [
         filhos: [
           { id: 'deep-dive', to: '/deep-dive', icone: 'lupa', text: 'Deep Dive' },
           { id: 'pendencia-cadastros', to: '/pendencia-cadastros', icone: 'pendencia', text: 'Pendências' },
+          { id: 'mapping', to: '/mapping', icone: 'target', text: 'Mapping' },
         ],
       },
     ],
