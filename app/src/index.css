@@ -194,7 +194,24 @@ a { color: inherit; text-decoration: none; }
    dentro de Visão Geral, Gestão de Documentos dentro de Importação). A
    indentação em si é inline (por profundidade); aqui só a estrutura do
    contêiner, sem repetir espaçamento a cada nível. */
-.menu-filhos { display: flex; flex-direction: column; }
+.menu-filhos { display: flex; flex-direction: column; position: relative; }
+
+/* Uma linha vertical arredondada (ponta em pílula) marcando visualmente que
+   este bloco inteiro é um drilldown de quem abriu o grupo — não é o
+   indicador de ativo (esse continua sendo o box-shadow do .active), é só o
+   "trilho" da hierarquia. A posição acompanha o recuo de cada nível via
+   --linha-recuo, calculado junto com o padding do texto em NoMenu. */
+.menu-filhos::before {
+  content: '';
+  position: absolute;
+  left: var(--linha-recuo, 20px);
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--color-border-forte);
+  opacity: 0.5;
+}
 
 /* O botão de primeiro nível (Visão Geral, Importação, Budget...) não é uma
    legenda pequena — é um item de menu de verdade, do mesmo tamanho e peso

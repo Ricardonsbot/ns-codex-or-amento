@@ -172,7 +172,10 @@ function NoMenu({ no, profundidade, pathname, search, fechadas, alternar }) {
         </span>
       </button>
       {aberto && (
-        <div className="menu-filhos">
+        <div
+          className="menu-filhos"
+          style={{ '--linha-recuo': `${RECUO_SEM_ICONE + profundidade * RECUO_POR_NIVEL - 14}px` }}
+        >
           {no.filhos.map((filho) => (
             <NoMenu
               key={filho.id}
