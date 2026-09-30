@@ -42,7 +42,7 @@ const MENU = [
     filhos: [
       {
         id: 'gestao-documentos',
-        text: 'Gestão de Documentos',
+        text: 'Gestão de Doc',
         icone: 'relatorio',
         filhos: [
           { id: 'importar-template', to: '/gestao-importacao', icone: 'importar', text: 'Template FP&A' },
@@ -53,7 +53,10 @@ const MENU = [
         id: 'validacao',
         text: 'Validação',
         icone: 'lupa',
-        filhos: [{ id: 'deep-dive', to: '/deep-dive', icone: 'lupa', text: 'Deep Dive' }],
+        filhos: [
+          { id: 'deep-dive', to: '/deep-dive', icone: 'lupa', text: 'Deep Dive' },
+          { id: 'pendencia-cadastros', to: '/pendencia-cadastros', icone: 'pendencia', text: 'Pendências' },
+        ],
       },
     ],
   },
@@ -70,10 +73,7 @@ const MENU = [
     id: 'fluxo-aprovacao',
     text: 'Fluxo de Aprovação',
     icone: 'aprovacao',
-    filhos: [
-      { id: 'aprovacoes', to: '/aprovacoes', icone: 'aprovacao', text: 'Aprovações' },
-      { id: 'pendencia-cadastros', to: '/pendencia-cadastros', icone: 'pendencia', text: 'Pendência de Cadastros' },
-    ],
+    filhos: [{ id: 'aprovacoes', to: '/aprovacoes', icone: 'aprovacao', text: 'Aprovações' }],
   },
   {
     id: 'configuracao',
@@ -82,7 +82,6 @@ const MENU = [
     filhos: [
       { id: 'cadastros', to: '/cadastros', icone: 'cadastros', text: 'Cadastros' },
       { id: 'ciclos', to: '/budget-settings', icone: 'ciclos', text: 'Ciclos & Versões' },
-      { id: 'contas', to: '/cadastros/contas', icone: 'contas', text: 'Contas' },
     ],
   },
 ]
@@ -310,9 +309,6 @@ export default function Layout({ children }) {
             </div>
             <div className="sidebar-rail-conteudo">
               <div className="nav-item" onClick={handleSair} style={{ cursor: 'pointer' }}>
-                <span className="nav-icon">
-                  <Icone nome="sair" />
-                </span>{' '}
                 <span className="nav-label">Sair</span>
               </div>
             </div>
