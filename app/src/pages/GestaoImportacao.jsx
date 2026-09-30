@@ -242,6 +242,56 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
   const semVersao = previa && !previa.versao
   const paraAprovacao = previa ? agruparParaCadastro(previa.marcadas.filter(semCadastro), tipo, arquivo) : []
 
+  const lidas = previa ? previa.prontas.length + previa.marcadas.length + previa.fora.length : 0
+  const soma = (linhas) => linhas.reduce((a, p) => a + Math.abs(p.total ?? 0), 0)
+
+  /**
+   * O que a conferência achou de errado, do que barra para o que só avisa.
+   * Grupo vazio não vira item: o sumário é a lista do que há para resolver,
+   * não um relatório de tudo o que poderia dar errado.
+   */
+  const ofensas = [
+    {
+      id: 'texto',
+      grave: true,
+      linhas: recusadasPorTexto.length,
+      valor: soma(recusadasPorTexto),
+      titulo: 'Texto onde era para ter número',
+      detalhe: 'não entram — ninguém adivinha quanto vale uma frase, e entrar como zero seria pior',
+    },
+    {
+      id: 'empresa',
+      grave: true,
+      linhas: recusadasSemEmpresa.length,
+      valor: soma(recusadasSemEmpresa),
+      titulo: 'Empresa fora do cadastro',
+      detalhe: 'não entram — sem empresa não há BU, e a BU é obrigatória no lançamento',
+    },
+    {
+      id: 'conta',
+      grave: false,
+      linhas: previa?.marcadas.length ?? 0,
+      valor: soma(previa?.marcadas ?? []),
+      titulo: 'Conta fora do plano',
+      detalhe:
+        'entram sem conta, marcadas nas observações — o valor não fica de fora, mas só volta a ser editável na grade quando a conta existir' +
+        (podeSolicitar && paraAprovacao.length
+          ? ` · ao confirmar, ${paraAprovacao.length === 1 ? '1 conta vai' : `${paraAprovacao.length} contas vão`} para aprovação`
+          : !podeSolicitar
+            ? ' · a fila de aprovação ainda não está disponível (falta a migração 2026-09-10)'
+            : ''),
+    },
+    {
+      id: 'sinal',
+      grave: false,
+      linhas: apontadas.length,
+      valor: soma(apontadas),
+      titulo: 'Sinal invertido',
+      detalhe:
+        'entram como estão — no template o valor veio positivo, e assim ele reduz a despesa no P&L; confira se é crédito ou digitação',
+    },
+  ].filter((o) => o.linhas > 0)
+
   // O "Importar o template inteiro" da tela chama isto em cada card, um
   // depois do outro. Cada módulo continua com a conferência e a gravação que
   // já tinha; o que muda é quem aperta o botão.
@@ -363,23 +413,35 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
               </div>
             )}
 
-            {previa.marcadas.length > 0 && (
-              <div className="proto-banner" style={{ marginBottom: 12 }}>
-                <strong>{previa.marcadas.length} linha(s)</strong> entram sem conta, marcadas nas observações — o valor
-                não fica de fora, mas só pode ser salvo na grade depois que a conta existir.
-                {podeSolicitar ? (
-                  paraAprovacao.length > 0 && (
-                    <>
-                      {' '}Ao confirmar, {paraAprovacao.length === 1 ? '1 conta' : `${paraAprovacao.length} contas`} sem
-                      cadastro {paraAprovacao.length === 1 ? 'será enviada' : 'serão enviadas'} para aprovação.
-                    </>
-                  )
-                ) : (
-                  <span style={{ display: 'block', fontSize: 12, opacity: 0.8, marginTop: 4 }}>
-                    A fila de aprovação ainda não está disponível — falta rodar
-                    supabase/migrations/2026-09-10-schema-completo-do-template.sql.
+            {/* Sumário de ofensas: tudo o que a conferência achou de errado
+                neste arquivo, num lugar só e em ordem de gravidade. Antes eram
+                avisos soltos, cada um numa faixa, e quem lia o terceiro já
+                tinha esquecido o primeiro. */}
+            {ofensas.length > 0 ? (
+              <div className="sumario-ofensas">
+                <div className="sumario-ofensas-topo">
+                  <strong>Sumário de ofensas</strong>
+                  <span>
+                    {ofensas.reduce((a, o) => a + o.linhas, 0)} de {lidas} linha(s) do arquivo
                   </span>
-                )}
+                </div>
+                <ul>
+                  {ofensas.map((o) => (
+                    <li key={o.id} className={o.grave ? 'grave' : ''}>
+                      <span className="ofensa-marca" aria-hidden="true">{o.grave ? '✕' : '⚠'}</span>
+                      <span className="ofensa-linhas">{o.linhas}</span>
+                      <span className="ofensa-oque">
+                        <strong>{o.titulo}</strong>
+                        <em>{o.detalhe}</em>
+                      </span>
+                      <span className="ofensa-valor">{brl(o.valor)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ✓ Nenhuma ofensa: as {lidas} linha(s) do arquivo entram resolvidas.
               </div>
             )}
 
@@ -389,33 +451,6 @@ function CardTipo({ ref, tipo, lido, arquivo, podeSolicitar, onImportado, onRegi
                 <strong>{previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'}</strong> e ficam para o card de{' '}
                 {previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'} acima ou abaixo — o mesmo upload entra
                 nos dois, cada um com a sua parte, sem duplicar.
-              </div>
-            )}
-
-            {apontadas.length > 0 && (
-              <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ⚠ {apontadas.length} linha(s) <strong>entram como estão</strong>, com o sinal invertido — no template
-                o valor veio positivo, e assim ele reduz a despesa no P&L. A ferramenta não corrige o número: confira
-                se é crédito ou erro de digitação. Estão no topo da tabela.
-              </div>
-            )}
-
-            {previa.fora.length > 0 && (
-              <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ⓘ {previa.fora.length} linha(s) <strong>não entram</strong>
-                {recusadasPorTexto.length > 0 && (
-                  <>
-                    {' '}
-                    — {recusadasPorTexto.length} com texto onde era para ter número
-                  </>
-                )}
-                {recusadasSemEmpresa.length > 0 && (
-                  <>
-                    {recusadasPorTexto.length ? ' e ' : ' — '}
-                    {recusadasSemEmpresa.length} sem empresa cadastrada
-                  </>
-                )}
-                . Estão listadas no começo da tabela, com o número da linha da planilha.
               </div>
             )}
 
