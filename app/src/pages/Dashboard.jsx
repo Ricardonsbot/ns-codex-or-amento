@@ -1,24 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useToast } from '../components/ToastProvider'
 import { fetchAnos, fetchBUs, fetchTorres, fetchEmpresas } from '../lib/dashboardData'
 import BotaoUnidade from '../components/BotaoUnidade'
+import FiltroBotoes from '../components/FiltroBotoes'
 import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
 import { bigNumbers } from '../lib/quadrosResultado'
 import Indicadores from '../components/Indicadores'
-import BotaoRecolher from '../components/BotaoRecolher'
-import Icone from '../components/Icone'
-
-// Escolha de quem está olhando, não dado do orçamento: fica no navegador.
-const CHAVE_ACESSO_RAPIDO = 'ns-budget:acesso-rapido-aberto'
-const lerAberto = () => {
-  try {
-    return localStorage.getItem(CHAVE_ACESSO_RAPIDO) !== 'false'
-  } catch {
-    return true
-  }
-}
 
 export default function Dashboard() {
   const showToast = useToast()
@@ -31,22 +19,11 @@ export default function Dashboard() {
   const [selectedBuId, setSelectedBuId] = useState('')
   const [selectedTorreId, setSelectedTorreId] = useState('')
   const [selectedEmpresaId, setSelectedEmpresaId] = useState('')
+  const [selectedVersaoId, setSelectedVersaoId] = useState('')
 
   const [loading, setLoading] = useState(true)
-  const [acessoAberto, setAcessoAberto] = useState(lerAberto)
   const [ciclos, setCiclos] = useState([])
   const [indicadores, setIndicadores] = useState(null)
-
-  function alternarAcesso() {
-    setAcessoAberto((aberto) => {
-      try {
-        localStorage.setItem(CHAVE_ACESSO_RAPIDO, String(!aberto))
-      } catch {
-        // navegador sem armazenamento: a escolha só não sobrevive ao reload
-      }
-      return !aberto
-    })
-  }
 
   useEffect(() => {
     async function carregarFiltros() {
@@ -72,9 +49,13 @@ export default function Dashboard() {
   }, [])
 
   // Os mesmos big numbers do Resultado, no recorte dos filtros do Dashboard:
-  // ano inteiro (FY) da versão de referência do ciclo, contra o ano anterior.
+  // ano inteiro (FY) da versão escolhida (ou a de referência, por padrão),
+  // contra o ano anterior.
   const ciclo = ciclos.find((c) => c.ano === selectedAno) ?? null
-  const versao = versaoReferencia(ciclo)
+  const versoesDisponiveis = [...(ciclo?.versao ?? [])].sort((a, b) =>
+    String(a.criada_em).localeCompare(String(b.criada_em))
+  )
+  const versao = versoesDisponiveis.find((v) => v.id === selectedVersaoId) ?? versaoReferencia(ciclo)
   const versaoLy = versaoReferencia(ciclos.find((c) => c.ano === selectedAno - 1))
 
   useEffect(() => {
@@ -125,59 +106,10 @@ export default function Dashboard() {
       <header className="topbar">
         <div className="topbar-title">
           <h1>Dashboard</h1>
-          <p>Ciclo de Orçamento {selectedAno ?? '—'} · Consolidado Corporate</p>
         </div>
       </header>
 
       <div className="content">
-        {/* Ordem pedida: menu de acesso rápido primeiro, depois os big
-            numbers, depois os filtros — e só então os dados que eles
-            recortam. */}
-        <div className="panel">
-          <div className="panel-header">
-            <BotaoRecolher chave="dashboard-1" />
-            <div>
-              <h2>Acesso Rápido</h2>
-              <p>Navegue pelas funcionalidades do orçamento sem sair do menu</p>
-            </div>
-            <button
-              type="button"
-              className="panel-toggle"
-              aria-expanded={acessoAberto}
-              title={acessoAberto ? 'Recolher o acesso rápido' : 'Mostrar o acesso rápido'}
-              onClick={() => alternarAcesso()}
-            >
-              {acessoAberto ? '▾ Recolher' : '▸ Mostrar'}
-            </button>
-          </div>
-          <div className="panel-body" hidden={!acessoAberto}>
-            <div className="action-strip">
-              <Link to="/orcamento/despesa">
-                <div className="hub-card hub-inserir">
-                  <div className="hub-icon"><Icone nome="inserir" tamanho={22} /></div>
-                  <h3>Inserir</h3>
-                  <p>Lançar valores de Receita, Despesa e Capex.</p>
-                  <div className="hub-cta">Novo lançamento →</div>
-                </div>
-              </Link>
-              <Link to="/cadastros">
-                <div className="hub-card hub-cadastrar">
-                  <div className="hub-icon"><Icone nome="cadastros" tamanho={22} /></div>
-                  <h3>Cadastrar</h3>
-                  <p>Usuários, contas, índices, layouts e mais.</p>
-                  <div className="hub-cta">Abrir cadastros →</div>
-                </div>
-              </Link>
-              <div className="hub-card hub-exportar" onClick={() => showToast('Exportação simulada gerada', 'info')}>
-                <div className="hub-icon"><Icone nome="exportar" tamanho={22} /></div>
-                <h3>Exportar</h3>
-                <p>Baixar o resumo do orçamento do ciclo atual.</p>
-                <div className="hub-cta">Exportar dados →</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {indicadores && <Indicadores itens={indicadores} />}
 
         <div className="filter-bar">
@@ -227,6 +159,16 @@ export default function Dashboard() {
               ))}
             </select>
           </div>
+          {versoesDisponiveis.length > 0 && (
+            <FiltroBotoes
+              label="Versão"
+              valor={versao?.id ?? ''}
+              opcoes={versoesDisponiveis.map((v) => ({ valor: v.id, rotulo: v.nome }))}
+              onChange={setSelectedVersaoId}
+              semTodas
+              semCorte
+            />
+          )}
           <BotaoUnidade />
           {loading && <span className="text-muted">Atualizando…</span>}
         </div>

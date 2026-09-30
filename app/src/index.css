@@ -2601,9 +2601,8 @@ tfoot td {
 .indicadores {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  /* A largura vem de fora, nunca do conteudo. Sem isto a grade entrava no
-     calculo de largura do layout pelo tamanho dos titulos, e o ajuste dos
-     titulos (que depende da largura da caixa) alargava a pagina inteira. */
+  /* A largura vem de fora, nunca do conteudo — a grade nao pode crescer pelo
+     tamanho dos titulos. */
   contain: inline-size;
   gap: 10px;
   background: var(--color-surface);
@@ -2657,13 +2656,14 @@ tfoot td {
 }
 
 .indicador-rotulo {
-  /* table: bloco que encolhe ao texto, para medir a largura do texto; o espacamento entre letras
-     que leva o titulo a largura do numero e posto pela faixa, em JS. */
+  /* table: bloco que encolhe ao texto, pra centralizar com margin auto sem
+     esticar letra por letra (isso distorcia titulos curtos como "EAC"). */
   display: table;
   margin-left: auto;
   margin-right: auto;
   font-size: 13px;
   font-weight: 700;
+  letter-spacing: normal;
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--xl-medio);

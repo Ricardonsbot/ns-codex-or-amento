@@ -1,4 +1,3 @@
-import { useLayoutEffect, useRef } from 'react'
 import { useUnidade } from './UnidadeProvider'
 
 const umaCasa = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -47,49 +46,10 @@ function Indicador({ rotulo, valor, pct, vsBudget, vsLy, menorEMelhor, formato }
   )
 }
 
-/**
- * A faixa de big numbers, com os títulos na largura dos números.
- *
- * Todo título ocupa a mesma largura: a da linha de número mais larga entre as
- * seis caixas (ou a do título mais longo, se ele for maior), pelo espaçamento
- * entre letras. É medida no navegador porque depende da fonte e dos valores.
- */
+/** A faixa de big numbers, título centralizado sem esticar letra por letra. */
 export default function Indicadores({ itens }) {
-  const ref = useRef(null)
-  const chave = itens.map((i) => `${i.valor}${i.pct}`).join('|')
-
-  useLayoutEffect(() => {
-    const faixa = ref.current
-    if (!faixa) return
-    const ajustar = () => {
-      const titulos = [...faixa.querySelectorAll('.indicador-rotulo')]
-      const linhas = [...faixa.querySelectorAll('.indicador-linha')]
-      for (const t of titulos) {
-        t.style.letterSpacing = '0px'
-        t.style.paddingLeft = '0px'
-      }
-      const natural = titulos.map((t) => t.getBoundingClientRect().width)
-      const caixa = faixa.querySelector('.indicador')
-      const util = caixa ? caixa.clientWidth - 2 * parseFloat(getComputedStyle(caixa).paddingLeft) : Infinity
-      const alvo = Math.min(util, Math.max(...linhas.map((l) => l.getBoundingClientRect().width), ...natural))
-      titulos.forEach((t, i) => {
-        const letras = t.textContent.length
-        const sobra = alvo - natural[i]
-        // O espaçamento entra depois de cada letra, inclusive a última; o
-        // mesmo tanto à esquerda equilibra, e o texto fica centrado.
-        const ls = letras > 1 && sobra > 0 ? sobra / (letras + 1) : 0
-        t.style.letterSpacing = `${ls}px`
-        t.style.paddingLeft = `${ls}px`
-      })
-    }
-    ajustar()
-    const obs = new ResizeObserver(ajustar)
-    obs.observe(faixa)
-    return () => obs.disconnect()
-  }, [chave])
-
   return (
-    <div className="indicadores" ref={ref}>
+    <div className="indicadores">
       {itens.map((i) => (
         <Indicador key={i.chave} {...i} />
       ))}
