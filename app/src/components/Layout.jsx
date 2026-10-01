@@ -51,6 +51,8 @@ const MENU = [
     icone: 'dashboard',
     filhos: [
       { id: 'dashboard', to: '/dashboard', icone: 'dashboard', text: 'Dashboard' },
+      { id: 'revenue', to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: 'Revenue' },
+      { id: 'expenses', to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: 'Expenses' },
       { id: 'notes', to: '/notes', icone: 'nota', text: 'Notes' },
       {
         id: 'analise',
@@ -61,8 +63,6 @@ const MENU = [
           { id: 'relatorios', to: '/relatorios', icone: 'relatorio', text: 'Relatórios' },
         ],
       },
-      { id: 'revenue', to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: 'Revenue' },
-      { id: 'expenses', to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: 'Expenses' },
     ],
   },
   {
