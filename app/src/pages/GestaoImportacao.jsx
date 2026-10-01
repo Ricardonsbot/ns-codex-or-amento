@@ -82,6 +82,14 @@ function CardTipo({
   onImportado,
   onRegistrar,
   onDesfeito,
+  // Capex grava como tipo próprio (ver EAC, relatórios), mas a conferência
+  // é visual: some o título daqui e os pacotes dele continuam direto
+  // embaixo dos de Despesa, na mesma árvore — sem botão de confirmar
+  // próprio, sem seção própria.
+  tituloOculto,
+  // Só em Despesa, quando Capex também tem dado: acrescenta "+ Capex" no
+  // título, pra avisar que os pacotes dele estão ali dentro.
+  tipoMesclado,
 }) {
   const showToast = useToast()
   const { sessao } = useAuth()
@@ -271,18 +279,21 @@ function CardTipo({
       {/* Seção, não painel: o template é uma coisa só. Não há o que escolher
           nem o que deixar de fora — as três abas entram juntas ou nenhuma
           entra, e meio arquivo no banco não é um estado que alguém queira. */}
-      <div className="modulo-conferencia-topo">
-        <BotaoRecolher chave={`conferencia-${tipo}`} rotulo={ROTULO[tipo]} />
-        <h3>
-          {ROTULO[tipo]} - Aba: {ABA_EXIBICAO[lido.aba] ?? lido.aba}
-        </h3>
-        {gravando && <span>importando…</span>}
-        {previa?.jaExistem > 0 && (
-          <span style={{ marginLeft: 'auto' }}>
-            ⚠ já tem {previa.jaExistem} lançamento(s) de {NOME[tipo]} — vai somar aos que já existem
-          </span>
-        )}
-      </div>
+      {!tituloOculto && (
+        <div className="modulo-conferencia-topo">
+          <BotaoRecolher chave={`conferencia-${tipo}`} rotulo={ROTULO[tipo]} />
+          <h3>
+            {ROTULO[tipo]} - Aba: {ABA_EXIBICAO[lido.aba] ?? lido.aba}
+            {tipoMesclado && ` + ${ROTULO[tipoMesclado]}`}
+          </h3>
+          {gravando && <span>importando…</span>}
+          {previa?.jaExistem > 0 && (
+            <span style={{ marginLeft: 'auto' }}>
+              ⚠ já tem {previa.jaExistem} lançamento(s) de {NOME[tipo]} — vai somar aos que já existem
+            </span>
+          )}
+        </div>
+      )}
 
       <div>
         {gravando && <ProgressoGravacao progresso={progresso} rotulo={ROTULO[tipo]} />}
@@ -383,6 +394,7 @@ function CardTipo({
                               <td colSpan={4}>
                                 <span className="conta-seta" aria-hidden="true">{pacoteAberto ? '▾' : '▸'}</span>
                                 <strong>{pac.pacote}</strong>
+                                {tituloOculto && <span className="pill capex" style={{ marginLeft: 6 }}>Capex</span>}
                                 <span style={{ opacity: 0.7, fontWeight: 400 }}>
                                   {' '}
                                   · {pac.subpacotes.length} subpacote(s) · {brl(pac.total)}
@@ -909,6 +921,12 @@ export default function GestaoImportacao() {
                                 onRegistrar={registrar}
                                 onDesfeito={desfeito}
                                 onImportado={() => setGravados((n) => n + 1)}
+                                // Capex grava separado, mas a conferência é
+                                // visual: os pacotes dele seguem direto
+                                // embaixo dos de Despesa, na mesma árvore —
+                                // sem título nem seção próprios.
+                                tituloOculto={t === 'capex' && tiposComDado.includes('despesa')}
+                                tipoMesclado={t === 'despesa' && tiposComDado.includes('capex') ? 'capex' : null}
                               />
                             ))}
 
