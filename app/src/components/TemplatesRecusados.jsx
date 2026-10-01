@@ -1,8 +1,9 @@
 import { Fragment, useEffect, useState } from 'react'
-import { historicoDisponivel, listarImportacoes, resultadoDisponivel } from '../lib/importacoesData'
+import { apagarRecusa, historicoDisponivel, listarImportacoes, resultadoDisponivel } from '../lib/importacoesData'
 import { nomeDoUsuario } from '../lib/usuario'
 import BotaoRecolher from './BotaoRecolher'
 import ChecklistImportacao from './ChecklistImportacao'
+import { useToast } from './ToastProvider'
 
 /**
  * Os templates que a ferramenta recusou.
@@ -63,6 +64,7 @@ const EXEMPLO = [
 ]
 
 export default function TemplatesRecusados({ versao, origens }) {
+  const showToast = useToast()
   const [registros, setRegistros] = useState(null)
   const [semRegistro, setSemRegistro] = useState(false)
   const [erro, setErro] = useState(null)
@@ -72,6 +74,9 @@ export default function TemplatesRecusados({ versao, origens }) {
   // Registro com a janela de status aberta — só os recusados por
   // impedimento têm tipos/empresas/totais pra ela ler.
   const [statusDe, setStatusDe] = useState(null)
+  // Id do registro sendo apagado agora, para desabilitar só o botão dele.
+  const [apagando, setApagando] = useState(null)
+  const [recarga, setRecarga] = useState(0)
 
   useEffect(() => {
     let cancelado = false
@@ -101,7 +106,22 @@ export default function TemplatesRecusados({ versao, origens }) {
     return () => {
       cancelado = true
     }
-  }, [versao])
+  }, [versao, recarga])
+
+  /** Tira o registro da lista — teste ou recusa que não interessa mais guardar. */
+  async function apagar(registro) {
+    const confirmado = window.confirm(`Apagar o registro de "${registro.arquivo}" desta lista? Não dá para desfazer.`)
+    if (!confirmado) return
+    setApagando(registro.id)
+    try {
+      await apagarRecusa(registro.id)
+      setRecarga((n) => n + 1)
+    } catch (err) {
+      showToast(`Não consegui apagar: ${err.message}`, 'error')
+    } finally {
+      setApagando(null)
+    }
+  }
 
   // `origens` separa Template FP&A de Template Pacote — mesmo arquivo,
   // destinos diferentes no banco, históricos que não podem se misturar.
@@ -178,6 +198,16 @@ export default function TemplatesRecusados({ versao, origens }) {
                                 }
                               >
                                 Exibir detalhes
+                              </button>
+                            )}
+                            {!r.exemplo && (
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                disabled={apagando === r.id}
+                                onClick={() => apagar(r)}
+                              >
+                                {apagando === r.id ? 'Apagando…' : 'Apagar'}
                               </button>
                             )}
                           </div>

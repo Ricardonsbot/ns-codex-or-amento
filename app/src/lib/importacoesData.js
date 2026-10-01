@@ -577,6 +577,17 @@ export async function definirLiberacao(id, { status, quem, observacao }) {
 }
 
 /**
+ * Tira um registro de recusa da lista — teste que não devia ter ficado
+ * registrado, ou recusa que não interessa mais olhar. Só vale para
+ * `resultado = 'recusado'`: uma importação de verdade sai daqui desfazendo os
+ * lançamentos (ver `desfazer`), não apagando a linha do histórico.
+ */
+export async function apagarRecusa(id) {
+  const { error } = await supabase.from('importacao').delete().eq('id', id).eq('resultado', 'recusado')
+  if (error) throw error
+}
+
+/**
  * As importações, da mais nova para a mais antiga, com o nome de quem subiu
  * quando o e-mail está no cadastro de usuários.
  */
