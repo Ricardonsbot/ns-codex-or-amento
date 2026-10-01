@@ -3245,6 +3245,14 @@ tfoot td {
   background: var(--color-surface);
 }
 
+/* Linha fina pra separar blocos sem recorrer a um painel inteiro — por
+   exemplo, entre o status do arquivo e os cards logo abaixo. */
+.divisor-fino {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 0 16px;
+}
+
 .alerta-status.ok { border-color: #bfe3cd; background: var(--color-success-bg); }
 .alerta-status.atencao { border-color: #f0dca0; background: var(--color-warning-bg); }
 .alerta-status.bloqueado { border-color: #f0bcbc; background: var(--color-danger-bg); }
@@ -3705,15 +3713,18 @@ tfoot td {
 .conta-filha { padding-left: 28px !important; color: var(--color-text-muted); }
 .conta-neta { padding-left: 44px !important; color: var(--color-text-muted); }
 
-/* O cabeçalho de pacote na conferência por Pacote > Subpacote: não é
-   clicável como a linha de subpacote embaixo, só separa um pacote do
-   outro. */
+/* O cabeçalho de pacote na conferência por Pacote > Subpacote: clicável
+   igual a linha de subpacote embaixo (drill down de dois níveis), com fundo
+   cinza claro pra ler como título, não como mais uma linha de dado. */
+.linha-pacote { cursor: pointer; }
+.linha-pacote:hover > td { background: var(--color-border-forte); }
 .linha-pacote > td {
-  padding-top: 14px;
-  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background: var(--color-surface-alt);
   font-size: 13px;
 }
-.linha-pacote:first-child > td { border-top: none; padding-top: 8px; }
+.linha-pacote .conta-seta { margin-right: 2px; }
 
 /* Teto de altura pra tabela não esticar o modal inteiro — a rolagem fica
    dentro dela, não na página. */

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { Fragment, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { Etapa, statusAba } from '../components/ImportWizard'
@@ -22,7 +22,6 @@ import {
   lerTodosOsTiposEmWorker,
   conferir,
   importar,
-  apagarDoTipo,
   desfazer,
 } from '../lib/importarTemplateOrcamento'
 import {
@@ -64,9 +63,9 @@ const semCadastro = (m) =>
 
 /**
  * Uma conferência por tipo, lado a lado na mesma tela. É a mesma lógica de
- * confirmar/substituir/desfazer da importação de cada módulo de lançamento —
- * só que aqui os três correm a partir de UM upload já lido, em vez de três
- * telas com um "Importar Template" cada uma.
+ * confirmar/desfazer da importação de cada módulo de lançamento — só que
+ * aqui os três correm a partir de UM upload já lido, em vez de três telas
+ * com um "Importar Template" cada uma.
  */
 function CardTipo({
   ref,
@@ -75,8 +74,6 @@ function CardTipo({
   arquivo,
   nomeTemplate,
   podeSolicitar,
-  substituir,
-  onSubstituir,
   onPrevia,
   onImportado,
   onRegistrar,
@@ -95,6 +92,10 @@ function CardTipo({
   const [checklistAberto, setChecklistAberto] = useState(false)
   // Quais subpacotes estão abertos na conferência, mostrando as linhas embaixo.
   const [abertos, setAbertos] = useState(() => new Set())
+  // Quais pacotes estão abertos, mostrando os subpacotes embaixo — o primeiro
+  // vem aberto por padrão, os demais fecham sozinhos, pra não começar com
+  // tudo exposto de uma vez num arquivo com vários pacotes.
+  const [pacotesAbertos, setPacotesAbertos] = useState(() => new Set())
 
   useEffect(() => {
     let cancelado = false
@@ -128,14 +129,12 @@ function CardTipo({
   }, [lido])
 
   async function handleConfirmar() {
-    // A versão já tinha lançamentos deste tipo e a pessoa não marcou
-    // substituir: entra como pendência no checklist, pode ter dobrado.
-    const somouEmCima = Boolean(previa.jaExistem) && !substituir
+    // A versão já tinha lançamentos deste tipo: entra como pendência no
+    // checklist, não impede — substituir deixou de ser uma escolha daqui.
+    const somouEmCima = Boolean(previa.jaExistem)
     setGravando(true)
-    setProgresso({ feitos: 0, total: 0, fase: substituir && previa.jaExistem ? 'apagando' : 'cabecalhos' })
+    setProgresso({ feitos: 0, total: 0, fase: 'cabecalhos' })
     try {
-      let apagados = 0
-      if (substituir && previa.jaExistem) apagados = await apagarDoTipo(previa.versao.id, tipo)
       const ids = await importar([...previa.prontas, ...previa.marcadas], previa.versao.id, tipo, (feitos, total, fase) =>
         setProgresso({ feitos, total, fase })
       )
@@ -153,9 +152,7 @@ function CardTipo({
       }
 
       showToast(
-        (apagados
-          ? `${apagados} lançamento(s) de ${oQue} apagado(s) e ${ids.length} importado(s).`
-          : `${ids.length} lançamento(s) de ${oQue} importado(s).`) +
+        `${ids.length} lançamento(s) de ${oQue} importado(s).` +
           (enviadas ? ` ${enviadas} conta(s) enviada(s) para aprovação de cadastro.` : ''),
         erroEnvio ? 'warning' : 'success'
       )
@@ -167,7 +164,7 @@ function CardTipo({
         await onRegistrar?.(tipo, {
           ids,
           linhas: [...previa.prontas, ...previa.marcadas],
-          apagados,
+          apagados: 0,
           fora: previa.fora.length,
           textoEmNumero: previa.fora.filter((f) => f.naoNumericos?.length).length,
           marcadas: previa.marcadas.length,
@@ -183,7 +180,7 @@ function CardTipo({
       }
 
       setUltima({
-        ids: apagados ? null : ids,
+        ids,
         quantos: ids.length,
         enviadas,
         // Abre a janela do checklist assim que a gravação termina.
@@ -195,7 +192,7 @@ function CardTipo({
           fora: previa.fora.length,
           textoEmNumero: previa.fora.filter((f) => f.naoNumericos?.length).length,
           marcadas: previa.marcadas.length,
-          apagados,
+          apagados: 0,
           somouEmCima,
           cadastros: previa.cadastros,
         }),
@@ -236,8 +233,18 @@ function CardTipo({
   const semVersao = previa && !previa.versao
   // A conferência por Pacote > Subpacote, só quem tem algo a resolver: a
   // regra mora em conferenciaPorConta.js, testada à parte.
-  const porPacote = agruparPorPacoteDivergente(previa)
+  const porPacote = useMemo(() => agruparPorPacoteDivergente(previa), [previa])
   const subpacotesComOfensa = porPacote.reduce((a, p) => a + p.subpacotes.length, 0)
+
+  // Drill down: o primeiro pacote vem aberto, os demais fecham sozinhos —
+  // quando chega uma conferência nova (arquivo novo ou reconferência pelo
+  // ciclo faltando), o padrão volta a valer em vez de herdar o que a pessoa
+  // tinha aberto na vez anterior.
+  useEffect(() => {
+    setPacotesAbertos(porPacote.length ? new Set([porPacote[0].pacote]) : new Set())
+    setAbertos(new Set())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previa])
 
 
   // O "Importar o template inteiro" da tela chama isto em cada card, um
@@ -324,31 +331,13 @@ function CardTipo({
             {previa.jaExistem > 0 && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
                 ⚠ Esta versão já tem <strong>{previa.jaExistem}</strong> lançamento(s) de {NOME[tipo]}. Importar vai{' '}
-                <strong>somar</strong> aos que já existem, não substituir.
-                <label style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(substituir)}
-                    onChange={(e) => onSubstituir?.(tipo, e.target.checked)}
-                    style={{ marginRight: 6 }}
-                  />
-                  Apagar os {previa.jaExistem} antes de importar
-                </label>
+                <strong>somar</strong> aos que já existem.
               </div>
             )}
 
             {semVersao && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
                 ⓘ O ciclo {previa.ano} não tem versão. Crie uma em Budget-Settings antes de importar.
-              </div>
-            )}
-
-            {previa.outroModulo?.length > 0 && (
-              <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ⓘ {previa.outroModulo.length} linha(s) desta aba são de{' '}
-                <strong>{previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'}</strong> e ficam para o card de{' '}
-                {previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'} acima ou abaixo — o mesmo upload entra
-                nos dois, cada um com a sua parte, sem duplicar.
               </div>
             )}
 
@@ -361,15 +350,17 @@ function CardTipo({
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm"
-                    onClick={() =>
-                      setAbertos((atual) =>
-                        atual.size
-                          ? new Set()
-                          : new Set(porPacote.flatMap((p) => p.subpacotes.map((s) => `${p.pacote}::${s.subpacote}`)))
+                    onClick={() => {
+                      const tudoFechado = !pacotesAbertos.size && !abertos.size
+                      setPacotesAbertos(tudoFechado ? new Set(porPacote.map((p) => p.pacote)) : new Set())
+                      setAbertos(
+                        tudoFechado
+                          ? new Set(porPacote.flatMap((p) => p.subpacotes.map((s) => `${p.pacote}::${s.subpacote}`)))
+                          : new Set()
                       )
-                    }
+                    }}
                   >
-                    {abertos.size ? 'Fechar todas' : 'Abrir todas'}
+                    {!pacotesAbertos.size && !abertos.size ? 'Abrir todas' : 'Fechar todas'}
                   </button>
                 </div>
 
@@ -386,70 +377,85 @@ function CardTipo({
                     <tbody>
                       {/* Só pacote e subpacote com ofensa chegam aqui — ver
                           agruparPorPacoteDivergente em conferenciaPorConta.js.
-                          Quem quiser ver as linhas de um subpacote abre só ele. */}
-                      {porPacote.map((pac) => (
-                        <Fragment key={pac.pacote}>
-                          <tr className="linha-pacote">
-                            <td colSpan={4}>
-                              <strong>{pac.pacote}</strong>
-                              <span style={{ opacity: 0.7, fontWeight: 400 }}>
-                                {' '}
-                                · {pac.subpacotes.length} subpacote(s) · {brl(pac.total)}
-                              </span>
-                            </td>
-                          </tr>
-                          {pac.subpacotes.map((s) => {
-                            const chaveS = `${pac.pacote}::${s.subpacote}`
-                            const aberta = abertos.has(chaveS)
-                            return (
-                              <Fragment key={chaveS}>
-                                <tr
-                                  className={`linha-conta conta-${s.pior}`}
-                                  onClick={() =>
-                                    setAbertos((atual) => {
-                                      const nova = new Set(atual)
-                                      if (nova.has(chaveS)) nova.delete(chaveS)
-                                      else nova.add(chaveS)
-                                      return nova
-                                    })
-                                  }
-                                >
-                                  <td className="conta-filha">
-                                    <span className="conta-seta" aria-hidden="true">{aberta ? '▾' : '▸'}</span>
-                                    {s.subpacote}
-                                  </td>
-                                  <td className="text-right">{s.quantas}</td>
-                                  <td className="text-right">{brl(s.total)}</td>
-                                  <td style={{ fontSize: 12 }}>
-                                    <span className={`conta-marca ${s.pior}`}>{SITUACOES[s.pior].marca}</span>{' '}
-                                    {resumoDaConta(s)}
-                                  </td>
-                                </tr>
-                                {aberta &&
-                                  s.linhas.map((l) => (
-                                    <tr key={`${chaveS}-${l.linha}`} className={`linha-da-conta ${l.situacao}`}>
-                                      <td className="conta-neta">
-                                        linha {l.linha} ·{' '}
-                                        {(typeof l.empresa === 'object' ? l.empresa?.nome : l.empresa) || '—'} · conta{' '}
-                                        {l.conta?.codigo || l.contaCodigo || '—'} {l.conta?.nome || l.contaRotulo || ''}
+                          Drill down: pacote abre os subpacotes, subpacote abre
+                          as linhas. O primeiro pacote já chega aberto. */}
+                      {porPacote.map((pac) => {
+                        const pacoteAberto = pacotesAbertos.has(pac.pacote)
+                        return (
+                          <Fragment key={pac.pacote}>
+                            <tr
+                              className="linha-pacote"
+                              onClick={() =>
+                                setPacotesAbertos((atual) => {
+                                  const nova = new Set(atual)
+                                  if (nova.has(pac.pacote)) nova.delete(pac.pacote)
+                                  else nova.add(pac.pacote)
+                                  return nova
+                                })
+                              }
+                            >
+                              <td colSpan={4}>
+                                <span className="conta-seta" aria-hidden="true">{pacoteAberto ? '▾' : '▸'}</span>
+                                <strong>{pac.pacote}</strong>
+                                <span style={{ opacity: 0.7, fontWeight: 400 }}>
+                                  {' '}
+                                  · {pac.subpacotes.length} subpacote(s) · {brl(pac.total)}
+                                </span>
+                              </td>
+                            </tr>
+                            {pacoteAberto &&
+                              pac.subpacotes.map((s) => {
+                                const chaveS = `${pac.pacote}::${s.subpacote}`
+                                const aberta = abertos.has(chaveS)
+                                return (
+                                  <Fragment key={chaveS}>
+                                    <tr
+                                      className={`linha-conta conta-${s.pior}`}
+                                      onClick={() =>
+                                        setAbertos((atual) => {
+                                          const nova = new Set(atual)
+                                          if (nova.has(chaveS)) nova.delete(chaveS)
+                                          else nova.add(chaveS)
+                                          return nova
+                                        })
+                                      }
+                                    >
+                                      <td className="conta-filha">
+                                        <span className="conta-seta" aria-hidden="true">{aberta ? '▾' : '▸'}</span>
+                                        {s.subpacote}
                                       </td>
-                                      <td />
-                                      <td className="text-right">{brl(l.total)}</td>
+                                      <td className="text-right">{s.quantas}</td>
+                                      <td className="text-right">{brl(s.total)}</td>
                                       <td style={{ fontSize: 12 }}>
-                                        <span className={`conta-marca ${l.situacao}`}>{SITUACOES[l.situacao].marca}</span>{' '}
-                                        {l.situacao === 'recusada' && `recusada — ${l.falhas.join(' · ')}`}
-                                        {l.situacao === 'semConta' && `entra sem conta — ${l.falhas.join(' · ')}`}
-                                        {l.situacao === 'apontada' &&
-                                          `entra como está — ${l.avisos.join(' · ')} (${brl(-l.total)})`}
-                                        {l.situacao === 'ok' && 'resolvida'}
+                                        <span className={`conta-marca ${s.pior}`}>{SITUACOES[s.pior].marca}</span>{' '}
+                                        {resumoDaConta(s)}
                                       </td>
                                     </tr>
-                                  ))}
-                              </Fragment>
-                            )
-                          })}
-                        </Fragment>
-                      ))}
+                                    {aberta &&
+                                      s.linhas.map((l) => (
+                                        <tr key={`${chaveS}-${l.linha}`} className={`linha-da-conta ${l.situacao}`}>
+                                          <td className="conta-neta">
+                                            linha {l.linha} ·{' '}
+                                            {(typeof l.empresa === 'object' ? l.empresa?.nome : l.empresa) || '—'} · conta{' '}
+                                            {l.conta?.codigo || l.contaCodigo || '—'} {l.conta?.nome || l.contaRotulo || ''}
+                                          </td>
+                                          <td />
+                                          <td className="text-right">{brl(l.total)}</td>
+                                          <td style={{ fontSize: 12 }}>
+                                            <span className={`conta-marca ${l.situacao}`}>{SITUACOES[l.situacao].marca}</span>{' '}
+                                            {l.situacao === 'recusada' && `recusada — ${l.falhas.join(' · ')}`}
+                                            {l.situacao === 'semConta' && `entra sem conta — ${l.falhas.join(' · ')}`}
+                                            {l.situacao === 'apontada' &&
+                                              `entra como está — ${l.avisos.join(' · ')} (${brl(-l.total)})`}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                  </Fragment>
+                                )
+                              })}
+                          </Fragment>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -513,9 +519,6 @@ export default function GestaoImportacao() {
   const [importandoTudo, setImportandoTudo] = useState(null)
   // Qual módulo está aberto na conferência. Os três continuam montados — é
   // deles que sai o resumo do topo, e é neles que o "importar tudo" bate.
-  // Apagar o que já existe antes de importar, por módulo. Mora aqui porque o
-  // checklist do arquivo precisa saber disso para dizer se vai somar em cima.
-  const [substituir, setSubstituir] = useState({})
   // A prévia de cada módulo, reportada pelos cards: é o que alimenta o
   // sumário de ofensas do arquivo inteiro.
   const [previas, setPrevias] = useState({})
@@ -677,7 +680,7 @@ export default function GestaoImportacao() {
               textoEmNumero: previas[t].fora.filter((f) => f.naoNumericos?.length).length,
               marcadas: previas[t].marcadas.length,
               apagados: 0,
-              somouEmCima: Boolean(previas[t].jaExistem) && !substituir[t],
+              somouEmCima: Boolean(previas[t].jaExistem),
               cadastros: previas[t].cadastros,
             })
           )
@@ -803,6 +806,19 @@ export default function GestaoImportacao() {
 
                     {!comoTarget && (
                       <>
+                        {/* O status do arquivo é a primeira coisa a ver, antes
+                            até dos cards — é ele que diz se vale a pena
+                            continuar olhando o resto. */}
+                        {registroDoArquivo && (
+                          <AlertaStatus
+                            registro={registroDoArquivo}
+                            escopo="arquivo"
+                            previa
+                            onAbrir={() => setChecklistDoArquivo(true)}
+                          />
+                        )}
+                        {registroDoArquivo && <div className="divisor-fino" />}
+
                         {tiposComErro.length > 0 && (
                           <div className="proto-banner" style={{ marginBottom: 16 }}>
                             ✕ Não consegui ler {tiposComErro.map((t) => ROTULO[t]).join(', ')}: veja o detalhe em
@@ -843,17 +859,6 @@ export default function GestaoImportacao() {
                             </div>
                           </div>
                           <div className="panel-body">
-                            {/* Um checklist só, do arquivo: é ele que decide se o template
-                                está apto a consolidar, e o template é um. */}
-                            {registroDoArquivo && (
-                              <AlertaStatus
-                                registro={registroDoArquivo}
-                                escopo="arquivo"
-                                previa
-                                onAbrir={() => setChecklistDoArquivo(true)}
-                              />
-                            )}
-
                             {tiposComDado.map((t) => (
                               <CardTipo
                                 key={`${chave}-${t}`}
@@ -865,10 +870,6 @@ export default function GestaoImportacao() {
                                 arquivo={arquivo}
                                 nomeTemplate={arquivo}
                                 podeSolicitar={podeSolicitar}
-                                substituir={substituir[t]}
-                                onSubstituir={(tipoDoCard, valor) =>
-                                  setSubstituir((atual) => ({ ...atual, [tipoDoCard]: valor }))
-                                }
                                 onPrevia={(tipoDoCard, pv) => setPrevias((atual) => ({ ...atual, [tipoDoCard]: pv }))}
                                 onRegistrar={registrar}
                                 onDesfeito={desfeito}

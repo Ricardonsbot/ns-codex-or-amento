@@ -171,12 +171,16 @@ export function agruparPorPacoteDivergente(previa) {
     .sort((a, b) => Math.abs(b.total) - Math.abs(a.total) || a.pacote.localeCompare(b.pacote, 'pt-BR'))
 }
 
-/** O resumo da conta em texto: "2 recusadas · 3 entram apontadas". */
+/**
+ * O resumo da conta em texto: "2 recusadas · 3 entram apontadas".
+ *
+ * Só fala do que precisa de atenção — a linha "ok" não entra: a ferramenta
+ * não mudou nada nela, então não há o que chamar de "resolvida".
+ */
 export function resumoDaConta(g) {
   const partes = []
   if (g.contagem.recusada) partes.push(`${g.contagem.recusada} recusada(s)`)
   if (g.contagem.semConta) partes.push(`${g.contagem.semConta} sem conta no plano`)
   if (g.contagem.apontada) partes.push(`${g.contagem.apontada} apontada(s)`)
-  if (g.contagem.ok) partes.push(`${g.contagem.ok} resolvida(s)`)
   return partes.join(' · ')
 }
