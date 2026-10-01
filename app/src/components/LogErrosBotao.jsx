@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Icone from './Icone'
 import { listarErros } from '../lib/logErroData'
+import { useMostrarIdTela } from '../lib/identificadorTela'
 
 /**
  * O ícone de log de erros: só o ícone, canto da tela, sem rótulo — não é
@@ -17,6 +18,7 @@ export default function LogErrosBotao() {
   const [erros, setErros] = useState([])
   const [carregando, setCarregando] = useState(false)
   const [copiadoId, setCopiadoId] = useState(null)
+  const [mostrarId, alternarMostrarId] = useMostrarIdTela()
 
   async function abrir() {
     setAberto(true)
@@ -65,6 +67,11 @@ export default function LogErrosBotao() {
               </button>
             </div>
             <div className="modal-body">
+              <label className="log-erros-toggle-id">
+                <input type="checkbox" checked={mostrarId} onChange={alternarMostrarId} />
+                Mostrar o ID da tela, pra apontar onde está o bug
+              </label>
+
               {carregando ? (
                 <div className="empty-hint">Carregando…</div>
               ) : erros.length === 0 ? (

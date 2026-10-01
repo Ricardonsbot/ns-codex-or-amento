@@ -5,6 +5,7 @@ import { useAuth } from './AuthProvider'
 import { sair } from '../lib/authData'
 import { useToast } from './ToastProvider'
 import LogErrosBotao from './LogErrosBotao'
+import IdentificadorTela from './IdentificadorTela'
 
 /**
  * O menu em árvore, quantos níveis forem precisos: um nó com `filhos` é um
@@ -332,6 +333,7 @@ export default function Layout({ children }) {
       <main className="main">{children}</main>
 
       <LogErrosBotao />
+      <IdentificadorTela />
     </div>
   )
 }

@@ -1070,6 +1070,38 @@ tfoot td {
 
 .log-erros-modal { max-width: 640px; }
 
+.log-erros-toggle-id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* O ID da tela atual, pra falar pra uma IA onde está o bug sem descrever o
+   caminho do menu. Mesmo canto do botão de log, só que acima dele, pra não
+   sobrepor nem o menu lateral nem o próprio botão. */
+.id-tela-badge {
+  position: fixed;
+  right: 16px;
+  bottom: 60px;
+  z-index: 900;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-faint);
+  font-size: 11px;
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+.id-tela-badge:hover { color: var(--color-text); border-color: var(--color-text-faint); }
+
 .log-erros-lista {
   list-style: none;
   margin: 0;
