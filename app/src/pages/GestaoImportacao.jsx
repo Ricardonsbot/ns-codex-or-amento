@@ -39,8 +39,6 @@ const ROTULO = { receita: 'Revenue', despesa: 'Expenses', capex: 'Capex' }
 const NOME = { receita: 'receita', despesa: 'despesa', capex: 'capex' }
 // O nome da aba na planilha é "Base Gastos" — é por ele que a leitura se
 // orienta, e não muda. Aqui é só o texto mostrado na tela.
-const ABA_EXIBICAO = { 'Base Gastos': 'Base de Gastos' }
-
 // Template FP&A e Template Pacote leem o mesmo arquivo, mas um vira
 // lançamento e o outro vira target_pacote — os históricos (Templates
 // importados / Templates Recusados) ficam cada um só com a origem da tela
@@ -317,7 +315,7 @@ function CardTipo({
         <div className="modulo-conferencia-topo">
           <BotaoRecolher chave={`conferencia-${tipo}`} rotulo={ROTULO[tipo]} />
           <h3>
-            {ROTULO[tipo]} - Aba: {ABA_EXIBICAO[lido.aba] ?? lido.aba}
+            {ROTULO[tipo]}
             {tipoMesclado && ` + ${ROTULO[tipoMesclado]}`}
             {subpacotesComOfensa > 0 && (
               <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: 'var(--color-primary)' }}>
@@ -848,6 +846,11 @@ export default function GestaoImportacao() {
       )
     : null
 
+  // Mesma avaliação que decide a faixa vermelha "Arquivo não pode ser
+  // importado" — se ela já apareceu, o botão não pode fingir que dá para
+  // confirmar.
+  const naoPodeImportar = Boolean(registroDoArquivo) && !avaliar(registroDoArquivo).liberado
+
   // O que o arquivo traz, somado: alimenta os big numbers e o gráfico.
   const resumo = resumoDoUpload(ORDEM.map((t) => ({ tipo: t, previa: previas[t] })))
 
@@ -900,7 +903,8 @@ export default function GestaoImportacao() {
                       className="btn btn-primary btn-sm"
                       type="button"
                       onClick={confirmarImportacao}
-                      disabled={Boolean(importandoTudo)}
+                      disabled={Boolean(importandoTudo) || naoPodeImportar}
+                      title={naoPodeImportar ? 'Arquivo não pode ser importado — resolva a conferência primeiro' : undefined}
                     >
                       {importandoTudo ? `Importando ${ROTULO[importandoTudo]}…` : 'Confirmar importação'}
                     </button>
