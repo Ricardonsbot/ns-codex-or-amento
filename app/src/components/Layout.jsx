@@ -20,24 +20,6 @@ import IdentificadorTela from './IdentificadorTela'
  */
 const MENU = [
   {
-    id: 'visao-geral',
-    text: 'Visão Geral',
-    icone: 'dashboard',
-    filhos: [
-      { id: 'dashboard', to: '/dashboard', icone: 'dashboard', text: 'Dashboard' },
-      { id: 'notes', to: '/notes', icone: 'nota', text: 'Notes' },
-      {
-        id: 'analise',
-        text: 'Análise',
-        icone: 'resultado',
-        filhos: [
-          { id: 'resultado', to: '/resultado', icone: 'resultado', text: 'Resultado' },
-          { id: 'relatorios', to: '/relatorios', icone: 'relatorio', text: 'Relatórios' },
-        ],
-      },
-    ],
-  },
-  {
     id: 'importacao',
     text: 'Importação',
     icone: 'importar',
@@ -59,6 +41,24 @@ const MENU = [
           { id: 'deep-dive', to: '/deep-dive', icone: 'lupa', text: 'Deep Dive' },
           { id: 'pendencia-cadastros', to: '/pendencia-cadastros', icone: 'pendencia', text: 'Pendências' },
           { id: 'mapping', to: '/mapping', icone: 'target', text: 'Mapping' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'visao-geral',
+    text: 'Visão Geral',
+    icone: 'dashboard',
+    filhos: [
+      { id: 'dashboard', to: '/dashboard', icone: 'dashboard', text: 'Dashboard' },
+      { id: 'notes', to: '/notes', icone: 'nota', text: 'Notes' },
+      {
+        id: 'analise',
+        text: 'Análise',
+        icone: 'resultado',
+        filhos: [
+          { id: 'resultado', to: '/resultado', icone: 'resultado', text: 'Resultado' },
+          { id: 'relatorios', to: '/relatorios', icone: 'relatorio', text: 'Relatórios' },
         ],
       },
     ],

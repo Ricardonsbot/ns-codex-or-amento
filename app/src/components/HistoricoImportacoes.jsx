@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import {
+  amarracaoDisponivel,
   avaliar,
   definirLiberacao,
   exemploDeHistorico,
@@ -7,6 +8,7 @@ import {
   LIBERACOES,
   listarImportacoes,
 } from '../lib/importacoesData'
+import { apagarDoTipo } from '../lib/importarTemplateOrcamento'
 import { useAuth } from './AuthProvider'
 import { useToast } from './ToastProvider'
 import FiltroBotoes from './FiltroBotoes'
@@ -112,8 +114,17 @@ export default function HistoricoImportacoes({ versao }) {
   const [statusDe, setStatusDe] = useState(null)
   // Registro com o detalhe por empresa aberto embaixo da linha.
   const [aberto, setAberto] = useState(null)
+  // Sem a coluna importacao_id não há como apagar só os lançamentos de
+  // ANTES deste arquivo — "substituir" ficaria sem escopo seguro.
+  const [podeSubstituir, setPodeSubstituir] = useState(false)
+  // `${registro.id}:${tipo}` da substituição em andamento.
+  const [substituindo, setSubstituindo] = useState(null)
 
   const [recarga, setRecarga] = useState(0)
+
+  useEffect(() => {
+    amarracaoDisponivel().then(setPodeSubstituir)
+  }, [])
 
   useEffect(() => {
     let cancelado = false
@@ -160,6 +171,29 @@ export default function HistoricoImportacoes({ versao }) {
       showToast(`Não consegui registrar a liberação: ${err.message}`, 'error')
     } finally {
       setMexendo(null)
+    }
+  }
+
+  /**
+   * Substituir, de depois de importado: apaga os lançamentos deste tipo e
+   * versão que não vieram deste arquivo (os de antes, com ou sem
+   * amarração), mantendo só o que acabou de entrar.
+   */
+  async function substituir(registro, tipo) {
+    const rotulo = TIPOS.find((t) => t.valor === tipo)?.rotulo ?? tipo
+    const confirmado = window.confirm(
+      `Apagar os lançamentos de ${rotulo} desta versão que não vieram de "${registro.arquivo}", mantendo só o que este arquivo trouxe? Não dá para desfazer.`
+    )
+    if (!confirmado) return
+    setSubstituindo(tipo)
+    try {
+      const n = await apagarDoTipo(registro.versao_id, tipo, registro.id)
+      showToast(`${n} lançamento(s) anterior(es) de ${rotulo} apagado(s) — ficou só o que este arquivo trouxe.`, 'success')
+      setRecarga((x) => x + 1)
+    } catch (err) {
+      showToast(`Não consegui substituir: ${err.message}`, 'error')
+    } finally {
+      setSubstituindo(null)
     }
   }
 
@@ -350,7 +384,15 @@ export default function HistoricoImportacoes({ versao }) {
         )}
       </div>
 
-      {statusDe && <ChecklistImportacao registro={statusDe} onFechar={() => setStatusDe(null)} />}
+      {statusDe && (
+        <ChecklistImportacao
+          registro={statusDe}
+          onFechar={() => setStatusDe(null)}
+          podeSubstituir={podeSubstituir}
+          substituindo={substituindo}
+          onSubstituir={(tipo) => substituir(statusDe, tipo)}
+        />
+      )}
     </div>
   )
 }

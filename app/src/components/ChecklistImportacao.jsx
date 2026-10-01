@@ -3,6 +3,7 @@ import { avaliar } from '../lib/importacoesData'
 import { useUnidade } from './UnidadeProvider'
 
 const quando = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—')
+const ROTULO_TIPO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
 
 /** Uma linha "Rótulo: valor" do bloco de detalhes. */
 function Detalhe({ rotulo, children }) {
@@ -21,7 +22,14 @@ function Detalhe({ rotulo, children }) {
  *
  * Abre sozinha depois de importar e ao clicar na linha do histórico.
  */
-export default function ChecklistImportacao({ registro, escopo, onFechar }) {
+export default function ChecklistImportacao({
+  registro,
+  escopo,
+  onFechar,
+  podeSubstituir,
+  substituindo,
+  onSubstituir,
+}) {
   const { numero, u } = useUnidade()
   const fechar = useRef(null)
   useEffect(() => {
@@ -32,6 +40,10 @@ export default function ChecklistImportacao({ registro, escopo, onFechar }) {
   }, [onFechar])
 
   const a = avaliar(registro, escopo)
+  // Só faz sentido substituir um arquivo de verdade, já gravado, e que passou
+  // na conferência — sem isso não há "o que este arquivo trouxe" para manter.
+  const mostrarSubstituir =
+    podeSubstituir && (escopo ?? 'arquivo') === 'arquivo' && registro?.id && !registro?.exemplo && a.apto
 
   return (
     <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label="Status do template">
@@ -105,6 +117,29 @@ export default function ChecklistImportacao({ registro, escopo, onFechar }) {
             ))}
             <div className="status-medidas-unidade">{u.faixa}</div>
           </div>
+
+          {mostrarSubstituir && (
+            <div className="substituir-bloco">
+              <div className="status-titulo">Substituir</div>
+              <p>
+                Apaga os lançamentos anteriores deste tipo, nesta versão, e mantém só o que este arquivo trouxe —
+                não dá para desfazer.
+              </p>
+              <div className="flex-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                {Object.keys(registro.tipos ?? {}).map((tipo) => (
+                  <button
+                    key={tipo}
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    disabled={substituindo === tipo}
+                    onClick={() => onSubstituir?.(tipo)}
+                  >
+                    {substituindo === tipo ? 'Substituindo…' : `Substituir ${ROTULO_TIPO[tipo] ?? tipo}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="modal-footer">

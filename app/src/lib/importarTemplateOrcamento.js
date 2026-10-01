@@ -223,17 +223,21 @@ export async function conferir(lido, versaoEscolhidaId) {
 }
 
 /**
- * Apaga os lançamentos deste tipo na versão, para quando a importação
- * substitui em vez de somar. Os valores mensais vão junto pelo ON DELETE
- * CASCADE da tabela.
+ * Apaga os lançamentos deste tipo na versão.
+ *
+ * Sem `excetoImportacaoId`, apaga todos — é o que a tela de resultado usa
+ * antes de regravar um recorte inteiro. Com ele, apaga só os que NÃO vieram
+ * desta importação (inclusive os de antes da amarração, sem
+ * `importacao_id`) — é o "substituir" de depois de importar, na Gestão de
+ * Documentos: mantém o que este arquivo acabou de trazer e limpa o resto.
+ * Os valores mensais vão junto pelo ON DELETE CASCADE da tabela.
  */
-export async function apagarDoTipo(versaoId, tipo) {
-  const { data, error } = await supabase
-    .from('lancamento')
-    .delete()
-    .eq('versao_id', versaoId)
-    .eq('tipo', tipo)
-    .select('id')
+export async function apagarDoTipo(versaoId, tipo, excetoImportacaoId) {
+  let query = supabase.from('lancamento').delete().eq('versao_id', versaoId).eq('tipo', tipo)
+  if (excetoImportacaoId) {
+    query = query.or(`importacao_id.is.null,importacao_id.neq.${excetoImportacaoId}`)
+  }
+  const { data, error } = await query.select('id')
   if (error) throw error
   return data?.length ?? 0
 }
