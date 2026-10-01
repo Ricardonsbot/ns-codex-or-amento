@@ -291,6 +291,8 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
           apagados,
           somouEmCima,
           cadastros: previa.cadastros,
+          arquivo,
+          usuarioEmail: email,
         }),
       })
       setChecklistAberto(true)
@@ -335,6 +337,8 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         apagados: 0,
         somouEmCima: Boolean(previa.jaExistem) && !substituir,
         cadastros: previa.cadastros,
+        arquivo,
+        usuarioEmail: email,
       })
     : null
 

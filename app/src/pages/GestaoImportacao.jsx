@@ -195,6 +195,8 @@ function CardTipo({
           apagados: 0,
           somouEmCima,
           cadastros: previa.cadastros,
+          arquivo,
+          usuarioEmail: email,
         }),
       })
       setChecklistAberto(true)
@@ -662,6 +664,8 @@ export default function GestaoImportacao() {
               apagados: 0,
               somouEmCima: Boolean(previas[t].jaExistem),
               cadastros: previas[t].cadastros,
+              arquivo,
+              usuarioEmail: sessao?.user?.email,
             })
           )
       )

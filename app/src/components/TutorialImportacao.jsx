@@ -36,7 +36,7 @@ const PASSOS = [
     titulo: 'Confira o status antes de gravar',
     texto:
       'Cada tipo vira um card com o total de linhas, o valor do ano e a faixa de status. Vermelho é impedimento: empresa ou conta fora do cadastro, centro de custo faltando, sinal trocado. Amarelo é pendência, e consolida assim mesmo.',
-    dica: 'Se a versão já tem lançamentos daquele tipo, marque "Apagar os que já existem antes de importar" — senão o orçamento soma em cima e dobra.',
+    dica: 'Se a versão já tem lançamentos daquele tipo, o aviso aparece ao lado do título — importar sempre soma em cima dos que já existem. Pra apagar os antigos, use "Substituir" depois, na janela de status do template já importado.',
   },
   {
     n: 5,

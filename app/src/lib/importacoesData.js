@@ -461,9 +461,14 @@ export function resumoDaImportacao({
   apagados,
   somouEmCima,
   cadastros,
+  arquivo,
+  usuarioEmail,
 }) {
   const empresas = resumirLinhas(linhas, tipo)
   return {
+    arquivo: arquivo ?? null,
+    criado_em: new Date().toISOString(),
+    usuario_email: usuarioEmail ?? null,
     ano: ano ?? null,
     versao_nome: versao?.nome ?? null,
     tipos: {
@@ -508,6 +513,9 @@ export function resumoDoArquivo(resumos) {
     empresas = juntarEmpresas(empresas, r.empresas ?? [])
   }
   return {
+    arquivo: cheios[0]?.arquivo ?? null,
+    criado_em: cheios[0]?.criado_em ?? null,
+    usuario_email: cheios[0]?.usuario_email ?? null,
     ano: cheios[0]?.ano ?? null,
     versao_nome: cheios[0]?.versao_nome ?? null,
     tipos,
