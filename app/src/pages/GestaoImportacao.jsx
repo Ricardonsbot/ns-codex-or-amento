@@ -14,7 +14,7 @@ import { useAuth } from '../components/AuthProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import { createCiclo } from '../lib/ciclosData'
 import { agruparPorPacoteDivergente, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
-import { resumoDoUpload } from '../lib/resumoDoUpload'
+import { bigNumbersDoArquivo, resumoDoUpload } from '../lib/resumoDoUpload'
 import { resumoDoArquivo } from '../lib/importacoesData'
 import Indicadores from '../components/Indicadores'
 import { useSubTela } from '../lib/identificadorTela'
@@ -842,16 +842,7 @@ export default function GestaoImportacao() {
                         )}
 
                         {resumo.tipos.length > 0 && (
-                          <Indicadores
-                            itens={[
-                              { chave: 'linhas', rotulo: 'linhas a importar', valor: resumo.linhas, formato: 'inteiro' },
-                              { chave: 'receita', rotulo: '(+) Revenue', valor: resumo.totais.receita ?? 0 },
-                              { chave: 'despesa', rotulo: '(−) Expenses', valor: resumo.totais.despesa ?? 0 },
-                              { chave: 'capex', rotulo: '(−) Capex', valor: resumo.totais.capex ?? 0 },
-                              { chave: 'empresas', rotulo: 'empresas', valor: resumo.empresas, formato: 'inteiro' },
-                              { chave: 'contas', rotulo: 'contas', valor: resumo.contas, formato: 'inteiro' },
-                            ]}
-                          />
+                          <Indicadores itens={bigNumbersDoArquivo(resumo)} />
                         )}
 
                         <div className="panel" style={{ marginBottom: 16 }}>
@@ -859,8 +850,12 @@ export default function GestaoImportacao() {
                             <BotaoRecolher chave="gestao-importacao-conferencia" rotulo="a conferência" />
                             <div>
                               <h2>Conferência do template</h2>
+                              {/* A contagem desceu dos big numbers para cá: ela
+                                  diz que o arquivo chegou inteiro, que é uma
+                                  pergunta da conferência, não do resultado. */}
                               <p>
                                 {arquivo}
+                                {` · ${resumo.linhas.toLocaleString('pt-BR')} linha(s) em ${resumo.contas} conta(s)`}
                                 {primeira?.ciclo && ` · ciclo ${primeira.ciclo.ano}`}
                                 {primeira?.versao && ` / versão ${primeira.versao.nome}`}
                               </p>
