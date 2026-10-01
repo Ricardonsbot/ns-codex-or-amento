@@ -34,8 +34,11 @@ import {
 } from '../lib/importacoesData'
 import BotaoRecolher from '../components/BotaoRecolher'
 
-const ROTULO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
+const ROTULO = { receita: 'Revenue', despesa: 'Expenses', capex: 'Capex' }
 const NOME = { receita: 'receita', despesa: 'despesa', capex: 'capex' }
+// O nome da aba na planilha é "Base Gastos" — é por ele que a leitura se
+// orienta, e não muda. Aqui é só o texto mostrado na tela.
+const ABA_EXIBICAO = { 'Base Gastos': 'Base de Gastos' }
 const ORDEM = ['receita', 'despesa', 'capex']
 
 const brl = (v) => `R$ ${Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -270,11 +273,10 @@ function CardTipo({
           entra, e meio arquivo no banco não é um estado que alguém queira. */}
       <div className="modulo-conferencia-topo">
         <BotaoRecolher chave={`conferencia-${tipo}`} rotulo={ROTULO[tipo]} />
-        <h3>{ROTULO[tipo]}</h3>
-        <span>
-          aba {lido.aba}
-          {gravando && ' · importando…'}
-        </span>
+        <h3>
+          {ROTULO[tipo]} - Aba: {ABA_EXIBICAO[lido.aba] ?? lido.aba}
+        </h3>
+        {gravando && <span>importando…</span>}
         {previa?.jaExistem > 0 && (
           <span style={{ marginLeft: 'auto' }}>
             ⚠ já tem {previa.jaExistem} lançamento(s) de {NOME[tipo]} — vai somar aos que já existem
@@ -345,7 +347,7 @@ function CardTipo({
             {porPacote.length > 0 && (
               <>
                 <strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>
-                  {subpacotesComOfensa} subpacote(s) com algo a resolver, de {porPacote.length} pacote(s)
+                  {subpacotesComOfensa} subpacote(s) com pendência.
                 </strong>
 
                 <div className="tabela-pacote-scroll">

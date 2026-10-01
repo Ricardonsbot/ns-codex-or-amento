@@ -985,6 +985,10 @@ tfoot td {
   max-width: 520px;
   max-height: 86vh;
   overflow-y: auto;
+  /* Reserva o espaço da barra de rolagem antes dela aparecer — sem isso, o
+     conteúdo (os cards de indicadores, por exemplo) empurra até a borda e
+     depois a barra nasce por cima, cortando a última coluna. */
+  scrollbar-gutter: stable;
 }
 
 .modal-header {
@@ -3738,7 +3742,10 @@ tfoot td {
   background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
   font-size: 13px;
+  /* Subtítulo 2 da árvore — um degrau mais claro que o nome da aba acima. */
+  color: var(--color-text-faint);
 }
+.linha-pacote > td strong { color: var(--color-text-muted); }
 .linha-pacote .conta-seta { margin-right: 2px; }
 
 /* Teto de altura pra tabela não esticar o modal inteiro — a rolagem fica
@@ -3865,18 +3872,25 @@ tfoot td {
 
 .modulo-conferencia:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
 
+/* Árvore de hierarquia da conferência: "Conferência do template" (o h2 do
+   painel, já com a borda embaixo) é o título; cada aba é o subtítulo 1,
+   com a mesma borda fina; o pacote (.linha-pacote) é o subtítulo 2. Mais
+   escuro em cima, mais claro embaixo — é o degradê que entrega a
+   profundidade sem precisar de recuo. As linhas de resultado (subpacote e
+   linha) continuam brancas: são dado, não título. */
 .modulo-conferencia-topo {
   display: flex;
   align-items: baseline;
   gap: 10px;
+  padding-bottom: 8px;
   margin-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modulo-conferencia-topo h3 {
   margin: 0;
-  font-size: 13.5px;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-size: 14.5px;
+  font-weight: 700;
   color: var(--color-text-muted);
 }
 
