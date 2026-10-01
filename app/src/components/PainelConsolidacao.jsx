@@ -90,7 +90,9 @@ function Falta({ lista, carregando }) {
              maior, procura a sua. */
           <ul className="lista-falta">
             {lista.map((e) => (
-              <li key={e.id ?? e.nome}>{e.nome}</li>
+              <li key={e.id ?? e.nome} title={e.nome}>
+                {e.nome}
+              </li>
             ))}
           </ul>
         )}

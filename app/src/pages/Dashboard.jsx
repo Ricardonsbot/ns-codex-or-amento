@@ -149,6 +149,12 @@ export default function Dashboard() {
       ]
     : []
 
+  // O GraficoLinhas não desenha série toda zerada — e devolver null deixa
+  // um buraco na tela sem dizer por quê. Versão sem lançamento é o estado
+  // normal no começo do ciclo, não um defeito: então o lugar do gráfico
+  // explica o vazio em vez de sumir.
+  const temNumero = series.some((x) => x.valores?.some((v) => v))
+
   // Em ordem alfabética: quem olha procura a sua empresa, não a maior.
   const faltam = dados
     ? dados.empresas.filter((e) => !e.temLancamento).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
@@ -230,12 +236,30 @@ export default function Dashboard() {
             número, os dois quadros dizem se ele já está inteiro. */}
         <div className="dashboard-linha">
           <div className="dashboard-grafico">
-            <GraficoLinhas
-              titulo="O ano mês a mês"
-              subtitulo="receita, despesa e capex da versão escolhida"
-              rotulos={MESES}
-              series={series}
-            />
+            {temNumero ? (
+              <GraficoLinhas
+                titulo="O ano mês a mês"
+                subtitulo="receita, despesa e capex da versão escolhida"
+                rotulos={MESES}
+                series={series}
+              />
+            ) : (
+              <div className="panel grafico-vazio">
+                <div className="panel-header">
+                  <div>
+                    <h2>O ano mês a mês</h2>
+                    <p>receita, despesa e capex da versão escolhida</p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div className="empty-hint">
+                    {loading
+                      ? 'Carregando…'
+                      : 'Esta versão ainda não tem lançamento nenhum — o gráfico aparece assim que o primeiro template entrar.'}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <PainelConsolidacao
             recentes={recentes}

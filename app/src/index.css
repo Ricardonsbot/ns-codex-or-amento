@@ -4072,21 +4072,37 @@ tfoot td {
   white-space: nowrap;
 }
 
-/* Duas colunas de nomes: a lista de quem falta passa de vinte empresas, e
-   em coluna única ela empurraria o resto da tela para baixo. */
+/* Os nomes numa caixa com rolagem própria, duas colunas por linha.
+   
+   Era `columns: 2` com altura fixa, e isso foi um erro: um container
+   multi-coluna com teto de altura transborda PARA O LADO — o texto vira
+   uma terceira e quarta coluna fora da vista, e aparece barra horizontal
+   onde se queria rolagem vertical. Grid preenche por linha, então o que
+   não cabe fica embaixo, que é onde se procura. */
 .lista-falta {
   list-style: none;
   margin: 0;
-  padding: 0;
-  columns: 2;
-  column-gap: 14px;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 14px;
   font-size: 12.5px;
-  max-height: 220px;
+  max-height: 184px;
   overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
 }
 
 .lista-falta li {
   padding: 2px 0;
-  break-inside: avoid;
   color: var(--color-text);
+  /* Nome de empresa longo não pode empurrar a coluna e criar rolagem
+     lateral: corta com reticências, e o título mostra o nome inteiro. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+.grafico-vazio { margin-bottom: 0; }
