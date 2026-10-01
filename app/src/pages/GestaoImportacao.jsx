@@ -15,7 +15,7 @@ import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasP
 import { createCiclo } from '../lib/ciclosData'
 import { agruparPorPacoteDivergente, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
 import { resumoDoUpload } from '../lib/resumoDoUpload'
-import { avaliar, resumoDoArquivo } from '../lib/importacoesData'
+import { avaliar, resumoDoArquivo, listarApontamentosPorLinha } from '../lib/importacoesData'
 import Indicadores from '../components/Indicadores'
 import { useSubTela } from '../lib/identificadorTela'
 import {
@@ -468,6 +468,67 @@ function CardTipo({
 }
 
 /**
+ * Aba "Pendências" da conferência: as mesmas categorias que o checklist mede
+ * em agregado (Centro de custo, Pacote, Conta contábil, MRR...), mas aqui
+ * cada uma abre e mostra a linha e a aba de origem no Excel — para corrigir
+ * direto no arquivo em vez de só saber que "689 estão fora do cadastro".
+ */
+function PainelPendenciasPorLinha({ grupos }) {
+  const [abertos, setAbertos] = useState(() => new Set())
+
+  if (!grupos.length) {
+    return <div className="empty-hint">Nenhuma pendência de linha encontrada na conferência.</div>
+  }
+
+  return (
+    <div className="tabela-pacote-scroll">
+      <table className="data-table tabela-contas">
+        <thead>
+          <tr>
+            <th>CATEGORIA</th>
+            <th className="text-right">LINHAS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {grupos.map((g) => {
+            const aberto = abertos.has(g.categoria)
+            return (
+              <Fragment key={g.categoria}>
+                <tr
+                  className="linha-pacote"
+                  onClick={() =>
+                    setAbertos((atual) => {
+                      const nova = new Set(atual)
+                      if (nova.has(g.categoria)) nova.delete(g.categoria)
+                      else nova.add(g.categoria)
+                      return nova
+                    })
+                  }
+                >
+                  <td colSpan={2}>
+                    <span className="conta-seta" aria-hidden="true">{aberto ? '▾' : '▸'}</span>
+                    <strong>{g.rotulo}</strong>
+                    <span style={{ opacity: 0.7, fontWeight: 400 }}> · {g.itens.length} linha(s)</span>
+                  </td>
+                </tr>
+                {aberto &&
+                  g.itens.map((it, i) => (
+                    <tr key={`${g.categoria}-${it.tipo}-${it.aba}-${it.linha}-${i}`} className="linha-da-conta">
+                      <td className="conta-neta" colSpan={2}>
+                        {ROTULO[it.tipo]} · aba {it.aba} · linha {it.linha} — {it.detalhe}
+                      </td>
+                    </tr>
+                  ))}
+              </Fragment>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+/**
  * Gestão de Importação: sobe o Template Budget uma vez e cuida das três
  * abas de lançamento (Receita, Despesa, Capex) juntas, em vez de subir o
  * mesmo arquivo de novo em cada tela.
@@ -522,6 +583,7 @@ export default function GestaoImportacao() {
   // sumário de ofensas do arquivo inteiro.
   const [previas, setPrevias] = useState({})
   const [checklistDoArquivo, setChecklistDoArquivo] = useState(false)
+  const [abaConferencia, setAbaConferencia] = useState('resultados')
   const cards = useRef({})
   const { sessao } = useAuth()
   // Um registro de histórico por upload: o primeiro tipo importado cria, os
@@ -709,6 +771,14 @@ export default function GestaoImportacao() {
   const tiposVazios = todos ? ORDEM.filter((t) => !todos[t].erro && !todos[t].linhas.length) : []
   const tiposComErro = todos ? ORDEM.filter((t) => todos[t].erro) : []
 
+  // Mesma pendência que o checklist mede em agregado, linha a linha — para a
+  // aba "Pendências" da conferência, drillável por categoria.
+  const apontamentos = useMemo(
+    () => listarApontamentosPorLinha(tiposComDado.map((t) => ({ tipo: t, previa: previas[t] }))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tiposComDado.join(','), previas]
+  )
+
   // O checklist é do arquivo, não de cada aba: o template entra inteiro, e é
   // inteiro que ele está apto ou não a consolidar.
   const primeira = tiposComDado.map((t) => previas[t]).find(Boolean)
@@ -894,7 +964,35 @@ export default function GestaoImportacao() {
                           />
                         )}
 
-                        <div className="panel" style={{ marginBottom: 16 }}>
+                        {tiposComDado.length > 0 && (
+                          <nav className="abas" aria-label="Conferência do template" style={{ marginBottom: 16 }}>
+                            <button
+                              type="button"
+                              className={`aba${abaConferencia === 'resultados' ? ' ativa' : ''}`}
+                              aria-current={abaConferencia === 'resultados' ? 'page' : undefined}
+                              onClick={() => setAbaConferencia('resultados')}
+                            >
+                              Resultados
+                            </button>
+                            <button
+                              type="button"
+                              className={`aba${abaConferencia === 'pendencias' ? ' ativa' : ''}`}
+                              aria-current={abaConferencia === 'pendencias' ? 'page' : undefined}
+                              onClick={() => setAbaConferencia('pendencias')}
+                            >
+                              Pendências{apontamentos.length > 0 && ` (${apontamentos.reduce((a, g) => a + g.itens.length, 0)})`}
+                            </button>
+                          </nav>
+                        )}
+
+                        {/* Os cards continuam montados na aba "Pendências" — é
+                            deles que sai o resumo do topo e é neles que o
+                            "importar tudo" bate (cards.current[t]); por isso
+                            escondido com display, nunca desmontado. */}
+                        <div
+                          className="panel"
+                          style={{ marginBottom: 16, display: abaConferencia === 'pendencias' ? 'none' : undefined }}
+                        >
                           <div className="panel-header">
                             <BotaoRecolher chave="gestao-importacao-conferencia" rotulo="a conferência" />
                             <div>
@@ -943,6 +1041,8 @@ export default function GestaoImportacao() {
                             )}
                           </div>
                         </div>
+
+                        {abaConferencia === 'pendencias' && <PainelPendenciasPorLinha grupos={apontamentos} />}
 
                         {checklistDoArquivo && registroDoArquivo && (
                           <ChecklistImportacao

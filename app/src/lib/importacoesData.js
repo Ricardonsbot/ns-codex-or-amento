@@ -211,6 +211,100 @@ function conferirCadastros(linhas, cadastros) {
   return saida
 }
 
+/** Ordem de exibição — a mesma de essenciais + ideais em avaliar(). */
+const ORDEM_CATEGORIAS = [
+  'valor', 'centroCusto', 'pacote', 'subpacote', 'contaContabil', 'empresa', 'valorTexto', 'mrr', 'cliente', 'sinal',
+]
+const ROTULO_CATEGORIA = {
+  valor: 'Valor',
+  centroCusto: 'Centro de custo',
+  pacote: 'Pacote',
+  subpacote: 'Subpacote',
+  contaContabil: 'Conta contábil',
+  empresa: 'Empresa',
+  valorTexto: 'Valor em número',
+  mrr: 'MRR',
+  cliente: 'Cliente',
+  sinal: 'Sinal do valor',
+}
+
+/**
+ * As mesmas pendências que avaliar() mede em agregado, mas linha a linha —
+ * cada apontamento guarda a linha e a aba de origem no Excel (`l.linha`,
+ * `l.aba`, já presentes desde a leitura em lerTemplateOrcamento.js), para
+ * quem for corrigir no arquivo saber exatamente onde mexer.
+ *
+ * `itens` é a lista de `{ tipo, previa }` dos tipos com dado no arquivo —
+ * `previa` é o objeto que `conferir()` devolve (prontas/marcadas/fora +
+ * cadastros), o mesmo que cada CardTipo já guarda no estado do pai.
+ */
+export function listarApontamentosPorLinha(itens) {
+  const porCategoria = new Map()
+  const add = (categoria, tipo, l, detalhe) => {
+    if (!porCategoria.has(categoria)) {
+      porCategoria.set(categoria, { categoria, rotulo: ROTULO_CATEGORIA[categoria], itens: [] })
+    }
+    porCategoria.get(categoria).itens.push({ tipo, linha: l.linha, aba: l.aba, detalhe })
+  }
+  const conhecido = (lista, valor) => {
+    const n = norm(valor)
+    return lista.some((c) => n === c || n.includes(c))
+  }
+
+  for (const { tipo, previa } of itens) {
+    if (!previa) continue
+    const linhas = [...(previa.prontas ?? []), ...(previa.marcadas ?? []), ...(previa.fora ?? [])]
+    const cadastros = previa.cadastros ?? {}
+    const conhecidosDe = (chave) => (cadastros[chave] ?? []).map(norm).filter(Boolean)
+    const centroCustoConhecido = conhecidosDe('centroCusto')
+    const pacoteConhecido = conhecidosDe('pacote')
+    const subpacoteConhecido = conhecidosDe('subpacote')
+    // MRR/Cliente só viram pendência se a aba usa a coluna — igual a avaliar():
+    // 100% vazio quer dizer que o template nem traz o campo.
+    const mrrUsado = linhas.some((l) => l.mrr)
+    const clienteUsado = linhas.some((l) => l.cliente)
+
+    for (const l of linhas) {
+      const total = l.total ?? soma(l.valores)
+      if (!total) add('valor', tipo, l, 'sem valor em nenhum mês')
+
+      if (l.naoNumericos?.length) {
+        add('valorTexto', tipo, l, `texto onde era número — ${l.naoNumericos.map((x) => `${x.coluna}: "${x.valor}"`).join(' · ')}`)
+      } else if (typeof l.empresa !== 'object' || !l.empresa) {
+        add('empresa', tipo, l, l.falhas?.[0] ?? 'empresa fora do cadastro')
+      } else if (!l.conta) {
+        add('contaContabil', tipo, l, l.falhas?.[0] ?? 'conta fora do plano')
+      }
+
+      const centroCusto = l.centro_custo_nome || l.centroCusto
+      if (!centroCusto) add('centroCusto', tipo, l, 'sem centro de custo')
+      else if (centroCustoConhecido.length && !conhecido(centroCustoConhecido, centroCusto))
+        add('centroCusto', tipo, l, `"${centroCusto}" fora do cadastro`)
+
+      // Pacote/subpacote só existem nas abas de gasto — ver nota em avaliar().
+      if (tipo !== 'receita') {
+        if (!l.pacote) add('pacote', tipo, l, 'sem pacote')
+        else if (pacoteConhecido.length && !conhecido(pacoteConhecido, l.pacote))
+          add('pacote', tipo, l, `"${l.pacote}" fora do cadastro de Pacotes`)
+
+        if (!l.subpacote) add('subpacote', tipo, l, 'sem subpacote')
+        else if (subpacoteConhecido.length && !conhecido(subpacoteConhecido, l.subpacote))
+          add('subpacote', tipo, l, `"${l.subpacote}" fora do cadastro de Subpacotes`)
+      }
+
+      if (mrrUsado && !l.mrr) add('mrr', tipo, l, 'sem MRR')
+      if (clienteUsado && !l.cliente) add('cliente', tipo, l, 'sem cliente')
+
+      const sinal = l.avisos?.find((a) => a.includes('sinal invertido'))
+      if (sinal) add('sinal', tipo, l, sinal)
+    }
+  }
+
+  return ORDEM_CATEGORIAS.map((c) => porCategoria.get(c))
+    .filter(Boolean)
+    .map((g) => ({ ...g, itens: g.itens.sort((a, b) => (a.linha ?? 0) - (b.linha ?? 0)) }))
+}
+
 /**
  * Campos que o status "Essencial" e o "Ideal" olham, por preenchimento.
  * Churn não existe como coluna do template; fica registrado como ausente, e
