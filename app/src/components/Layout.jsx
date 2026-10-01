@@ -72,21 +72,10 @@ const MENU = [
       },
     ],
   },
-  {
-    id: 'budget',
-    text: 'Budget',
-    icone: 'budget',
-    filhos: [
-      { id: 'revenue', to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: 'Revenue' },
-      { id: 'expenses', to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: 'Expenses' },
-    ],
-  },
-  {
-    id: 'fluxo-aprovacao',
-    text: 'Fluxo de Aprovação',
-    icone: 'aprovacao',
-    filhos: [{ id: 'aprovacoes', to: '/aprovacoes', icone: 'aprovacao', text: 'Aprovações' }],
-  },
+  // Revenue e Expenses soltos, sem o grupo "Budget" por cima — é tela de
+  // verdade, com `to`, direto no primeiro nível.
+  { id: 'revenue', to: '/orcamento/receita', icone: 'receita', cor: 'receita', text: 'Revenue' },
+  { id: 'expenses', to: '/orcamento/despesa', icone: 'despesa', cor: 'despesa', text: 'Expenses' },
   {
     id: 'configuracao',
     text: 'Configuração',
@@ -96,6 +85,9 @@ const MENU = [
       { id: 'ciclos', to: '/budget-settings', icone: 'ciclos', text: 'Ciclos & Versões' },
     ],
   },
+  // Antigo "Fluxo de Aprovação" > "Aprovações": o grupo some, a folha vira
+  // "Fluxo Aprovação" direto no primeiro nível.
+  { id: 'fluxo-aprovacao', to: '/aprovacoes', icone: 'aprovacao', text: 'Fluxo Aprovação' },
 ]
 
 /**
