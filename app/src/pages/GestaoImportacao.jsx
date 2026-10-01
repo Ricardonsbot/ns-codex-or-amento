@@ -495,10 +495,11 @@ export default function GestaoImportacao() {
   const showToast = useToast()
   const inputRef = useRef(null)
   const [arquivo, setArquivo] = useState('')
-  // Nome do template, ciclo e versão escolhidos ANTES do arquivo liberar —
-  // substitui a antiga detecção automática pelo ano do cabeçalho. Fica
-  // guardado por toda a sessão de upload (os três tipos usam o mesmo
-  // destino), e some quando a pessoa troca de arquivo de novo.
+  // Ciclo e versão escolhidos ANTES do arquivo liberar — substitui a antiga
+  // detecção automática pelo ano do cabeçalho. Fica guardado por toda a
+  // sessão de upload (os três tipos usam o mesmo destino). O nome do
+  // template não se escolhe à parte: é sempre o nome do próprio arquivo
+  // (`arquivo`, abaixo).
   const [modalDestinoAberto, setModalDestinoAberto] = useState(false)
   const [destino, setDestino] = useState(null)
   // O menu tem dois links pra esta mesma tela — "Importar - Template FP&A" e
@@ -866,7 +867,6 @@ export default function GestaoImportacao() {
                 <div>
                   <h2>Conferência do template</h2>
                   <p>
-                    {destino?.nomeTemplate && `${destino.nomeTemplate} · `}
                     {arquivo}
                     {primeira?.ciclo && ` · ciclo ${primeira.ciclo.ano}`}
                     {primeira?.versao && ` / versão ${primeira.versao.nome}`}
@@ -895,7 +895,7 @@ export default function GestaoImportacao() {
                     lido={todos[t]}
                     arquivo={arquivo}
                     versaoEscolhidaId={destino?.versao?.id}
-                    nomeTemplate={destino?.nomeTemplate}
+                    nomeTemplate={arquivo}
                     podeSolicitar={podeSolicitar}
                     substituir={substituir[t]}
                     onSubstituir={(tipoDoCard, valor) =>

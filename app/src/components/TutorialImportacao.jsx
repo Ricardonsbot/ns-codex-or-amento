@@ -23,7 +23,7 @@ const PASSOS = [
     n: 2,
     titulo: 'Escolha o destino e selecione o arquivo',
     texto:
-      'Clique em "Selecionar Template": antes de liberar o campo de arquivo, a tela pede o nome do template, o ciclo e a versão de destino (só aparecem os que estão disponíveis para lançamento). Confirmado, escolha o arquivo. Um upload só serve para Receita, Despesa e Capex. Se quem preencheu foi o pacoteiro, marque no topo "este template é o target do pacoteiro": aí o total por pacote entra como teto do ano, e não como lançamento.',
+      'Clique em "Selecionar Template": antes de liberar o campo de arquivo, a tela pede o ciclo e a versão de destino (só aparecem os que estão disponíveis para lançamento — criar ciclo ou versão é em Ciclos & Versões). Confirmado, escolha o arquivo; o nome do template é sempre o do próprio arquivo. Um upload só serve para Receita, Despesa e Capex. Se quem preencheu foi o pacoteiro, marque no topo "este template é o target do pacoteiro": aí o total por pacote entra como teto do ano, e não como lançamento.',
   },
   {
     n: 3,
