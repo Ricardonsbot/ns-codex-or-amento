@@ -287,7 +287,7 @@ function CardTipo({
             {tipoMesclado && ` + ${ROTULO[tipoMesclado]}`}
             {subpacotesComOfensa > 0 && (
               <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: 'var(--color-primary)' }}>
-                Pendências
+                {subpacotesComOfensa} subpacote(s) com pendência.
               </span>
             )}
           </h3>
@@ -362,10 +362,6 @@ function CardTipo({
 
             {porPacote.length > 0 && (
               <>
-                <strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>
-                  {subpacotesComOfensa} subpacote(s) com pendência.
-                </strong>
-
                 <div className="tabela-pacote-scroll">
                   <table className="data-table tabela-contas">
                     <thead>

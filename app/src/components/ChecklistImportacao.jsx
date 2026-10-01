@@ -31,7 +31,7 @@ export default function ChecklistImportacao({
   substituindo,
   onSubstituir,
 }) {
-  const { numero, u } = useUnidade()
+  const { numero } = useUnidade()
   const fechar = useRef(null)
   useEffect(() => {
     fechar.current?.focus()
@@ -118,7 +118,6 @@ export default function ChecklistImportacao({
                 </div>
               </div>
             ))}
-            <div className="status-medidas-unidade">{u.faixa}</div>
           </div>
 
           {mostrarSubstituir && (
