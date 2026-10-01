@@ -10,7 +10,6 @@ import HistoricoImportacoes from '../components/HistoricoImportacoes'
 import TemplatesRecusados from '../components/TemplatesRecusados'
 import CardTargetsPacote from '../components/CardTargetsPacote'
 import CargaCadastros from '../components/CargaCadastros'
-import SeletorDestinoTemplate from '../components/SeletorDestinoTemplate'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
@@ -77,7 +76,6 @@ function CardTipo({
   tipo,
   lido,
   arquivo,
-  versaoEscolhidaId,
   nomeTemplate,
   podeSolicitar,
   substituir,
@@ -109,14 +107,12 @@ function CardTipo({
       setConferindo(true)
       setErroConferencia(null)
       try {
-        let p = { ...(await conferir(lido, versaoEscolhidaId)), ano: lido.ano, ignoradas: lido.ignoradas }
+        let p = { ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas }
         // Sem o ciclo do ano não há versão onde gravar. Cria e confere de
         // novo, em vez de parar a pessoa com um botão no meio do caminho.
-        // (Só acontece sem destino escolhido — com destino, o ciclo já
-        // existe, porque a tela só deixa escolher entre os que existem.)
         if (p.cicloFaltando) {
           await garantirCiclo(p.cicloFaltando)
-          p = { ...(await conferir(lido, versaoEscolhidaId)), ano: lido.ano, ignoradas: lido.ignoradas }
+          p = { ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas }
         }
         if (cancelado) return
         setPrevia(p)
@@ -134,7 +130,7 @@ function CardTipo({
       cancelado = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lido, versaoEscolhidaId])
+  }, [lido])
 
   async function handleConfirmar() {
     // A versão já tinha lançamentos deste tipo e a pessoa não marcou
@@ -495,13 +491,13 @@ export default function GestaoImportacao() {
   const showToast = useToast()
   const inputRef = useRef(null)
   const [arquivo, setArquivo] = useState('')
-  // Ciclo e versão escolhidos ANTES do arquivo liberar — substitui a antiga
-  // detecção automática pelo ano do cabeçalho. Fica guardado por toda a
-  // sessão de upload (os três tipos usam o mesmo destino). O nome do
-  // template não se escolhe à parte: é sempre o nome do próprio arquivo
-  // (`arquivo`, abaixo).
-  const [modalDestinoAberto, setModalDestinoAberto] = useState(false)
-  const [destino, setDestino] = useState(null)
+  // "Selecionar Template" não abre o seletor de arquivo do sistema na
+  // hora — primeiro mostra esta tela, com o botão de escolher o arquivo
+  // de verdade. Uma vez escolhido, a validação roda logo abaixo, na mesma
+  // tela. Ciclo e versão não se escolhem aqui: a conferência usa sempre
+  // a versão atual (ver `conferir`), e o nome do template é o do próprio
+  // arquivo (`arquivo`, abaixo) — não há nome separado para digitar.
+  const [telaSelecao, setTelaSelecao] = useState(false)
   // O menu tem dois links pra esta mesma tela — "Importar - Template FP&A" e
   // "Importar - Pacote" — e é o `?modo=pacote` do segundo que já chega com o
   // interruptor ligado, sem a pessoa precisar marcar o checkbox na mão.
@@ -727,7 +723,7 @@ export default function GestaoImportacao() {
         <button
           className="btn btn-primary btn-sm"
           type="button"
-          onClick={() => setModalDestinoAberto(true)}
+          onClick={() => (todos ? inputRef.current?.click() : setTelaSelecao(true))}
           disabled={lendo}
         >
           {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Selecionar Template'}
@@ -741,17 +737,6 @@ export default function GestaoImportacao() {
         />
       </header>
 
-      {modalDestinoAberto && (
-        <SeletorDestinoTemplate
-          onCancelar={() => setModalDestinoAberto(false)}
-          onConfirmar={(escolha) => {
-            setDestino(escolha)
-            setModalDestinoAberto(false)
-            inputRef.current?.click()
-          }}
-        />
-      )}
-
       <ImportWizard
         aberto={wizardAberto}
         arquivo={arquivo}
@@ -764,7 +749,26 @@ export default function GestaoImportacao() {
       />
 
       <div className="content">
-        {!todos && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
+        {!telaSelecao && !todos && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
+
+        {telaSelecao && !todos && !lendo && (
+          <div className="panel" style={{ marginBottom: 16 }}>
+            <div className="panel-header">
+              <div>
+                <h2>Selecione o arquivo</h2>
+                <p>
+                  O Template Budget do ano (.xlsb, .xlsx ou .xlsm) — a ferramenta reconhece as abas de Receita e Base
+                  Gastos e confere sozinha, aqui mesmo, assim que o arquivo for escolhido.
+                </p>
+              </div>
+            </div>
+            <div className="panel-body">
+              <button className="btn btn-primary" type="button" onClick={() => inputRef.current?.click()}>
+                ⭱ Escolher arquivo
+              </button>
+            </div>
+          </div>
+        )}
 
         {todos && (
           <div className="painel-formato" style={{ marginBottom: 16 }}>
@@ -894,7 +898,6 @@ export default function GestaoImportacao() {
                     tipo={t}
                     lido={todos[t]}
                     arquivo={arquivo}
-                    versaoEscolhidaId={destino?.versao?.id}
                     nomeTemplate={arquivo}
                     podeSolicitar={podeSolicitar}
                     substituir={substituir[t]}
