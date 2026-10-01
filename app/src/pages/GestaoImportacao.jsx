@@ -9,12 +9,11 @@ import TutorialImportacao from '../components/TutorialImportacao'
 import HistoricoImportacoes from '../components/HistoricoImportacoes'
 import TemplatesRecusados from '../components/TemplatesRecusados'
 import CardTargetsPacote from '../components/CardTargetsPacote'
-import CargaCadastros from '../components/CargaCadastros'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
 import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
 import { createCiclo } from '../lib/ciclosData'
-import { agruparPorConta, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
+import { agruparPorPacoteDivergente, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
 import { resumoDoUpload } from '../lib/resumoDoUpload'
 import { resumoDoArquivo } from '../lib/importacoesData'
 import Indicadores from '../components/Indicadores'
@@ -34,7 +33,6 @@ import {
   resumoDaImportacao,
   amarrarLancamentos,
 } from '../lib/importacoesData'
-import { temMapasDeCadastro } from '../lib/lerCadastrosTemplate'
 import BotaoRecolher from '../components/BotaoRecolher'
 
 const ROTULO = { receita: 'Receita (Revenue)', despesa: 'Despesa (Expenses)', capex: 'Capex' }
@@ -96,10 +94,8 @@ function CardTipo({
   const [ultima, setUltima] = useState(null)
   const [desfazendo, setDesfazendo] = useState(false)
   const [checklistAberto, setChecklistAberto] = useState(false)
-  // Quais contas estão abertas na conferência, e se a lista esconde as que
-  // não têm nada a resolver.
-  const [contasAbertas, setContasAbertas] = useState(() => new Set())
-  const [soOfensas, setSoOfensas] = useState(false)
+  // Quais subpacotes estão abertos na conferência, mostrando as linhas embaixo.
+  const [abertos, setAbertos] = useState(() => new Set())
 
   useEffect(() => {
     let cancelado = false
@@ -239,11 +235,10 @@ function CardTipo({
   // As duas recusas são de natureza diferente e o aviso precisa dizer qual é:
   // texto numa coluna de valor não é empresa fora do cadastro.
   const semVersao = previa && !previa.versao
-  // A conferência por conta: é o que a tabela desenha. A regra mora em
-  // conferenciaPorConta.js, testada à parte.
-  const porConta = agruparPorConta(previa)
-  const contasVisiveis = soOfensas ? porConta.filter((g) => g.ofensas > 0) : porConta
-  const contasComOfensa = porConta.filter((g) => g.ofensas > 0).length
+  // A conferência por Pacote > Subpacote, só quem tem algo a resolver: a
+  // regra mora em conferenciaPorConta.js, testada à parte.
+  const porPacote = agruparPorPacoteDivergente(previa)
+  const subpacotesComOfensa = porPacote.reduce((a, p) => a + p.subpacotes.length, 0)
 
 
   // O "Importar o template inteiro" da tela chama isto em cada card, um
@@ -358,114 +353,106 @@ function CardTipo({
               </div>
             )}
 
-            {porConta.length > 0 && (
+            {porPacote.length > 0 && (
               <>
                 <div className="flex-row" style={{ gap: 12, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
                   <strong style={{ fontSize: 13 }}>
-                    {porConta.length} conta(s) neste arquivo
-                    {contasComOfensa > 0 && ` · ${contasComOfensa} com algo a resolver`}
+                    {subpacotesComOfensa} subpacote(s) com algo a resolver, de {porPacote.length} pacote(s)
                   </strong>
-                  {contasComOfensa > 0 && (
-                    <label style={{ fontSize: 12.5 }}>
-                      <input
-                        type="checkbox"
-                        checked={soOfensas}
-                        onChange={(e) => setSoOfensas(e.target.checked)}
-                        style={{ marginRight: 6 }}
-                      />
-                      Só as contas com algo a resolver
-                    </label>
-                  )}
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm"
                     onClick={() =>
-                      setContasAbertas((atual) =>
-                        atual.size ? new Set() : new Set(contasVisiveis.map((g) => g.chave))
+                      setAbertos((atual) =>
+                        atual.size
+                          ? new Set()
+                          : new Set(porPacote.flatMap((p) => p.subpacotes.map((s) => `${p.pacote}::${s.subpacote}`)))
                       )
                     }
                   >
-                    {contasAbertas.size ? 'Fechar todas' : 'Abrir todas'}
+                    {abertos.size ? 'Fechar todas' : 'Abrir todas'}
                   </button>
                 </div>
 
-                <div className="rolagem-x">
+                <div className="tabela-pacote-scroll">
                   <table className="data-table tabela-contas">
                     <thead>
                       <tr>
-                        <th>CONTA</th>
+                        <th>PACOTE / SUBPACOTE</th>
                         <th className="text-right">LINHAS</th>
                         <th className="text-right">TOTAL ANO</th>
                         <th>SITUAÇÃO</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Uma linha por conta, da que mais pede atenção para a
-                          que não pede nenhuma. Quem quiser ver as linhas de
-                          uma conta abre só ela — são milhares no arquivo. */}
-                      {contasVisiveis.slice(0, 200).map((g) => {
-                        const aberta = contasAbertas.has(g.chave)
-                        return (
-                          <Fragment key={g.chave}>
-                            <tr
-                              className={`linha-conta ${g.ofensas ? `conta-${g.pior}` : ''}`}
-                              onClick={() =>
-                                setContasAbertas((atual) => {
-                                  const nova = new Set(atual)
-                                  if (nova.has(g.chave)) nova.delete(g.chave)
-                                  else nova.add(g.chave)
-                                  return nova
-                                })
-                              }
-                            >
-                              <td>
-                                <span className="conta-seta" aria-hidden="true">{aberta ? '▾' : '▸'}</span>
-                                <strong>{g.codigo || '(sem conta)'}</strong> {g.nome}
-                                {!g.noPlano && <span className="pill" style={{ marginLeft: 6 }}>fora do plano</span>}
-                              </td>
-                              <td className="text-right">{g.quantas}</td>
-                              <td className="text-right">{brl(g.total)}</td>
-                              <td style={{ fontSize: 12 }}>
-                                <span className={`conta-marca ${g.pior}`}>{SITUACOES[g.pior].marca}</span>{' '}
-                                {resumoDaConta(g)}
-                              </td>
-                            </tr>
-                            {aberta &&
-                              g.linhas.slice(0, 100).map((l) => (
-                                <tr key={`${g.chave}-${l.linha}`} className={`linha-da-conta ${l.situacao}`}>
+                      {/* Só pacote e subpacote com ofensa chegam aqui — ver
+                          agruparPorPacoteDivergente em conferenciaPorConta.js.
+                          Quem quiser ver as linhas de um subpacote abre só ele. */}
+                      {porPacote.map((pac) => (
+                        <Fragment key={pac.pacote}>
+                          <tr className="linha-pacote">
+                            <td colSpan={4}>
+                              <strong>{pac.pacote}</strong>
+                              <span style={{ opacity: 0.7, fontWeight: 400 }}>
+                                {' '}
+                                · {pac.subpacotes.length} subpacote(s) · {brl(pac.total)}
+                              </span>
+                            </td>
+                          </tr>
+                          {pac.subpacotes.map((s) => {
+                            const chaveS = `${pac.pacote}::${s.subpacote}`
+                            const aberta = abertos.has(chaveS)
+                            return (
+                              <Fragment key={chaveS}>
+                                <tr
+                                  className={`linha-conta conta-${s.pior}`}
+                                  onClick={() =>
+                                    setAbertos((atual) => {
+                                      const nova = new Set(atual)
+                                      if (nova.has(chaveS)) nova.delete(chaveS)
+                                      else nova.add(chaveS)
+                                      return nova
+                                    })
+                                  }
+                                >
                                   <td className="conta-filha">
-                                    linha {l.linha} ·{' '}
-                                    {(typeof l.empresa === 'object' ? l.empresa?.nome : l.empresa) || '—'}
+                                    <span className="conta-seta" aria-hidden="true">{aberta ? '▾' : '▸'}</span>
+                                    {s.subpacote}
                                   </td>
-                                  <td />
-                                  <td className="text-right">{brl(l.total)}</td>
+                                  <td className="text-right">{s.quantas}</td>
+                                  <td className="text-right">{brl(s.total)}</td>
                                   <td style={{ fontSize: 12 }}>
-                                    <span className={`conta-marca ${l.situacao}`}>{SITUACOES[l.situacao].marca}</span>{' '}
-                                    {l.situacao === 'recusada' && `recusada — ${l.falhas.join(' · ')}`}
-                                    {l.situacao === 'semConta' && `entra sem conta — ${l.falhas.join(' · ')}`}
-                                    {l.situacao === 'apontada' &&
-                                      `entra como está — ${l.avisos.join(' · ')} (${brl(-l.total)})`}
-                                    {l.situacao === 'ok' && 'resolvida'}
+                                    <span className={`conta-marca ${s.pior}`}>{SITUACOES[s.pior].marca}</span>{' '}
+                                    {resumoDaConta(s)}
                                   </td>
                                 </tr>
-                              ))}
-                            {aberta && g.linhas.length > 100 && (
-                              <tr className="linha-da-conta">
-                                <td colSpan={4} className="conta-filha" style={{ opacity: 0.7 }}>
-                                  mostrando 100 das {g.linhas.length} linhas desta conta
-                                </td>
-                              </tr>
-                            )}
-                          </Fragment>
-                        )
-                      })}
+                                {aberta &&
+                                  s.linhas.map((l) => (
+                                    <tr key={`${chaveS}-${l.linha}`} className={`linha-da-conta ${l.situacao}`}>
+                                      <td className="conta-neta">
+                                        linha {l.linha} ·{' '}
+                                        {(typeof l.empresa === 'object' ? l.empresa?.nome : l.empresa) || '—'} · conta{' '}
+                                        {l.conta?.codigo || l.contaCodigo || '—'} {l.conta?.nome || l.contaRotulo || ''}
+                                      </td>
+                                      <td />
+                                      <td className="text-right">{brl(l.total)}</td>
+                                      <td style={{ fontSize: 12 }}>
+                                        <span className={`conta-marca ${l.situacao}`}>{SITUACOES[l.situacao].marca}</span>{' '}
+                                        {l.situacao === 'recusada' && `recusada — ${l.falhas.join(' · ')}`}
+                                        {l.situacao === 'semConta' && `entra sem conta — ${l.falhas.join(' · ')}`}
+                                        {l.situacao === 'apontada' &&
+                                          `entra como está — ${l.avisos.join(' · ')} (${brl(-l.total)})`}
+                                        {l.situacao === 'ok' && 'resolvida'}
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </Fragment>
+                            )
+                          })}
+                        </Fragment>
+                      ))}
                     </tbody>
                   </table>
-                  {contasVisiveis.length > 200 && (
-                    <p style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      Mostrando as primeiras 200 de {contasVisiveis.length} contas — o total acima já conta todas.
-                    </p>
-                  )}
                 </div>
               </>
             )}
@@ -503,13 +490,10 @@ export default function GestaoImportacao() {
   // interruptor ligado, sem a pessoa precisar marcar o checkbox na mão.
   const [searchParams] = useSearchParams()
   const modoPacote = searchParams.get('modo') === 'pacote'
-  // O template é um só; o que muda é o papel de quem preencheu. Marcado, o
-  // arquivo entra como target do pacote em vez de lançamento.
-  const [comoTarget, setComoTarget] = useState(modoPacote)
-  // O File fica guardado porque a carga de cadastros relê o arquivo por conta
-  // própria — as abas de cadastro não passam pela leitura dos lançamentos.
-  const [blob, setBlob] = useState(null)
-  const [temMapas, setTemMapas] = useState(false)
+  // O template é um só; o que muda é o papel de quem preencheu — e isso é a
+  // tela por onde a pessoa entrou, não mais uma marcação manual: "Template
+  // FP&A" sempre lança, "Template Pacote" sempre vira target.
+  const comoTarget = modoPacote
   const [lendo, setLendo] = useState(false)
   const [segundos, setSegundos] = useState(0)
   const [estrutura, setEstrutura] = useState(null)
@@ -567,23 +551,10 @@ export default function GestaoImportacao() {
   async function processarArquivo(file) {
     setArquivo(file.name)
     setTamanho(file.size)
-    setBlob(file)
     registro.current = { id: null, fila: Promise.resolve() }
     setGravados(0)
     setPrevias({})
     setSubstituir({})
-
-    // Só os nomes das abas, sem parsear nenhuma: é o que diz se este arquivo
-    // traz também os cadastros.
-    try {
-      setTemMapas(temMapasDeCadastro(await file.arrayBuffer()))
-    } catch {
-      setTemMapas(false)
-    }
-    // Volta pro modo de quem trouxe até aqui — não pro padrão fixo: quem
-    // entrou por "Importar - Pacote" continua em modo pacote ao trocar de
-    // arquivo na mesma visita, sem precisar marcar o checkbox de novo.
-    setComoTarget(modoPacote)
 
     setLendo(true)
     setTodos(null)
@@ -750,15 +721,27 @@ export default function GestaoImportacao() {
           <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label="Importar template">
             <div className="modal modal-importacao">
               <div className="modal-header">
-                <h3>Importar template</h3>
-                <button
-                  className="modal-close"
-                  type="button"
-                  onClick={() => setTelaSelecao(false)}
-                  aria-label="Fechar"
-                >
-                  ×
-                </button>
+                <h3>{todos ? arquivo : 'Importar template'}</h3>
+                <div className="modal-header-acoes">
+                  {todos && (
+                    <button className="btn btn-ghost btn-sm" type="button" onClick={() => inputRef.current?.click()}>
+                      Trocar arquivo
+                    </button>
+                  )}
+                  {todos && !comoTarget && tiposComDado.length > 0 && (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      type="button"
+                      onClick={importarTudo}
+                      disabled={Boolean(importandoTudo)}
+                    >
+                      {importandoTudo ? `Importando ${ROTULO[importandoTudo]}…` : 'Confirmar importação'}
+                    </button>
+                  )}
+                  <button className="btn btn-secondary btn-sm" type="button" onClick={() => setTelaSelecao(false)}>
+                    Cancelar
+                  </button>
+                </div>
               </div>
 
               <div className="modal-body">
@@ -805,32 +788,6 @@ export default function GestaoImportacao() {
 
                 {todos && (
                   <>
-                    <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                      <strong>{arquivo}</strong>
-                      <button className="btn btn-ghost btn-sm" type="button" onClick={() => inputRef.current?.click()}>
-                        Trocar arquivo
-                      </button>
-                    </div>
-
-                    <div className="painel-formato" style={{ marginBottom: 16 }}>
-                      <label style={{ fontSize: 13 }}>
-                        <input
-                          type="checkbox"
-                          checked={comoTarget}
-                          onChange={(e) => setComoTarget(e.target.checked)}
-                          style={{ marginRight: 6 }}
-                        />
-                        <strong>Este template é o target do pacoteiro</strong>
-                      </label>
-                      <p style={{ fontSize: 12, opacity: 0.8, margin: '6px 0 0' }}>
-                        O arquivo é o mesmo de sempre; muda o papel de quem preencheu. Marcado, o total por pacote
-                        entra como teto do ano em vez de virar lançamento — gravar os dois somaria o gasto do pacote
-                        duas vezes.
-                      </p>
-                    </div>
-
-                    {temMapas && blob && <CargaCadastros arquivo={blob} nomeArquivo={arquivo} />}
-
                     {comoTarget && (
                       <CardTargetsPacote
                         linhas={todos.despesa?.linhas ?? []}
@@ -858,51 +815,16 @@ export default function GestaoImportacao() {
                         )}
 
                         {resumo.tipos.length > 0 && (
-                          <>
-                            <Indicadores
-                              itens={[
-                                { chave: 'linhas', rotulo: 'linhas a importar', valor: resumo.linhas, formato: 'inteiro' },
-                                { chave: 'receita', rotulo: '(+) Revenue', valor: resumo.totais.receita ?? 0 },
-                                { chave: 'despesa', rotulo: '(−) Expenses', valor: resumo.totais.despesa ?? 0 },
-                                { chave: 'capex', rotulo: '(−) Capex', valor: resumo.totais.capex ?? 0 },
-                                { chave: 'empresas', rotulo: 'empresas', valor: resumo.empresas, formato: 'inteiro' },
-                                { chave: 'contas', rotulo: 'contas', valor: resumo.contas, formato: 'inteiro' },
-                              ]}
-                            />
-
-                            <GraficoLinhas
-                              titulo="O arquivo mês a mês"
-                              subtitulo="o que vai ser gravado, sem as linhas recusadas"
-                              rotulos={MESES}
-                              series={[
-                                { id: 'receita', rotulo: 'Revenue', cor: 'var(--serie-receita)', valores: resumo.porMes.receita },
-                                { id: 'despesa', rotulo: 'Expenses', cor: 'var(--serie-despesa)', valores: resumo.porMes.despesa },
-                                { id: 'capex', rotulo: 'Capex', cor: 'var(--serie-capex)', valores: resumo.porMes.capex },
-                              ].filter((x) => x.valores)}
-                            />
-                          </>
-                        )}
-
-                        {tiposComDado.length > 0 && (
-                          <div className="painel-formato flex-row" style={{ marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
-                            <div style={{ flex: '1 1 320px' }}>
-                              <strong>Importar o template inteiro</strong>
-                              <p style={{ fontSize: 12, opacity: 0.8, margin: '6px 0 0' }}>
-                                Grava {tiposComDado.map((t) => ROTULO[t]).join(', ')} numa passada só, nesta ordem, e
-                                tudo entra como uma importação só no histórico. O template é uma coisa só: não dá
-                                para deixar uma aba de fora, porque meio arquivo dentro do banco e meio fora não é
-                                um estado que alguém consiga defender depois.
-                              </p>
-                            </div>
-                            <button
-                              className="btn btn-primary"
-                              type="button"
-                              onClick={importarTudo}
-                              disabled={Boolean(importandoTudo)}
-                            >
-                              {importandoTudo ? `Importando ${ROTULO[importandoTudo]}…` : 'Importar o template'}
-                            </button>
-                          </div>
+                          <Indicadores
+                            itens={[
+                              { chave: 'linhas', rotulo: 'linhas a importar', valor: resumo.linhas, formato: 'inteiro' },
+                              { chave: 'receita', rotulo: '(+) Revenue', valor: resumo.totais.receita ?? 0 },
+                              { chave: 'despesa', rotulo: '(−) Expenses', valor: resumo.totais.despesa ?? 0 },
+                              { chave: 'capex', rotulo: '(−) Capex', valor: resumo.totais.capex ?? 0 },
+                              { chave: 'empresas', rotulo: 'empresas', valor: resumo.empresas, formato: 'inteiro' },
+                              { chave: 'contas', rotulo: 'contas', valor: resumo.contas, formato: 'inteiro' },
+                            ]}
+                          />
                         )}
 
                         <div className="panel" style={{ marginBottom: 16 }}>
@@ -918,6 +840,19 @@ export default function GestaoImportacao() {
                             </div>
                           </div>
                           <div className="panel-body">
+                            {resumo.tipos.length > 0 && (
+                              <GraficoLinhas
+                                titulo="O arquivo mês a mês"
+                                subtitulo="o que vai ser gravado, sem as linhas recusadas"
+                                rotulos={MESES}
+                                series={[
+                                  { id: 'receita', rotulo: 'Revenue', cor: 'var(--serie-receita)', valores: resumo.porMes.receita },
+                                  { id: 'despesa', rotulo: 'Expenses', cor: 'var(--serie-despesa)', valores: resumo.porMes.despesa },
+                                  { id: 'capex', rotulo: 'Capex', cor: 'var(--serie-capex)', valores: resumo.porMes.capex },
+                                ].filter((x) => x.valores)}
+                              />
+                            )}
+
                             {/* Um checklist só, do arquivo: é ele que decide se o template
                                 está apto a consolidar, e o template é um. */}
                             {registroDoArquivo && (

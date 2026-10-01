@@ -23,7 +23,7 @@ const PASSOS = [
     n: 2,
     titulo: 'Selecione o template',
     texto:
-      'Clique em "Selecionar Template" e depois em "Escolher arquivo". Um upload só serve para Receita, Despesa e Capex. Se quem preencheu foi o pacoteiro, marque no topo "este template é o target do pacoteiro": aí o total por pacote entra como teto do ano, e não como lançamento.',
+      'Clique em "Selecionar Template" e depois em "Escolher arquivo". Um upload só serve para Receita, Despesa e Capex. Se quem preencheu foi o pacoteiro, entre por "Importar - Pacote" no menu, não por "Template FP&A": aí o total por pacote entra como teto do ano, e não como lançamento.',
   },
   {
     n: 3,

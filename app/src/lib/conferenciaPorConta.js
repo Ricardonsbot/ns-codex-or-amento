@@ -103,6 +103,74 @@ export function agruparPorConta(previa) {
   )
 }
 
+const SEM_PACOTE = '(sem pacote)'
+const SEM_SUBPACOTE = '(sem subpacote)'
+
+/**
+ * Agrupa a prévia por Pacote > Subpacote, só com quem tem algo a resolver.
+ *
+ * É a mesma ideia de `agruparPorConta`, mas a conta deixa de ser o que
+ * importa: um arquivo de milhares de linhas certas vira ruído na tela, e
+ * quem confere quer ver só o que tem pendência, organizado do jeito que o
+ * pacoteiro enxerga o próprio orçamento.
+ */
+export function agruparPorPacoteDivergente(previa) {
+  if (!previa) return []
+  const pacotes = new Map()
+
+  const juntar = (linhas, onde) => {
+    for (const p of linhas ?? []) {
+      const nomePacote = (p.pacote ?? '').trim() || SEM_PACOTE
+      const nomeSub = (p.subpacote ?? '').trim() || SEM_SUBPACOTE
+      if (!pacotes.has(nomePacote)) pacotes.set(nomePacote, { pacote: nomePacote, subpacotes: new Map(), total: 0 })
+      const pac = pacotes.get(nomePacote)
+      if (!pac.subpacotes.has(nomeSub)) {
+        pac.subpacotes.set(nomeSub, { subpacote: nomeSub, linhas: [], contagem: zeros(), total: 0 })
+      }
+      const sub = pac.subpacotes.get(nomeSub)
+      const situacao = situacaoDaLinha(p, onde)
+      sub.linhas.push({ ...p, onde, situacao })
+      sub.contagem[situacao] += 1
+      sub.total += Number(p.total ?? 0)
+      pac.total += Number(p.total ?? 0)
+    }
+  }
+
+  juntar(previa.fora, 'fora')
+  juntar(previa.marcadas, 'marcadas')
+  juntar(previa.prontas, 'prontas')
+
+  return [...pacotes.values()]
+    .map((pac) => {
+      const subpacotes = [...pac.subpacotes.values()]
+        .map((s) => {
+          s.linhas.sort(
+            (a, b) => SITUACOES[a.situacao].ordem - SITUACOES[b.situacao].ordem || (a.linha ?? 0) - (b.linha ?? 0)
+          )
+          const ofensas = s.contagem.recusada + s.contagem.semConta + s.contagem.apontada
+          const pior = s.linhas.length ? s.linhas[0].situacao : 'ok'
+          return { ...s, ofensas, pior, quantas: s.linhas.length }
+        })
+        .filter((s) => s.ofensas > 0)
+        .sort(
+          (a, b) =>
+            SITUACOES[a.pior].ordem - SITUACOES[b.pior].ordem ||
+            Math.abs(b.total) - Math.abs(a.total) ||
+            a.subpacote.localeCompare(b.subpacote, 'pt-BR')
+        )
+      const ofensas = subpacotes.reduce((a, s) => a + s.ofensas, 0)
+      return {
+        pacote: pac.pacote,
+        subpacotes,
+        total: pac.total,
+        ofensas,
+        quantas: subpacotes.reduce((a, s) => a + s.quantas, 0),
+      }
+    })
+    .filter((pac) => pac.ofensas > 0)
+    .sort((a, b) => Math.abs(b.total) - Math.abs(a.total) || a.pacote.localeCompare(b.pacote, 'pt-BR'))
+}
+
 /** O resumo da conta em texto: "2 recusadas · 3 entram apontadas". */
 export function resumoDaConta(g) {
   const partes = []
