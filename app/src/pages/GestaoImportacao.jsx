@@ -272,6 +272,11 @@ function CardTipo({
           aba {lido.aba}
           {gravando && ' · importando…'}
         </span>
+        {previa?.jaExistem > 0 && (
+          <span style={{ marginLeft: 'auto' }}>
+            ⚠ já tem {previa.jaExistem} lançamento(s) de {NOME[tipo]} — vai somar aos que já existem
+          </span>
+        )}
       </div>
 
       <div>
@@ -328,13 +333,6 @@ function CardTipo({
 
         {previa && (
           <>
-            {previa.jaExistem > 0 && (
-              <div className="proto-banner" style={{ marginBottom: 12 }}>
-                ⚠ Esta versão já tem <strong>{previa.jaExistem}</strong> lançamento(s) de {NOME[tipo]}. Importar vai{' '}
-                <strong>somar</strong> aos que já existem.
-              </div>
-            )}
-
             {semVersao && (
               <div className="proto-banner" style={{ marginBottom: 12 }}>
                 ⓘ O ciclo {previa.ano} não tem versão. Crie uma em Budget-Settings antes de importar.
@@ -343,26 +341,9 @@ function CardTipo({
 
             {porPacote.length > 0 && (
               <>
-                <div className="flex-row" style={{ gap: 12, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
-                  <strong style={{ fontSize: 13 }}>
-                    {subpacotesComOfensa} subpacote(s) com algo a resolver, de {porPacote.length} pacote(s)
-                  </strong>
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => {
-                      const tudoFechado = !pacotesAbertos.size && !abertos.size
-                      setPacotesAbertos(tudoFechado ? new Set(porPacote.map((p) => p.pacote)) : new Set())
-                      setAbertos(
-                        tudoFechado
-                          ? new Set(porPacote.flatMap((p) => p.subpacotes.map((s) => `${p.pacote}::${s.subpacote}`)))
-                          : new Set()
-                      )
-                    }}
-                  >
-                    {!pacotesAbertos.size && !abertos.size ? 'Abrir todas' : 'Fechar todas'}
-                  </button>
-                </div>
+                <strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>
+                  {subpacotesComOfensa} subpacote(s) com algo a resolver, de {porPacote.length} pacote(s)
+                </strong>
 
                 <div className="tabela-pacote-scroll">
                   <table className="data-table tabela-contas">

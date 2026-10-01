@@ -3698,8 +3698,8 @@ tfoot td {
 /* ------------------------------------------- Conferência por conta
    Uma linha por conta contábil, clicável, com as linhas do arquivo
    embaixo. É o drill down da tela de importação. */
-.linha-conta { cursor: pointer; }
-.linha-conta:hover { background: var(--color-surface-alt); }
+.linha-conta { cursor: pointer; background: var(--color-surface); }
+.linha-conta:hover { background: var(--color-bg); }
 
 .conta-seta {
   display: inline-block;
@@ -3708,29 +3708,27 @@ tfoot td {
   font-size: 11px;
 }
 
-.linha-conta.conta-recusada > td:first-child { box-shadow: inset 3px 0 0 var(--color-danger); }
-.linha-conta.conta-semConta > td:first-child,
-.linha-conta.conta-apontada > td:first-child { box-shadow: inset 3px 0 0 var(--color-warning); }
-
 .conta-marca { font-weight: 700; }
 .conta-marca.recusada { color: var(--color-danger); }
 .conta-marca.semConta,
 .conta-marca.apontada { color: var(--color-warning); }
 .conta-marca.ok { color: var(--color-success); }
 
-.linha-da-conta > td { background: var(--color-surface-alt); font-size: 12.5px; }
+.linha-da-conta > td { background: var(--color-surface); font-size: 12.5px; }
 .conta-filha { padding-left: 28px !important; color: var(--color-text-muted); }
 .conta-neta { padding-left: 44px !important; color: var(--color-text-muted); }
 
 /* O cabeçalho de pacote na conferência por Pacote > Subpacote: clicável
-   igual a linha de subpacote embaixo (drill down de dois níveis), com fundo
-   cinza claro pra ler como título, não como mais uma linha de dado. */
+   igual a linha de subpacote embaixo (drill down de dois níveis). Quase
+   branco, com uma linha embaixo pra marcar que é título — não precisa de
+   fundo forte pra isso. */
 .linha-pacote { cursor: pointer; }
-.linha-pacote:hover > td { background: var(--color-border-forte); }
+.linha-pacote:hover > td { background: var(--color-bg); }
 .linha-pacote > td {
   padding-top: 10px;
   padding-bottom: 10px;
-  background: var(--color-surface-alt);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
   font-size: 13px;
 }
 .linha-pacote .conta-seta { margin-right: 2px; }
