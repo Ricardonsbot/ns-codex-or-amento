@@ -285,11 +285,16 @@ function CardTipo({
           <h3>
             {ROTULO[tipo]} - Aba: {ABA_EXIBICAO[lido.aba] ?? lido.aba}
             {tipoMesclado && ` + ${ROTULO[tipoMesclado]}`}
+            {subpacotesComOfensa > 0 && (
+              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: 'var(--color-primary)' }}>
+                Pendências
+              </span>
+            )}
           </h3>
           {gravando && <span>importando…</span>}
           {previa?.jaExistem > 0 && (
             <span style={{ marginLeft: 'auto' }}>
-              ⚠ já tem {previa.jaExistem} lançamento(s) de {NOME[tipo]} — vai somar aos que já existem
+              ⚠ {previa.jaExistem} lançamento(s) identificados como duplicadas.
             </span>
           )}
         </div>
