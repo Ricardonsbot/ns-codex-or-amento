@@ -7,6 +7,11 @@ export const CADASTROS_SIMPLES = {
       { key: 'nome', label: 'Nome', obrigatorio: true },
       { key: 'email', label: 'E-mail', obrigatorio: true },
       { key: 'papel', label: 'Papel', tipo: 'select', opcoes: ['Admin', 'Aprovador', 'Analista'] },
+      // Local é conta criada só pra uso interno/teste (como a de dev), sem
+      // conta corporativa por trás; sincronizado é quem entra pela conta da
+      // empresa. Hoje é só informativo — o login em si continua pelo e-mail
+      // e senha cadastrados no Supabase Auth, local ou sincronizado.
+      { key: 'origem', label: 'Origem', tipo: 'select', opcoes: ['Local', 'Sincronizado'] },
     ],
   },
   'centros-de-custo': {

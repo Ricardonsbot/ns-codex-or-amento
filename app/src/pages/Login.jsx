@@ -8,8 +8,8 @@ export default function Login() {
   const navigate = useNavigate()
   const showToast = useToast()
   const { sessao, carregando } = useAuth()
-  const [email, setEmail] = useState('dev@nstech.com.br')
-  const [senha, setSenha] = useState('123456')
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
   const [entrando, setEntrando] = useState(false)
 
   if (!carregando && sessao) {
