@@ -850,7 +850,7 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                           ⚠ entra como está — {p.avisos.join(' · ')} ({brl(-p.total)})
                         </td>
                       ) : (
-                        <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ resolvida</td>
+                        <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ certa</td>
                       )}
                     </tr>
                   ))}

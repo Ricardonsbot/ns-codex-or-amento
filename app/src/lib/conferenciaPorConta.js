@@ -17,7 +17,7 @@ export const SITUACOES = {
   recusada: { ordem: 0, marca: '✕', rotulo: 'recusada', grave: true },
   semConta: { ordem: 1, marca: '⚠', rotulo: 'entra sem conta', grave: false },
   apontada: { ordem: 2, marca: '⚠', rotulo: 'entra apontada', grave: false },
-  ok: { ordem: 3, marca: '✓', rotulo: 'resolvida', grave: false },
+  ok: { ordem: 3, marca: '✓', rotulo: 'certa', grave: false },
 }
 
 /** Em que situação está a linha, pelo balde em que o casamento a pôs. */
@@ -174,8 +174,11 @@ export function agruparPorPacoteDivergente(previa) {
 /**
  * O resumo da conta em texto: "2 recusadas · 3 entram apontadas".
  *
- * Só fala do que precisa de atenção — a linha "ok" não entra: a ferramenta
- * não mudou nada nela, então não há o que chamar de "resolvida".
+ * Só fala do que precisa de atenção — a linha certa não entra aqui.
+ *
+ * Ela se chamava "resolvida", e a palavra mentia: dizia que tinha havido
+ * um problema e que a ferramenta deu um jeito nele. Não houve e não deu —
+ * a linha veio certa do template e passou direto.
  */
 export function resumoDaConta(g) {
   const partes = []
