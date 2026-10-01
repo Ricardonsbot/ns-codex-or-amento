@@ -15,7 +15,7 @@ import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasP
 import { createCiclo } from '../lib/ciclosData'
 import { agruparPorPacoteDivergente, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
 import { resumoDoUpload } from '../lib/resumoDoUpload'
-import { resumoDoArquivo } from '../lib/importacoesData'
+import { avaliar, resumoDoArquivo } from '../lib/importacoesData'
 import Indicadores from '../components/Indicadores'
 import { useSubTela } from '../lib/identificadorTela'
 import {
@@ -27,6 +27,7 @@ import {
 import {
   registrarImportacao,
   registrarTentativaRecusada,
+  registrarRecusaDeConferencia,
   marcarDesfeito,
   resumoDaImportacao,
   amarrarLancamentos,
@@ -610,6 +611,54 @@ export default function GestaoImportacao() {
     setImportandoTudo(null)
   }
 
+  /**
+   * Impedimento (campo essencial vazio, conta fora do plano...) não grava —
+   * em vez de importar, registra a recusa com o mesmo resumo que uma
+   * importação de verdade levaria, pra "Exibir detalhes" em Templates
+   * Recusados poder reabrir a mesma janela de status.
+   */
+  async function recusarPorImpedimento(a) {
+    const motivo = `Itens não preenchidos: ${a.impedimentos.map((i) => i.rotulo).join(', ')}`
+    try {
+      await registrarRecusaDeConferencia({
+        arquivo,
+        tamanho,
+        origem: 'gestao',
+        ano: registroDoArquivo.ano,
+        ciclo: primeira?.ciclo,
+        versao: primeira?.versao,
+        usuarioEmail: sessao?.user?.email,
+        motivo,
+        tipos: registroDoArquivo.tipos,
+        empresas: registroDoArquivo.empresas,
+        totais: registroDoArquivo.totais,
+      })
+      showToast(`Arquivo recusado — ${motivo}.`, 'error')
+      setVersaoHistorico((n) => n + 1)
+      setTelaSelecao(false)
+    } catch (err) {
+      showToast(`Não consegui registrar a recusa: ${err.message}`, 'error')
+    }
+  }
+
+  /**
+   * O botão "Confirmar importação" só grava se o arquivo inteiro já foi
+   * conferido e está liberado — com impedimento, vira recusa, não tentativa
+   * de gravar. "Todas conferidas" importa: com a metade na mão, "falta
+   * empresa" pode ser só a aba que ainda não chegou.
+   */
+  async function confirmarImportacao() {
+    const todasConferidas = tiposComDado.length > 0 && tiposComDado.every((t) => previas[t])
+    if (todasConferidas && registroDoArquivo) {
+      const a = avaliar(registroDoArquivo)
+      if (!a.liberado) {
+        await recusarPorImpedimento(a)
+        return
+      }
+    }
+    await importarTudo()
+  }
+
   function registrar(tipo, dados) {
     const r = registro.current
     const passo = r.fila.then(async () => {
@@ -722,7 +771,7 @@ export default function GestaoImportacao() {
                     <button
                       className="btn btn-primary btn-sm"
                       type="button"
-                      onClick={importarTudo}
+                      onClick={confirmarImportacao}
                       disabled={Boolean(importandoTudo)}
                     >
                       {importandoTudo ? `Importando ${ROTULO[importandoTudo]}…` : 'Confirmar importação'}

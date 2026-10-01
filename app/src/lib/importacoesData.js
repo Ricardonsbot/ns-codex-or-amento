@@ -386,6 +386,57 @@ export async function registrarImportacao({
   return data.id
 }
 
+/**
+ * Registra a recusa de um arquivo que foi lido e conferido, mas tinha
+ * impedimento (campo essencial vazio, conta fora do plano, etc.) — a
+ * conferência é que decide, não se escreve lançamento nenhum.
+ *
+ * Leva o mesmo resumo que uma importação de verdade grava — `tipos`,
+ * `empresas`, `totais` são as MEDIDAS que `avaliar()` usa (quantas linhas
+ * sem isso, sem aquilo), não as linhas em si. É o log do que a conferência
+ * viu, não o arquivo de novo: "Exibir detalhes" em Templates Recusados
+ * reabre a mesma janela de status de um importado, com os mesmos dados.
+ */
+export async function registrarRecusaDeConferencia({
+  arquivo,
+  tamanho,
+  origem,
+  ano,
+  ciclo,
+  versao,
+  usuarioEmail,
+  motivo,
+  tipos,
+  empresas,
+  totais,
+}) {
+  if (!(await historicoDisponivel())) return null
+  if (!(await resultadoDisponivel())) return null
+  const comNomeTemplate = await nomeTemplateDisponivel()
+  const { data, error } = await supabase
+    .from('importacao')
+    .insert({
+      usuario_email: usuarioEmail ?? null,
+      arquivo,
+      tamanho_bytes: tamanho ?? null,
+      origem: origem ?? 'gestao',
+      ano: ano ?? null,
+      ciclo_id: ciclo?.id ?? null,
+      versao_id: versao?.id ?? null,
+      versao_nome: versao?.nome ?? null,
+      ...(comNomeTemplate ? { nome_template: arquivo ?? null } : {}),
+      resultado: 'recusado',
+      recusa_motivo: motivo,
+      tipos: tipos ?? {},
+      empresas: empresas ?? [],
+      totais: totais ?? zero(),
+    })
+    .select('id')
+    .single()
+  if (error) throw error
+  return data.id
+}
+
 /** Marca um tipo como desfeito — o registro fica, para o histórico. */
 export async function marcarDesfeito(id, tipo) {
   if (!id) return
