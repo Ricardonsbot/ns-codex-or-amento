@@ -101,7 +101,7 @@ function LiberacaoCelula({ registro, apto, ocupado, onDecidir }) {
  * Clicar em qualquer ponto da linha abre a janela de status. `versao` muda a
  * cada importação da tela, para a lista recarregar.
  */
-export default function HistoricoImportacoes({ versao }) {
+export default function HistoricoImportacoes({ versao, origens }) {
   const { numero, u } = useUnidade()
   const { sessao } = useAuth()
   const showToast = useToast()
@@ -198,6 +198,14 @@ export default function HistoricoImportacoes({ versao }) {
     }
   }
 
+  // O recusado não entra aqui: não tem número, não tem liberação, e tem
+  // painel só dele em cima. `origens` separa Template FP&A de Template
+  // Pacote — mesmo arquivo, históricos que não podem se misturar.
+  const visiveis = (registros ?? [])
+    .filter((r) => r.resultado !== 'recusado')
+    .filter((r) => !origens || origens.includes(r.origem))
+    .filter((r) => !filtro || (r.liberacao ?? 'aguardando') === filtro)
+
   return (
     <div className="panel" style={{ marginTop: 16 }}>
       <div className="panel-header">
@@ -225,14 +233,14 @@ export default function HistoricoImportacoes({ versao }) {
         )}
         {erro && <div className="proto-banner">✕ Não consegui carregar o histórico: {erro}</div>}
         {!semTabela && !erro && !registros && <div className="empty-hint">Carregando…</div>}
-        {registros && !registros.length && (
+        {registros && !visiveis.length && (
           <div className="empty-hint">
             Nenhum template importado ainda. Cada importação confirmada aparece aqui; o que a ferramenta recusou fica
-            no painel de baixo.
+            no painel de cima.
           </div>
         )}
 
-        {registros?.length > 0 && (
+        {visiveis.length > 0 && (
           <div className="rolagem-x">
             <table className="data-table tabela-templates">
               <thead>
@@ -252,12 +260,7 @@ export default function HistoricoImportacoes({ versao }) {
                 </tr>
               </thead>
               <tbody>
-                {registros
-                  // O recusado não entrou: não tem número, não tem liberação,
-                  // e tem painel só dele logo abaixo.
-                  .filter((r) => r.resultado !== 'recusado')
-                  .filter((r) => !filtro || (r.liberacao ?? 'aguardando') === filtro)
-                  .map((r) => {
+                {visiveis.map((r) => {
                   const t = r.totais ?? {}
                   const a = avaliar(r)
                   const empresas = r.empresas ?? []

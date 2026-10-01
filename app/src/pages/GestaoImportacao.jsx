@@ -39,6 +39,15 @@ const NOME = { receita: 'receita', despesa: 'despesa', capex: 'capex' }
 // O nome da aba na planilha é "Base Gastos" — é por ele que a leitura se
 // orienta, e não muda. Aqui é só o texto mostrado na tela.
 const ABA_EXIBICAO = { 'Base Gastos': 'Base de Gastos' }
+
+// Template FP&A e Template Pacote leem o mesmo arquivo, mas um vira
+// lançamento e o outro vira target_pacote — os históricos (Templates
+// importados / Templates Recusados) ficam cada um só com a origem da tela
+// por onde a pessoa entrou, nunca misturados.
+const ORIGENS_DA_TELA = {
+  gestao: ['gestao', 'receita', 'despesa', 'capex'],
+  pacote: ['pacote'],
+}
 const ORDEM = ['receita', 'despesa', 'capex']
 
 const brl = (v) => `R$ ${Number(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -662,7 +671,7 @@ export default function GestaoImportacao() {
       const id = await registrarTentativaRecusada({
         arquivo: nome,
         tamanho: bytes,
-        origem: 'gestao',
+        origem: comoTarget ? 'pacote' : 'gestao',
         usuarioEmail: sessao?.user?.email,
         motivo,
       })
@@ -700,7 +709,7 @@ export default function GestaoImportacao() {
       await registrarRecusaDeConferencia({
         arquivo,
         tamanho,
-        origem: 'gestao',
+        origem: comoTarget ? 'pacote' : 'gestao',
         ano: registroDoArquivo.ano,
         ciclo: primeira?.ciclo,
         versao: primeira?.versao,
@@ -745,7 +754,7 @@ export default function GestaoImportacao() {
         tipo,
         arquivo,
         tamanho,
-        origem: 'gestao',
+        origem: comoTarget ? 'pacote' : 'gestao',
         usuarioEmail: sessao?.user?.email,
       })
       // Qual arquivo trouxe cada linha: é por aqui que o Deep Dive lista
@@ -1066,9 +1075,13 @@ export default function GestaoImportacao() {
           </div>
         )}
 
-        <HistoricoImportacoes versao={versaoHistorico} />
+        {/* Template FP&A e Template Pacote são o mesmo arquivo, mas viram
+            coisas diferentes no banco (lançamento vs target_pacote) — os
+            históricos ficam só com a origem da tela por onde a pessoa
+            entrou, para não misturar um público com o outro. */}
+        <TemplatesRecusados versao={versaoHistorico} origens={ORIGENS_DA_TELA[comoTarget ? 'pacote' : 'gestao']} />
 
-        <TemplatesRecusados versao={versaoHistorico} />
+        <HistoricoImportacoes versao={versaoHistorico} origens={ORIGENS_DA_TELA[comoTarget ? 'pacote' : 'gestao']} />
 
         {tutorialAberto && (
           <TutorialImportacao etapa={etapaTutorial} janela onFechar={() => setTutorialAberto(false)} />

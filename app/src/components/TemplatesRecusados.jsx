@@ -8,9 +8,9 @@ import ChecklistImportacao from './ChecklistImportacao'
  * Os templates que a ferramenta recusou.
  *
  * Fica à parte dos importados de propósito: são listas com perguntas
- * diferentes. A de cima é "o que entrou e está apto a consolidar"; esta é
- * "quem tentou subir o quê e por que não entrou" — que é o que se olha
- * quando alguém diz que mandou o arquivo e ele não aparece em lugar nenhum.
+ * diferentes. Esta é "quem tentou subir o quê e por que não entrou" — que é
+ * o que se olha quando alguém diz que mandou o arquivo e ele não aparece em
+ * lugar nenhum; a de baixo é "o que entrou e está apto a consolidar".
  *
  * Três motivos recusam aqui: arquivo que não dá para ler, arquivo sem uma
  * linha sequer para trazer, e arquivo lido e conferido que tinha impedimento
@@ -47,6 +47,7 @@ const EXEMPLO = [
     tamanho_bytes: 5_456_773,
     criado_em: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
     usuario_email: 'fpa.bu@nstech.com.br',
+    origem: 'gestao',
     recusa_motivo: 'Não consegui ler a planilha — a aba "Base Gastos" não foi encontrada',
   },
   {
@@ -56,11 +57,12 @@ const EXEMPLO = [
     tamanho_bytes: 184_320,
     criado_em: new Date(Date.now() - 26 * 3600 * 1000).toISOString(),
     usuario_email: 'analista@nstech.com.br',
+    origem: 'gestao',
     recusa_motivo: 'Nenhuma das três abas tinha linha com valor preenchido.',
   },
 ]
 
-export default function TemplatesRecusados({ versao }) {
+export default function TemplatesRecusados({ versao, origens }) {
   const [registros, setRegistros] = useState(null)
   const [semRegistro, setSemRegistro] = useState(false)
   const [erro, setErro] = useState(null)
@@ -101,6 +103,10 @@ export default function TemplatesRecusados({ versao }) {
     }
   }, [versao])
 
+  // `origens` separa Template FP&A de Template Pacote — mesmo arquivo,
+  // destinos diferentes no banco, históricos que não podem se misturar.
+  const visiveis = (registros ?? []).filter((r) => !origens || origens.includes(r.origem))
+
   return (
     <div className="panel" style={{ marginTop: 16 }}>
       <div className="panel-header">
@@ -109,8 +115,8 @@ export default function TemplatesRecusados({ versao }) {
           <h2>Templates recusados</h2>
           <p>O que a ferramenta barrou, com quem tentou subir e o motivo</p>
         </div>
-        {registros?.length > 0 && !semRegistro && (
-          <span className="pill despesa">{registros.length}</span>
+        {visiveis.length > 0 && !semRegistro && (
+          <span className="pill despesa">{visiveis.length}</span>
         )}
       </div>
       <div className="panel-body">
@@ -124,14 +130,14 @@ export default function TemplatesRecusados({ versao }) {
         )}
         {erro && <div className="proto-banner">✕ Não consegui carregar as recusas: {erro}</div>}
         {!semRegistro && !erro && !registros && <div className="empty-hint">Carregando…</div>}
-        {!semRegistro && registros && !registros.length && (
+        {!semRegistro && registros && !visiveis.length && (
           <div className="empty-hint">
             Nenhum template recusado. Arquivo que a ferramenta não conseguir ler, que não trouxer nenhuma linha com
             valor, ou que tiver impedimento na conferência, aparece aqui com quem tentou.
           </div>
         )}
 
-        {registros?.length > 0 && (
+        {visiveis.length > 0 && (
           <div className="rolagem-x">
             <table className="data-table">
               <thead>
@@ -143,7 +149,7 @@ export default function TemplatesRecusados({ versao }) {
                 </tr>
               </thead>
               <tbody>
-                {registros.map((r) => {
+                {visiveis.map((r) => {
                   const temConferencia = r.tipos && Object.keys(r.tipos).length > 0
                   const aberta = expandido === r.id
                   return (
