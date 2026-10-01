@@ -863,6 +863,19 @@ export default function GestaoImportacao() {
     await importarTudo()
   }
 
+  /**
+   * Só para a fase de teste: ignora o impedimento e importa assim mesmo —
+   * sem isso, todo arquivo de teste incompleto vira recusa em vez de dado
+   * pra conferir. Tirar este botão quando a fase de teste acabar.
+   */
+  async function confirmarMesmoComErro() {
+    const confirmado = window.confirm(
+      'Importar mesmo com impedimento (campo essencial vazio)? Isso é só para teste — não use isso com dado real.'
+    )
+    if (!confirmado) return
+    await importarTudo()
+  }
+
   function registrar(tipo, dados) {
     const r = registro.current
     const passo = r.fila.then(async () => {
@@ -993,6 +1006,17 @@ export default function GestaoImportacao() {
                       title={naoPodeImportar ? 'Arquivo não pode ser importado — resolva a conferência primeiro' : undefined}
                     >
                       {importandoTudo ? `Importando ${ROTULO[importandoTudo]}…` : 'Confirmar importação'}
+                    </button>
+                  )}
+                  {todos && !comoTarget && tiposComDado.length > 0 && naoPodeImportar && (
+                    <button
+                      className="btn btn-danger btn-sm"
+                      type="button"
+                      onClick={confirmarMesmoComErro}
+                      disabled={Boolean(importandoTudo)}
+                      title="Só para teste: ignora o impedimento e importa assim mesmo"
+                    >
+                      ⚠ Importar mesmo com erro (teste)
                     </button>
                   )}
                   <button className="btn btn-secondary btn-sm" type="button" onClick={() => setTelaSelecao(false)}>
