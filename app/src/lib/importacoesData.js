@@ -325,6 +325,10 @@ export function medirLinhas(linhas, tipo, cadastros) {
   let semArea = 0
   let sinaisTrocados = 0
   let caixa = 0
+  // Conta sem código nem nome (campo vazio de verdade) é diferente de conta
+  // preenchida que não casou com o plano — só a primeira impede importar; a
+  // segunda vira pendência de cadastro (ver avaliar()).
+  let contaVazia = 0
   const vazios = Object.fromEntries(Object.keys(PREENCHIMENTO).map((k) => [k, 0]))
   // Linha do P&L: a da conta no plano é a que manda. Duas coisas podem dar
   // errado — a conta cair numa linha que a Master não conhece (o valor some
@@ -337,6 +341,7 @@ export function medirLinhas(linhas, tipo, cadastros) {
   for (const p of linhas) {
     const total = p.total ?? soma(p.valores)
     for (const [chave, tem] of Object.entries(PREENCHIMENTO)) if (!tem({ ...p, total })) vazios[chave] += 1
+    if (p.contaVazia) contaVazia += 1
     for (const v of p.valores ?? []) caixa += Number(v?.valor_caixa ?? 0)
     const chave = classificar({ tipo, conta: p.conta, area: p.area, area_ajustada: p.area_ajustada })
     // Gasto e capex são guardados como magnitude positiva: negativo aqui quer
@@ -369,6 +374,7 @@ export function medirLinhas(linhas, tipo, cadastros) {
     plDivergente,
     plExemplos,
     vazios,
+    contaVazia,
     caixa,
     empresas: meses.size,
     cadastros: conferirCadastros(linhas, cadastros),
@@ -751,7 +757,14 @@ export function avaliar(registro, escopo = 'arquivo') {
   // cadastrada onde o problema era outro.
   const comTexto = somar('textoEmNumero')
   const foraEmpresa = Math.max(0, somar('fora') - comTexto)
+  // Preenchido mas fora do cadastro não é a mesma coisa que vazio: só o
+  // campo vazio de verdade impede importar. Fora do cadastro vira pendência
+  // (abaixo, em ideais) e cai para aprovação de cadastro — centro de custo
+  // em centro_custo_pendente, conta em conta_pendente, os dois já na fila
+  // antes mesmo do checklist terminar de avaliar.
   const semConta = somar('marcadas')
+  const semContaVazia = somar('contaVazia')
+  const contaFora = Math.max(0, semConta - semContaVazia)
   const foraDoCadastro = (dim) => usados.reduce((a, x) => a + (tipos[x]?.cadastros?.[dim]?.linhas ?? 0), 0)
   const ccFora = foraDoCadastro('centroCusto')
   const pacoteFora = foraDoCadastro('pacote')
@@ -761,10 +774,8 @@ export function avaliar(registro, escopo = 'arquivo') {
     item(
       'centroCusto',
       'Centro de custo',
-      vazio('centroCusto') + ccFora,
-      vazio('centroCusto') + ccFora
-        ? `${vazio('centroCusto')} sem preencher · ${ccFora} fora do cadastro`
-        : 'preenchido e cadastrado'
+      vazio('centroCusto'),
+      vazio('centroCusto') ? `${vazio('centroCusto')} sem preencher` : 'preenchido'
     ),
     item(
       'pacote',
@@ -787,8 +798,8 @@ export function avaliar(registro, escopo = 'arquivo') {
     item(
       'contaContabil',
       'Conta contábil',
-      semConta,
-      semConta ? `${semConta} linha(s) sem conta no plano` : 'todas no plano de contas'
+      semContaVazia,
+      semContaVazia ? `${semContaVazia} linha(s) sem número nem nome de conta` : 'preenchida'
     ),
     item(
       'empresa',
@@ -832,6 +843,20 @@ export function avaliar(registro, escopo = 'arquivo') {
         : 'todas com o sinal esperado'
     )
   )
+
+  // Preenchido mas fora do cadastro: a linha entra do mesmo jeito, e o
+  // pedido de cadastrar o valor novo já foi (ou vai) para a fila de
+  // aprovação — não é motivo pra travar o arquivo inteiro.
+  if (ccFora > 0) {
+    ideais.push(
+      item('centroCustoFora', 'Centro de custo fora do cadastro', ccFora, `${ccFora} linha(s) foram para aprovação de cadastro`)
+    )
+  }
+  if (contaFora > 0) {
+    ideais.push(
+      item('contaFora', 'Conta fora do cadastro', contaFora, `${contaFora} linha(s) foram para aprovação de cadastro`)
+    )
+  }
 
   const impedimentos = essenciais.filter((i) => !i.ok)
   const pendencias = ideais.filter((i) => !i.ok)

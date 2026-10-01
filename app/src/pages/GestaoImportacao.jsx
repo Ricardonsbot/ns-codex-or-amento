@@ -11,7 +11,14 @@ import TemplatesRecusados from '../components/TemplatesRecusados'
 import CardTargetsPacote from '../components/CardTargetsPacote'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../components/AuthProvider'
-import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
+import {
+  agruparParaCadastro,
+  agruparParaCadastroCentroCusto,
+  centroCustoPendenteDisponivel,
+  solicitar,
+  solicitarCentroCusto,
+  tabelaDisponivel,
+} from '../lib/contasPendentesData'
 import { createCiclo } from '../lib/ciclosData'
 import { agruparPorPacoteDivergente, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
 import { resumoDoUpload } from '../lib/resumoDoUpload'
@@ -86,6 +93,7 @@ function CardTipo({
   arquivo,
   nomeTemplate,
   podeSolicitar,
+  podeSolicitarCC,
   onPrevia,
   onImportado,
   onRegistrar,
@@ -152,6 +160,23 @@ function CardTipo({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lido])
 
+  // Mesma regra de normalização de conferirCadastros (importacoesData.js):
+  // ignora acento e caixa, casa por igualdade ou conter — só não tem como
+  // reaproveitar a função de lá porque ela é privada daquele arquivo.
+  const normCC = (v) =>
+    String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/\s+/g, ' ').trim()
+  function foraDoCadastroCC(l) {
+    const valor = (l.centro_custo_nome || l.centroCusto || '').trim()
+    if (!valor) return false // vazio é impedimento (ver avaliar()), não pendência
+    const conhecidos = previa?.cadastros?.centroCusto
+    if (!conhecidos?.length) return false // cadastro não carregou: não acusa à toa
+    const n = normCC(valor)
+    return !conhecidos.some((c) => {
+      const cn = normCC(c)
+      return n === cn || n.includes(cn)
+    })
+  }
+
   async function handleConfirmar() {
     // A versão já tinha lançamentos deste tipo: entra como pendência no
     // checklist, não impede — substituir deixou de ser uma escolha daqui.
@@ -175,12 +200,30 @@ function CardTipo({
         }
       }
 
+      // Centro de custo preenchido mas fora do cadastro: mesmo princípio da
+      // conta acima — a linha já entrou (centro de custo é texto livre no
+      // lançamento, não trava a gravação), só o cadastro novo fica pendente.
+      let enviadasCC = 0
+      let erroEnvioCC = null
+      const paraEnviarCC = [...previa.prontas, ...previa.marcadas].filter(foraDoCadastroCC)
+      if (paraEnviarCC.length && podeSolicitarCC) {
+        try {
+          enviadasCC = await solicitarCentroCusto(agruparParaCadastroCentroCusto(paraEnviarCC, tipo, arquivo), email)
+        } catch (err) {
+          erroEnvioCC = err.message
+        }
+      }
+
       showToast(
         `${ids.length} lançamento(s) de ${oQue} importado(s).` +
-          (enviadas ? ` ${enviadas} conta(s) enviada(s) para aprovação de cadastro.` : ''),
-        erroEnvio ? 'warning' : 'success'
+          (enviadas ? ` ${enviadas} conta(s) enviada(s) para aprovação de cadastro.` : '') +
+          (enviadasCC ? ` ${enviadasCC} centro(s) de custo enviado(s) para aprovação de cadastro.` : ''),
+        erroEnvio || erroEnvioCC ? 'warning' : 'success'
       )
       if (erroEnvio) showToast(`As linhas entraram, mas não consegui enviar as contas para aprovação: ${erroEnvio}`, 'error')
+      if (erroEnvioCC) {
+        showToast(`As linhas entraram, mas não consegui enviar os centros de custo para aprovação: ${erroEnvioCC}`, 'error')
+      }
 
       // O histórico vem depois de gravar e num try próprio: falhar aqui não
       // desfaz nem invalida a importação, que já está no banco.
@@ -651,6 +694,7 @@ export default function GestaoImportacao() {
   const [erroLeitura, setErroLeitura] = useState(null)
   const [todos, setTodos] = useState(null)
   const [podeSolicitar, setPodeSolicitar] = useState(false)
+  const [podeSolicitarCC, setPodeSolicitarCC] = useState(false)
   const [chave, setChave] = useState(0) // muda a cada upload, para os CardTipo remontarem do zero
   const [tamanho, setTamanho] = useState(null)
   const [versaoHistorico, setVersaoHistorico] = useState(0)
@@ -675,6 +719,7 @@ export default function GestaoImportacao() {
 
   useEffect(() => {
     tabelaDisponivel().then(setPodeSolicitar)
+    centroCustoPendenteDisponivel().then(setPodeSolicitarCC)
   }, [])
 
   useEffect(() => {
@@ -1104,6 +1149,7 @@ export default function GestaoImportacao() {
                                 arquivo={arquivo}
                                 nomeTemplate={arquivo}
                                 podeSolicitar={podeSolicitar}
+                                podeSolicitarCC={podeSolicitarCC}
                                 onPrevia={(tipoDoCard, pv) => setPrevias((atual) => ({ ...atual, [tipoDoCard]: pv }))}
                                 onRegistrar={registrar}
                                 onDesfeito={desfeito}

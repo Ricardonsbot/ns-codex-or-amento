@@ -164,7 +164,11 @@ export function casar({ tipo, aba, linhas }, { empresas, contas }) {
       const motivo = l.empresa ? `Empresa "${l.empresa}" não está cadastrada` : 'Linha sem empresa'
       fora.push({ ...l, avisos, falhas: erro ? [motivo, erro] : [motivo] })
     } else if (erro) {
-      marcadas.push({ ...l, empresa, conta: null, avisos, falhas: [erro] })
+      // Sem código nem nome de conta é diferente de código/nome que não
+      // casa com nada: o primeiro é campo vazio de verdade (impede
+      // importar); o segundo tem dado — só não está no plano ainda, e
+      // isso vira pendência de cadastro, não impedimento (ver avaliar()).
+      marcadas.push({ ...l, empresa, conta: null, avisos, falhas: [erro], contaVazia: erro === 'Linha sem número nem nome de conta' })
     } else {
       prontas.push({ ...l, empresa, conta, avisos })
     }

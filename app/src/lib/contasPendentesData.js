@@ -128,3 +128,106 @@ export async function reprovar(pendencia, { observacao, quem }) {
     .eq('id', pendencia.id)
   if (error) throw error
 }
+
+/**
+ * Pendência de Centro de Custo: mesmo mecanismo da conta acima — a
+ * importação envia o pedido, alguém aprova ou reprova em /pendencia-
+ * -cadastros, aprovar cria o centro de custo. Migração
+ * 2026-10-01-pendencia-de-centro-de-custo.sql.
+ */
+let existeCC = null
+export async function centroCustoPendenteDisponivel() {
+  if (existeCC !== null) return existeCC
+  const { error } = await supabase.from('centro_custo_pendente').select('id').limit(1)
+  existeCC = !error
+  return existeCC
+}
+
+/** Igual a `agruparParaCadastro`, mas pelo centro de custo da linha. */
+export function agruparParaCadastroCentroCusto(linhas, tipo, origem) {
+  const porRotulo = new Map()
+  for (const l of linhas) {
+    const rotulo = (l.centro_custo_nome || l.centroCusto || '').trim()
+    if (!rotulo) continue
+    if (!porRotulo.has(rotulo)) {
+      porRotulo.set(rotulo, { rotulo, tipo, origem, linhas: 0, valor: 0, empresas: new Set() })
+    }
+    const p = porRotulo.get(rotulo)
+    p.linhas += 1
+    p.valor += Number(l.total ?? 0)
+    p.empresas.add((typeof l.empresa === 'object' ? l.empresa?.nome : l.empresa) ?? '—')
+  }
+
+  return [...porRotulo.values()].map((p) => ({
+    rotulo: p.rotulo,
+    tipo: p.tipo,
+    origem: p.origem,
+    linhas: p.linhas,
+    valor: Math.round(p.valor * 100) / 100,
+    descricao: `${p.linhas} linha(s) em ${[...p.empresas].slice(0, 4).join(', ')}${p.empresas.size > 4 ? ` e mais ${p.empresas.size - 4}` : ''}`,
+    motivo: 'Centro de custo não encontrado no cadastro',
+  }))
+}
+
+export async function fetchPendentesCentroCusto() {
+  const { data, error } = await supabase
+    .from('centro_custo_pendente')
+    .select('*, centro_custo:centro_custo_id(codigo, nome)')
+    .order('solicitado_em', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function solicitarCentroCusto(pedidos, quem) {
+  if (!pedidos.length) return 0
+  const { data: abertos } = await supabase
+    .from('centro_custo_pendente')
+    .select('rotulo, tipo')
+    .eq('status', 'pendente')
+  const jaAberto = new Set((abertos ?? []).map((p) => `${p.rotulo.toLowerCase()}|${p.tipo}`))
+  const novos = pedidos.filter((p) => !jaAberto.has(`${p.rotulo.toLowerCase()}|${p.tipo}`))
+  if (!novos.length) return 0
+
+  const { data, error } = await supabase
+    .from('centro_custo_pendente')
+    .insert(novos.map((p) => ({ ...p, solicitado_por: quem ?? null })))
+    .select('id')
+  if (error) throw error
+  return data?.length ?? 0
+}
+
+/** Aprova: cria o centro de custo e liga o pedido a ele. */
+export async function aprovarCentroCusto(pendencia, { codigo, nome, observacao, quem }) {
+  const { data: cc, error } = await supabase
+    .from('centro_de_custo')
+    .insert({ codigo: codigo.trim(), nome: (nome || pendencia.rotulo).trim() })
+    .select('id, codigo, nome')
+    .single()
+  if (error) throw error
+
+  const { error: erroP } = await supabase
+    .from('centro_custo_pendente')
+    .update({
+      status: 'aprovada',
+      decidido_em: new Date().toISOString(),
+      decidido_por: quem ?? null,
+      observacao_decisao: observacao || null,
+      centro_custo_id: cc.id,
+    })
+    .eq('id', pendencia.id)
+  if (erroP) throw erroP
+  return cc
+}
+
+export async function reprovarCentroCusto(pendencia, { observacao, quem }) {
+  const { error } = await supabase
+    .from('centro_custo_pendente')
+    .update({
+      status: 'reprovada',
+      decidido_em: new Date().toISOString(),
+      decidido_por: quem ?? null,
+      observacao_decisao: observacao || null,
+    })
+    .eq('id', pendencia.id)
+  if (error) throw error
+}
