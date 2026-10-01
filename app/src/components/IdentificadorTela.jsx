@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { idDaTela, useMostrarIdTela } from '../lib/identificadorTela'
+import { idDaTela, useMostrarIdTela, useSubTelaAtual } from '../lib/identificadorTela'
 
 /**
  * Etiqueta com o ID da tela atual, pra falar pra uma IA qual tela tem o bug
@@ -10,11 +10,12 @@ import { idDaTela, useMostrarIdTela } from '../lib/identificadorTela'
 export default function IdentificadorTela() {
   const [ativo] = useMostrarIdTela()
   const location = useLocation()
+  const subTela = useSubTelaAtual()
   const [copiado, setCopiado] = useState(false)
 
   if (!ativo) return null
 
-  const id = idDaTela(location.pathname, location.search)
+  const id = subTela ?? idDaTela(location.pathname, location.search)
 
   async function copiar() {
     try {

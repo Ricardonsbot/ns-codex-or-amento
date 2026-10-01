@@ -35,7 +35,7 @@ export default function ChecklistImportacao({ registro, escopo, onFechar }) {
 
   return (
     <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label="Status do template">
-      <div className="modal modal-status" style={{ maxWidth: 820 }}>
+      <div className="modal modal-status" style={{ maxWidth: 980 }}>
         <div className="modal-header">
           <h3>Status do template</h3>
           <button ref={fechar} className="modal-close" type="button" onClick={onFechar} aria-label="Fechar">
@@ -63,56 +63,33 @@ export default function ChecklistImportacao({ registro, escopo, onFechar }) {
             </div>
 
             <div className="status-niveis">
-              <div className="status-titulo">Status</div>
-
-              <div className="nivel">
-                <span className={`bolinha ${a.liberado ? 'verde' : 'cinza'}`} aria-hidden="true" />
-                <div>
-                  <strong>Essencial {a.liberado ? '(Liberado)' : '(Incompleto)'}</strong>
-                  <ul className="nivel-itens">
-                    {a.essenciais.map((i) => (
-                      <li key={i.chave} className={i.ok ? 'ok' : 'falta'}>
-                        <span aria-hidden="true">{i.ok ? '☑' : '☐'}</span> {i.rotulo}
-                        <em>{i.detalhe}</em>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              <div className="status-titulo">
+                Status
+                <span className="status-titulo-resumo">
+                  {a.impedimentos.length > 0 && `${a.impedimentos.length} impedimento(s)`}
+                  {a.impedimentos.length > 0 && a.pendencias.length > 0 && ' · '}
+                  {a.pendencias.length > 0 && `${a.pendencias.length} pendência(s)`}
+                  {!a.impedimentos.length && !a.pendencias.length && 'nada pendente'}
+                </span>
               </div>
 
-              {a.ideais.length > 0 && (
-                <div className="nivel">
-                  <span className={`bolinha ${a.pendencias.length ? 'amarelo' : 'verde'}`} aria-hidden="true" />
-                  <div>
-                    <strong>Ideal {a.pendencias.length ? '(Pendências)' : '(Completo)'}</strong>
-                    <ul className="nivel-itens">
-                      {a.ideais.map((i) => (
-                        <li key={i.chave} className={i.ok ? 'ok' : 'falta'}>
-                          <span aria-hidden="true">{i.ok ? '☑' : '☐'}</span> {i.rotulo}
-                          <em>{i.detalhe}</em>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {a.impedimentos.length > 0 && (
-                <div className="nivel">
-                  <span className="bolinha vermelho" aria-hidden="true" />
-                  <div>
-                    <strong>Impedimento (Não Liberado)</strong>
-                    <ul className="nivel-itens">
-                      {a.impedimentos.map((i) => (
-                        <li key={i.chave} className="falta">
-                          {i.rotulo}
-                          <em>{i.detalhe}</em>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
+              <div className="grade-validacao">
+                {[
+                  ...a.essenciais.map((i) => ({ ...i, nivel: 'essencial' })),
+                  ...a.ideais.map((i) => ({ ...i, nivel: 'ideal' })),
+                ].map((i) => {
+                  const classe = i.ok ? 'ok' : i.nivel === 'essencial' ? 'impedimento' : 'pendencia'
+                  return (
+                    <div key={i.chave} className={`quadrado-validacao ${classe}`}>
+                      <div className="quadrado-validacao-rotulo">
+                        <span aria-hidden="true">{i.ok ? '✓' : classe === 'impedimento' ? '✕' : '!'}</span>
+                        {i.rotulo}
+                      </div>
+                      <div className="quadrado-validacao-detalhe">{i.detalhe}</div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
 

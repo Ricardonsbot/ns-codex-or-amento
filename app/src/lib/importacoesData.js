@@ -520,7 +520,7 @@ export function resumoDoArquivo(resumos) {
  * O quadro de status do template, em três níveis:
  *
  *   Essencial     o que o consolidado precisa para fechar. Falhou, o template
- *                 fica "Não liberado" e vira impedimento.
+ *                 fica "Arquivo não pode ser importado" e vira impedimento.
  *   Ideal         o que enriquece a análise (MRR, cliente, churn).
  *                 Falhou, é pendência: consolida do mesmo jeito.
  *   Medidas       Net Revenue, Gasto, Capex e Fluxo de Caixa, com o sinal de
@@ -661,7 +661,7 @@ export function avaliar(registro, escopo = 'arquivo') {
     liberado,
     apto: liberado,
     // O que aparece na coluna Motivo da lista.
-    motivo: !liberado ? 'Não liberado' : pendencias.length ? 'Pendência' : 'Liberado',
+    motivo: !liberado ? 'Arquivo não pode ser importado' : pendencias.length ? 'Pendência' : 'Liberado',
     corEssencial: liberado ? 'verde' : 'vermelho',
     corIdeal: pendencias.length ? 'amarelo' : 'verde',
   }

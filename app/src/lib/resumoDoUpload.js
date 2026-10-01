@@ -41,6 +41,7 @@ export function resumoDoUpload(entradas) {
     totais,
     linhas,
     empresas: empresas.size,
+    empresasLista: [...empresas].sort((a, b) => a.localeCompare(b, 'pt-BR')),
     contas: contas.size,
     tipos: Object.keys(porMes),
     total: Object.values(totais).reduce((a, x) => a + x, 0),

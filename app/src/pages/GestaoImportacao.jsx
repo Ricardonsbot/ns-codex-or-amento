@@ -17,8 +17,7 @@ import { agruparPorPacoteDivergente, resumoDaConta, SITUACOES } from '../lib/con
 import { resumoDoUpload } from '../lib/resumoDoUpload'
 import { resumoDoArquivo } from '../lib/importacoesData'
 import Indicadores from '../components/Indicadores'
-import GraficoLinhas from '../components/GraficoLinhas'
-import { MESES } from '../lib/demonstrativo'
+import { useSubTela } from '../lib/identificadorTela'
 import {
   lerTodosOsTiposEmWorker,
   conferir,
@@ -485,6 +484,10 @@ export default function GestaoImportacao() {
   // a versão atual (ver `conferir`), e o nome do template é o do próprio
   // arquivo (`arquivo`, abaixo) — não há nome separado para digitar.
   const [telaSelecao, setTelaSelecao] = useState(false)
+  // Enquanto esta tela está aberta por cima da rota, o ID que aparece não é
+  // mais o da rota (GESTAO-IMPORTACAO) — é o da tela de verdade, a que
+  // subiu para importar o arquivo.
+  useSubTela(telaSelecao ? 'GESTAO-IMPORTACAO-IMPORTAR-TEMPLATE' : null)
   // O menu tem dois links pra esta mesma tela — "Importar - Template FP&A" e
   // "Importar - Pacote" — e é o `?modo=pacote` do segundo que já chega com o
   // interruptor ligado, sem a pessoa precisar marcar o checkbox na mão.
@@ -840,19 +843,6 @@ export default function GestaoImportacao() {
                             </div>
                           </div>
                           <div className="panel-body">
-                            {resumo.tipos.length > 0 && (
-                              <GraficoLinhas
-                                titulo="O arquivo mês a mês"
-                                subtitulo="o que vai ser gravado, sem as linhas recusadas"
-                                rotulos={MESES}
-                                series={[
-                                  { id: 'receita', rotulo: 'Revenue', cor: 'var(--serie-receita)', valores: resumo.porMes.receita },
-                                  { id: 'despesa', rotulo: 'Expenses', cor: 'var(--serie-despesa)', valores: resumo.porMes.despesa },
-                                  { id: 'capex', rotulo: 'Capex', cor: 'var(--serie-capex)', valores: resumo.porMes.capex },
-                                ].filter((x) => x.valores)}
-                              />
-                            )}
-
                             {/* Um checklist só, do arquivo: é ele que decide se o template
                                 está apto a consolidar, e o template é um. */}
                             {registroDoArquivo && (
@@ -885,6 +875,17 @@ export default function GestaoImportacao() {
                                 onImportado={() => setGravados((n) => n + 1)}
                               />
                             ))}
+
+                            {resumo.empresasLista?.length > 0 && (
+                              <div className="empresas-detectadas">
+                                <strong>{resumo.empresasLista.length} empresa(s) detectada(s) no arquivo</strong>
+                                <div className="empresas-detectadas-lista">
+                                  {resumo.empresasLista.map((nome) => (
+                                    <span key={nome} className="pill">{nome}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 

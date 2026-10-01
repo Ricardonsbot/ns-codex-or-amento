@@ -53,3 +53,42 @@ export function useMostrarIdTela() {
 
   return [ativo, alternar]
 }
+
+let subTelaAtual = null
+const EVENTO_SUBTELA = 'nsplanner:subTela'
+
+/**
+ * Uma tela que sobe por cima da rota (um modal de várias etapas, por
+ * exemplo) tem o seu próprio ID, mais específico que o da rota — "a tela
+ * que sobe para importar os arquivos" é um ID à parte de GESTAO-IMPORTACAO,
+ * não a mesma coisa só porque a URL não muda.
+ *
+ * Chame com o ID enquanto a tela estiver aberta, e com `null` (ou omita a
+ * chamada) quando fechar — o `useEffect` já limpa sozinho ao desmontar.
+ */
+export function useSubTela(id) {
+  useEffect(() => {
+    if (!id) return undefined
+    subTelaAtual = id
+    window.dispatchEvent(new Event(EVENTO_SUBTELA))
+    return () => {
+      if (subTelaAtual === id) {
+        subTelaAtual = null
+        window.dispatchEvent(new Event(EVENTO_SUBTELA))
+      }
+    }
+  }, [id])
+}
+
+/** O ID da sub-tela aberta agora, ou `null` se nenhuma estiver. */
+export function useSubTelaAtual() {
+  const [valor, setValor] = useState(subTelaAtual)
+
+  useEffect(() => {
+    const ouvir = () => setValor(subTelaAtual)
+    window.addEventListener(EVENTO_SUBTELA, ouvir)
+    return () => window.removeEventListener(EVENTO_SUBTELA, ouvir)
+  }, [])
+
+  return valor
+}
