@@ -552,11 +552,20 @@ export default function GestaoImportacao() {
     return () => clearInterval(t)
   }, [lendo])
 
-  async function handleArquivo(e) {
+  function handleArquivo(e) {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (!file) return
+    if (file) processarArquivo(file)
+  }
 
+  /** Arrastar solta no mesmo lugar que clicar em "Escolher arquivo" leva. */
+  function handleSoltarArquivo(e) {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (file) processarArquivo(file)
+  }
+
+  async function processarArquivo(file) {
     setArquivo(file.name)
     setTamanho(file.size)
     setBlob(file)
@@ -723,7 +732,7 @@ export default function GestaoImportacao() {
         <button
           className="btn btn-primary btn-sm"
           type="button"
-          onClick={() => (todos ? inputRef.current?.click() : setTelaSelecao(true))}
+          onClick={() => setTelaSelecao(true)}
           disabled={lendo}
         >
           {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Selecionar Template'}
@@ -749,182 +758,217 @@ export default function GestaoImportacao() {
       />
 
       <div className="content">
-        {!telaSelecao && !todos && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
+        {!todos && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
 
-        {telaSelecao && !todos && !lendo && (
-          <div className="panel" style={{ marginBottom: 16 }}>
-            <div className="panel-header">
-              <div>
-                <h2>Selecione o arquivo</h2>
-                <p>
-                  O Template Budget do ano (.xlsb, .xlsx ou .xlsm) — a ferramenta reconhece as abas de Receita e Base
-                  Gastos e confere sozinha, aqui mesmo, assim que o arquivo for escolhido.
-                </p>
-              </div>
-            </div>
-            <div className="panel-body">
-              <button className="btn btn-primary" type="button" onClick={() => inputRef.current?.click()}>
-                ⭱ Escolher arquivo
-              </button>
-            </div>
-          </div>
-        )}
-
-        {todos && (
-          <div className="painel-formato" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 13 }}>
-              <input
-                type="checkbox"
-                checked={comoTarget}
-                onChange={(e) => setComoTarget(e.target.checked)}
-                style={{ marginRight: 6 }}
-              />
-              <strong>Este template é o target do pacoteiro</strong>
-            </label>
-            <p style={{ fontSize: 12, opacity: 0.8, margin: '6px 0 0' }}>
-              O arquivo é o mesmo de sempre; muda o papel de quem preencheu. Marcado, o total por pacote entra como
-              teto do ano em vez de virar lançamento — gravar os dois somaria o gasto do pacote duas vezes.
-            </p>
-          </div>
-        )}
-
-        {temMapas && blob && <CargaCadastros arquivo={blob} nomeArquivo={arquivo} />}
-
-        {todos && comoTarget && (
-          <CardTargetsPacote
-            linhas={todos.despesa?.linhas ?? []}
-            anoTemplate={todos.despesa?.ano}
-            arquivo={arquivo}
-            responsavel={sessao?.user?.email}
-            onGravado={() => setGravados((n) => n + 1)}
-          />
-        )}
-
-        {todos && !comoTarget && (
-          <>
-            {tiposComErro.length > 0 && (
-              <div className="proto-banner" style={{ marginBottom: 16 }}>
-                ✕ Não consegui ler {tiposComErro.map((t) => ROTULO[t]).join(', ')}: veja o detalhe em cada aba na
-                Etapa de validação.
-              </div>
-            )}
-            {tiposVazios.length > 0 && (
-              <div className="proto-banner" style={{ marginBottom: 16 }}>
-                ⓘ {tiposVazios.map((t) => ROTULO[t]).join(', ')} não {tiposVazios.length === 1 ? 'tem' : 'têm'} nenhuma
-                linha com valor mensal preenchido neste arquivo — nada para conferir.
-              </div>
-            )}
-
-            {resumo.tipos.length > 0 && (
-              <>
-                <Indicadores
-                  itens={[
-                    { chave: 'linhas', rotulo: 'linhas a importar', valor: resumo.linhas, formato: 'inteiro' },
-                    { chave: 'receita', rotulo: '(+) Revenue', valor: resumo.totais.receita ?? 0 },
-                    { chave: 'despesa', rotulo: '(−) Expenses', valor: resumo.totais.despesa ?? 0 },
-                    { chave: 'capex', rotulo: '(−) Capex', valor: resumo.totais.capex ?? 0 },
-                    { chave: 'empresas', rotulo: 'empresas', valor: resumo.empresas, formato: 'inteiro' },
-                    { chave: 'contas', rotulo: 'contas', valor: resumo.contas, formato: 'inteiro' },
-                  ]}
-                />
-
-                <GraficoLinhas
-                  titulo="O arquivo mês a mês"
-                  subtitulo="o que vai ser gravado, sem as linhas recusadas"
-                  rotulos={MESES}
-                  series={[
-                    { id: 'receita', rotulo: 'Revenue', cor: 'var(--serie-receita)', valores: resumo.porMes.receita },
-                    { id: 'despesa', rotulo: 'Expenses', cor: 'var(--serie-despesa)', valores: resumo.porMes.despesa },
-                    { id: 'capex', rotulo: 'Capex', cor: 'var(--serie-capex)', valores: resumo.porMes.capex },
-                  ].filter((x) => x.valores)}
-                />
-              </>
-            )}
-
-            {tiposComDado.length > 0 && (
-              <div className="painel-formato flex-row" style={{ marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
-                <div style={{ flex: '1 1 320px' }}>
-                  <strong>Importar o template inteiro</strong>
-                  <p style={{ fontSize: 12, opacity: 0.8, margin: '6px 0 0' }}>
-                    Grava {tiposComDado.map((t) => ROTULO[t]).join(', ')} numa passada só, nesta ordem, e tudo entra
-                    como uma importação só no histórico. O template é uma coisa só: não dá para deixar uma aba de
-                    fora, porque meio arquivo dentro do banco e meio fora não é um estado que alguém consiga defender
-                    depois.
-                  </p>
-                </div>
+        {telaSelecao && (
+          <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label="Importar template">
+            <div className="modal modal-importacao">
+              <div className="modal-header">
+                <h3>Importar template</h3>
                 <button
-                  className="btn btn-primary"
+                  className="modal-close"
                   type="button"
-                  onClick={importarTudo}
-                  disabled={Boolean(importandoTudo)}
+                  onClick={() => setTelaSelecao(false)}
+                  aria-label="Fechar"
                 >
-                  {importandoTudo
-                    ? `Importando ${ROTULO[importandoTudo]}…`
-                    : 'Importar o template'}
+                  ×
                 </button>
               </div>
-            )}
 
-            <div className="panel" style={{ marginBottom: 16 }}>
-              <div className="panel-header">
-                <BotaoRecolher chave="gestao-importacao-conferencia" rotulo="a conferência" />
-                <div>
-                  <h2>Conferência do template</h2>
-                  <p>
-                    {arquivo}
-                    {primeira?.ciclo && ` · ciclo ${primeira.ciclo.ano}`}
-                    {primeira?.versao && ` / versão ${primeira.versao.nome}`}
-                  </p>
-                </div>
-              </div>
-              <div className="panel-body">
-                {/* Um checklist só, do arquivo: é ele que decide se o template
-                    está apto a consolidar, e o template é um. */}
-                {registroDoArquivo && (
-                  <AlertaStatus
-                    registro={registroDoArquivo}
-                    escopo="arquivo"
-                    previa
-                    onAbrir={() => setChecklistDoArquivo(true)}
-                  />
+              <div className="modal-body">
+                {!todos && (
+                  <div
+                    className="dropzone-arquivo"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleSoltarArquivo}
+                  >
+                    <p className="dropzone-arquivo-titulo">Arraste o arquivo aqui</p>
+                    <p className="text-muted" style={{ fontSize: 12 }}>ou</p>
+                    <button
+                      className="btn btn-primary"
+                      type="button"
+                      onClick={() => inputRef.current?.click()}
+                      disabled={lendo}
+                    >
+                      {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Escolher arquivo'}
+                    </button>
+                    <p style={{ fontSize: 12, opacity: 0.75, marginTop: 10 }}>
+                      O Template Budget do ano (.xlsb, .xlsx ou .xlsm) — a ferramenta reconhece as abas de Receita e
+                      Base Gastos e confere sozinha, aqui mesmo, assim que o arquivo for escolhido.
+                    </p>
+                  </div>
                 )}
 
-                {tiposComDado.map((t) => (
-                  <CardTipo
-                    key={`${chave}-${t}`}
-                    ref={(el) => {
-                      cards.current[t] = el
-                    }}
-                    tipo={t}
-                    lido={todos[t]}
-                    arquivo={arquivo}
-                    nomeTemplate={arquivo}
-                    podeSolicitar={podeSolicitar}
-                    substituir={substituir[t]}
-                    onSubstituir={(tipoDoCard, valor) =>
-                      setSubstituir((atual) => ({ ...atual, [tipoDoCard]: valor }))
-                    }
-                    onPrevia={(tipoDoCard, pv) => setPrevias((atual) => ({ ...atual, [tipoDoCard]: pv }))}
-                    onRegistrar={registrar}
-                    onDesfeito={desfeito}
-                    onImportado={() => setGravados((n) => n + 1)}
-                  />
-                ))}
+                {todos && (
+                  <>
+                    <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                      <strong>{arquivo}</strong>
+                      <button className="btn btn-ghost btn-sm" type="button" onClick={() => inputRef.current?.click()}>
+                        Trocar arquivo
+                      </button>
+                    </div>
+
+                    <div className="painel-formato" style={{ marginBottom: 16 }}>
+                      <label style={{ fontSize: 13 }}>
+                        <input
+                          type="checkbox"
+                          checked={comoTarget}
+                          onChange={(e) => setComoTarget(e.target.checked)}
+                          style={{ marginRight: 6 }}
+                        />
+                        <strong>Este template é o target do pacoteiro</strong>
+                      </label>
+                      <p style={{ fontSize: 12, opacity: 0.8, margin: '6px 0 0' }}>
+                        O arquivo é o mesmo de sempre; muda o papel de quem preencheu. Marcado, o total por pacote
+                        entra como teto do ano em vez de virar lançamento — gravar os dois somaria o gasto do pacote
+                        duas vezes.
+                      </p>
+                    </div>
+
+                    {temMapas && blob && <CargaCadastros arquivo={blob} nomeArquivo={arquivo} />}
+
+                    {comoTarget && (
+                      <CardTargetsPacote
+                        linhas={todos.despesa?.linhas ?? []}
+                        anoTemplate={todos.despesa?.ano}
+                        arquivo={arquivo}
+                        responsavel={sessao?.user?.email}
+                        onGravado={() => setGravados((n) => n + 1)}
+                      />
+                    )}
+
+                    {!comoTarget && (
+                      <>
+                        {tiposComErro.length > 0 && (
+                          <div className="proto-banner" style={{ marginBottom: 16 }}>
+                            ✕ Não consegui ler {tiposComErro.map((t) => ROTULO[t]).join(', ')}: veja o detalhe em
+                            cada aba na Etapa de validação.
+                          </div>
+                        )}
+                        {tiposVazios.length > 0 && (
+                          <div className="proto-banner" style={{ marginBottom: 16 }}>
+                            ⓘ {tiposVazios.map((t) => ROTULO[t]).join(', ')} não{' '}
+                            {tiposVazios.length === 1 ? 'tem' : 'têm'} nenhuma linha com valor mensal preenchido
+                            neste arquivo — nada para conferir.
+                          </div>
+                        )}
+
+                        {resumo.tipos.length > 0 && (
+                          <>
+                            <Indicadores
+                              itens={[
+                                { chave: 'linhas', rotulo: 'linhas a importar', valor: resumo.linhas, formato: 'inteiro' },
+                                { chave: 'receita', rotulo: '(+) Revenue', valor: resumo.totais.receita ?? 0 },
+                                { chave: 'despesa', rotulo: '(−) Expenses', valor: resumo.totais.despesa ?? 0 },
+                                { chave: 'capex', rotulo: '(−) Capex', valor: resumo.totais.capex ?? 0 },
+                                { chave: 'empresas', rotulo: 'empresas', valor: resumo.empresas, formato: 'inteiro' },
+                                { chave: 'contas', rotulo: 'contas', valor: resumo.contas, formato: 'inteiro' },
+                              ]}
+                            />
+
+                            <GraficoLinhas
+                              titulo="O arquivo mês a mês"
+                              subtitulo="o que vai ser gravado, sem as linhas recusadas"
+                              rotulos={MESES}
+                              series={[
+                                { id: 'receita', rotulo: 'Revenue', cor: 'var(--serie-receita)', valores: resumo.porMes.receita },
+                                { id: 'despesa', rotulo: 'Expenses', cor: 'var(--serie-despesa)', valores: resumo.porMes.despesa },
+                                { id: 'capex', rotulo: 'Capex', cor: 'var(--serie-capex)', valores: resumo.porMes.capex },
+                              ].filter((x) => x.valores)}
+                            />
+                          </>
+                        )}
+
+                        {tiposComDado.length > 0 && (
+                          <div className="painel-formato flex-row" style={{ marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+                            <div style={{ flex: '1 1 320px' }}>
+                              <strong>Importar o template inteiro</strong>
+                              <p style={{ fontSize: 12, opacity: 0.8, margin: '6px 0 0' }}>
+                                Grava {tiposComDado.map((t) => ROTULO[t]).join(', ')} numa passada só, nesta ordem, e
+                                tudo entra como uma importação só no histórico. O template é uma coisa só: não dá
+                                para deixar uma aba de fora, porque meio arquivo dentro do banco e meio fora não é
+                                um estado que alguém consiga defender depois.
+                              </p>
+                            </div>
+                            <button
+                              className="btn btn-primary"
+                              type="button"
+                              onClick={importarTudo}
+                              disabled={Boolean(importandoTudo)}
+                            >
+                              {importandoTudo ? `Importando ${ROTULO[importandoTudo]}…` : 'Importar o template'}
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="panel" style={{ marginBottom: 16 }}>
+                          <div className="panel-header">
+                            <BotaoRecolher chave="gestao-importacao-conferencia" rotulo="a conferência" />
+                            <div>
+                              <h2>Conferência do template</h2>
+                              <p>
+                                {arquivo}
+                                {primeira?.ciclo && ` · ciclo ${primeira.ciclo.ano}`}
+                                {primeira?.versao && ` / versão ${primeira.versao.nome}`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="panel-body">
+                            {/* Um checklist só, do arquivo: é ele que decide se o template
+                                está apto a consolidar, e o template é um. */}
+                            {registroDoArquivo && (
+                              <AlertaStatus
+                                registro={registroDoArquivo}
+                                escopo="arquivo"
+                                previa
+                                onAbrir={() => setChecklistDoArquivo(true)}
+                              />
+                            )}
+
+                            {tiposComDado.map((t) => (
+                              <CardTipo
+                                key={`${chave}-${t}`}
+                                ref={(el) => {
+                                  cards.current[t] = el
+                                }}
+                                tipo={t}
+                                lido={todos[t]}
+                                arquivo={arquivo}
+                                nomeTemplate={arquivo}
+                                podeSolicitar={podeSolicitar}
+                                substituir={substituir[t]}
+                                onSubstituir={(tipoDoCard, valor) =>
+                                  setSubstituir((atual) => ({ ...atual, [tipoDoCard]: valor }))
+                                }
+                                onPrevia={(tipoDoCard, pv) => setPrevias((atual) => ({ ...atual, [tipoDoCard]: pv }))}
+                                onRegistrar={registrar}
+                                onDesfeito={desfeito}
+                                onImportado={() => setGravados((n) => n + 1)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        {checklistDoArquivo && registroDoArquivo && (
+                          <ChecklistImportacao
+                            registro={registroDoArquivo}
+                            escopo="arquivo"
+                            onFechar={() => setChecklistDoArquivo(false)}
+                          />
+                        )}
+
+                        {!tiposComDado.length && !tiposComErro.length && (
+                          <div className="empty-hint">
+                            Nenhuma das três abas tinha lançamento para conferir neste arquivo.
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
               </div>
             </div>
-
-            {checklistDoArquivo && registroDoArquivo && (
-              <ChecklistImportacao
-                registro={registroDoArquivo}
-                escopo="arquivo"
-                onFechar={() => setChecklistDoArquivo(false)}
-              />
-            )}
-
-            {!tiposComDado.length && !tiposComErro.length && (
-              <div className="empty-hint">Nenhuma das três abas tinha lançamento para conferir neste arquivo.</div>
-            )}
-          </>
+          </div>
         )}
 
         <HistoricoImportacoes versao={versaoHistorico} />

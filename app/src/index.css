@@ -1019,6 +1019,31 @@ tfoot td {
   gap: 4px;
 }
 
+/* ---------- Importar template: tela própria por cima da página ---------- */
+
+/* O processo inteiro (escolher o arquivo, conferir, gravar) mora aqui
+   dentro — não é um formulário curto, então é bem maior que o .modal
+   padrão (520-640px), quase do tamanho da tela. */
+.modal-importacao {
+  max-width: 1100px;
+  width: calc(100% - 40px);
+  max-height: 92vh;
+}
+
+.dropzone-arquivo {
+  border: 2px dashed var(--color-border-forte);
+  border-radius: var(--radius-lg);
+  padding: 40px 20px;
+  text-align: center;
+  background: var(--color-surface-alt, #f8f9fb);
+}
+
+.dropzone-arquivo-titulo {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
 /* ---------- Log de erros ---------- */
 
 /* Só o ícone, canto da tela — não é pra chamar atenção, é pra estar lá
