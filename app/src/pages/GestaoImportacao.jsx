@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout'
-import ImportWizard from '../components/ImportWizard'
+import { Etapa, statusAba } from '../components/ImportWizard'
 import ProgressoGravacao from '../components/ProgressoGravacao'
 import ChecklistImportacao from '../components/ChecklistImportacao'
 import AlertaStatus from '../components/AlertaStatus'
@@ -512,7 +512,6 @@ export default function GestaoImportacao() {
   const [temMapas, setTemMapas] = useState(false)
   const [lendo, setLendo] = useState(false)
   const [segundos, setSegundos] = useState(0)
-  const [wizardAberto, setWizardAberto] = useState(false)
   const [estrutura, setEstrutura] = useState(null)
   const [erroLeitura, setErroLeitura] = useState(null)
   const [todos, setTodos] = useState(null)
@@ -590,12 +589,10 @@ export default function GestaoImportacao() {
     setTodos(null)
     setEstrutura(null)
     setErroLeitura(null)
-    setWizardAberto(true)
     try {
       const lidos = await lerTodosOsTiposEmWorker(await file.arrayBuffer(), setEstrutura)
       setTodos(lidos)
       setChave((c) => c + 1)
-      setWizardAberto(false)
       // Arquivo lido, mas sem nada para trazer, é recusa igual: fica na lista
       // com o motivo, senão ninguém sabe que a pessoa tentou.
       const comDado = ORDEM.filter((t) => !lidos[t].erro && lidos[t].linhas.length > 0)
@@ -746,17 +743,6 @@ export default function GestaoImportacao() {
         />
       </header>
 
-      <ImportWizard
-        aberto={wizardAberto}
-        arquivo={arquivo}
-        tipo={null}
-        estrutura={estrutura}
-        lendo={lendo}
-        segundos={segundos}
-        erro={erroLeitura}
-        onFechar={() => setWizardAberto(false)}
-      />
-
       <div className="content">
         {!todos && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
 
@@ -776,7 +762,7 @@ export default function GestaoImportacao() {
               </div>
 
               <div className="modal-body">
-                {!todos && (
+                {!todos && !lendo && (
                   <div
                     className="dropzone-arquivo"
                     onDragOver={(e) => e.preventDefault()}
@@ -784,17 +770,35 @@ export default function GestaoImportacao() {
                   >
                     <p className="dropzone-arquivo-titulo">Arraste o arquivo aqui</p>
                     <p className="text-muted" style={{ fontSize: 12 }}>ou</p>
-                    <button
-                      className="btn btn-primary"
-                      type="button"
-                      onClick={() => inputRef.current?.click()}
-                      disabled={lendo}
-                    >
-                      {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Escolher arquivo'}
+                    <button className="btn btn-primary" type="button" onClick={() => inputRef.current?.click()}>
+                      ⭱ Escolher arquivo
                     </button>
                     <p style={{ fontSize: 12, opacity: 0.75, marginTop: 10 }}>
                       O Template Budget do ano (.xlsb, .xlsx ou .xlsm) — a ferramenta reconhece as abas de Receita e
                       Base Gastos e confere sozinha, aqui mesmo, assim que o arquivo for escolhido.
+                    </p>
+                  </div>
+                )}
+
+                {lendo && (
+                  <div className="leitura-template">
+                    <p style={{ margin: '0 0 12px', fontSize: 13, opacity: 0.75 }}>
+                      {arquivo} — conferindo a estrutura das três abas antes de ler linha a linha.
+                    </p>
+                    <ol className="lista-etapas">
+                      {ORDEM.map((t, i) => (
+                        <Etapa key={t} numero={i + 1} titulo={ROTULO[t]} {...statusAba(estrutura?.[t])} />
+                      ))}
+                      <Etapa
+                        numero={ORDEM.length + 1}
+                        titulo="Lendo os lançamentos das três abas"
+                        {...(erroLeitura
+                          ? { estado: 'erro', detalhe: erroLeitura }
+                          : { estado: 'carregando', detalhe: `lendo linha a linha… ${segundos}s` })}
+                      />
+                    </ol>
+                    <p style={{ margin: '12px 0 0', fontSize: 12, opacity: 0.7 }}>
+                      Pode deixar esta janela aberta — a leitura roda em segundo plano.
                     </p>
                   </div>
                 )}

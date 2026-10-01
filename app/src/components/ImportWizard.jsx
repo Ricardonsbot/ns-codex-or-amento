@@ -12,7 +12,7 @@ function Marcador({ estado }) {
   return <span className="etapa-marcador etapa-pendente" aria-hidden="true" />
 }
 
-function Etapa({ numero, titulo, estado, detalhe }) {
+export function Etapa({ numero, titulo, estado, detalhe }) {
   return (
     <li className={`etapa-importacao linha-${estado}`}>
       <Marcador estado={estado} />
@@ -30,7 +30,7 @@ function Etapa({ numero, titulo, estado, detalhe }) {
  * Status de uma aba do template (Receita/Despesa/Capex), a partir do que
  * `checarEstrutura` devolveu. `null` enquanto a checagem ainda não chegou.
  */
-function statusAba(info) {
+export function statusAba(info) {
   if (!info) return { estado: 'carregando', detalhe: 'localizando a aba, validando colunas…' }
   if (!info.encontrada) return { estado: 'erro', detalhe: `aba "${info.aba}" não encontrada no arquivo` }
   if (info.faltando.length) {
