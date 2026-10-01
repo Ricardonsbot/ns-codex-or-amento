@@ -23,6 +23,7 @@ import {
   conferir,
   importar,
   desfazer,
+  apagarDoTipo,
 } from '../lib/importarTemplateOrcamento'
 import {
   registrarImportacao,
@@ -111,6 +112,7 @@ function CardTipo({
   const [ultima, setUltima] = useState(null)
   const [desfazendo, setDesfazendo] = useState(false)
   const [checklistAberto, setChecklistAberto] = useState(false)
+  const [zerando, setZerando] = useState(false)
   // Quais subpacotes estão abertos na conferência, mostrando as linhas embaixo.
   const [abertos, setAbertos] = useState(() => new Set())
   // Quais pacotes estão abertos, mostrando os subpacotes embaixo — o primeiro
@@ -250,6 +252,29 @@ function CardTipo({
     }
   }
 
+  /**
+   * Zerar é diferente de Substituir: Substituir troca pelo que ESTE arquivo
+   * trouxe (só faz sentido depois de já ter importado de novo); Zerar apaga
+   * tudo de ${tipo} nesta versão antes mesmo de confirmar a importação —
+   * para quem quer recomeçar do zero, não só trocar.
+   */
+  async function handleZerar() {
+    const confirmado = window.confirm(
+      `Apagar TODOS os lançamentos de ${NOME[tipo]} já gravados nesta versão (${previa.jaExistem}), antes de importar este arquivo? Não dá para desfazer.`
+    )
+    if (!confirmado) return
+    setZerando(true)
+    try {
+      const n = await apagarDoTipo(previa.versao.id, tipo)
+      showToast(`${n} lançamento(s) de ${NOME[tipo]} apagado(s) — versão zerada para este tipo.`, 'success')
+      setPrevia((p) => (p ? { ...p, jaExistem: 0 } : p))
+    } catch (err) {
+      showToast(`Não consegui zerar: ${err.message}`, 'error')
+    } finally {
+      setZerando(false)
+    }
+  }
+
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
   // As duas recusas são de natureza diferente e o aviso precisa dizer qual é:
   // texto numa coluna de valor não é empresa fora do cadastro.
@@ -302,8 +327,17 @@ function CardTipo({
           </h3>
           {gravando && <span>importando…</span>}
           {previa?.jaExistem > 0 && (
-            <span style={{ marginLeft: 'auto' }}>
+            <span className="flex-row" style={{ marginLeft: 'auto', gap: 8, alignItems: 'center' }}>
               ⚠ {previa.jaExistem} lançamento(s) identificados como duplicadas.
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                disabled={zerando}
+                title={`Apaga os ${previa.jaExistem} lançamento(s) de ${NOME[tipo]} já gravados nesta versão, antes de importar este arquivo`}
+                onClick={handleZerar}
+              >
+                {zerando ? 'Zerando…' : 'Zerar'}
+              </button>
             </span>
           )}
         </div>
