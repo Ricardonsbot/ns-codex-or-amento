@@ -22,14 +22,7 @@ import {
   desfazer,
   TEMPLATE,
 } from '../lib/importarTemplateOrcamento'
-import {
-  avaliar,
-  registrarImportacao,
-  registrarTentativaRecusada,
-  marcarDesfeito,
-  resumoDaImportacao,
-  amarrarLancamentos,
-} from '../lib/importacoesData'
+import { registrarImportacao, marcarDesfeito, resumoDaImportacao, amarrarLancamentos } from '../lib/importacoesData'
 import BotaoRecolher from './BotaoRecolher'
 
 const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -157,9 +150,6 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   const [ultima, setUltima] = useState(null)   // { ids, quantos } da importacao recem-feita
   const [desfazendo, setDesfazendo] = useState(false)
   const [checklistAberto, setChecklistAberto] = useState(false)
-  // De qual arquivo a recusa já foi registrada, para um segundo clique não
-  // virar uma segunda linha na lista.
-  const recusaDeste = useRef(null)
   const [statusPrevia, setStatusPrevia] = useState(false)
   const [tutorialAberto, setTutorialAberto] = useState(false)
   const [podeSolicitar, setPodeSolicitar] = useState(false)
@@ -218,27 +208,6 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
   }
 
   async function handleConfirmar() {
-    if (barrado) {
-      showToast(`Este template não pode ser importado: falta ${oQueFalta}.`, 'error')
-      setChecklistAberto(true)
-      // A tentativa barrada entra na mesma lista de recusados da Gestão de
-      // Importação. Barrar aqui e não registrar deixaria um caminho em que
-      // a pessoa tenta, não consegue, e ninguém fica sabendo.
-      if (recusaDeste.current !== arquivo) {
-        recusaDeste.current = arquivo
-        registrarTentativaRecusada({
-          arquivo,
-          tamanho,
-          origem: tipo,
-          ano: previa?.ano,
-          usuarioEmail: email,
-          motivo: `Barrado na conferência — falta ${oQueFalta}`,
-        }).catch(() => {
-          // O registro é acessório: o erro de verdade já está na tela.
-        })
-      }
-      return
-    }
     // A versão já tinha lançamentos deste tipo e a pessoa não marcou
     // substituir: entra como pendência no checklist, pode ter dobrado.
     const somouEmCima = Boolean(previa.jaExistem) && !substituir
@@ -362,24 +331,12 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
         tipo,
         linhas: [...previa.prontas, ...previa.marcadas],
         fora: previa.fora.length,
-        // Sem isto o essencial "Valor em número" passava sempre nesta tela:
-        // o checklist contava zero texto em coluna de valor porque ninguém
-        // tinha contado. Era um dos itens que a trava precisa ver.
-        textoEmNumero: previa.fora.filter((f) => f.naoNumericos?.length).length,
         marcadas: previa.marcadas.length,
         apagados: 0,
         somouEmCima: Boolean(previa.jaExistem) && !substituir,
         cadastros: previa.cadastros,
       })
     : null
-
-  // A mesma trava da Gestão de Importação: impedimento no checklist barra.
-  // Aqui o arquivo entra uma aba por vez, então o julgamento é da aba — e é
-  // o mesmo `avaliar`, para as duas telas não discordarem sobre o mesmo
-  // arquivo.
-  const aptidao = resumoPrevia ? avaliar(resumoPrevia, 'tipo') : null
-  const barrado = Boolean(aptidao && aptidao.impedimentos.length)
-  const oQueFalta = (aptidao?.impedimentos ?? []).map((i) => i.rotulo).join(', ')
 
   const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
 
@@ -595,7 +552,6 @@ export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onIm
                 type="button"
                 onClick={handleConfirmar}
                 disabled={gravando || !aImportar.length || semVersao}
-                title={barrado ? `Falta ${oQueFalta}` : undefined}
               >
                 {gravando
                   ? 'Importando…'
