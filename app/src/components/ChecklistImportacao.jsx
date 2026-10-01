@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { avaliar } from '../lib/importacoesData'
+import { nomeDoUsuario } from '../lib/usuario'
 import { useUnidade } from './UnidadeProvider'
 
 const quando = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—')
@@ -65,7 +66,9 @@ export default function ChecklistImportacao({
                   <Detalhe rotulo="Nome">{registro?.arquivo ?? '—'}</Detalhe>
                   <Detalhe rotulo="Data Import">{quando(registro?.criado_em)}</Detalhe>
                   <Detalhe rotulo="User">
-                    <span className="detalhe-email">{registro?.usuario_email ?? registro?.usuario_nome ?? '—'}</span>
+                    <span className="detalhe-email">
+                      {registro?.usuario_nome ?? nomeDoUsuario(registro?.usuario_email) ?? '—'}
+                    </span>
                   </Detalhe>
                   <Detalhe rotulo="Ciclo">
                     {[registro?.ano, registro?.versao_nome].filter(Boolean).join(' - ') || '—'}

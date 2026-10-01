@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import { historicoDisponivel, listarImportacoes, resultadoDisponivel } from '../lib/importacoesData'
+import { nomeDoUsuario } from '../lib/usuario'
 import BotaoRecolher from './BotaoRecolher'
 import ChecklistImportacao from './ChecklistImportacao'
 
@@ -155,7 +156,9 @@ export default function TemplatesRecusados({ versao }) {
                         </td>
                         <td style={{ whiteSpace: 'nowrap' }}>{quando(r.criado_em)}</td>
                         <td>
-                          <span className="detalhe-email">{r.usuario_email ?? r.usuario_nome ?? '—'}</span>
+                          <span className="detalhe-email">
+                            {r.usuario_nome ?? nomeDoUsuario(r.usuario_email) ?? '—'}
+                          </span>
                         </td>
                         <td className="dd-motivo">
                           <div className="flex-row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>

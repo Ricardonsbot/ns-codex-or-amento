@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Icone from './Icone'
 import { listarErros } from '../lib/logErroData'
 import { useMostrarIdTela } from '../lib/identificadorTela'
+import { nomeDoUsuario } from '../lib/usuario'
 
 /**
  * O ícone de log de erros: só o ícone, canto da tela, sem rótulo — não é
@@ -85,7 +86,11 @@ export default function LogErrosBotao() {
                           {new Date(erro.criado_em).toLocaleString('pt-BR')}
                         </span>
                         {erro.contexto && <span className="log-erros-contexto">{erro.contexto}</span>}
-                        {erro.usuario_email && <span className="log-erros-usuario">{erro.usuario_email}</span>}
+                        {erro.usuario_email && (
+                          <span className="log-erros-usuario" title={erro.usuario_email}>
+                            {nomeDoUsuario(erro.usuario_email)}
+                          </span>
+                        )}
                         <button
                           className="btn btn-ghost btn-sm"
                           type="button"

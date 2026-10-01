@@ -6,6 +6,7 @@ import { sair } from '../lib/authData'
 import { useToast } from './ToastProvider'
 import LogErrosBotao from './LogErrosBotao'
 import IdentificadorTela from './IdentificadorTela'
+import { nomeDoUsuario } from '../lib/usuario'
 
 /**
  * O menu em árvore, quantos níveis forem precisos: um nó com `filhos` é um
@@ -202,6 +203,7 @@ export default function Layout({ children }) {
   const showToast = useToast()
 
   const email = sessao?.user?.email ?? ''
+  const nome = nomeDoUsuario(email)
   const iniciais = email ? email.slice(0, 2).toUpperCase() : '—'
 
   /** Abre ou fecha um grupo do menu, em qualquer nível, e lembra a escolha. */
@@ -310,7 +312,7 @@ export default function Layout({ children }) {
           <div className="user-chip">
             <div className="avatar">{iniciais}</div>
             <div className="user-meta">
-              <strong>{email || 'Usuário'}</strong>
+              <strong title={email || undefined}>{nome || 'Usuário'}</strong>
               <span>NSTECH GR LTDA</span>
             </div>
           </div>

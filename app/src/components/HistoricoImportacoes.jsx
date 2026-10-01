@@ -9,6 +9,7 @@ import {
   listarImportacoes,
 } from '../lib/importacoesData'
 import { apagarDoTipo } from '../lib/importarTemplateOrcamento'
+import { nomeDoUsuario } from '../lib/usuario'
 import { useAuth } from './AuthProvider'
 import { useToast } from './ToastProvider'
 import FiltroBotoes from './FiltroBotoes'
@@ -292,7 +293,9 @@ export default function HistoricoImportacoes({ versao }) {
                             </Detalhe>
                             <Detalhe rotulo="Data Import">{quando(r.criado_em)}</Detalhe>
                             <Detalhe rotulo="User">
-                              <span className="detalhe-email">{r.usuario_email ?? r.usuario_nome ?? '—'}</span>
+                              <span className="detalhe-email">
+                                {r.usuario_nome ?? nomeDoUsuario(r.usuario_email) ?? '—'}
+                              </span>
                             </Detalhe>
                             <Detalhe rotulo="Ciclo">
                               {[r.ano, r.versao_nome].filter(Boolean).join(' - ') || '—'}
