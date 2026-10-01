@@ -4020,3 +4020,73 @@ tfoot td {
 .mapping-quadrado.amarelo { background: var(--color-warning); }
 .mapping-quadrado.azul { background: var(--color-info); }
 .mapping-quadrado.verde { background: var(--color-success); }
+
+/* ------------------------------------------- Dashboard: ano e andamento
+   O gráfico ocupa o que sobrar; os dois quadros da direita têm largura
+   fixa, porque são lista de nome e data e esticar não os melhora. Abaixo
+   de 1100px a coluna desce para baixo do gráfico, em vez de espremer os
+   doze meses. */
+.dashboard-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-linha { grid-template-columns: minmax(0, 1fr); }
+}
+
+.coluna-consolidacao {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* O panel padrão tem margem embaixo; aqui quem dá o respiro é o gap. */
+.painel-consolidacao { margin-bottom: 0; }
+.dashboard-grafico .grafico-linhas { margin-bottom: 0; }
+
+.tabela-consolidacao td {
+  padding: 7px 10px;
+  vertical-align: top;
+}
+
+/* O nome do arquivo é longo e a coluna é estreita: quebra, não corta. */
+.tabela-consolidacao .link-linha {
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.consolidacao-sub {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.consolidacao-quando {
+  font-size: 11.5px;
+  color: var(--color-text-faint);
+  white-space: nowrap;
+}
+
+/* Duas colunas de nomes: a lista de quem falta passa de vinte empresas, e
+   em coluna única ela empurraria o resto da tela para baixo. */
+.lista-falta {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 2;
+  column-gap: 14px;
+  font-size: 12.5px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.lista-falta li {
+  padding: 2px 0;
+  break-inside: avoid;
+  color: var(--color-text);
+}
