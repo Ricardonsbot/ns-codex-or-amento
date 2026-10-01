@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react'
 import {
   amarracaoDisponivel,
   apagarImportacoes,
+  apagarTodasImportacoes,
   avaliar,
   definirLiberacao,
   exemploDeHistorico,
@@ -128,6 +129,7 @@ export default function HistoricoImportacoes({ versao, origens }) {
   // `${registro.id}:${tipo}` da substituição em andamento.
   const [substituindo, setSubstituindo] = useState(null)
   const [apagandoDesconhecidos, setApagandoDesconhecidos] = useState(false)
+  const [apagandoTudo, setApagandoTudo] = useState(false)
 
   const [recarga, setRecarga] = useState(0)
 
@@ -220,6 +222,30 @@ export default function HistoricoImportacoes({ versao, origens }) {
   const comArquivo = visiveis.filter((r) => r.arquivo?.trim())
   const semArquivo = visiveis.filter((r) => !r.arquivo?.trim())
 
+  /**
+   * Zera a tabela inteira de registro de importação — não mexe em
+   * lançamento, target_pacote nem cadastro. Confirmação por digitação, não
+   * só OK/Cancelar: base compartilhada com o Ricardo, ação sem volta.
+   */
+  async function apagarTudo() {
+    const digitado = window.prompt(
+      `Isso apaga TODOS os ${registros?.length ?? 0} registro(s) desta tabela — FP&A, Pacote, tudo, mesmo o que esta ` +
+        `tela está filtrando agora. Não mexe em lançamento nem em cadastro, só no registro de import. Não dá para ` +
+        `desfazer.\n\nDigite APAGAR para confirmar:`
+    )
+    if (digitado !== 'APAGAR') return
+    setApagandoTudo(true)
+    try {
+      await apagarTodasImportacoes()
+      showToast('Registro de importações zerado.', 'success')
+      setRecarga((n) => n + 1)
+    } catch (err) {
+      showToast(`Não consegui zerar: ${err.message}`, 'error')
+    } finally {
+      setApagandoTudo(false)
+    }
+  }
+
   async function excluirDesconhecidos() {
     const confirmado = window.confirm(
       `Apagar ${semArquivo.length} registro(s) sem nome de arquivo identificado? Não dá para desfazer.`
@@ -253,6 +279,17 @@ export default function HistoricoImportacoes({ versao, origens }) {
           onChange={setFiltro}
         />
         <BotaoUnidade />
+        {!semTabela && (
+          <button
+            type="button"
+            className="btn btn-danger btn-sm"
+            disabled={apagandoTudo}
+            title="Apaga todo o registro de importações (FP&A e Pacote) — não mexe em lançamento nem cadastro"
+            onClick={apagarTudo}
+          >
+            {apagandoTudo ? 'Zerando…' : 'Zerar registro de importações'}
+          </button>
+        )}
       </div>
       <div className="panel-body">
         {semTabela && (

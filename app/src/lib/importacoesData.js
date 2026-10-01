@@ -549,6 +549,17 @@ export async function apagarImportacoes(ids) {
   if (error) throw error
 }
 
+/**
+ * Zera `importacao` inteira — todo registro de template importado, de
+ * qualquer tela (Gestão, Revenue, Expenses, Capex, Pacote). Não toca em
+ * `lancamento`, `target_pacote` nem em nenhum cadastro: é só a tabela que
+ * registra os imports, pra recomeçar o registro do zero em caso de teste.
+ */
+export async function apagarTodasImportacoes() {
+  const { error } = await supabase.from('importacao').delete().not('id', 'is', null)
+  if (error) throw error
+}
+
 /** Marca um tipo como desfeito — o registro fica, para o histórico. */
 export async function marcarDesfeito(id, tipo) {
   if (!id) return
