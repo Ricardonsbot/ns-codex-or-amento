@@ -1113,9 +1113,9 @@ export default function GestaoImportacao() {
             coisas diferentes no banco (lançamento vs target_pacote) — os
             históricos ficam só com a origem da tela por onde a pessoa
             entrou, para não misturar um público com o outro. */}
-        <TemplatesRecusados versao={versaoHistorico} origens={ORIGENS_DA_TELA[comoTarget ? 'pacote' : 'gestao']} />
-
         <HistoricoImportacoes versao={versaoHistorico} origens={ORIGENS_DA_TELA[comoTarget ? 'pacote' : 'gestao']} />
+
+        <TemplatesRecusados versao={versaoHistorico} origens={ORIGENS_DA_TELA[comoTarget ? 'pacote' : 'gestao']} />
 
         {tutorialAberto && (
           <TutorialImportacao etapa={etapaTutorial} janela onFechar={() => setTutorialAberto(false)} />

@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import {
   amarracaoDisponivel,
+  apagarImportacoes,
   avaliar,
   definirLiberacao,
   exemploDeHistorico,
@@ -23,7 +24,13 @@ const TIPOS = [
   { valor: 'despesa', rotulo: 'Expenses' },
   { valor: 'capex', rotulo: 'Capex' },
 ]
-const ORIGEM = { gestao: 'Gestão de Importação', receita: 'tela (+) Revenue', despesa: 'tela (−) Expenses', capex: 'tela (−) Capex' }
+const ORIGEM = {
+  gestao: 'Gestão de Importação',
+  receita: 'tela (+) Revenue',
+  despesa: 'tela (−) Expenses',
+  capex: 'tela (−) Capex',
+  pacote: 'Template Pacote',
+}
 
 const quando = (iso) => new Date(iso).toLocaleDateString('pt-BR')
 const tamanhoArquivo = (b) => (b ? `${(b / 1024 / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB` : '')
@@ -120,6 +127,7 @@ export default function HistoricoImportacoes({ versao, origens }) {
   const [podeSubstituir, setPodeSubstituir] = useState(false)
   // `${registro.id}:${tipo}` da substituição em andamento.
   const [substituindo, setSubstituindo] = useState(null)
+  const [apagandoDesconhecidos, setApagandoDesconhecidos] = useState(false)
 
   const [recarga, setRecarga] = useState(0)
 
@@ -199,12 +207,35 @@ export default function HistoricoImportacoes({ versao, origens }) {
   }
 
   // O recusado não entra aqui: não tem número, não tem liberação, e tem
-  // painel só dele em cima. `origens` separa Template FP&A de Template
+  // painel só dele embaixo. `origens` separa Template FP&A de Template
   // Pacote — mesmo arquivo, históricos que não podem se misturar.
   const visiveis = (registros ?? [])
     .filter((r) => r.resultado !== 'recusado')
     .filter((r) => !origens || origens.includes(r.origem))
     .filter((r) => !filtro || (r.liberacao ?? 'aguardando') === filtro)
+
+  // Registro sem nome de arquivo identificado é lixo de teste, não dado
+  // real — vira um grupo só ("Desconhecido"), pra limpar com um clique em
+  // vez de aparecer espalhado como linhas em branco confusas.
+  const comArquivo = visiveis.filter((r) => r.arquivo?.trim())
+  const semArquivo = visiveis.filter((r) => !r.arquivo?.trim())
+
+  async function excluirDesconhecidos() {
+    const confirmado = window.confirm(
+      `Apagar ${semArquivo.length} registro(s) sem nome de arquivo identificado? Não dá para desfazer.`
+    )
+    if (!confirmado) return
+    setApagandoDesconhecidos(true)
+    try {
+      await apagarImportacoes(semArquivo.map((r) => r.id))
+      showToast(`${semArquivo.length} registro(s) apagado(s).`, 'success')
+      setRecarga((n) => n + 1)
+    } catch (err) {
+      showToast(`Não consegui apagar: ${err.message}`, 'error')
+    } finally {
+      setApagandoDesconhecidos(false)
+    }
+  }
 
   return (
     <div className="panel" style={{ marginTop: 16 }}>
@@ -236,7 +267,7 @@ export default function HistoricoImportacoes({ versao, origens }) {
         {registros && !visiveis.length && (
           <div className="empty-hint">
             Nenhum template importado ainda. Cada importação confirmada aparece aqui; o que a ferramenta recusou fica
-            no painel de cima.
+            no painel de baixo.
           </div>
         )}
 
@@ -260,7 +291,7 @@ export default function HistoricoImportacoes({ versao, origens }) {
                 </tr>
               </thead>
               <tbody>
-                {visiveis.map((r) => {
+                {comArquivo.map((r) => {
                   const t = r.totais ?? {}
                   const a = avaliar(r)
                   const empresas = r.empresas ?? []
@@ -384,6 +415,32 @@ export default function HistoricoImportacoes({ versao, origens }) {
                     </Fragment>
                   )
                 })}
+                {semArquivo.length > 0 && (
+                  <tr className="linha-template">
+                    <td />
+                    <td>
+                      <div className="detalhe-bloco">
+                        <span className="detalhe-icone" aria-hidden="true">⚠</span>
+                        <div>
+                          <Detalhe rotulo="Nome"><strong>Desconhecido</strong></Detalhe>
+                          <div className="detalhe-origem">
+                            {semArquivo.length} registro(s) sem nome de arquivo identificado — provavelmente teste
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td colSpan={10}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        disabled={apagandoDesconhecidos}
+                        onClick={excluirDesconhecidos}
+                      >
+                        {apagandoDesconhecidos ? 'Apagando…' : `Apagar ${semArquivo.length} registro(s)`}
+                      </button>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

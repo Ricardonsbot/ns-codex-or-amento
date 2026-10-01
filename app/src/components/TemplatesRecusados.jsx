@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { apagarRecusa, historicoDisponivel, listarImportacoes, resultadoDisponivel } from '../lib/importacoesData'
+import { apagarRecusa, listarRecusas, recusasDisponivel } from '../lib/importacoesData'
 import { nomeDoUsuario } from '../lib/usuario'
 import BotaoRecolher from './BotaoRecolher'
 import ChecklistImportacao from './ChecklistImportacao'
@@ -9,9 +9,9 @@ import { useToast } from './ToastProvider'
  * Os templates que a ferramenta recusou.
  *
  * Fica à parte dos importados de propósito: são listas com perguntas
- * diferentes. Esta é "quem tentou subir o quê e por que não entrou" — que é
- * o que se olha quando alguém diz que mandou o arquivo e ele não aparece em
- * lugar nenhum; a de baixo é "o que entrou e está apto a consolidar".
+ * diferentes. A de cima é "o que entrou e está apto a consolidar"; esta é
+ * "quem tentou subir o quê e por que não entrou" — que é o que se olha
+ * quando alguém diz que mandou o arquivo e ele não aparece em lugar nenhum.
  *
  * Três motivos recusam aqui: arquivo que não dá para ler, arquivo sem uma
  * linha sequer para trazer, e arquivo lido e conferido que tinha impedimento
@@ -49,7 +49,7 @@ const EXEMPLO = [
     criado_em: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
     usuario_email: 'fpa.bu@nstech.com.br',
     origem: 'gestao',
-    recusa_motivo: 'Não consegui ler a planilha — a aba "Base Gastos" não foi encontrada',
+    motivo: 'Não consegui ler a planilha — a aba "Base Gastos" não foi encontrada',
   },
   {
     id: 'exemplo-2',
@@ -59,7 +59,7 @@ const EXEMPLO = [
     criado_em: new Date(Date.now() - 26 * 3600 * 1000).toISOString(),
     usuario_email: 'analista@nstech.com.br',
     origem: 'gestao',
-    recusa_motivo: 'Nenhuma das três abas tinha linha com valor preenchido.',
+    motivo: 'Nenhuma das três abas tinha linha com valor preenchido.',
   },
 ]
 
@@ -82,21 +82,19 @@ export default function TemplatesRecusados({ versao, origens }) {
     let cancelado = false
     ;(async () => {
       try {
-        // Duas migrações: a tabela (2026-09-22) e a coluna que diz o que
-        // aconteceu com a tentativa (2026-09-29). Faltando qualquer uma, não
-        // há recusa gravada — e a tela diz isso em vez de fingir que nunca
-        // ninguém errou.
-        const [temTabela, temColuna] = await Promise.all([historicoDisponivel(), resultadoDisponivel()])
-        if (!temTabela || !temColuna) {
+        // `importacao_recusada`, migração 2026-10-01: sem ela, não há recusa
+        // gravada — e a tela diz isso em vez de fingir que nunca ninguém
+        // errou.
+        if (!(await recusasDisponivel())) {
           if (!cancelado) {
             setSemRegistro(true)
             setRegistros(EXEMPLO)
           }
           return
         }
-        const todos = await listarImportacoes()
+        const todos = await listarRecusas()
         if (!cancelado) {
-          setRegistros(todos.filter((r) => r.resultado === 'recusado'))
+          setRegistros(todos)
           setErro(null)
         }
       } catch (err) {
@@ -142,10 +140,9 @@ export default function TemplatesRecusados({ versao, origens }) {
       <div className="panel-body">
         {semRegistro && (
           <div className="proto-banner">
-            ⓘ <strong>Exemplo.</strong> O registro das recusas ainda não está disponível — faltam rodar
-            supabase/migrations/2026-09-22-historico-de-importacao.sql e
-            supabase/migrations/2026-09-29-lancamento-da-importacao.sql no Supabase. As linhas abaixo são fictícias,
-            só para mostrar o formato; enquanto o SQL não rodar, nada do que for recusado fica registrado.
+            ⓘ <strong>Exemplo.</strong> O registro das recusas ainda não está disponível — falta rodar
+            supabase/migrations/2026-10-01-log-de-recusas-de-importacao.sql no Supabase. As linhas abaixo são
+            fictícias, só para mostrar o formato; enquanto o SQL não rodar, nada do que for recusado fica registrado.
           </div>
         )}
         {erro && <div className="proto-banner">✕ Não consegui carregar as recusas: {erro}</div>}
@@ -188,7 +185,7 @@ export default function TemplatesRecusados({ versao, origens }) {
                         </td>
                         <td className="dd-motivo">
                           <div className="flex-row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <span>{motivoCurto(r.recusa_motivo)}</span>
+                            <span>{motivoCurto(r.motivo)}</span>
                             {!r.exemplo && (
                               <button
                                 type="button"
@@ -216,7 +213,7 @@ export default function TemplatesRecusados({ versao, origens }) {
                       {aberta && !temConferencia && (
                         <tr>
                           <td colSpan={4} className="dd-motivo" style={{ background: 'var(--color-bg)' }}>
-                            {r.recusa_motivo}
+                            {r.motivo}
                           </td>
                         </tr>
                       )}

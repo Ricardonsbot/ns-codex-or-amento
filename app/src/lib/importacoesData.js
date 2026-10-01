@@ -74,42 +74,41 @@ export async function amarrarLancamentos(importacaoId, ids) {
 }
 
 /**
- * A coluna que diz o que aconteceu com a tentativa existe? Veio na migração
- * 2026-09-29, depois da tabela: ter a tabela e não ter a coluna é normal.
+ * Se `importacao_recusada` existe. É tabela à parte de `importacao` — essa
+ * agora é só o que virou lançamento de verdade; recusa (teste que falha,
+ * arquivo que não lê) vai para cá, como log.
  */
-let temResultado = null
-export async function resultadoDisponivel() {
-  if (temResultado !== null) return temResultado
-  const { error } = await supabase.from('importacao').select('resultado').limit(1)
-  temResultado = !error
-  return temResultado
+let temRecusas = null
+export async function recusasDisponivel() {
+  if (temRecusas) return true
+  const { error } = await supabase.from('importacao_recusada').select('id').limit(1)
+  temRecusas = !error
+  return temRecusas
 }
 
 /**
  * Registra a tentativa que não virou importação: arquivo que não dá para
  * ler, ou que não tinha nenhuma linha para trazer.
  *
- * Fica na mesma lista dos importados, com quem tentou e o motivo. Sem isso,
+ * Log à parte de `importacao` — essa é só o que entrou de verdade. Sem isso,
  * template recusado não deixa rastro nenhum — e é justamente o que alguém
  * vai reenviar corrigido, ou reclamar que mandou.
  *
- * Devolve null quando a tabela ou a coluna ainda não existem: registrar a
- * recusa é acessório, e não pode virar um segundo erro na tela de quem já
- * está lidando com o primeiro.
+ * Devolve null quando a tabela ainda não existe: registrar a recusa é
+ * acessório, e não pode virar um segundo erro na tela de quem já está
+ * lidando com o primeiro.
  */
 export async function registrarTentativaRecusada({ arquivo, tamanho, origem, ano, usuarioEmail, motivo }) {
-  if (!(await historicoDisponivel())) return null
-  if (!(await resultadoDisponivel())) return null
+  if (!(await recusasDisponivel())) return null
   const { data, error } = await supabase
-    .from('importacao')
+    .from('importacao_recusada')
     .insert({
       usuario_email: usuarioEmail ?? null,
       arquivo,
       tamanho_bytes: tamanho ?? null,
       origem: origem ?? 'gestao',
       ano: ano ?? null,
-      resultado: 'recusado',
-      recusa_motivo: motivo,
+      motivo,
     })
     .select('id')
     .single()
@@ -504,11 +503,9 @@ export async function registrarRecusaDeConferencia({
   empresas,
   totais,
 }) {
-  if (!(await historicoDisponivel())) return null
-  if (!(await resultadoDisponivel())) return null
-  const comNomeTemplate = await nomeTemplateDisponivel()
+  if (!(await recusasDisponivel())) return null
   const { data, error } = await supabase
-    .from('importacao')
+    .from('importacao_recusada')
     .insert({
       usuario_email: usuarioEmail ?? null,
       arquivo,
@@ -518,9 +515,8 @@ export async function registrarRecusaDeConferencia({
       ciclo_id: ciclo?.id ?? null,
       versao_id: versao?.id ?? null,
       versao_nome: versao?.nome ?? null,
-      ...(comNomeTemplate ? { nome_template: arquivo ?? null } : {}),
-      resultado: 'recusado',
-      recusa_motivo: motivo,
+      nome_template: arquivo ?? null,
+      motivo,
       tipos: tipos ?? {},
       empresas: empresas ?? [],
       totais: totais ?? zero(),
@@ -529,6 +525,28 @@ export async function registrarRecusaDeConferencia({
     .single()
   if (error) throw error
   return data.id
+}
+
+/** As recusas, da mais nova para a mais antiga — mesmo formato de `listarImportacoes`. */
+export async function listarRecusas(limite = 200) {
+  const [rec, usu] = await Promise.all([
+    supabase.from('importacao_recusada').select('*').order('criado_em', { ascending: false }).limit(limite),
+    supabase.from('usuario').select('nome, email'),
+  ])
+  if (rec.error) throw rec.error
+  const nomes = new Map((usu.data ?? []).map((u) => [u.email.toLowerCase(), u.nome]))
+  return rec.data.map((r) => ({ ...r, usuario_nome: r.usuario_email ? nomes.get(r.usuario_email.toLowerCase()) ?? null : null }))
+}
+
+/**
+ * Tira registro(s) de `importacao` (a tabela principal, só de dado real) —
+ * usado pelo grupo "Desconhecido" em Templates importados, para limpar
+ * registro de teste que entrou sem nome de arquivo identificado.
+ */
+export async function apagarImportacoes(ids) {
+  if (!ids?.length) return
+  const { error } = await supabase.from('importacao').delete().in('id', ids)
+  if (error) throw error
 }
 
 /** Marca um tipo como desfeito — o registro fica, para o histórico. */
@@ -577,13 +595,13 @@ export async function definirLiberacao(id, { status, quem, observacao }) {
 }
 
 /**
- * Tira um registro de recusa da lista — teste que não devia ter ficado
- * registrado, ou recusa que não interessa mais olhar. Só vale para
- * `resultado = 'recusado'`: uma importação de verdade sai daqui desfazendo os
- * lançamentos (ver `desfazer`), não apagando a linha do histórico.
+ * Tira um registro de `importacao_recusada` — teste que não devia ter
+ * ficado registrado, ou recusa que não interessa mais olhar. Uma importação
+ * de verdade sai da lista desfazendo os lançamentos (ver `desfazer`), nunca
+ * apagando a linha do histórico de `importacao` por aqui.
  */
 export async function apagarRecusa(id) {
-  const { error } = await supabase.from('importacao').delete().eq('id', id).eq('resultado', 'recusado')
+  const { error } = await supabase.from('importacao_recusada').delete().eq('id', id)
   if (error) throw error
 }
 
