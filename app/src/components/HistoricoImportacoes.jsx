@@ -8,7 +8,6 @@ import {
   LIBERACOES,
   listarImportacoes,
 } from '../lib/importacoesData'
-import { ebitdaAfterCapex } from '../lib/resumoDoUpload'
 import { apagarDoTipo } from '../lib/importarTemplateOrcamento'
 import { useAuth } from './AuthProvider'
 import { useToast } from './ToastProvider'
@@ -245,13 +244,10 @@ export default function HistoricoImportacoes({ versao }) {
                   <th>LIBERAÇÃO</th>
                   <th>TIPOS</th>
                   <th className="text-right">EMPRESAS</th>
-                  {/* A mesma leitura do cabeçalho do import: receita,
-                      despesa e o que sobra depois do capex. Gross Revenue
-                      e Capex em coluna própria ficaram no detalhe por
-                      empresa, que é onde se vai atrás deles. */}
+                  <th className="text-right">GROSS REVENUE</th>
                   <th className="text-right">NET REVENUE</th>
                   <th className="text-right">EXPENSES</th>
-                  <th className="text-right">EBITDA AFTER CAPEX</th>
+                  <th className="text-right">CAPEX</th>
                 </tr>
               </thead>
               <tbody>
@@ -343,9 +339,10 @@ export default function HistoricoImportacoes({ versao }) {
                         </div>
                       </td>
                       <td className="text-right">{empresas.length}</td>
-                      <td className="text-right">{mi(t.nr)}</td>
+                      <td className="text-right">{mi(t.gr)}</td>
+                      <td className="text-right"><strong>{mi(t.nr)}</strong></td>
                       <td className="text-right">{mi(t.despesa)}</td>
-                      <td className="text-right"><strong>{mi(ebitdaAfterCapex(t))}</strong></td>
+                      <td className="text-right">{mi(t.capex)}</td>
                     </tr>
                     {estaAberto && (
                       <tr>
@@ -360,7 +357,6 @@ export default function HistoricoImportacoes({ versao }) {
                                 <th className="text-right">NET REVENUE</th>
                                 <th className="text-right">EXPENSES</th>
                                 <th className="text-right">CAPEX</th>
-                                <th className="text-right">EBITDA AFTER CAPEX</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -372,7 +368,6 @@ export default function HistoricoImportacoes({ versao }) {
                                   <td className="text-right"><strong>{mi(e.nr)}</strong></td>
                                   <td className="text-right">{mi(e.despesa)}</td>
                                   <td className="text-right">{mi(e.capex)}</td>
-                                  <td className="text-right"><strong>{mi(ebitdaAfterCapex(e))}</strong></td>
                                 </tr>
                               ))}
                             </tbody>

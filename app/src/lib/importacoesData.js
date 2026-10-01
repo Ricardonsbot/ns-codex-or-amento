@@ -118,7 +118,6 @@ export async function registrarTentativaRecusada({ arquivo, tamanho, origem, ano
 }
 
 const zero = () => ({ linhas: 0, gr: 0, nr: 0, despesa: 0, capex: 0 })
-
 const soma = (v) => (v ?? []).reduce((a, x) => a + Number(x.valor ?? x ?? 0), 0)
 
 /**
