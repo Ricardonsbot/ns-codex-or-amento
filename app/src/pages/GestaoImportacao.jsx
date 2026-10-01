@@ -98,6 +98,9 @@ function CardTipo({
   // Só em Despesa, quando Capex também tem dado: acrescenta "+ Capex" no
   // título, pra avisar que os pacotes dele estão ali dentro.
   tipoMesclado,
+  // A prévia do Capex, só quando `tipoMesclado` está ligado — é com ela que
+  // Despesa monta a árvore Pacote > Subpacote e o resumo únicos dos dois.
+  previaExtra,
 }) {
   const showToast = useToast()
   const { sessao } = useAuth()
@@ -257,15 +260,19 @@ function CardTipo({
    * para quem quer recomeçar do zero, não só trocar.
    */
   async function handleZerar() {
+    const rotulo = tipoMesclado ? `${NOME[tipo]} e ${NOME[tipoMesclado]}` : NOME[tipo]
+    const total = (previa?.jaExistem ?? 0) + (previaExtra?.jaExistem ?? 0)
     const confirmado = window.confirm(
-      `Apagar TODOS os lançamentos de ${NOME[tipo]} já gravados nesta versão (${previa.jaExistem}), antes de importar este arquivo? Não dá para desfazer.`
+      `Apagar TODOS os lançamentos de ${rotulo} já gravados nesta versão (${total}), antes de importar este arquivo? Não dá para desfazer.`
     )
     if (!confirmado) return
     setZerando(true)
     try {
-      const n = await apagarDoTipo(previa.versao.id, tipo)
-      showToast(`${n} lançamento(s) de ${NOME[tipo]} apagado(s) — versão zerada para este tipo.`, 'success')
+      const n1 = await apagarDoTipo(previa.versao.id, tipo)
+      const n2 = tipoMesclado && previaExtra?.versao ? await apagarDoTipo(previaExtra.versao.id, tipoMesclado) : 0
+      showToast(`${n1 + n2} lançamento(s) de ${rotulo} apagado(s) — versão zerada.`, 'success')
       setPrevia((p) => (p ? { ...p, jaExistem: 0 } : p))
+      if (tipoMesclado && previaExtra) onPrevia?.(tipoMesclado, { ...previaExtra, jaExistem: 0 })
     } catch (err) {
       showToast(`Não consegui zerar: ${err.message}`, 'error')
     } finally {
@@ -277,9 +284,30 @@ function CardTipo({
   // As duas recusas são de natureza diferente e o aviso precisa dizer qual é:
   // texto numa coluna de valor não é empresa fora do cadastro.
   const semVersao = previa && !previa.versao
+  const jaExistemCombinado = (previa?.jaExistem ?? 0) + (previaExtra?.jaExistem ?? 0)
+
   // A conferência por Pacote > Subpacote, só quem tem algo a resolver: a
-  // regra mora em conferenciaPorConta.js, testada à parte.
-  const porPacote = useMemo(() => agruparPorPacoteDivergente(previa), [previa])
+  // regra mora em conferenciaPorConta.js, testada à parte. Com `previaExtra`
+  // (Capex mesclado em Despesa), as linhas dos dois entram juntas na mesma
+  // árvore — uma tabela só, uma pendência só — e cada linha carrega de onde
+  // veio, pra pintar a etiqueta "Capex" só nela, não no pacote inteiro.
+  const previaParaTabela = useMemo(() => {
+    if (!previa && !previaExtra) return null
+    const marcar = (p, origemTipo) => ({
+      fora: (p?.fora ?? []).map((l) => ({ ...l, _origemTipo: origemTipo })),
+      marcadas: (p?.marcadas ?? []).map((l) => ({ ...l, _origemTipo: origemTipo })),
+      prontas: (p?.prontas ?? []).map((l) => ({ ...l, _origemTipo: origemTipo })),
+    })
+    const base = marcar(previa, tipo)
+    const extra = tipoMesclado && previaExtra ? marcar(previaExtra, tipoMesclado) : { fora: [], marcadas: [], prontas: [] }
+    return {
+      fora: [...base.fora, ...extra.fora],
+      marcadas: [...base.marcadas, ...extra.marcadas],
+      prontas: [...base.prontas, ...extra.prontas],
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previa, previaExtra, tipo, tipoMesclado])
+  const porPacote = useMemo(() => agruparPorPacoteDivergente(previaParaTabela), [previaParaTabela])
   const subpacotesComOfensa = porPacote.reduce((a, p) => a + p.subpacotes.length, 0)
 
   // Drill down: o primeiro pacote vem aberto, os demais fecham sozinhos —
@@ -290,7 +318,7 @@ function CardTipo({
     setPacotesAbertos(porPacote.length ? new Set([porPacote[0].pacote]) : new Set())
     setAbertos(new Set())
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previa])
+  }, [previaParaTabela])
 
 
   // O "Importar o template inteiro" da tela chama isto em cada card, um
@@ -324,14 +352,14 @@ function CardTipo({
             )}
           </h3>
           {gravando && <span>importando…</span>}
-          {previa?.jaExistem > 0 && (
+          {jaExistemCombinado > 0 && (
             <span className="flex-row" style={{ marginLeft: 'auto', gap: 8, alignItems: 'center' }}>
-              ⚠ {previa.jaExistem} lançamento(s) identificados como duplicadas.
+              ⚠ {jaExistemCombinado} lançamento(s) identificados como duplicadas.
               <button
                 type="button"
                 className="btn btn-ghost btn-sm"
                 disabled={zerando}
-                title={`Apaga os ${previa.jaExistem} lançamento(s) de ${NOME[tipo]} já gravados nesta versão, antes de importar este arquivo`}
+                title={`Apaga os ${jaExistemCombinado} lançamento(s) já gravados nesta versão, antes de importar este arquivo`}
                 onClick={handleZerar}
               >
                 {zerando ? 'Zerando…' : 'Zerar'}
@@ -401,7 +429,10 @@ function CardTipo({
               </div>
             )}
 
-            {porPacote.length > 0 && (
+            {/* Quando mesclado (tituloOculto), as linhas de Capex já estão
+                na tabela de Despesa via previaExtra — essa aqui ficaria
+                duplicada. */}
+            {!tituloOculto && porPacote.length > 0 && (
               <>
                 <div className="tabela-pacote-scroll">
                   <table className="data-table tabela-contas">
@@ -436,7 +467,6 @@ function CardTipo({
                               <td colSpan={4}>
                                 <span className="conta-seta" aria-hidden="true">{pacoteAberto ? '▾' : '▸'}</span>
                                 <strong>{pac.pacote}</strong>
-                                {tituloOculto && <span className="pill capex" style={{ marginLeft: 6 }}>Capex</span>}
                                 <span style={{ opacity: 0.7, fontWeight: 400 }}>
                                   {' '}
                                   · {pac.subpacotes.length} subpacote(s) · {brl(pac.total)}
@@ -447,6 +477,13 @@ function CardTipo({
                               pac.subpacotes.map((s) => {
                                 const chaveS = `${pac.pacote}::${s.subpacote}`
                                 const aberta = abertos.has(chaveS)
+                                // Pacote e subpacote podem misturar linhas de Despesa e
+                                // Capex (mesmo nome de pacote, origem diferente) — a
+                                // etiqueta só aparece quando TODA a linha do subpacote
+                                // vem do Capex; misto fica sem etiqueta aqui, e cada
+                                // linha aberta mostra a sua própria origem.
+                                const todoCapex =
+                                  tipoMesclado && s.linhas.length > 0 && s.linhas.every((l) => l._origemTipo === tipoMesclado)
                                 return (
                                   <Fragment key={chaveS}>
                                     <tr
@@ -463,6 +500,7 @@ function CardTipo({
                                       <td className="conta-filha">
                                         <span className="conta-seta" aria-hidden="true">{aberta ? '▾' : '▸'}</span>
                                         {s.subpacote}
+                                        {todoCapex && <span className="pill capex" style={{ marginLeft: 6 }}>Capex</span>}
                                       </td>
                                       <td className="text-right">{s.quantas}</td>
                                       <td className="text-right">{brl(s.total)}</td>
@@ -478,6 +516,9 @@ function CardTipo({
                                             linha {l.linha} ·{' '}
                                             {(typeof l.empresa === 'object' ? l.empresa?.nome : l.empresa) || '—'} · conta{' '}
                                             {l.conta?.codigo || l.contaCodigo || '—'} {l.conta?.nome || l.contaRotulo || ''}
+                                            {!todoCapex && tipoMesclado && l._origemTipo === tipoMesclado && (
+                                              <span className="pill capex" style={{ marginLeft: 6 }}>Capex</span>
+                                            )}
                                           </td>
                                           <td />
                                           <td className="text-right">{brl(l.total)}</td>
@@ -1068,11 +1109,14 @@ export default function GestaoImportacao() {
                                 onDesfeito={desfeito}
                                 onImportado={() => setGravados((n) => n + 1)}
                                 // Capex grava separado, mas a conferência é
-                                // visual: os pacotes dele seguem direto
-                                // embaixo dos de Despesa, na mesma árvore —
-                                // sem título nem seção próprios.
+                                // visual: os pacotes dele entram na MESMA
+                                // tabela e no mesmo resumo de Despesa — uma
+                                // árvore só, uma pendência só, um "Zerar" só.
                                 tituloOculto={t === 'capex' && tiposComDado.includes('despesa')}
                                 tipoMesclado={t === 'despesa' && tiposComDado.includes('capex') ? 'capex' : null}
+                                previaExtra={
+                                  t === 'despesa' && tiposComDado.includes('capex') ? previas.capex : null
+                                }
                               />
                             ))}
 
