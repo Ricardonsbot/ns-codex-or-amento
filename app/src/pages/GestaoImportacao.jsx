@@ -560,7 +560,6 @@ export default function GestaoImportacao() {
     registro.current = { id: null, fila: Promise.resolve() }
     setGravados(0)
     setPrevias({})
-    setSubstituir({})
 
     setLendo(true)
     setTodos(null)
