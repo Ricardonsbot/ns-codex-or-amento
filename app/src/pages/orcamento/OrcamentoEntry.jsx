@@ -405,7 +405,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
             </div>
             <button className="btn btn-primary btn-sm" onClick={handleAdicionarLinha}>+ Adicionar Conta</button>
           </div>
-          <div className="panel-body table-wrap">
+          <div className="panel-body table-wrap entry-grid-scroll">
             <table className="entry-grid">
               <thead>
                 <tr>

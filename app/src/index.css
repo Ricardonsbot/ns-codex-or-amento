@@ -819,6 +819,14 @@ select:focus, input:focus, textarea:focus {
   overflow: auto;
 }
 
+/* Lançamento de Capex (a grade editável, linha a linha): mesmo motivo do
+   resumo acima — muitas contas e muitas colunas de mês esticavam a página
+   inteira, nas duas direções. */
+.entry-grid-scroll {
+  max-height: 420px;
+  overflow: auto;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
