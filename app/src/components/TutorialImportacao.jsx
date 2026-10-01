@@ -8,8 +8,10 @@ import BotaoRecolher from './BotaoRecolher'
  * etapa a pessoa está, e como janela pelo botão "Como importar" — quem já
  * sabe o caminho não precisa do quadro ocupando a tela.
  *
- * `etapa` é a etapa corrente (1 a 5); os passos anteriores ficam marcados
- * como vencidos.
+ * `etapa` é a etapa corrente; os passos anteriores ficam marcados como
+ * vencidos. `modo` escolhe de quem é o caminho: o do FP&A, que grava
+ * lançamento conferindo card por card, ou o do pacoteiro, que grava um
+ * teto por pacote e não tem card nenhum para conferir.
  */
 const PASSOS = [
   {
@@ -23,7 +25,7 @@ const PASSOS = [
     n: 2,
     titulo: 'Selecione o template',
     texto:
-      'Clique em "Selecionar Template" e depois em "Escolher arquivo". Um upload só serve para Receita, Despesa e Capex. Se quem preencheu foi o pacoteiro, entre por "Importar - Pacote" no menu, não por "Template FP&A": aí o total por pacote entra como teto do ano, e não como lançamento.',
+      'Clique em "Selecionar Template" e depois em "Escolher arquivo". Um upload só serve para Receita, Despesa e Capex. Se quem preencheu foi o pacoteiro, entre por "Pacote → Importar target" no menu, não por aqui: lá o total por pacote entra como teto do ano, e não como lançamento.',
   },
   {
     n: 3,
@@ -47,6 +49,41 @@ const PASSOS = [
   },
 ]
 
+/**
+ * O caminho do pacoteiro. Não é o do FP&A com as palavras trocadas: ele
+ * sobe o mesmo arquivo para gravar outra coisa — um teto por pacote — e o
+ * que precisa conferir antes de gravar também é outro.
+ */
+const PASSOS_PACOTE = [
+  {
+    n: 1,
+    titulo: 'Prepare o arquivo',
+    texto:
+      'É o mesmo Template Budget do ano que as empresas preenchem (.xlsb, .xlsx ou .xlsm), com as abas Receita e Base Gastos. Não renomeie as abas nem as colunas. Para o target o que manda é a coluna Pacote: linha sem pacote preenchido não tem onde entrar e fica de fora.',
+    dica: 'O ano do cabeçalho do template decide o ano do target.',
+  },
+  {
+    n: 2,
+    titulo: 'Selecione o template',
+    texto:
+      'Clique em "Selecionar Template" e escolha o arquivo. A leitura é a mesma de sempre e leva de 20 a 45 segundos num arquivo de ~9 MB; dá para fechar a janela e continuar na tela.',
+  },
+  {
+    n: 3,
+    titulo: 'Confira o total por pacote',
+    texto:
+      'A ferramenta soma o arquivo inteiro e devolve uma linha por pacote — é isso que vira target. Conta, centro de custo e fornecedor não entram: target é do pacote, e o detalhe é das empresas.',
+    dica: 'Pacote escrito diferente do cadastro não casa com o bottom up. Confira os nomes em Cadastros → Pacotes antes de gravar.',
+  },
+  {
+    n: 4,
+    titulo: 'Grave o target',
+    texto:
+      'Gravar põe o teto do ano de cada pacote. O seu arquivo não vira lançamento: quem lança são as empresas, por baixo — gravar os dois contaria o mesmo gasto duas vezes. A diferença entre os dois aparece em Resultado → Target × Bottom Up.',
+    dica: 'Já existe target do ano? Marque substituir; senão o antigo continua lá e o novo não entra.',
+  },
+]
+
 function Passo({ passo, estado }) {
   return (
     <li className={`passo-importacao ${estado}`}>
@@ -62,17 +99,20 @@ function Passo({ passo, estado }) {
   )
 }
 
-function Lista({ etapa }) {
+function Lista({ etapa, passos }) {
   return (
     <ol className="lista-passos">
-      {PASSOS.map((p) => (
+      {passos.map((p) => (
         <Passo key={p.n} passo={p} estado={etapa > p.n ? 'vencido' : etapa === p.n ? 'atual' : 'futuro'} />
       ))}
     </ol>
   )
 }
 
-export default function TutorialImportacao({ etapa = 1, janela, onFechar }) {
+export default function TutorialImportacao({ etapa = 1, modo = 'fpa', janela, onFechar }) {
+  const pacote = modo === 'pacote'
+  const passos = pacote ? PASSOS_PACOTE : PASSOS
+  const titulo = pacote ? 'Como submeter o target do pacote' : 'Como submeter um template'
   const fechar = useRef(null)
   useEffect(() => {
     if (!janela) return undefined
@@ -88,28 +128,32 @@ export default function TutorialImportacao({ etapa = 1, janela, onFechar }) {
         <div className="panel-header">
           <BotaoRecolher chave="tutorial-importacao-1" />
           <div>
-            <h2>Como submeter um template</h2>
-            <p>Cinco passos, do arquivo até o orçamento gravado</p>
+            <h2>{titulo}</h2>
+            <p>
+              {pacote
+                ? 'Quatro passos, do arquivo até o teto do ano gravado'
+                : 'Cinco passos, do arquivo até o orçamento gravado'}
+            </p>
           </div>
         </div>
         <div className="panel-body">
-          <Lista etapa={etapa} />
+          <Lista etapa={etapa} passos={passos} />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label="Como submeter um template">
+    <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label={titulo}>
       <div className="modal" style={{ maxWidth: 640 }}>
         <div className="modal-header">
-          <h3>Como submeter um template</h3>
+          <h3>{titulo}</h3>
           <button ref={fechar} className="modal-close" type="button" onClick={onFechar} aria-label="Fechar">
             ×
           </button>
         </div>
         <div className="modal-body">
-          <Lista etapa={etapa} />
+          <Lista etapa={etapa} passos={passos} />
         </div>
         <div className="modal-footer">
           <button className="btn btn-secondary" type="button" onClick={onFechar}>

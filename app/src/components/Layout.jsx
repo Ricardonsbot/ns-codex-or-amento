@@ -12,11 +12,15 @@ import IdentificadorTela from './IdentificadorTela'
  * grupo que só expande/recolhe (não navega — igual "Importação" e
  * "Configuração"); um nó sem `filhos` é uma tela de verdade, com `to`.
  *
- * "Importar - Template FP&A" e "Importar - Pacote" apontam para a MESMA
- * rota (GestaoImportacao.jsx é uma tela só, com um interruptor interno de
- * "é o target do pacoteiro?") — o `?modo=pacote` na segunda é o que liga
- * esse interruptor ao entrar, e o que distingue qual das duas fica
- * destacada no menu (ver `ehAtivo` abaixo).
+ * "Pacote" é do pacoteiro, não do FP&A. Ele entra aqui para fazer uma
+ * coisa só — subir o template dele — e não tem o que fazer em Gestão de
+ * Doc, Validação ou Cadastros. Por isso o import dele saiu de dentro de
+ * "Gestão de Doc", onde era um irmão do Template FP&A, e virou categoria
+ * de primeiro nível com rota própria: /pacote/importar.
+ *
+ * A tela por baixo continua sendo a mesma de importar (GestaoImportacao
+ * .jsx). O que muda é o papel de quem preencheu — e agora quem diz isso é
+ * a rota, não um interruptor dentro da tela.
  */
 const MENU = [
   {
@@ -30,7 +34,6 @@ const MENU = [
         icone: 'relatorio',
         filhos: [
           { id: 'importar-template', to: '/gestao-importacao', icone: 'importar', text: 'Template FP&A' },
-          { id: 'importar-pacote', to: '/gestao-importacao?modo=pacote', icone: 'pacote', text: 'Template Pacote' },
         ],
       },
       {
@@ -44,6 +47,12 @@ const MENU = [
         ],
       },
     ],
+  },
+  {
+    id: 'pacote',
+    text: 'Pacote',
+    icone: 'pacote',
+    filhos: [{ id: 'importar-target', to: '/pacote/importar', icone: 'importar', text: 'Importar target' }],
   },
   {
     id: 'visao-geral',
@@ -110,9 +119,10 @@ function lerFechadas() {
 /**
  * Se `to` é a tela aberta agora. Rota simples (`/cadastros`) casa com ela e
  * com o que vem depois (`/cadastros/contas`) — é o que mantém "Cadastros"
- * destacado nas sub-telas dele. Rota com `?query` (os dois links que
- * apontam para Gestão de Importação) só casa exata: é o query string que
- * distingue qual dos dois está com o modo ligado.
+ * destacado nas sub-telas dele. Rota com `?query` só casa exata; hoje
+ * nenhum item do menu usa query, mas o endereço antigo do pacoteiro
+ * (`/gestao-importacao?modo=pacote`) ainda abre, e sem esta parte ele
+ * acenderia "Template FP&A", que não é onde a pessoa está.
  */
 function ehAtivo(to, pathname, search) {
   const [rota, query] = to.split('?')

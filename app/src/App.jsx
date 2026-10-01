@@ -40,6 +40,9 @@ export default function App() {
           <Route path="/orcamento/despesa" element={<RequireAuth><Despesa /></RequireAuth>} />
           <Route path="/orcamento/capex" element={<RequireAuth><Capex /></RequireAuth>} />
           <Route path="/gestao-importacao" element={<RequireAuth><GestaoImportacao /></RequireAuth>} />
+          {/* A mesma tela, entrada do pacoteiro: a rota é que diz que o
+              template vira target em vez de lançamento. */}
+          <Route path="/pacote/importar" element={<RequireAuth><GestaoImportacao /></RequireAuth>} />
           <Route path="/aprovacoes" element={<RequireAuth><Aprovacoes /></RequireAuth>} />
           <Route path="/pendencia-cadastros" element={<RequireAuth><PendenciaCadastros /></RequireAuth>} />
           <Route path="/resultado" element={<RequireAuth><Resultado /></RequireAuth>} />

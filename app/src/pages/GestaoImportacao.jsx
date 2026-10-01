@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { Etapa, statusAba } from '../components/ImportWizard'
 import ProgressoGravacao from '../components/ProgressoGravacao'
@@ -490,19 +490,22 @@ export default function GestaoImportacao() {
   // a versão atual (ver `conferir`), e o nome do template é o do próprio
   // arquivo (`arquivo`, abaixo) — não há nome separado para digitar.
   const [telaSelecao, setTelaSelecao] = useState(false)
+  // Quem entra por "Pacote -> Importar target" é o pacoteiro, e o template
+  // dele vira teto do ano, não lançamento. Quem diz isso é a rota: o papel
+  // de quem preencheu não é uma marcação que dá para esquecer de clicar.
+  //
+  // O `?modo=pacote` era o endereço deste mesmo lugar até a categoria
+  // Pacote existir. Continua valendo, porque pode estar no favorito de
+  // alguém — e um favorito que abre a tela errada grava lançamento onde
+  // devia gravar target.
+  const { pathname } = useLocation()
+  const [searchParams] = useSearchParams()
+  const modoPacote = pathname.startsWith('/pacote') || searchParams.get('modo') === 'pacote'
+  const comoTarget = modoPacote
   // Enquanto esta tela está aberta por cima da rota, o ID que aparece não é
   // mais o da rota (GESTAO-IMPORTACAO) — é o da tela de verdade, a que
   // subiu para importar o arquivo.
-  useSubTela(telaSelecao ? 'GESTAO-IMPORTACAO-IMPORTAR-TEMPLATE' : null)
-  // O menu tem dois links pra esta mesma tela — "Importar - Template FP&A" e
-  // "Importar - Pacote" — e é o `?modo=pacote` do segundo que já chega com o
-  // interruptor ligado, sem a pessoa precisar marcar o checkbox na mão.
-  const [searchParams] = useSearchParams()
-  const modoPacote = searchParams.get('modo') === 'pacote'
-  // O template é um só; o que muda é o papel de quem preencheu — e isso é a
-  // tela por onde a pessoa entrou, não mais uma marcação manual: "Template
-  // FP&A" sempre lança, "Template Pacote" sempre vira target.
-  const comoTarget = modoPacote
+  useSubTela(telaSelecao ? `${modoPacote ? 'PACOTE-IMPORTAR' : 'GESTAO-IMPORTACAO'}-IMPORTAR-TEMPLATE` : null)
   const [lendo, setLendo] = useState(false)
   const [segundos, setSegundos] = useState(0)
   const [estrutura, setEstrutura] = useState(null)
@@ -657,7 +660,11 @@ export default function GestaoImportacao() {
   }
 
   // 1 sem arquivo · 2 escolhendo · 3 lendo · 4 conferindo · 5 gravado
-  const etapaTutorial = gravados ? 5 : todos ? 4 : lendo ? 3 : 1
+  // O caminho do pacoteiro tem um passo a menos: ele não confere card por
+  // card antes de gravar — o arquivo inteiro vira uma linha por pacote.
+  const etapaTutorial = modoPacote
+    ? (gravados ? 4 : todos ? 3 : lendo ? 2 : 1)
+    : (gravados ? 5 : todos ? 4 : lendo ? 3 : 1)
 
   const tiposComDado = todos ? ORDEM.filter((t) => !todos[t].erro && todos[t].linhas.length > 0) : []
   const tiposVazios = todos ? ORDEM.filter((t) => !todos[t].erro && !todos[t].linhas.length) : []
@@ -694,10 +701,11 @@ export default function GestaoImportacao() {
     <Layout>
       <header className="topbar">
         <div className="topbar-title">
-          <h1>{modoPacote ? 'Importar - Pacote' : 'Importar - Template FP&A'}</h1>
+          <h1>{modoPacote ? 'Importar target do pacote' : 'Importar - Template FP&A'}</h1>
           <p>
-            Suba o template uma vez — a ferramenta reconhece qual dos quatro é e confere o que aquele formato tem de
-            trazer.
+            {modoPacote
+              ? 'Suba o seu Template Budget: a ferramenta soma o arquivo por pacote e grava o total como teto do ano. O detalhe linha a linha quem lança são as empresas.'
+              : 'Suba o template uma vez — a ferramenta reconhece qual dos quatro é e confere o que aquele formato tem de trazer.'}
           </p>
         </div>
         <button className="btn btn-secondary btn-sm" type="button" onClick={() => setTutorialAberto(true)}>
@@ -721,7 +729,7 @@ export default function GestaoImportacao() {
       </header>
 
       <div className="content">
-        {!todos && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
+        {!todos && !lendo && <TutorialImportacao etapa={etapaTutorial} modo={modoPacote ? 'pacote' : 'fpa'} />}
 
         {telaSelecao && (
           <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label="Importar template">
@@ -912,12 +920,20 @@ export default function GestaoImportacao() {
           </div>
         )}
 
-        <HistoricoImportacoes versao={versaoHistorico} />
+        {/* Histórico e recusados são do FP&A: listam importação de
+            lançamento, que é justamente o que o pacoteiro não faz. Na tela
+            dele seriam duas listas onde o trabalho dele nunca aparece. */}
+        {!modoPacote && <HistoricoImportacoes versao={versaoHistorico} />}
 
-        <TemplatesRecusados versao={versaoHistorico} />
+        {!modoPacote && <TemplatesRecusados versao={versaoHistorico} />}
 
         {tutorialAberto && (
-          <TutorialImportacao etapa={etapaTutorial} janela onFechar={() => setTutorialAberto(false)} />
+          <TutorialImportacao
+            etapa={etapaTutorial}
+            modo={modoPacote ? 'pacote' : 'fpa'}
+            janela
+            onFechar={() => setTutorialAberto(false)}
+          />
         )}
       </div>
     </Layout>
