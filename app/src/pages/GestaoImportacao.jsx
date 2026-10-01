@@ -15,7 +15,7 @@ import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasP
 import { createCiclo } from '../lib/ciclosData'
 import { agruparPorPacoteDivergente, resumoDaConta, SITUACOES } from '../lib/conferenciaPorConta'
 import { bigNumbersDoArquivo, resumoDoUpload } from '../lib/resumoDoUpload'
-import { resumoDoArquivo } from '../lib/importacoesData'
+import { avaliar, resumoDoArquivo } from '../lib/importacoesData'
 import Indicadores from '../components/Indicadores'
 import { useSubTela } from '../lib/identificadorTela'
 import {
@@ -520,6 +520,8 @@ export default function GestaoImportacao() {
   const [gravados, setGravados] = useState(0)
   // Qual módulo o "importar tudo" está gravando agora; null quando parado.
   const [importandoTudo, setImportandoTudo] = useState(null)
+  // De qual upload a recusa já foi registrada, para não repetir a cada clique.
+  const recusaDeste = useRef(null)
   // Qual módulo está aberto na conferência. Os três continuam montados — é
   // deles que sai o resumo do topo, e é neles que o "importar tudo" bate.
   // A prévia de cada módulo, reportada pelos cards: é o que alimenta o
@@ -600,6 +602,20 @@ export default function GestaoImportacao() {
    * tentou e o motivo. Falhar aqui não pode virar um segundo erro na tela de
    * quem já está lidando com o primeiro.
    */
+  /**
+   * Alguém tentou importar um arquivo barrado: mostra o que falta, abre o
+   * checklist e registra a tentativa — uma vez por upload, para três
+   * cliques não virarem três linhas na lista de recusados.
+   */
+  function recusarImportacao() {
+    showToast(`Este template não pode ser importado: falta ${oQueFalta}.`, 'error')
+    setChecklistDoArquivo(true)
+    const marca = `${arquivo}#${chave}`
+    if (recusaDeste.current === marca) return
+    recusaDeste.current = marca
+    registrarRecusa(`Barrado na conferência — falta ${oQueFalta}`, arquivo, tamanho)
+  }
+
   async function registrarRecusa(motivo, nome, bytes) {
     try {
       const id = await registrarTentativaRecusada({
@@ -617,6 +633,9 @@ export default function GestaoImportacao() {
 
   /** Grava os três módulos numa passada só, na ordem Receita → Despesa → Capex. */
   async function importarTudo() {
+    // A guarda mora aqui, e não só no botão: desabilitar um botão é
+    // aparência, e esta função é chamada de mais de um lugar.
+    if (barrado) return recusarImportacao()
     for (const t of tiposComDado) {
       const card = cards.current[t]
       if (!card?.pronto) continue
@@ -694,7 +713,28 @@ export default function GestaoImportacao() {
       )
     : null
 
-  // O que o arquivo traz, somado: alimenta os big numbers e o gráfico.
+  /**
+   * A trava: arquivo com impedimento no checklist não é importado.
+   *
+   * O checklist já dizia "Arquivo não pode ser importado" — e o botão
+   * importava assim mesmo. Parecer que não impede nada ensina a ignorar o
+   * parecer, e no fim do caminho é o consolidado que recebe empresa fora do
+   * cadastro e frase escrita em célula de valor.
+   *
+   * Só vale com a conferência inteira na mão. Com metade das abas
+   * conferidas, "falta empresa" pode ser só a aba que ainda não chegou — e
+   * barrar por isso seria barrar por pressa da ferramenta.
+   *
+   * O que barra é o ESSENCIAL. Pendência (MRR, cliente, churn, sinal) passa:
+   * consolida do mesmo jeito, e sempre consolidou.
+   */
+  const conferenciaCompleta = tiposComDado.length > 0 && tiposComDado.every((t) => previas[t])
+  const statusDoArquivo = conferenciaCompleta && registroDoArquivo ? avaliar(registroDoArquivo) : null
+  const impedimentos = statusDoArquivo?.impedimentos ?? []
+  const barrado = impedimentos.length > 0
+  const oQueFalta = impedimentos.map((i) => i.rotulo).join(', ')
+
+  // O que o arquivo traz, somado: os três números do cabeçalho.
   const resumo = resumoDoUpload(ORDEM.map((t) => ({ tipo: t, previa: previas[t] })))
 
   return (
@@ -743,13 +783,21 @@ export default function GestaoImportacao() {
                     </button>
                   )}
                   {todos && !comoTarget && tiposComDado.length > 0 && (
+                    /* Barrado, o botão deixa de ser o primário e diz o que é:
+                       não um caminho que falha depois, mas um caminho fechado.
+                       Clicar nele abre o checklist com o que falta. */
                     <button
-                      className="btn btn-primary btn-sm"
+                      className={`btn btn-sm ${barrado ? 'btn-secondary' : 'btn-primary'}`}
                       type="button"
-                      onClick={importarTudo}
+                      onClick={barrado ? recusarImportacao : importarTudo}
                       disabled={Boolean(importandoTudo)}
+                      title={barrado ? `Falta ${oQueFalta}` : undefined}
                     >
-                      {importandoTudo ? `Importando ${ROTULO[importandoTudo]}…` : 'Confirmar importação'}
+                      {importandoTudo
+                        ? `Importando ${ROTULO[importandoTudo]}…`
+                        : barrado
+                        ? '✕ Não dá para importar'
+                        : 'Confirmar importação'}
                     </button>
                   )}
                   <button className="btn btn-secondary btn-sm" type="button" onClick={() => setTelaSelecao(false)}>
