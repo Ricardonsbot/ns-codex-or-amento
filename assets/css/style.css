@@ -1,19 +1,18 @@
 /* ==========================================================================
-   Protótipo visual - App de Orçamento Corporativo (BU / Torres / Corporativo)
+   Protótipo visual - App de Orçamento Corporativo (BU / Torres / Corporate)
    Apenas front-end estático para simular a experiência do usuário.
    ========================================================================== */
 
 :root {
   --color-bg: #f4f6f9;
   --color-surface: #ffffff;
-  --color-sidebar: #ffffff;
-  --color-sidebar-active: #fff1ec;
-  --color-primary: #ff3d03;
-  --color-primary-dark: #cc3102;
-  --color-text: #20242d;
+  --color-sidebar: #12213f;
+  --color-sidebar-active: #1c3566;
+  --color-primary: #1f4fd6;
+  --color-primary-dark: #163aa3;
+  --color-text: #1b2436;
   --color-text-muted: #6b7280;
   --color-border: #e3e7ee;
-  --color-dark: #20242d;
 
   --color-receita: #1a9c6a;
   --color-receita-bg: #e5f7ef;
@@ -67,8 +66,7 @@ a { color: inherit; text-decoration: none; }
   width: var(--sidebar-width);
   flex-shrink: 0;
   background: var(--color-sidebar);
-  color: var(--color-text);
-  border-right: 1px solid var(--color-border);
+  color: #cfd8ec;
   display: flex;
   flex-direction: column;
   padding: 20px 0;
@@ -79,7 +77,7 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   gap: 10px;
   padding: 0 20px 20px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   margin-bottom: 12px;
 }
 
@@ -87,7 +85,7 @@ a { color: inherit; text-decoration: none; }
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ff7a4d, #ff3d03);
+  background: linear-gradient(135deg, #3a6dfb, #1f4fd6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,24 +96,22 @@ a { color: inherit; text-decoration: none; }
 
 .sidebar-brand .brand-text strong {
   display: block;
+  color: #fff;
   font-size: 15px;
 }
 
 .sidebar-brand .brand-text span {
   font-size: 11px;
-  color: var(--color-text-muted);
+  color: #8fa0c7;
   text-transform: uppercase;
   letter-spacing: .05em;
 }
-
-.brand-ns { color: var(--color-primary) !important; }
-.brand-rest { color: var(--color-text) !important; }
 
 .sidebar-section-label {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .06em;
-  color: var(--color-text-muted);
+  color: #6f80a8;
   padding: 14px 20px 6px;
 }
 
@@ -126,7 +122,7 @@ a { color: inherit; text-decoration: none; }
   padding: 10px 20px;
   margin: 2px 10px;
   border-radius: var(--radius-sm);
-  color: var(--color-text);
+  color: #cfd8ec;
   font-size: 13.5px;
   cursor: pointer;
 }
@@ -138,20 +134,19 @@ a { color: inherit; text-decoration: none; }
 }
 
 .nav-item:hover {
-  background: var(--color-bg);
+  background: rgba(255,255,255,0.06);
 }
 
 .nav-item.active {
   background: var(--color-sidebar-active);
-  color: var(--color-primary);
+  color: #fff;
   font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
 .sidebar-footer {
   margin-top: auto;
   padding: 14px 20px 0;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid rgba(255,255,255,0.08);
 }
 
 .user-chip {
@@ -165,7 +160,7 @@ a { color: inherit; text-decoration: none; }
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--color-dark);
+  background: #3a4d7a;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,12 +172,12 @@ a { color: inherit; text-decoration: none; }
 .user-chip .user-meta strong {
   display: block;
   font-size: 12.5px;
-  color: var(--color-text);
+  color: #fff;
 }
 
 .user-chip .user-meta span {
   font-size: 11px;
-  color: var(--color-text-muted);
+  color: #8fa0c7;
 }
 
 /* ---------- Conteúdo principal ---------- */
@@ -266,7 +261,7 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 }
 
 select:focus, input:focus, textarea:focus {
-  outline: 2px solid #ffd6c2;
+  outline: 2px solid #c6d4fb;
   border-color: var(--color-primary);
 }
 
@@ -320,7 +315,7 @@ select:focus, input:focus, textarea:focus {
   border-color: transparent;
   padding: 6px 8px;
 }
-.btn-ghost:hover { background: #fff1ec; }
+.btn-ghost:hover { background: #eef2fe; }
 
 .btn-sm { padding: 6px 10px; font-size: 12px; }
 
@@ -575,7 +570,7 @@ tfoot td {
 }
 
 .toast {
-  background: var(--color-dark);
+  background: #1b2436;
   color: #fff;
   padding: 12px 16px;
   border-radius: var(--radius-md);
@@ -733,15 +728,16 @@ tfoot td {
 
 .proto-banner {
   background: var(--color-info-bg);
-  color: var(--color-info);
+  color: var(--color-primary-dark);
   border: 1px solid #c6d4fb;
   border-radius: var(--radius-md);
   padding: 10px 16px;
   font-size: 12.5px;
   margin-bottom: 18px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  /* texto corrido: com display:flex cada <strong>/<code> virava uma coluna
+     e a frase saía fora de ordem */
+  display: block;
+  line-height: 1.5;
 }
 
 @media (max-width: 1000px) {
@@ -782,7 +778,7 @@ tfoot td {
   width: 46px;
   height: 46px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #ff7a4d, #ff3d03);
+  background: linear-gradient(135deg, #3a6dfb, #1f4fd6);
   color: #fff;
   display: flex;
   align-items: center;
@@ -926,7 +922,7 @@ tfoot td {
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ff7a4d, #ff3d03);
+  background: linear-gradient(135deg, #3a6dfb, #1f4fd6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -973,7 +969,7 @@ tfoot td {
   width: 68px;
   height: 68px;
   border-radius: 50%;
-  background: var(--color-dark);
+  background: linear-gradient(135deg, #3a6dfb, #1f4fd6);
   color: #fff;
   display: flex;
   align-items: center;
@@ -1010,7 +1006,7 @@ tfoot td {
 }
 
 .hub-profile-role-badge {
-  background: var(--color-sidebar-active);
+  background: var(--color-info-bg);
   color: var(--color-primary);
   font-weight: 700;
   font-size: 12.5px;
@@ -1061,7 +1057,7 @@ tfoot td {
 .hub-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 26px rgba(16, 24, 40, 0.12);
-  border-color: #ffd6c2;
+  border-color: #c6d4fb;
 }
 
 .hub-card .hub-icon {
@@ -1124,8 +1120,8 @@ tfoot td {
 .sidebar-role-badge {
   margin-top: 12px;
   text-align: center;
-  background: var(--color-sidebar-active);
-  color: var(--color-primary);
+  background: rgba(255,255,255,0.08);
+  color: #cfe0ff;
   font-size: 11px;
   font-weight: 700;
   padding: 5px 10px;
@@ -1259,7 +1255,7 @@ tfoot td {
 .admin-item:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 26px rgba(16, 24, 40, 0.12);
-  border-color: #ffd6c2;
+  border-color: #c6d4fb;
 }
 
 .admin-item-icon {
@@ -1305,13 +1301,14 @@ tfoot td {
   padding-left: 34px;
   color: var(--color-text-muted);
   font-weight: 400;
+  position: relative;
 }
 
 .report-table td.up { color: var(--color-success); font-weight: 600; }
 .report-table td.down { color: var(--color-danger); font-weight: 600; }
 
 .report-table tfoot td {
-  background: var(--color-dark);
+  background: var(--color-sidebar);
   color: #fff;
 }
 .report-table tfoot td.up { color: #7be2b3; }
@@ -1381,7 +1378,7 @@ tfoot td {
   line-height: 1.25;
 }
 
-.bridge-torres .bridge-bar.anchor { background: var(--color-dark); }
+.bridge-torres .bridge-bar.anchor { background: var(--color-sidebar); }
 .bridge-torres .bridge-bar.torre-up { background: var(--color-receita); }
 .bridge-torres .bridge-bar.torre-down { background: var(--color-despesa); }
 
@@ -1414,6 +1411,47 @@ tfoot td {
 
 .report-table tbody tr.report-empresa-row.report-empresa-outras td:first-child {
   color: #9aa3b2;
+}
+
+/* ---------- Colapsar/expandir BU e Torre (botão dentro do recuo, não desloca o texto) ---------- */
+
+/* recuo só nas tabelas com colapso, para não deslocar as outras tabelas de relatório */
+[data-hierarchy-collapse] tbody tr.report-bu-row td:first-child {
+  padding-left: 20px;
+  position: relative;
+}
+
+[data-hierarchy-collapse] tbody tr.report-bu-row .hier-toggle {
+  left: 3px;
+}
+
+.hier-toggle {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.hier-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.report-table tbody tr[hidden] {
+  display: none;
 }
 
 /* ---------- Tabs (Relatórios: Torres / P&L) ---------- */
@@ -1487,9 +1525,9 @@ tfoot td {
    ========================================================================== */
 
 .sidebar-toggle {
-  background: var(--color-bg);
+  background: rgba(255,255,255,0.08);
   border: none;
-  color: var(--color-text);
+  color: #cfd8ec;
   width: 26px;
   height: 26px;
   border-radius: 6px;
@@ -1500,7 +1538,7 @@ tfoot td {
   align-items: center;
   justify-content: center;
 }
-.sidebar-toggle:hover { background: var(--color-sidebar-active); color: var(--color-primary); }
+.sidebar-toggle:hover { background: rgba(255,255,255,0.16); }
 
 .sidebar.collapsed { width: 68px; }
 
@@ -1618,7 +1656,7 @@ tfoot td {
   display: flex;
   gap: 28px;
   align-items: center;
-  background: var(--color-dark);
+  background: var(--color-sidebar);
   color: #dfe6f8;
   border-radius: var(--radius-md);
   padding: 10px 18px;
@@ -1680,9 +1718,9 @@ tfoot td {
 }
 
 .month-toggle-btn:hover {
-  background: #fff1ec;
+  background: #eef2fe;
   color: var(--color-primary);
-  border-color: #ffd6c2;
+  border-color: #c6d4fb;
 }
 
 .month-toggle-icon {
@@ -1709,3 +1747,2400 @@ tfoot td {
   color: var(--color-text-muted) !important;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   Aprovações — fila, status oficial, situação e validações
+   ========================================================================== */
+
+.aprov-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  /* minmax(0, 1fr) e não 1fr: coluna de grid tem min-width auto por padrão,
+     então conteúdo largo — a grade de linhas da entrega — empurra a coluna
+     para fora da tela em vez de rolar dentro do próprio .table-wrap. */
+  .aprov-layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+.aprov-fila {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 620px;
+  overflow-y: auto;
+}
+
+.aprov-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.aprov-item:hover {
+  background: var(--color-bg);
+}
+
+.aprov-item.selecionada {
+  border-left-color: var(--color-primary);
+  background: var(--color-info-bg);
+}
+
+.aprov-item-topo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.aprov-item-meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.aprov-marcas {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.aprov-marca {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.aprov-marca.trava { background: var(--color-danger-bg); color: var(--color-danger); }
+.aprov-marca.falta { background: var(--color-warning-bg); color: var(--color-warning); }
+.aprov-marca.limpa { background: var(--color-success-bg); color: var(--color-success); }
+
+.aprov-bloco {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.aprov-bloco:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.aprov-bloco h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  margin: 0 0 12px;
+}
+
+.aprov-rotulo {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.aprov-decisao {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+.aprov-decisao.aguardando {
+  border-style: dashed;
+  color: var(--color-text-muted);
+}
+
+.aprov-parecer {
+  margin-top: 8px;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.aprov-trava {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.aprov-acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.aprov-pendencia {
+  border-left: 3px solid var(--color-warning);
+  background: var(--color-warning-bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.aprov-pendencia-oque {
+  font-weight: 700;
+}
+
+.aprov-pendencia-porque {
+  margin-top: 6px;
+}
+
+.aprov-pendencia-quem {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.aprov-validacoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aprov-validacao {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.aprov-val-icone {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.aprov-val-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.aprov-val-texto em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.aprov-val-sev {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.aprov-validacao.val-ok .aprov-val-icone { background: var(--color-success); }
+.aprov-validacao.val-alerta .aprov-val-icone { background: var(--color-warning); }
+.aprov-validacao.val-falha .aprov-val-icone { background: var(--color-danger); }
+
+.aprov-validacao.val-falha {
+  border-color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+.aprov-validacao.val-alerta {
+  border-color: #f2dfae;
+  background: var(--color-warning-bg);
+}
+
+/* ---------- Aceite final do líder (ato manual + log de responsabilidade) ---------- */
+
+.aceite-quem {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 10px;
+}
+
+.aceite-quem span {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.aceite-registrado {
+  border-left: 3px solid var(--color-success);
+  background: var(--color-success-bg);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+.aceite-quando {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.aceite-declaracao {
+  font-style: italic;
+}
+
+.aceite-obs {
+  margin-top: 10px;
+  font-size: 12.5px;
+}
+
+.aceite-travado {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.aceite-form {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.aceite-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.aceite-check input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.aceite-form textarea {
+  width: 100%;
+  margin: 10px 0;
+  resize: vertical;
+}
+
+.aceite-nota {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.aprov-nota-trava {
+  align-self: center;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.log-cargo {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   Status do ciclo — resposta rápida no topo do dashboard
+   ========================================================================== */
+
+.status-ciclo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+  .status-ciclo { grid-template-columns: 1fr; }
+}
+
+.status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 16px 18px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  color: inherit;
+}
+
+a.status-card:hover { background: var(--color-bg); }
+
+.status-card.bom { border-left-color: var(--color-success); }
+.status-card.atencao { border-left-color: var(--color-warning); }
+.status-card.ruim { border-left-color: var(--color-danger); }
+
+.status-rot {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--color-text-muted);
+}
+
+.status-valor {
+  font-size: 22px;
+  line-height: 1.2;
+  margin: 2px 0 4px;
+}
+
+.status-card.ruim .status-valor { color: var(--color-danger); }
+.status-card.bom .status-valor { color: var(--color-success); }
+
+.status-linha { font-size: 12.5px; }
+
+.status-nota {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.status-linhas {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+}
+
+.status-linhas a {
+  color: var(--color-text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  width: fit-content;
+}
+
+.status-linhas a:hover {
+  color: var(--color-primary);
+  border-bottom-color: currentColor;
+}
+
+/* ==========================================================================
+   Notificações — modelos, fila e prévia do e-mail
+   ========================================================================== */
+
+.banner-atencao {
+  background: var(--color-warning-bg);
+  border-color: #f2dfae;
+  color: #7a5c07;
+}
+
+.email {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.email-cabecalho {
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  padding: 12px 14px;
+  font-size: 12.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.email-cabecalho span {
+  display: inline-block;
+  min-width: 58px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+}
+
+.email-corpo {
+  margin: 0;
+  padding: 16px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.modelos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modelo {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.modelo-topo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.modelo-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.modelo-tag.prioridade-alta {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-color: transparent;
+}
+
+.modelo-gatilho {
+  margin: 3px 0;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.modelo-assunto {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-info-bg);
+  color: var(--color-primary-dark);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.modelo-corpo {
+  margin: 8px 0 0;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ==========================================================================
+   Lançamento guiado — input para quem não é do financeiro
+   ========================================================================== */
+
+.form-guiado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 760px;
+}
+
+.passo {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.passo:last-of-type { border-bottom: none; }
+
+.passo-num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.passo.avancado .passo-num {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.passo-corpo { flex: 1; min-width: 0; }
+
+.passo-corpo h3 {
+  margin: 0 0 3px;
+  font-size: 15px;
+}
+
+.passo-ajuda {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.passo-corpo > input[type="text"],
+.passo-corpo > select {
+  width: 100%;
+  max-width: 460px;
+}
+
+.passo-eco {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.passo-eco.ok { color: var(--color-success); }
+.passo-eco.alerta { color: var(--color-warning); }
+
+.campos-lado {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.campos-lado label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campos-lado label span {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+}
+
+.cartoes-pacote {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.cartao-pacote {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cartao-pacote:hover { background: var(--color-bg); }
+
+.cartao-pacote.escolhido {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+.cartao-pacote strong { font-size: 13px; }
+
+.cartao-pacote span {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Phasing: valor num mês só x distribuído no ano ---------- */
+
+.phasing-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.phasing-topo.ligado {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+}
+
+.phasing-estado {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.phasing-topo.ligado .phasing-estado {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.pontual-campos { margin-bottom: 12px; }
+
+/* .campos-lado usa display:grid e o painel é bloco: os dois ganham do
+   [hidden] do navegador — sem isto o atributo não esconde nada */
+.pontual-campos[hidden],
+.phasing-painel[hidden] { display: none; }
+
+.ritmos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.ritmo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.ritmo:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+}
+
+.ritmo input { margin-bottom: 4px; }
+
+.ritmo-titulo { font-weight: 700; font-size: 13px; }
+
+.ritmo-ajuda {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.ritmo-campo { margin-bottom: 12px; }
+
+.ritmo-campo[hidden] { display: none; }
+
+.ritmo-campo > label {
+  display: block;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.meses-variaveis {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.mes-variavel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.mes-variavel input { width: 100%; }
+
+.form-fecho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.form-total { font-size: 15px; }
+.form-total strong { font-size: 19px; color: var(--color-primary); }
+
+.form-acoes { display: flex; gap: 8px; }
+
+.form-erro {
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.form-erro[hidden] { display: none; }
+
+/* O modo planilha deixou de ser alternativa escondida: a grade é o caminho
+   principal de lançamento, porque quem orça entra com centenas de linhas de
+   uma vez. Quem quiser responder pergunta a pergunta abre o guiado. */
+.modo-guiado {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: 4px 0;
+  margin-bottom: 22px;
+}
+
+.modo-guiado > summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.modo-guiado[open] > summary { border-bottom: 1px solid var(--color-border); } }
+
+/* ---------- Resumo do que já foi lançado ---------- */
+
+.resumo-pacotes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.resumo-pacote-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.resumo-barra {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.resumo-barra span {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+}
+
+.resumo-itens {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.resumo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.resumo-item strong { display: block; font-size: 13px; }
+
+.resumo-item span {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.resumo-valor {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .meses-variaveis { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ==========================================================================
+   Premissas macro do ciclo — índices e câmbio
+   ========================================================================== */
+
+.premissas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.premissa {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.premissa.rascunho { border-style: dashed; }
+
+.premissa-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.premissa-topo strong { font-size: 14px; }
+
+.premissa-topo p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.premissa-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin: 0 6px;
+  background: var(--color-info-bg);
+  color: var(--color-primary);
+}
+
+.premissa-fecho {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.premissa-fecho strong { font-size: 18px; }
+
+.premissa-var {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.premissa-serie {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+}
+
+.premissa-mes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 5px 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.premissa-mes em {
+  font-style: normal;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.premissa-mes strong { font-size: 11.5px; }
+
+@media (max-width: 900px) {
+  .premissa-serie { grid-template-columns: repeat(6, 1fr); }
+}
+
+.reajuste-fonte {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* .field-group usa display:flex, que ganha do [hidden] do navegador —
+   sem isto o atributo hidden não esconde nada */
+.field-group[hidden] { display: none; }
+
+.reajuste-origem {
+  margin-bottom: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-info-bg);
+  color: var(--color-primary-dark);
+  font-size: 12px;
+}
+
+/* ==========================================================================
+   Cronograma do ciclo — Gantt, calendário de entregas e reminders
+   ========================================================================== */
+
+.gantt { --gantt-rotulo: 300px; }
+
+.gantt-legenda {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.gantt-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 3px;
+}
+
+.gantt-dot.concluida { background: var(--color-success); }
+.gantt-dot.andamento { background: var(--color-primary); }
+.gantt-dot.atrasada { background: var(--color-danger); }
+.gantt-dot.futura { background: #c3cad6; }
+
+.gantt-meses,
+.gantt-linha {
+  display: grid;
+  grid-template-columns: var(--gantt-rotulo) 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.gantt-meses .gantt-faixa {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gantt-meses .gantt-faixa span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  border-left: 1px solid var(--color-border);
+  padding: 0 0 6px 6px;
+}
+
+.gantt-corpo {
+  position: relative;
+  padding-top: 8px;
+}
+
+.gantt-linha { padding: 5px 0; }
+
+.gantt-rotulo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.gantt-rotulo strong { font-size: 13px; }
+
+.gantt-rotulo span {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.gantt-rotulo em {
+  font-style: normal;
+  font-size: 11px;
+  color: #9aa3b2;
+}
+
+.gantt-faixa {
+  position: relative;
+  height: 26px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+}
+
+.gantt-barra {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  min-width: 10px;
+}
+
+.gantt-barra.concluida { background: #b7e6d0; }
+.gantt-barra.andamento { background: #c7d6fb; }
+.gantt-barra.atrasada { background: #f7cccc; }
+.gantt-barra.futura { background: #dfe4ec; }
+
+.gantt-preenchido {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.gantt-barra.concluida .gantt-preenchido { background: var(--color-success); }
+.gantt-barra.andamento .gantt-preenchido { background: var(--color-primary); }
+.gantt-barra.atrasada .gantt-preenchido { background: var(--color-danger); }
+.gantt-barra.futura .gantt-preenchido { background: #aab3c2; }
+
+.gantt-texto {
+  position: relative;
+  z-index: 1;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--color-text);
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+/* camada que cobre só a área das barras, para o "hoje" cair na data certa */
+.gantt-hoje-camada {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--gantt-rotulo) + 12px);
+  right: 0;
+  pointer-events: none;
+}
+
+.gantt-hoje {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-despesa);
+  z-index: 2;
+}
+
+.gantt-hoje span {
+  position: absolute;
+  top: -4px;
+  left: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-despesa);
+  white-space: nowrap;
+}
+
+@media (max-width: 1000px) {
+  .gantt { --gantt-rotulo: 180px; }
+}
+
+/* ---------- Calendário de entregas + reminders ---------- */
+
+.ciclo-colunas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .ciclo-colunas { grid-template-columns: 1fr; }
+}
+
+.calendario {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.marco {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.marco.proximo {
+  border-color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.marco.passado { opacity: .6; }
+
+.marco-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 34px;
+  line-height: 1.1;
+}
+
+.marco-data strong { font-size: 16px; }
+
+.marco-data span {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.marco-texto {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.marco-texto strong { font-size: 13px; }
+
+.marco-texto span {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.marco-quando {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.reminder-regra {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12.5px;
+}
+
+.reminder-regra p { margin: 3px 0 0; color: var(--color-text-muted); }
+
+.reminder-quando {
+  flex-shrink: 0;
+  min-width: 118px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--color-primary);
+  background: var(--color-info-bg);
+  border-radius: 999px;
+  padding: 3px 9px;
+  text-align: center;
+}
+
+.reminder-canal {
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.reminder-titulo {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  margin: 18px 0 10px;
+}
+
+.reminder-fila {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reminder-disparo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-size: 12.5px;
+}
+
+.reminder-data {
+  font-weight: 700;
+  min-width: 78px;
+}
+
+.reminder-alvo {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   Diluição de reajuste — valor distribuído pelos meses escolhidos
+   ========================================================================== */
+
+.modal-reajuste { max-width: 540px; }
+
+.reajuste-linha {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-size: 13px;
+}
+
+.reajuste-dica {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.reajuste-meses {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.reajuste-mes {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.reajuste-mes:hover { background: var(--color-bg); }
+
+.reajuste-mes:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+  font-weight: 600;
+}
+
+.reajuste-atalhos {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.reajuste-apartir {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.reajuste-apartir select { padding: 4px 8px; font-size: 12.5px; }
+
+.reajuste-previa {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  font-size: 13px;
+}
+
+.reajuste-vazio { color: var(--color-text-muted); font-size: 12.5px; }
+
+.reajuste-previa-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.reajuste-de-para { color: var(--color-text-muted); font-size: 12.5px; }
+
+.reajuste-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.reajuste-chip {
+  font-size: 11.5px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+/* ==========================================================================
+   Ativação — quanto do gasto sai de Expenses e vira ativo
+   ========================================================================== */
+
+.ativ-barra {
+  display: flex;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-border);
+  margin-bottom: 16px;
+}
+
+.ativ-parte { display: block; height: 100%; }
+.ativ-parte.opex { background: var(--color-despesa); }
+.ativ-parte.ativado { background: var(--color-capex); }
+
+.ativ-numeros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .ativ-numeros { grid-template-columns: repeat(2, 1fr); }
+  .ativ-efeito-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+.ativ-num {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ativ-num strong { font-size: 19px; }
+.ativ-num strong.opex { color: var(--color-despesa); }
+.ativ-num strong.ativado { color: var(--color-capex); }
+
+.ativ-rot {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+}
+
+.ativ-num em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.ativacao-efeito {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.ativacao-efeito h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  margin: 0 0 12px;
+}
+
+.ativ-efeito-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.ativ-efeito-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.ativ-efeito-item span {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.ativ-efeito-item strong { font-size: 16px; }
+.ativ-efeito-item em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.ativ-efeito-item.up { border-left: 3px solid var(--color-success); }
+.ativ-efeito-item.up strong { color: var(--color-success); }
+.ativ-efeito-item.down { border-left: 3px solid var(--color-danger); }
+.ativ-efeito-item.down strong { color: var(--color-danger); }
+.ativ-efeito-item.neutro { border-left: 3px solid var(--color-text-muted); }
+
+.ativ-por-tipo {
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.ativ-por-tipo ul,
+.ativ-alertas ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.ativ-alertas {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-warning-bg);
+  border-left: 3px solid var(--color-warning);
+  font-size: 12.5px;
+}
+
+.ativacao-criterios {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.ativacao-criterios[hidden] { display: none; }
+
+.ativ-norma {
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.ativ-norma p { margin: 6px 0; }
+.ativ-norma ol,
+.ativ-norma ul { margin: 6px 0 0; padding-left: 18px; }
+
+.ativ-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-info-bg);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.ativ-sim, .ativ-nao {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  border-radius: 999px;
+  padding: 2px 7px;
+  margin-right: 6px;
+}
+
+.ativ-sim { background: var(--color-success-bg); color: var(--color-success); }
+.ativ-nao { background: var(--color-danger-bg); color: var(--color-danger); }
+
+.ativ-pacotes { list-style: none; padding-left: 0; }
+.ativ-pacotes li { margin-bottom: 5px; }
+
+.ativ-grau {
+  display: inline-block;
+  min-width: 74px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  text-align: center;
+}
+
+.ativ-grau.elegivel { background: var(--color-success-bg); color: var(--color-success); }
+.ativ-grau.parcial { background: var(--color-warning-bg); color: var(--color-warning); }
+.ativ-grau.nao { background: var(--color-danger-bg); color: var(--color-danger); }
+
+.entry-grid .ativacao-input { min-width: 170px; }
+.entry-grid .ativacao-pct { max-width: 70px; }
+
+/* ==========================================================================
+   Pacote de gasto — o motivo do gasto, no contexto do lançamento
+   ========================================================================== */
+
+.pacote-resumo {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.pacote-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pacote-tag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: help;
+}
+
+.pacote-tag em {
+  font-style: normal;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  opacity: .7;
+}
+
+.pacote-motivo {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.entry-grid .pacote-input {
+  min-width: 150px;
+}
+
+.entry-grid tbody tr[hidden] {
+  display: none;
+}
+
+/* ==========================================================================
+   Entregas — organograma de cobrança (BU → Torre → Sub Torre → Empresa)
+   ========================================================================== */
+
+.org-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.org-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* cada nível entra um degrau e ganha uma guia vertical, como num organograma */
+.org-no.nivel-1,
+.org-no.nivel-2 {
+  margin-left: 18px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+}
+
+.org-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 30px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  position: relative;
+}
+
+.org-linha:hover {
+  background: var(--color-bg);
+}
+
+/* reaproveita o botãozinho de colapso do relatório */
+.org-toggle {
+  left: 8px;
+}
+
+.org-no.nivel-0 > .org-linha .org-nome {
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.org-nome {
+  font-weight: 600;
+}
+
+.org-meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.org-progresso {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.org-progresso-trilho {
+  width: 120px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.org-progresso-barra {
+  display: block;
+  height: 100%;
+  background: var(--color-success);
+}
+
+.org-progresso-texto {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  min-width: 42px;
+  text-align: right;
+}
+
+.org-atrasadas {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.org-filhos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.org-filhos[hidden] {
+  display: none;
+}
+
+/* folha do organograma: a empresa e as 3 entregas dela */
+.org-empresa {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-left: 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.org-empresa-id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 190px;
+}
+
+.org-responsavel {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.org-chips {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.entrega-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.entrega-chip-cat {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.org-cobrar {
+  margin-left: auto;
+}
+
+.badge.status-nao-iniciado {
+  background: transparent;
+  color: var(--color-text-muted);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.badge.status-atrasado {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  box-shadow: inset 0 0 0 1px var(--color-danger);
+}
+
+@media (max-width: 900px) {
+  .org-progresso-trilho { width: 70px; }
+  .org-empresa { align-items: flex-start; }
+  .org-cobrar { margin-left: 0; }
+}
+
+/* ==========================================================================
+   Impressão / "Salvar como PDF" — o papel sai igual à tela.
+   Só sai de cena o que não existe no papel: menu lateral, botões de ação,
+   toasts e modais. Cores, barras, badges e tabelas ficam idênticos.
+   ========================================================================== */
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  /* sem isto o navegador descarta os fundos coloridos (barras do bridge, badges, cabeçalhos) */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .sidebar,
+  .topbar-actions,
+  #toast-container,
+  .modal-overlay,
+  .filter-bar .btn,
+  [data-action="view"],
+  [data-action="export"],
+  .no-print {
+    display: none !important;
+  }
+
+  .app-shell,
+  .main {
+    display: block;
+  }
+
+  .topbar {
+    padding: 0 0 10px;
+  }
+
+  .content {
+    padding: 14px 0 0;
+  }
+
+  /* filtros deixam de ser controle e viram o contexto do relatório */
+  .filter-bar select {
+    border: none;
+    background: none;
+    padding: 0;
+    font-weight: 600;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  /* nenhum painel ou linha cortado no meio da quebra de página */
+  .panel {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none;
+  }
+
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* tabela larga: no papel não há barra de rolagem, então mostra tudo */
+  .table-wrap {
+    overflow: visible !important;
+  }
+
+  /* se a tabela virar a página, o cabeçalho se repete */
+  thead {
+    display: table-header-group;
+  }
+}
+
+/* ==========================================================================
+   Auditoria — trilha do ciclo + histórico do lançamento
+   ========================================================================== */
+
+.aud-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  .aud-layout { grid-template-columns: 1fr; }
+}
+
+/* a trilha tem centenas de linhas: rolagem própria para os KPIs e o
+   histórico ao lado continuarem visíveis enquanto se procura o evento */
+.aud-scroll {
+  max-height: 620px;
+  overflow-y: auto;
+}
+
+.aud-tabela td { vertical-align: top; }
+.aud-tabela tbody tr { cursor: pointer; }
+.aud-tabela tbody tr:hover { background: var(--color-info-bg); }
+
+.aud-linha-ativa,
+.aud-tabela tbody tr.aud-linha-ativa:hover {
+  background: var(--color-info-bg);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.aud-quando {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.aud-quem, .aud-empresa { display: block; font-weight: 600; font-size: 12.5px; }
+.aud-papel, .aud-onde   { display: block; color: var(--color-text-muted); font-size: 11px; }
+
+.aud-col-mudou { font-size: 12.5px; white-space: nowrap; }
+.aud-de        { color: var(--color-text-muted); }
+.aud-seta      { color: var(--color-text-muted); margin: 0 2px; }
+.aud-delta-up   { color: var(--color-despesa); font-size: 11px; font-weight: 700; }
+.aud-delta-down { color: var(--color-receita); font-size: 11px; font-weight: 700; }
+
+/* Cores por ação. Excluiu é o único em fundo sólido: é o movimento que
+   precisa saltar quando alguém percorre a lista atrás do que sumiu. */
+.badge.aud-criou    { background: var(--color-info-bg);    color: var(--color-info); }
+.badge.aud-editou   { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge.aud-excluiu  { background: var(--color-despesa);    color: #fff; }
+.badge.aud-enviou   { background: #eef0f4;                 color: #4b5566; }
+.badge.aud-validou  { background: #eef0f4;                 color: #6b7280; }
+.badge.aud-aprovou  { background: var(--color-success-bg); color: var(--color-success); }
+.badge.aud-reprovou { background: var(--color-danger-bg);  color: var(--color-danger); }
+.badge.aud-devolveu { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge.aud-aceitou  { background: var(--color-capex-bg);   color: var(--color-capex); }
+
+/* ---------- Painel do histórico ---------- */
+
+.aud-detalhe-topo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.aud-detalhe-topo strong { display: block; font-size: 15px; }
+
+.aud-detalhe-label {
+  display: block;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.aud-seta-grande { color: var(--color-text-muted); font-size: 18px; }
+
+.aud-detalhe-id {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.aud-tl-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.aud-tl-topo strong  { font-size: 13px; }
+.aud-tl-quando       { font-size: 11px; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.aud-tl-quem         { font-size: 12px; margin-top: 1px; }
+.aud-tl-mudou        { font-size: 12.5px; margin-top: 5px; }
+
+.aud-tl-obs {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  border-left: 2px solid var(--color-border);
+  padding-left: 10px;
+  line-height: 1.5;
+}
+
+/* Cor do ponto por ação. Precisa de 3 classes para empatar com
+   `.timeline-item.done .timeline-dot` — e vence por vir depois no arquivo. */
+.timeline-item .timeline-dot.aud-criou    { background: var(--color-info-bg);    color: var(--color-info); }
+.timeline-item .timeline-dot.aud-editou   { background: var(--color-warning-bg); color: var(--color-warning); }
+.timeline-item .timeline-dot.aud-excluiu  { background: var(--color-despesa);    color: #fff; }
+.timeline-item .timeline-dot.aud-enviou   { background: #eef0f4;                 color: #4b5566; }
+.timeline-item .timeline-dot.aud-validou  { background: #eef0f4;                 color: #6b7280; }
+.timeline-item .timeline-dot.aud-aprovou  { background: var(--color-success-bg); color: var(--color-success); }
+.timeline-item .timeline-dot.aud-reprovou { background: var(--color-danger-bg);  color: var(--color-danger); }
+.timeline-item .timeline-dot.aud-devolveu { background: var(--color-warning-bg); color: var(--color-warning); }
+.timeline-item .timeline-dot.aud-aceitou  { background: var(--color-capex-bg);   color: var(--color-capex); }
+
+/* ==========================================================================
+   Importar planilha
+   ========================================================================== */
+
+.imp-tipos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 900px) { .imp-tipos { grid-template-columns: 1fr; } }
+
+.imp-tipo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 16px;
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .12s, background .12s;
+}
+
+.imp-tipo:hover { border-color: var(--color-primary); }
+
+.imp-tipo.active {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+}
+
+.imp-tipo-icone { font-size: 18px; color: var(--color-primary); }
+.imp-tipo strong { font-size: 14px; color: var(--color-text); }
+.imp-tipo span:last-child { font-size: 12px; color: var(--color-text-muted); }
+
+.imp-ajuda { margin: 0 0 14px; font-size: 13px; color: var(--color-text-muted); }
+.imp-colunas td { vertical-align: top; }
+.imp-aceita { font-size: 12px; color: var(--color-text-muted); }
+
+/* ---------- área de soltar o arquivo ---------- */
+
+.imp-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 34px 20px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color .12s, background .12s;
+}
+
+.imp-drop:hover,
+.imp-drop.arrastando {
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
+}
+
+.imp-drop-icone { font-size: 26px; color: var(--color-primary); }
+.imp-drop strong { font-size: 14px; }
+.imp-drop-dica  { font-size: 12px; color: var(--color-text-muted); }
+
+.imp-arquivo-nome {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+/* ---------- resultado da conferência ---------- */
+
+.imp-scroll { max-height: 520px; overflow-y: auto; }
+
+.imp-tabela td { vertical-align: top; }
+.imp-num { font-variant-numeric: tabular-nums; color: var(--color-text-muted); white-space: nowrap; }
+.imp-resumo { display: block; font-size: 12.5px; }
+.imp-total  { display: block; font-size: 11px; color: var(--color-text-muted); }
+
+.imp-motivos { font-size: 12px; }
+.imp-erro, .imp-alerta {
+  display: block;
+  padding: 2px 0 2px 12px;
+  position: relative;
+  line-height: 1.45;
+}
+.imp-erro   { color: var(--color-danger); }
+.imp-alerta { color: var(--color-warning); }
+.imp-erro::before   { content: "✕"; position: absolute; left: 0; font-size: 10px; }
+.imp-alerta::before { content: "!"; position: absolute; left: 3px; font-weight: 700; }
+
+/* faixa lateral em vez de fundo colorido: a tabela ja tem muita informacao */
+.imp-linha-erro   td:first-child { box-shadow: inset 3px 0 0 var(--color-danger); }
+.imp-linha-alerta td:first-child { box-shadow: inset 3px 0 0 var(--color-warning); }
+.imp-linha-ok     td:first-child { box-shadow: inset 3px 0 0 var(--color-success); }
+
+.imp-baixar { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+/* ==========================================================================
+   Impressão das telas com rolagem própria
+   ==========================================================================
+   Auditoria e Importação limitam a altura da tabela para os KPIs e o painel
+   ao lado continuarem visíveis. No papel isso cortaria a lista na primeira
+   tela — a rolagem precisa ser solta na impressão.
+*/
+@media print {
+  .aud-scroll,
+  .imp-scroll {
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* as duas colunas viram uma: no papel não há por que competir por largura */
+  .aud-layout {
+    display: block;
+  }
+
+  .aud-layout .panel {
+    margin-bottom: 16px;
+  }
+
+  /* linha da trilha não pode ser partida no meio pela quebra de página */
+  .aud-tabela tr,
+  .imp-tabela tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* o cabeçalho se repete no alto de cada página */
+  .aud-tabela thead,
+  .imp-tabela thead {
+    display: table-header-group;
+  }
+
+  /* a área de soltar arquivo é controle, não conteúdo */
+  .imp-drop,
+  .imp-baixar,
+  .imp-tipos {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   Correções — fila do que voltou e formulário de reenvio
+   ========================================================================== */
+
+.cor-fila { display: flex; flex-direction: column; gap: 10px; }
+
+.cor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cor-card:hover { border-color: var(--color-primary); }
+.cor-card.escolhido { background: var(--color-info-bg); border-color: var(--color-primary); }
+.cor-card.corrigido { border-left-color: var(--color-success); }
+
+.cor-card-topo  { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cor-card-topo strong { font-size: 13.5px; }
+.cor-card-meio  { font-size: 12px; color: var(--color-text-muted); }
+.cor-card-baixo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; }
+.cor-trava      { color: var(--color-danger); font-weight: 600; }
+.cor-pronto     { color: var(--color-success); font-weight: 600; }
+
+/* ---------- painel de correção ---------- */
+
+.cor-motivo {
+  background: var(--color-warning-bg);
+  border: 1px solid #ecd9a0;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+.cor-motivo-rot {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--color-warning);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.cor-motivo p { margin: 0; font-size: 13px; line-height: 1.55; }
+
+.cor-bloco { margin-bottom: 18px; }
+.cor-bloco-rot {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.cor-obrigatorio {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-danger);
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.cor-validacoes, .cor-pendencias { margin: 0; padding: 0; list-style: none; }
+.cor-validacoes li, .cor-pendencias li {
+  padding: 8px 0 8px 12px;
+  border-left: 2px solid var(--color-border);
+  font-size: 12.5px;
+  margin-bottom: 6px;
+}
+.cor-validacoes li.trava  { border-left-color: var(--color-danger); }
+.cor-validacoes li.alerta { border-left-color: var(--color-warning); }
+.cor-validacoes li strong, .cor-pendencias li strong { display: block; }
+.cor-pendencias li span { display: block; color: var(--color-text-muted); font-size: 12px; }
+.cor-quem { font-style: italic; }
+
+.cor-tag-trava, .cor-tag-alerta {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  margin-top: 3px;
+}
+.cor-tag-trava  { background: var(--color-danger-bg);  color: var(--color-danger); }
+.cor-tag-alerta { background: var(--color-warning-bg); color: var(--color-warning); }
+.cor-detalhe-val { display: block; color: var(--color-text-muted); font-size: 12px; margin-top: 2px; }
+
+/* ---------- antes / depois ---------- */
+
+.cor-antes-depois {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+.cor-ad-rot { display: block; font-size: 10.5px; text-transform: uppercase;
+              letter-spacing: .4px; color: var(--color-text-muted); margin-bottom: 3px; }
+.cor-antes-depois strong { font-size: 15px; }
+.cor-ad-seta { color: var(--color-text-muted); font-size: 18px; }
+.cor-input-valor {
+  width: 130px;
+  padding: 6px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+.cor-ad-delta { margin-left: auto; font-size: 13px; font-weight: 600; }
+.cor-delta-sobe  { color: var(--color-despesa); }
+.cor-delta-desce { color: var(--color-receita); }
+.cor-delta-igual { color: var(--color-text-muted); font-weight: 400; }
+
+.cor-justificativa {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  resize: vertical;
+}
+.cor-justificativa:focus { outline: none; border-color: var(--color-primary); }
+.cor-ajuda { margin: 6px 0 0; font-size: 11.5px; color: var(--color-text-muted); }
+
+.cor-confirma {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: 12.5px;
+  line-height: 1.5;
+  background: var(--color-danger-bg);
+  border-radius: var(--radius-md);
+  padding: 11px 13px;
+  margin-bottom: 18px;
+  cursor: pointer;
+}
+.cor-confirma input { margin-top: 2px; flex-shrink: 0; }
+
+.cor-acoes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cor-aviso { font-size: 12px; color: var(--color-text-muted); }
+
+/* ==========================================================================
+   Dashboard Executivo — a leitura do ciclo em uma tela só
+   ==========================================================================
+   Quase tudo aqui reaproveita o que já existe (.kpi-grid, .bridge-chart,
+   .report-table). O que é novo: a linha do zero na ponte — porque um número
+   derivado pode ser negativo, coisa que a ponte fixa do Dashboard nunca teve —
+   e a barra de composição por situação de aprovação.
+*/
+
+/* Fora de .filter-field de propósito: o export em CSV varre os .filter-field
+   para registrar o recorte, e um campo sem select viraria linha vazia. */
+.exec-filtro-nota {
+  align-self: center;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.exec-zero {
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  border-top: 1px dashed #aab2c0;
+  pointer-events: none;
+}
+
+.exec-zero-rot {
+  position: absolute;
+  top: -8px;
+  left: 0;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  padding: 0 3px;
+}
+
+.exec-delta {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.exec-delta.sobe  { color: var(--color-receita); }
+.exec-delta.desce { color: var(--color-despesa); }
+.exec-delta.neutro { color: var(--color-text-muted); font-weight: 500; }
+
+/* Leitura em texto embaixo de cada painel: a frase que o executivo levaria
+   embora se lesse só uma linha. */
+.exec-leitura {
+  margin: 18px 0 0;
+  padding: 11px 14px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+.exec-firmeza { display: flex; flex-direction: column; gap: 14px; }
+
+.exec-barra {
+  display: flex;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.exec-barra-parte {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.exec-barra-parte.aprovado  { background: var(--color-success); }
+.exec-barra-parte.pendente  { background: var(--color-warning); }
+.exec-barra-parte.rejeitado { background: var(--color-danger); }
+
+.exec-firmeza-itens {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.exec-firmeza-item {
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+.exec-firmeza-item.aprovado  { border-left-color: var(--color-success); }
+.exec-firmeza-item.pendente  { border-left-color: var(--color-warning); }
+.exec-firmeza-item.rejeitado { border-left-color: var(--color-danger); }
+
+.exec-firmeza-item strong { display: block; font-size: 18px; line-height: 1.25; }
+.exec-firmeza-item span   { font-size: 12px; color: var(--color-text-muted); }
+
+.exec-justificativa {
+  max-width: 320px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .exec-firmeza-itens { grid-template-columns: 1fr; }
+}
+
+/* ---------- Sair (rodapé da barra lateral) ----------
+   Vive na barra escura, então não reaproveita .btn (que é para fundo claro).
+   Some o rótulo quando a barra está recolhida, igual ao resto do rodapé — sem
+   isso o botão estoura a largura de 72px e empurra o layout. */
+.sidebar-sair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 12px 0 14px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #cfe0ff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-sair:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+.sidebar.collapsed .sidebar-sair .sidebar-sair-rotulo { display: none; }
+.sidebar.collapsed .sidebar-sair { padding: 8px 0; }

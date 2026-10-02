@@ -2,9 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
+<meta http-equiv="Cache-Control" content="no-cache" />
+<meta http-equiv="Pragma" content="no-cache" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Aprovações</title>
-<link rel="stylesheet" href="assets/css/style.css" />
+<title>Aprovações — NS Codex</title>
+<link rel="stylesheet" href="assets/css/style.css?v=fc2c900f20" />
 </head>
 <body>
 <div class="app-shell">
@@ -16,7 +18,7 @@
       <div class="logo-mark">NS</div>
       <div class="brand-text">
         <strong>NS Codex</strong>
-        <span>BU · Torres · Corporativo</span>
+        <span>BU · Torres · Corporate</span>
       </div>
     </div>
     </a>
@@ -28,12 +30,18 @@
     <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
     <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
     <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+    <a href="importar.html"><div class="nav-item" data-page="importar.html"><span class="nav-icon">⇧</span> Importar planilha</div></a>
 
     <div class="sidebar-section-label">Fluxo</div>
+    <a href="entregas.html"><div class="nav-item" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div></a>
     <div class="nav-item active" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div>
+    <a href="correcoes.html"><div class="nav-item" data-page="correcoes.html"><span class="nav-icon">↩</span> Correções</div></a>
+    <a href="notificacoes.html"><div class="nav-item" data-page="notificacoes.html"><span class="nav-icon">✉</span> Notificações</div></a>
+    <a href="auditoria.html"><div class="nav-item" data-page="auditoria.html"><span class="nav-icon">⧉</span> Auditoria</div></a>
 
     <div class="sidebar-section-label">Análise</div>
     <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+    <a href="dashboard-executivo.html"><div class="nav-item" data-page="dashboard-executivo.html"><span class="nav-icon">◱</span> Dashboard Executivo</div></a>
 
     <div class="sidebar-section-label">Administração</div>
     <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
@@ -59,28 +67,156 @@
     <header class="topbar">
       <div class="topbar-title">
         <h1>Aprovações</h1>
-        <p>Orçamentos submetidos pelas áreas aguardando decisão</p>
+        <p>Ciclo 2026 · o que foi enviado, o que trava e o que ainda falta</p>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge status-em-aprovacao"><span class="badge-dot"></span><span data-aprov-kpi="pendente">—</span> aguardando você</span>
       </div>
     </header>
 
     <div class="content">
+
       <div class="proto-banner">
-        🚧 Tela em construção — esta será a próxima tela detalhada do protótipo (fluxo de aprovar/reprovar com histórico).
+        ⓘ As submissões vêm de <strong>Referencias/aprovacoes.json</strong>, derivado do mesmo <a href="entregas.html" style="color:var(--color-primary); font-weight:600;">mapa de Entregas</a> — só chega aqui o que o responsável já enviou. Decisões, pendências e validações são ilustrativas do protótipo.
       </div>
 
-      <div class="panel">
-        <div class="panel-body">
-          <div class="empty-hint">
-            A tela de Aprovações ainda será desenhada em detalhe.<br />
-            Volte para o <a href="index.html" style="color:var(--color-primary); font-weight:600;">Início</a> ou peça para construirmos esta tela agora.
-          </div>
+      <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
+        <div class="kpi-card margem">
+          <div class="kpi-label">Aguardando decisão</div>
+          <div class="kpi-value" data-aprov-kpi="pendente">—</div>
+          <div class="kpi-delta down" data-aprov-kpi="bloqueadas-detalhe">—</div>
+        </div>
+        <div class="kpi-card capex">
+          <div class="kpi-label">Valor total solicitado</div>
+          <div class="kpi-value" data-aprov-kpi="valor-solicitado">—</div>
+          <div class="kpi-delta" data-aprov-kpi="valor-base">—</div>
+        </div>
+        <div class="kpi-card receita">
+          <div class="kpi-label">Valor já aprovado</div>
+          <div class="kpi-value" data-aprov-kpi="valor-aprovado">—</div>
+          <div class="kpi-delta up" data-aprov-kpi="valor-aprovado-detalhe">—</div>
+        </div>
+        <div class="kpi-card despesa">
+          <div class="kpi-label">Valor rejeitado</div>
+          <div class="kpi-value" data-aprov-kpi="valor-rejeitado">—</div>
+          <div class="kpi-delta down" data-aprov-kpi="valor-rejeitado-detalhe">—</div>
+        </div>
+        <div class="kpi-card margem">
+          <div class="kpi-label">Aguardando aceite final</div>
+          <div class="kpi-value" data-aprov-kpi="sem-aceite">—</div>
+          <div class="kpi-delta" data-aprov-kpi="aceite-detalhe">—</div>
         </div>
       </div>
+
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>Busca</label>
+          <input type="search" data-aprov-filtro="busca" placeholder="Empresa, torre, responsável…" />
+        </div>
+        <div class="filter-field">
+          <label>BU</label>
+          <select data-aprov-filtro="bu"><option value="">Todas as BUs</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Responsável</label>
+          <select data-aprov-filtro="responsavel"><option value="">Qualquer um</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Categoria</label>
+          <select data-aprov-filtro="categoria">
+            <option value="">Receita, Despesa e Capex</option>
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+            <option value="capex">Capex</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Status oficial</label>
+          <select data-aprov-filtro="status">
+            <option value="pendente">Aguardando decisão</option>
+            <option value="">Todos os status</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="reprovado">Reprovado</option>
+            <option value="devolvido">Devolvido para ajuste</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Situação</label>
+          <select data-aprov-filtro="situacao">
+            <option value="">Qualquer situação</option>
+            <option value="bloqueada">Só as travadas por validação</option>
+            <option value="pendencia">Só as com informação faltando</option>
+            <option value="limpa">Só as prontas para aprovar</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Aceite final</label>
+          <select data-aprov-filtro="aceite">
+            <option value="">Com ou sem aceite</option>
+            <option value="sem">Aguardando o líder</option>
+            <option value="com">Já aceito pelo líder</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary" data-aprov-limpar>Limpar filtros</button>
+      </div>
+
+      <div class="aprov-layout">
+
+        <!-- Fila -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Fila de Aprovação</h2>
+              <p data-aprov-contagem>—</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="aprov-fila" data-aprov-fila>
+              <div class="empty-hint">Carregando as submissões…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel de situação -->
+        <div class="panel aprov-detalhe" data-aprov-detalhe>
+          <div class="panel-body">
+            <div class="empty-hint">Selecione uma submissão na fila para ver a situação.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Log do aprovador final -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Log do Aprovador Final</h2>
+            <p data-log-resumo>—</p>
+          </div>
+          <span class="badge status-rascunho"><span class="badge-dot"></span>registro não editável</span>
+        </div>
+        <div class="panel-body table-wrap">
+          <table class="report-table" data-log-tabela>
+            <thead>
+              <tr>
+                <th>Quando</th>
+                <th>Quem assumiu</th>
+                <th>O que foi aceito</th>
+                <th>Área</th>
+                <th>Observação do líder</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </main>
 </div>
 
 <div id="toast-container"></div>
-<script src="assets/js/app.js"></script>
+<script src="assets/js/dados.js?v=fc2c900f20"></script>
+<script src="assets/js/app.js?v=fc2c900f20"></script>
 </body>
 </html>

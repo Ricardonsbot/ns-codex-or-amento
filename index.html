@@ -2,9 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
+<meta http-equiv="Cache-Control" content="no-cache" />
+<meta http-equiv="Pragma" content="no-cache" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dashboard — NS Codex</title>
-<link rel="stylesheet" href="assets/css/style.css" />
+<link rel="stylesheet" href="assets/css/style.css?v=fc2c900f20" />
 </head>
 <body>
 <div class="app-shell">
@@ -16,7 +18,7 @@
       <div class="logo-mark">NS</div>
       <div class="brand-text">
         <strong>NS Codex</strong>
-        <span>BU · Torres · Corporativo</span>
+        <span>BU · Torres · Corporate</span>
       </div>
     </div>
     </a>
@@ -28,12 +30,18 @@
     <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
     <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
     <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+    <a href="importar.html"><div class="nav-item" data-page="importar.html"><span class="nav-icon">⇧</span> Importar planilha</div></a>
 
     <div class="sidebar-section-label">Fluxo</div>
+    <a href="entregas.html"><div class="nav-item" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div></a>
     <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+    <a href="correcoes.html"><div class="nav-item" data-page="correcoes.html"><span class="nav-icon">↩</span> Correções</div></a>
+    <a href="notificacoes.html"><div class="nav-item" data-page="notificacoes.html"><span class="nav-icon">✉</span> Notificações</div></a>
+    <a href="auditoria.html"><div class="nav-item" data-page="auditoria.html"><span class="nav-icon">⧉</span> Auditoria</div></a>
 
     <div class="sidebar-section-label">Análise</div>
     <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+    <a href="dashboard-executivo.html"><div class="nav-item" data-page="dashboard-executivo.html"><span class="nav-icon">◱</span> Dashboard Executivo</div></a>
 
     <div class="sidebar-section-label">Administração</div>
     <a href="usuarios.html"><div class="nav-item" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
@@ -59,11 +67,20 @@
     <header class="topbar">
       <div class="topbar-title">
         <h1>Dashboard</h1>
-        <p>Ciclo de Orçamento 2026 · Consolidado Corporativo</p>
+        <p>Ciclo de Orçamento 2026 · Consolidado Corporate</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" data-export-dashboard>⭳ Exportar CSV</button>
+        <button class="btn btn-primary btn-sm" data-export-pdf>⭳ Exportar PDF</button>
       </div>
     </header>
 
     <div class="content">
+
+      <!-- Resposta rápida: versão vigente, pendências e encerramento -->
+      <div class="status-ciclo" data-status-ciclo>
+        <div class="empty-hint">Carregando o status do ciclo…</div>
+      </div>
 
       <div class="proto-banner">
         ⓘ Protótipo visual — os botões simulam as ações do app, sem gravar dados reais.
@@ -77,7 +94,7 @@
         </div>
         <div class="filter-field">
           <label>BU</label>
-          <select><option>Todas as BUs</option><option>Corporativo</option><option>Serviços Log</option><option>Cadeia de Suprimentos</option></select>
+          <select><option>Todas as BUs</option><option>Corporate</option><option>PSL</option><option>Embarcador</option></select>
         </div>
         <div class="filter-field">
           <label>Torre</label>
@@ -85,7 +102,7 @@
         </div>
         <div class="filter-field">
           <label>Visão</label>
-          <select><option>Corporativo (Consolidado)</option><option>Por BU</option><option>Por Torre</option></select>
+          <select><option>Corporate (Consolidado)</option><option>Por BU</option><option>Por Torre</option></select>
         </div>
         <button class="btn btn-secondary">Aplicar Filtros</button>
       </div>
@@ -95,13 +112,13 @@
         <div class="panel-header">
           <div>
             <h2>Resumo do Orçamento — Revenue → EBITDA after Capex</h2>
-            <p>Ciclo 2026 · Consolidado Corporativo (R$ milhões)</p>
+            <p>Ciclo 2026 · Consolidado Corporate (R$ milhões)</p>
           </div>
         </div>
         <div class="panel-body">
           <div class="bridge-chart">
             <div class="bridge-col">
-              <div class="bridge-value">R$ 113,0 mi</div>
+              <div class="bridge-value">R$ 184,2 mi</div>
               <div class="bridge-track"><div class="bridge-bar receita" style="bottom:0%; height:100%;"></div></div>
               <div class="bridge-label"><span class="bridge-sign">(+)</span>Revenue</div>
             </div>
@@ -111,7 +128,7 @@
               <div class="bridge-label">&nbsp;</div>
             </div>
             <div class="bridge-col">
-              <div class="bridge-value">− R$ 59,3 mi</div>
+              <div class="bridge-value">− R$ 96,7 mi</div>
               <div class="bridge-track"><div class="bridge-bar despesa" style="bottom:47.5%; height:52.5%;"></div></div>
               <div class="bridge-label"><span class="bridge-sign">(−)</span>Expenses</div>
             </div>
@@ -121,7 +138,7 @@
               <div class="bridge-label">&nbsp;</div>
             </div>
             <div class="bridge-col">
-              <div class="bridge-value">R$ 53,7 mi</div>
+              <div class="bridge-value">R$ 87,5 mi</div>
               <div class="bridge-track"><div class="bridge-bar subtotal" style="bottom:0%; height:47.5%;"></div></div>
               <div class="bridge-label">EBITDA</div>
             </div>
@@ -131,7 +148,7 @@
               <div class="bridge-label">&nbsp;</div>
             </div>
             <div class="bridge-col">
-              <div class="bridge-value">− R$ 13,8 mi</div>
+              <div class="bridge-value">− R$ 22,5 mi</div>
               <div class="bridge-track"><div class="bridge-bar capex" style="bottom:35.3%; height:12.2%;"></div></div>
               <div class="bridge-label"><span class="bridge-sign">(−)</span>Capex</div>
             </div>
@@ -141,7 +158,7 @@
               <div class="bridge-label">&nbsp;</div>
             </div>
             <div class="bridge-col">
-              <div class="bridge-value">R$ 39,9 mi</div>
+              <div class="bridge-value">R$ 65,0 mi</div>
               <div class="bridge-track"><div class="bridge-bar final" style="bottom:0%; height:35.3%;"></div></div>
               <div class="bridge-label">EBITDA after Capex</div>
             </div>
@@ -163,7 +180,7 @@
               <div class="hub-card hub-visualizar">
                 <div class="hub-icon">▦</div>
                 <h3>Visualizar</h3>
-                <p>Ver o Budget por BU: Corporativo, Serviços Log ou Cadeia de Suprimentos.</p>
+                <p>Ver o Budget por BU: Corporate, PSL ou Embarcador.</p>
                 <div class="hub-cta">Escolher BU →</div>
               </div>
             </a>
@@ -183,7 +200,7 @@
                 <div class="hub-cta">Abrir cadastros →</div>
               </div>
             </a>
-            <div class="hub-card hub-exportar" data-action="export" data-action-label="Dashboard">
+            <div class="hub-card hub-exportar" data-export-pdf>
               <div class="hub-icon">⭳</div>
               <h3>Exportar</h3>
               <p>Baixar o resumo do orçamento do ciclo atual.</p>
@@ -218,54 +235,54 @@
             </thead>
             <tbody>
               <tr data-status-scope>
-                <td>Serviços Log</td>
+                <td>PSL</td>
                 <td>Comercial</td>
                 <td>Ana Ribeiro</td>
-                <td class="text-right">R$ 38,0 mi</td>
-                <td class="text-right">R$ 11,3 mi</td>
-                <td class="text-right">R$ 2,0 mi</td>
+                <td class="text-right">R$ 62,0 mi</td>
+                <td class="text-right">R$ 18,4 mi</td>
+                <td class="text-right">R$ 3,2 mi</td>
                 <td><span class="badge status-aprovado"><span class="badge-dot"></span>Aprovado</span></td>
-                <td><button class="btn btn-ghost btn-sm" data-action="view" data-action-label="Serviços Log · Comercial">Ver detalhes</button></td>
+                <td><button class="btn btn-ghost btn-sm" data-action="view" data-action-label="PSL · Comercial">Ver detalhes</button></td>
               </tr>
               <tr data-status-scope>
-                <td>Serviços Log</td>
+                <td>PSL</td>
                 <td>Operações</td>
                 <td>Carlos Mendes</td>
-                <td class="text-right">R$ 24,9 mi</td>
-                <td class="text-right">R$ 12,9 mi</td>
-                <td class="text-right">R$ 3,1 mi</td>
+                <td class="text-right">R$ 40,5 mi</td>
+                <td class="text-right">R$ 21,1 mi</td>
+                <td class="text-right">R$ 5,0 mi</td>
                 <td><span class="badge status-em-aprovacao"><span class="badge-dot"></span>Em aprovação</span></td>
-                <td><button class="btn btn-ghost btn-sm" data-action="view" data-action-label="Serviços Log · Operações">Ver detalhes</button></td>
+                <td><button class="btn btn-ghost btn-sm" data-action="view" data-action-label="PSL · Operações">Ver detalhes</button></td>
               </tr>
               <tr data-status-scope>
-                <td>Cadeia de Suprimentos</td>
+                <td>Embarcador</td>
                 <td>Comercial</td>
                 <td>Julia Prado</td>
-                <td class="text-right">R$ 31,5 mi</td>
-                <td class="text-right">R$ 14,7 mi</td>
-                <td class="text-right">R$ 2,5 mi</td>
+                <td class="text-right">R$ 51,3 mi</td>
+                <td class="text-right">R$ 24,0 mi</td>
+                <td class="text-right">R$ 4,1 mi</td>
                 <td><span class="badge status-rascunho"><span class="badge-dot"></span>Rascunho</span></td>
-                <td><button class="btn btn-ghost btn-sm" data-action="view" data-action-label="Cadeia de Suprimentos · Comercial">Ver detalhes</button></td>
+                <td><button class="btn btn-ghost btn-sm" data-action="view" data-action-label="Embarcador · Comercial">Ver detalhes</button></td>
               </tr>
               <tr data-status-scope>
-                <td>Corporativo</td>
+                <td>Corporate</td>
                 <td>TI</td>
                 <td>Rafael Souza</td>
-                <td class="text-right">R$ 2,6 mi</td>
-                <td class="text-right">R$ 12,2 mi</td>
-                <td class="text-right">R$ 4,8 mi</td>
+                <td class="text-right">R$ 4,2 mi</td>
+                <td class="text-right">R$ 19,8 mi</td>
+                <td class="text-right">R$ 7,9 mi</td>
                 <td><span class="badge status-reprovado"><span class="badge-dot"></span>Reprovado</span></td>
-                <td><button class="btn btn-ghost btn-sm" data-action="view" data-action-label="Corporativo · TI">Ver detalhes</button></td>
+                <td><button class="btn btn-ghost btn-sm" data-action="view" data-action-label="Corporate · TI">Ver detalhes</button></td>
               </tr>
               <tr data-status-scope>
-                <td>Corporativo</td>
+                <td>Corporate</td>
                 <td>G&amp;A</td>
                 <td>Marina Costa</td>
-                <td class="text-right">R$ 1,3 mi</td>
-                <td class="text-right">R$ 8,2 mi</td>
-                <td class="text-right">R$ 1,4 mi</td>
+                <td class="text-right">R$ 2,1 mi</td>
+                <td class="text-right">R$ 13,4 mi</td>
+                <td class="text-right">R$ 2,3 mi</td>
                 <td><span class="badge status-rascunho"><span class="badge-dot"></span>Rascunho</span></td>
-                <td><button class="btn btn-ghost btn-sm" data-action="view" data-action-label="Corporativo · G&amp;A">Ver detalhes</button></td>
+                <td><button class="btn btn-ghost btn-sm" data-action="view" data-action-label="Corporate · G&amp;A">Ver detalhes</button></td>
               </tr>
             </tbody>
           </table>
@@ -277,6 +294,7 @@
 </div>
 
 <div id="toast-container"></div>
-<script src="assets/js/app.js"></script>
+<script src="assets/js/dados.js?v=fc2c900f20"></script>
+<script src="assets/js/app.js?v=fc2c900f20"></script>
 </body>
 </html>

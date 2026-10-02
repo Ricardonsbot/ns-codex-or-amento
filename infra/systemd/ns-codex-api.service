@@ -1,0 +1,37 @@
+[Unit]
+Description=NS Codex - API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=exec
+# Conta SEM privilégio, criada pelo provisionar-servidor.sh. Não é a conta que
+# roda o Postgres e não tem sudo fora da lista fechada em /etc/sudoers.d/.
+User=nscodex-deploy
+Group=nscodex-deploy
+WorkingDirectory=/opt/ns-codex/api
+ExecStart=/opt/dotnet/dotnet /opt/ns-codex/api/NsCodex.Api.dll
+Restart=always
+RestartSec=5
+KillMode=process
+EnvironmentFile=/opt/ns-codex/api/.env
+Environment=DOTNET_ROOT=/opt/dotnet
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5055
+Environment=ASPNETCORE_ENVIRONMENT=Production
+
+# Endurecimento: a API não escreve fora dos próprios diretórios nem ganha
+# privilégio. Se for comprometida, o alcance para no serviço.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ns-codex
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

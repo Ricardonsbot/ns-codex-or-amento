@@ -1,0 +1,61 @@
+{
+  "ciclo": "2026",
+  "observacao": "Premissas macro do ciclo. Os índices alimentam a diluição de reajuste nas grades de lançamento: o % vem daqui, não é digitado à mão. O acumulado é composto — (1+i1)×(1+i2)…−1 — e não a soma simples das taxas. Séries ilustrativas do protótipo.",
+  "premissas": [
+    {
+      "codigo": "IGPM",
+      "nome": "IGP-M",
+      "tipo": "indice",
+      "unidade": "%",
+      "fonte": "FGV",
+      "aplicacao": "Receita",
+      "status": "ativo",
+      "descricao": "Reajuste de contratos indexados ao IGP-M",
+      "mensal": [0.62, 0.48, 0.35, 0.28, 0.31, 0.40, 0.45, 0.38, 0.42, 0.36, 0.44, 0.39]
+    },
+    {
+      "codigo": "INPC",
+      "nome": "INPC",
+      "tipo": "indice",
+      "unidade": "%",
+      "fonte": "IBGE",
+      "aplicacao": "Despesa",
+      "status": "ativo",
+      "descricao": "Dissídio e reajuste de folha",
+      "mensal": [0.45, 0.38, 0.30, 0.25, 0.28, 0.33, 0.36, 0.31, 0.35, 0.29, 0.37, 0.32]
+    },
+    {
+      "codigo": "IPCA",
+      "nome": "IPCA",
+      "tipo": "indice",
+      "unidade": "%",
+      "fonte": "IBGE",
+      "aplicacao": "Ambos",
+      "status": "rascunho",
+      "descricao": "Inflação oficial — referência geral do ciclo",
+      "mensal": [0.52, 0.41, 0.33, 0.27, 0.30, 0.38, 0.42, 0.35, 0.39, 0.33, 0.41, 0.36]
+    },
+    {
+      "codigo": "CDI",
+      "nome": "CDI",
+      "tipo": "indice",
+      "unidade": "%",
+      "fonte": "B3",
+      "aplicacao": "Despesa",
+      "status": "ativo",
+      "descricao": "Custo de captação e contratos indexados ao CDI",
+      "mensal": [0.88, 0.84, 0.82, 0.79, 0.77, 0.75, 0.74, 0.72, 0.71, 0.70, 0.69, 0.68]
+    },
+    {
+      "codigo": "USD",
+      "nome": "Câmbio USD/BRL",
+      "tipo": "cambio",
+      "unidade": "R$",
+      "fonte": "BCB — Boletim Focus",
+      "aplicacao": "Contratos em dólar",
+      "status": "ativo",
+      "descricao": "Cotação média mensal usada para converter contratos em dólar",
+      "mensal": [5.38, 5.42, 5.45, 5.51, 5.48, 5.55, 5.60, 5.58, 5.62, 5.65, 5.68, 5.72]
+    }
+  ]
+}

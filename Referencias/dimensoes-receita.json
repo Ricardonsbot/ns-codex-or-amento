@@ -1,0 +1,77 @@
+{
+  "observacao": "Eixos de classificacao da receita. Tipo Receita (movimento) e Categoria (natureza) vem da aba Parametros Receitas do Template Budget das Torres; persona e setor, da aba Parametros Clientes. MOVIMENTO responde de onde vem o numero (base, venda nova, churn); NATUREZA responde o que foi vendido. Gerado por ferramentas/carrega_template_torres.py.",
+  "movimento": [
+    "Receita Recorrente",
+    "Novas Vendas",
+    "Novas Vendas - Setup",
+    "Expansão (Venda na Base)",
+    "Churn / Down Sell"
+  ],
+  "natureza": [
+    "Software SaaS",
+    "Software On Premise",
+    "BPO + Software",
+    "Mão de Obra BPO",
+    "Cloud / Infra de Tecnologia",
+    "Squad dedicada",
+    "CS dedicado",
+    "Locação de hardware",
+    "Implantação",
+    "Consultoria",
+    "Customização",
+    "Treinamento",
+    "Suporte / Sustentação",
+    "Outras receitas",
+    "Mídia",
+    "Venda de produto"
+  ],
+  "personas": [
+    "Transportadoras - PME",
+    "Embarcadores",
+    "Transportadoras - Enterprise",
+    "Operadores Logísticos (3PL)",
+    "Mobilidade",
+    "Seguradoras",
+    "Outros fornecedores ecossistema logístico (combustível, pneus, etc)",
+    "Corretoras",
+    "Motoristas"
+  ],
+  "setores": [
+    "Setor primário",
+    "Indústria",
+    "Varejo / Comércio",
+    "Serviços",
+    "Governo",
+    "Distribuidor Atacadista",
+    "Trasp FTL",
+    "Transp LTL",
+    "Transp Geral",
+    "Operadores Logisticos"
+  ],
+  "segmentos": [
+    "Serviços - Transporte e armazenagem Especializado agro",
+    "Varejo / Comércio - Partes e Peças automotivas",
+    "Sem Especificação",
+    "Serviços - Transporte de passageiros, fretamento",
+    "Serviços - Transporte e armazenagem geral",
+    "Serviços - Transporte urbano de passageiros",
+    "Serviços - Serviços Diversos",
+    "Serviços - Transporte de passageiros - rodoviário",
+    "Serviços - Transporte e armazenagem - Cabotagem",
+    "Varejo / Comércio - Combustível"
+  ],
+  "classesCliente": [
+    "Cliente AAA",
+    "Cliente A",
+    "Cliente B",
+    "Cliente C",
+    "Cliente D",
+    "Cliente E"
+  ],
+  "termometro": [
+    "Fechado",
+    "Pipe",
+    "Desafio Risco",
+    "Desafio Aceitável"
+  ]
+}

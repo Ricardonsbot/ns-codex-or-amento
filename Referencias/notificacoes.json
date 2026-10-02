@@ -1,0 +1,51 @@
+{
+  "remetente": "orcamento@nstech.com.br",
+  "assinatura": "NS Codex · Orçamento Corporativo",
+  "observacao": "Modelos de notificação do ciclo. O protótipo não tem backend: nada é enviado de verdade. O que existe aqui é o conteúdo, o destinatário e a regra de disparo — a parte que precisa ser decidida pelo negócio antes de ligar em qualquer serviço de e-mail.",
+  "modelos": [
+    {
+      "codigo": "REJEICAO",
+      "nome": "Rejeição com motivo",
+      "evento": "O aprovador reprova uma submissão",
+      "canal": "E-mail",
+      "para": "Responsável pela entrega",
+      "copia": "Líder da Torre",
+      "prioridade": "alta",
+      "assunto": "[Budget {{ciclo}}] {{empresa}} · {{categoria}} foi reprovado",
+      "corpo": "Olá, {{responsavel}}.\n\nA submissão de {{categoria}} da {{empresa}} ({{bu}} → {{torre}}) foi reprovada por {{aprovador}} em {{data}}.\n\nMotivo informado:\n{{motivo}}\n\nCorrija na tela de lançamento e reenvie. Enquanto não houver novo envio, a área segue como pendente no mapa de entregas.\n\n{{assinatura}}"
+    },
+    {
+      "codigo": "PRAZO",
+      "nome": "Lembrete de prazo",
+      "evento": "Faltam N dias para um corte do calendário",
+      "canal": "E-mail + app",
+      "para": "Responsáveis de área",
+      "copia": "—",
+      "prioridade": "média",
+      "assunto": "[Budget {{ciclo}}] {{marco}} em {{diasRestantes}} dia(s)",
+      "corpo": "Olá, {{responsavel}}.\n\nO corte \"{{marco}}\" vence em {{prazo}}, daqui a {{diasRestantes}} dia(s).\n\n{{detalhe}}\n\nO que não estiver enviado até lá entra como não entregue no acompanhamento da liderança.\n\n{{assinatura}}"
+    },
+    {
+      "codigo": "ESCALACAO",
+      "nome": "Escalação para a liderança",
+      "evento": "Entrega segue pendente depois do corte",
+      "canal": "E-mail",
+      "para": "Líder da Torre",
+      "copia": "FP&A",
+      "prioridade": "alta",
+      "assunto": "[Budget {{ciclo}}] Pendência vencida em {{torre}}",
+      "corpo": "Olá, {{lider}}.\n\nA {{empresa}} ({{torre}}) está com {{qtdPendente}} entrega(s) vencida(s) sob responsabilidade de {{responsavel}}.\n\nCategorias em aberto: {{categorias}}\n\nComo o corte já passou, a cobrança sobe para a liderança da Torre.\n\n{{assinatura}}"
+    },
+    {
+      "codigo": "ACEITE",
+      "nome": "Aceite final pendente",
+      "evento": "Submissão aprovada aguardando o aceite do líder",
+      "canal": "E-mail",
+      "para": "Líder da Torre",
+      "copia": "—",
+      "prioridade": "média",
+      "assunto": "[Budget {{ciclo}}] Aguardando seu aceite: {{empresa}} · {{categoria}}",
+      "corpo": "Olá, {{lider}}.\n\nA submissão de {{categoria}} da {{empresa}} passou pela aprovação de 1ª instância e aguarda o seu aceite final.\n\nAo registrar o aceite você declara:\n\"{{declaracao}}\"\n\nO aceite é nominal e fica registrado em log não editável.\n\n{{assinatura}}"
+    }
+  ]
+}

@@ -2,9 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
+<meta http-equiv="Cache-Control" content="no-cache" />
+<meta http-equiv="Pragma" content="no-cache" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Índices — NS Codex</title>
-<link rel="stylesheet" href="assets/css/style.css" />
+<link rel="stylesheet" href="assets/css/style.css?v=fc2c900f20" />
 </head>
 <body>
 <div class="app-shell">
@@ -16,7 +18,7 @@
       <div class="logo-mark">NS</div>
       <div class="brand-text">
         <strong>NS Codex</strong>
-        <span>BU · Torres · Corporativo</span>
+        <span>BU · Torres · Corporate</span>
       </div>
     </div>
     </a>
@@ -28,12 +30,18 @@
     <a href="orcamento-receita.html"><div class="nav-item" data-page="orcamento-receita.html"><span class="nav-icon">▲</span> (+) Revenue</div></a>
     <a href="orcamento-despesa.html"><div class="nav-item" data-page="orcamento-despesa.html"><span class="nav-icon">▼</span> (−) Expenses</div></a>
     <a href="orcamento-capex.html"><div class="nav-item" data-page="orcamento-capex.html"><span class="nav-icon">◆</span> (−) Capex</div></a>
+    <a href="importar.html"><div class="nav-item" data-page="importar.html"><span class="nav-icon">⇧</span> Importar planilha</div></a>
 
     <div class="sidebar-section-label">Fluxo</div>
+    <a href="entregas.html"><div class="nav-item" data-page="entregas.html"><span class="nav-icon">◷</span> Entregas</div></a>
     <a href="aprovacoes.html"><div class="nav-item" data-page="aprovacoes.html"><span class="nav-icon">✓</span> Aprovações</div></a>
+    <a href="correcoes.html"><div class="nav-item" data-page="correcoes.html"><span class="nav-icon">↩</span> Correções</div></a>
+    <a href="notificacoes.html"><div class="nav-item" data-page="notificacoes.html"><span class="nav-icon">✉</span> Notificações</div></a>
+    <a href="auditoria.html"><div class="nav-item" data-page="auditoria.html"><span class="nav-icon">⧉</span> Auditoria</div></a>
 
     <div class="sidebar-section-label">Análise</div>
     <a href="relatorios.html"><div class="nav-item" data-page="relatorios.html"><span class="nav-icon">▤</span> Relatórios</div></a>
+    <a href="dashboard-executivo.html"><div class="nav-item" data-page="dashboard-executivo.html"><span class="nav-icon">◱</span> Dashboard Executivo</div></a>
 
     <div class="sidebar-section-label">Administração</div>
     <a href="usuarios.html"><div class="nav-item active" data-page="usuarios.html"><span class="nav-icon">👤</span> Cadastros</div></a>
@@ -65,7 +73,21 @@
 
     <div class="content">
       <div class="proto-banner">
-        ⓘ Protótipo visual — cadastre índices (IGP-M, INPC, IPCA ou outro) e informe a % mês a mês. Essa % alimentaria o cálculo de reajuste de contratos de Receita e Despesa.
+        ⓘ As premissas abaixo vêm de <strong>Referencias/premissas.json</strong> e <strong>alimentam de verdade</strong> a diluição de reajuste nas grades de Receita e Despesa — lá o % é escolhido pelo índice, não digitado à mão. A tabela de Índices logo abaixo é a tela de edição do protótipo.
+      </div>
+
+      <!-- Premissas macro do ciclo -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Premissas Macro do Ciclo 2026</h2>
+            <p data-premissas-resumo>—</p>
+          </div>
+          <span class="badge status-aprovado"><span class="badge-dot"></span>usado nos lançamentos</span>
+        </div>
+        <div class="panel-body">
+          <div class="premissas" data-premissas></div>
+        </div>
       </div>
 
       <!-- Índices cadastrados -->
@@ -358,7 +380,8 @@
 </div>
 
 <div id="toast-container"></div>
-<script src="assets/js/app.js"></script>
+<script src="assets/js/dados.js?v=fc2c900f20"></script>
+<script src="assets/js/app.js?v=fc2c900f20"></script>
 <script>
   // Atualiza o rótulo "Índice selecionado" no painel de valores mensais conforme a linha clicada
   document.addEventListener("DOMContentLoaded", () => {
