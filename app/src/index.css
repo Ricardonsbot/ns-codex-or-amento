@@ -2776,14 +2776,6 @@ tfoot td {
   gap: 12px;
 }
 
-.recorte-dupla {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 32px;
-}
-
-.recorte-dupla > .filtro-botoes { flex: 1 1 240px; }
-
 /* BU e Torre na mesma linha, em todo recorte: a BU tem poucas opcoes e fica
    do tamanho delas; a Torre ocupa o resto. Em tela estreita a Torre desce. */
 .recorte-bu-torre {
@@ -3170,9 +3162,80 @@ tfoot td {
   100% { margin-left: 100%; }
 }
 
-/* Empresa é caixa de seleção (são mais de 50): fica mais larga que os demais
-   campos, para o nome não ser cortado. */
-.filtro-empresa { min-width: 260px; }
+/* ---------- Recorte BU → Torre → Empresa ----------
+   Uma caixa de digitar com a árvore inteira embaixo. Larga de propósito: o
+   caminho completo ("Embarcador → BU Embarcador → Empresa") cabe sem cortar. */
+.seletor-recorte {
+  flex: 1 1 420px;
+  max-width: 640px;
+}
+
+.seletor-recorte-caixa { position: relative; }
+
+.seletor-recorte-caixa input {
+  width: 100%;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+.seletor-recorte-caixa input:focus { cursor: text; }
+
+.seletor-recorte-seta {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--color-text-faint);
+  pointer-events: none;
+}
+
+.seletor-recorte-lista {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 340px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-forte);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(10, 30, 63, 0.12);
+}
+
+.seletor-recorte-lista li {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* BU em negrito, Torre recuada, Empresa mais recuada e mais leve: a árvore
+   lê sozinha, sem precisar de ícone. */
+.seletor-recorte-lista li.nivel-0 { font-weight: 600; }
+.seletor-recorte-lista li.nivel-1 { padding-left: 26px; }
+.seletor-recorte-lista li.nivel-2 { padding-left: 44px; }
+/* Empresa é leve em qualquer nível: a que não tem torre fica no nível da
+   torre, e sem isso as duas pareciam a mesma coisa. */
+.seletor-recorte-lista li.empresa { font-weight: 400; color: var(--color-text-muted); }
+.seletor-recorte-lista li.ativo { background: var(--color-primary-soft); }
+.seletor-recorte-lista li.escolhido { color: var(--color-primary-dark); }
+
+.seletor-recorte-antes {
+  font-weight: 400;
+  color: var(--color-text-faint);
+}
+
+.seletor-recorte-lista li.seletor-recorte-vazio {
+  cursor: default;
+  color: var(--color-text-faint);
+  font-weight: 400;
+}
 
 /* ---------- Flag e checklist do template importado ---------- */
 

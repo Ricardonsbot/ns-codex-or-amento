@@ -10,7 +10,7 @@ import { useToast } from '../../components/ToastProvider'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../../lib/dashboardData'
 import { fetchContas } from '../../lib/contasData'
 import BotaoUnidade from '../../components/BotaoUnidade'
-import SeletorEmpresa from '../../components/SeletorEmpresa'
+import SeletorRecorte from '../../components/SeletorRecorte'
 import MenuExportar from '../../components/MenuExportar'
 import { useUnidade } from '../../components/UnidadeProvider'
 import { contasDoTipo } from '../../lib/linhasPl'
@@ -116,13 +116,6 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
     if (atual && !contasDisponiveis.some((c) => c.id === atual.id)) return [atual, ...contasDisponiveis]
     return contasDisponiveis
   }
-
-  const torresDisponiveis = selectedBuId ? torres.filter((t) => t.bu_id === selectedBuId) : torres
-  const empresasDisponiveis = selectedTorreId
-    ? empresas.filter((e) => e.torre_id === selectedTorreId)
-    : selectedBuId
-    ? empresas.filter((e) => e.bu_id === selectedBuId)
-    : empresas
 
   async function handleAdicionarLinha() {
     if (!selectedBuId) {
@@ -355,35 +348,16 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
           </div>
           <div className="panel-body">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div className="recorte-bu-torre">
-              <FiltroBotoes
-                label="BU"
-                valor={selectedBuId}
-                rotuloTodas="Todas as BUs"
-                opcoes={bus.map((bu) => ({ valor: bu.id, rotulo: bu.nome }))}
-                onChange={(v) => {
-                  setSelectedBuId(v)
-                  setSelectedTorreId('')
-                  setSelectedEmpresaId('')
-                }}
-              />
-              <FiltroBotoes
-                label="Torre"
-                valor={selectedTorreId}
-                rotuloTodas="Todas as Torres"
-                opcoes={torresDisponiveis.map((t) => ({ valor: t.id, rotulo: t.nome }))}
-                onChange={(v) => {
-                  setSelectedTorreId(v)
-                  setSelectedEmpresaId('')
-                }}
-              />
-              </div>
-              <SeletorEmpresa
-                empresas={empresasDisponiveis}
+              <SeletorRecorte
+                bus={bus}
                 torres={torres}
-                valor={selectedEmpresaId}
-                onChange={setSelectedEmpresaId}
-                rotuloTodas="Todas as empresas"
+                empresas={empresas}
+                valor={{ buId: selectedBuId, torreId: selectedTorreId, empresaId: selectedEmpresaId }}
+                onChange={(v) => {
+                  setSelectedBuId(v.buId)
+                  setSelectedTorreId(v.torreId)
+                  setSelectedEmpresaId(v.empresaId)
+                }}
               />
               <BotaoUnidade />
             </div>
