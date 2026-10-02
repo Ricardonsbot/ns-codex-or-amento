@@ -1065,6 +1065,58 @@ tfoot td {
   margin: 0 0 4px;
 }
 
+/* Faixa de envio da Gestão de Importação: o botão "Selecionar Template"
+   saiu do topo e mora aqui, com cara de área de soltar arquivo. */
+.faixa-envio {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 18px 22px;
+  border: 1.5px dashed var(--color-primary-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.faixa-envio.arrastando {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+.faixa-envio-icone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 20px;
+}
+
+.faixa-envio-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.faixa-envio-texto strong {
+  display: block;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.faixa-envio-texto span {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+  .faixa-envio { flex-wrap: wrap; }
+  .faixa-envio .btn { width: 100%; }
+}
+
 /* ---------- Log de erros ---------- */
 
 /* Só o ícone, canto da tela — não é pra chamar atenção, é pra estar lá
