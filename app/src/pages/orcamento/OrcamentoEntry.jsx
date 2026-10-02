@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import Layout from '../../components/Layout'
-import ImportarTemplateOrcamento from '../../components/ImportarTemplateOrcamento'
 import ResumoLancamentos from '../../components/ResumoLancamentos'
 import FiltroBotoes from '../../components/FiltroBotoes'
 import SeletorColunas from '../../components/SeletorColunas'
@@ -290,7 +289,6 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
       <header className="topbar">
         <div className="topbar-title">
           <h1>{titulo} <span className={`pill ${corClasse}`}>{sinal} {rotulo}</span></h1>
-          <p>Selecione BU/Torre/Empresa e edite a grade de {rotulo.toLowerCase()} — os valores são salvos por linha.</p>
           {abas && (
             <FiltroBotoes
               label="Ver"
@@ -302,12 +300,6 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
             />
           )}
         </div>
-        <ImportarTemplateOrcamento
-          tipo={tipo}
-          rotulo={rotulo}
-          anoCiclo={versaoAtual.ciclo.ano}
-          onImportado={carregarLinhas}
-        />
       </header>
 
       <div className="content">
@@ -367,7 +359,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
         {/* O resumo por conta é o que estas telas mostram. Revenue e Expenses
             não têm mais a grade linha a linha: o lançamento entra por
             importação de template, e conferir é olhar a conta, não a linha. */}
-        <ResumoLancamentos linhas={linhas} rotulo={rotulo} />
+        <ResumoLancamentos linhas={linhas} rotulo={rotulo} tipo={tipo} empresas={empresas} />
 
         {temGrade && (
         <div className="panel">

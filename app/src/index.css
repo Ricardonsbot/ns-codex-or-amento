@@ -815,9 +815,94 @@ select:focus, input:focus, textarea:focus {
    crescia junto com a página. Mesmo tratamento do Deep Dive — altura
    própria com rolagem vertical e horizontal, sem arrastar o painel. */
 .resumo-contas-scroll {
-  max-height: 420px;
+  max-height: 560px;
   overflow: auto;
 }
+
+/* ---------- Drill-down do resumo (Revenue / Expenses / Capex) ----------
+   Linha do P&L em negrito e com fundo, cada nível abaixo recuado e mais
+   leve, o lançamento (folha) em cinza. A coluna do rótulo fica presa à
+   esquerda: com doze meses a tabela rola para o lado, e sem isso se perdia
+   de qual linha era o número. */
+.drill-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.drill-caminho {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--color-text-faint);
+}
+
+.tabela-drill th:first-child,
+.tabela-drill td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-surface);
+  min-width: 320px;
+  max-width: 460px;
+}
+
+.tabela-drill td { font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.tabela-drill td:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drill-linha { cursor: pointer; }
+.drill-linha.folha { cursor: default; }
+.drill-linha:hover > td { background: var(--color-primary-soft); }
+.drill-linha.folha:hover > td { background: var(--color-bg); }
+
+.drill-linha.nivel-0 > td { font-weight: 700; background: var(--color-bg); }
+.drill-linha.nivel-0:hover > td { background: var(--color-primary-soft); }
+.drill-linha.nivel-1 > td:first-child { font-weight: 600; }
+.drill-linha.folha > td { color: var(--color-text-muted); }
+
+.drill-seta {
+  display: inline-block;
+  width: 18px;
+  margin-right: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  color: var(--color-text-faint);
+  cursor: pointer;
+  text-align: center;
+}
+
+.drill-linha.aberta .drill-seta { color: var(--color-primary); }
+
+.drill-dim {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-faint);
+}
+
+.drill-total { font-weight: 700; }
+
+.drill-mais-botao {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+}
+
+.drill-mais-botao:hover { text-decoration: underline; }
 
 /* Lançamento de Capex (a grade editável, linha a linha): mesmo motivo do
    resumo acima — muitas contas e muitas colunas de mês esticavam a página

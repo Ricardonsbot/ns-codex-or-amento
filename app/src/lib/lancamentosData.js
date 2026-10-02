@@ -21,14 +21,25 @@ export async function fetchVersaoAtual() {
 
 const SELECT_LANCAMENTO = '*, conta:conta_id(id, codigo, nome, linha_pl, categoria), lancamento_valor_mensal(mes, valor)'
 
+/**
+ * Paginado: o PostgREST devolve no máximo 1000 linhas, e a Base Gastos de uma
+ * versão passa disso. Sem paginar, o resumo de Expenses somava as primeiras
+ * mil e mostrava o total errado sem avisar. O `id` no fim da ordem é o que
+ * impede duas linhas criadas no mesmo instante de trocarem de página.
+ */
 export async function fetchLancamentos({ tipo, versaoId, buId, torreId, empresaId }) {
-  let query = supabase.from('lancamento').select(SELECT_LANCAMENTO).eq('tipo', tipo).eq('versao_id', versaoId)
-  if (buId) query = query.eq('bu_id', buId)
-  if (torreId) query = query.eq('torre_id', torreId)
-  if (empresaId) query = query.eq('empresa_id', empresaId)
-  const { data, error } = await query.order('criado_em')
-  if (error) throw error
-  return data ?? []
+  const todos = []
+  for (let de = 0; ; de += 1000) {
+    let query = supabase.from('lancamento').select(SELECT_LANCAMENTO).eq('tipo', tipo).eq('versao_id', versaoId)
+    if (buId) query = query.eq('bu_id', buId)
+    if (torreId) query = query.eq('torre_id', torreId)
+    if (empresaId) query = query.eq('empresa_id', empresaId)
+    const { data, error } = await query.order('criado_em').order('id').range(de, de + 999)
+    if (error) throw error
+    todos.push(...(data ?? []))
+    if (!data || data.length < 1000) break
+  }
+  return todos
 }
 
 /**

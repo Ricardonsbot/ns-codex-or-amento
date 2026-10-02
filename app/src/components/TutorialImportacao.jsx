@@ -1,12 +1,11 @@
-import { useEffect, useRef } from 'react'
 import BotaoRecolher from './BotaoRecolher'
 
 /**
  * Passo a passo de como submeter um Template Budget.
  *
- * Aparece de dois jeitos: como quadro na tela de importação, marcando em que
- * etapa a pessoa está, e como janela pelo botão "Como importar" — quem já
- * sabe o caminho não precisa do quadro ocupando a tela.
+ * Aparece como quadro na tela de importação, marcando em que etapa a pessoa
+ * está. Era também uma janela, aberta pelo botão "Como importar" das telas
+ * de Revenue e Expenses — o botão saiu, e a importação mora só na Gestão.
  *
  * `etapa` é a etapa corrente (1 a 5); os passos anteriores ficam marcados
  * como vencidos.
@@ -72,50 +71,18 @@ function Lista({ etapa }) {
   )
 }
 
-export default function TutorialImportacao({ etapa = 1, janela, onFechar }) {
-  const fechar = useRef(null)
-  useEffect(() => {
-    if (!janela) return undefined
-    fechar.current?.focus()
-    const esc = (e) => e.key === 'Escape' && onFechar?.()
-    document.addEventListener('keydown', esc)
-    return () => document.removeEventListener('keydown', esc)
-  }, [janela, onFechar])
-
-  if (!janela) {
-    return (
-      <div className="panel">
-        <div className="panel-header">
-          <BotaoRecolher chave="tutorial-importacao-1" />
-          <div>
-            <h2>Como submeter um template</h2>
-            <p>Cinco passos, do arquivo até o orçamento gravado</p>
-          </div>
-        </div>
-        <div className="panel-body">
-          <Lista etapa={etapa} />
+export default function TutorialImportacao({ etapa = 1 }) {
+  return (
+    <div className="panel">
+      <div className="panel-header">
+        <BotaoRecolher chave="tutorial-importacao-1" />
+        <div>
+          <h2>Como submeter um template</h2>
+          <p>Cinco passos, do arquivo até o orçamento gravado</p>
         </div>
       </div>
-    )
-  }
-
-  return (
-    <div className="modal-overlay open" role="dialog" aria-modal="true" aria-label="Como submeter um template">
-      <div className="modal" style={{ maxWidth: 640 }}>
-        <div className="modal-header">
-          <h3>Como submeter um template</h3>
-          <button ref={fechar} className="modal-close" type="button" onClick={onFechar} aria-label="Fechar">
-            ×
-          </button>
-        </div>
-        <div className="modal-body">
-          <Lista etapa={etapa} />
-        </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" type="button" onClick={onFechar}>
-            Fechar
-          </button>
-        </div>
+      <div className="panel-body">
+        <Lista etapa={etapa} />
       </div>
     </div>
   )
