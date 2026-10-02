@@ -58,22 +58,27 @@ export default function GraficoLinhas({ series, rotulos, titulo, subtitulo }) {
 
   return (
     <div className="grafico-linhas">
-      {titulo && (
-        <div className="grafico-linhas-topo">
+      {/* A legenda fica mesmo sem título: dentro de um painel, quem dá o
+          título é o cabeçalho dele, mas a cor de cada série ainda precisa de
+          nome. */}
+      <div className="grafico-linhas-topo">
+        {titulo ? (
           <div>
             <strong>{titulo}</strong>
             {subtitulo && <span>{subtitulo}</span>}
           </div>
-          <ul className="grafico-legenda">
-            {comDado.map((s) => (
-              <li key={s.id}>
-                <span className="legenda-marca" style={{ background: s.cor }} aria-hidden="true" />
-                {s.rotulo}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        ) : (
+          <span />
+        )}
+        <ul className="grafico-legenda">
+          {comDado.map((s) => (
+            <li key={s.id}>
+              <span className="legenda-marca" style={{ background: s.cor }} aria-hidden="true" />
+              {s.rotulo}
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <svg
         viewBox={`0 0 ${LARGURA} ${ALTURA}`}

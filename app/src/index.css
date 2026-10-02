@@ -2790,8 +2790,10 @@ tfoot td {
 
 /* ---------- Indicadores de revisao do budget ----------
    Ficam entre os filtros e as tabelas: sao a leitura que se faz antes de abrir
-   qualquer quadro. Um bloco branco so, dividido por fios, para nao virar seis
-   cartoes disputando atencao. */
+   qualquer quadro. Cada um e um cartao no formato dos paineis (branco, fio
+   claro, canto de 18px), com um filete em cima na cor da familia do numero —
+   as mesmas cores de Receita, Despesa e Capex do resto da ferramenta. Antes
+   eram caixas cinzas dentro de uma moldura cinza, e a faixa lia como tabela. */
 
 .indicadores {
   display: grid;
@@ -2799,12 +2801,8 @@ tfoot td {
   /* A largura vem de fora, nunca do conteudo — a grade nao pode crescer pelo
      tamanho dos titulos. */
   contain: inline-size;
-  gap: 10px;
-  background: var(--color-surface);
-  border: 1.5px solid var(--color-border-forte);
-  border-radius: var(--radius-lg);
-  padding: 12px;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 /* Quatro, tres e dois conforme a tela encolhe: sete caixas numa linha so
@@ -2821,66 +2819,54 @@ tfoot td {
   .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Cada indicador e uma caixa propria dentro da moldura, como itens de um
-   menu: a borda separa melhor que o fio vertical quando a linha quebra. */
 .indicador {
+  --familia: var(--color-navy);
+  --familia-bg: var(--color-surface-alt);
   min-width: 0;
-  padding: 12px 8px;
-  border: 1.5px solid var(--color-border-forte);
-  border-radius: var(--radius-md);
+  padding: 14px 16px 12px;
+  border: 1px solid var(--color-border);
+  border-top: 4px solid var(--familia);
+  border-radius: var(--radius-lg);
   background: var(--color-surface);
-  text-align: center;
 }
 
-/* Valor e % RoL na mesma linha, centralizados, separados pela barra. Quebra
-   para baixo so quando a caixa fica estreita demais. */
-.indicador-linha {
-  /* inline-flex para a largura ser a do conteudo: e ela que a faixa mede. */
-  display: inline-flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: 100%;
-  align-items: baseline;
-  column-gap: 6px;
-}
-
-.indicador-barra {
-  color: var(--color-border-forte);
-  font-size: 20px;
-  font-weight: 300;
-}
+.indicador.receita { --familia: var(--color-receita); --familia-bg: var(--color-receita-bg); }
+.indicador.despesa { --familia: var(--color-despesa); --familia-bg: var(--color-despesa-bg); }
+.indicador.capex { --familia: var(--color-capex); --familia-bg: var(--color-capex-bg); }
+.indicador.resultado { --familia: var(--color-primary); --familia-bg: var(--color-primary-soft); }
 
 .indicador-rotulo {
-  /* table: bloco que encolhe ao texto, pra centralizar com margin auto sem
-     esticar letra por letra (isso distorcia titulos curtos como "EAC"). */
-  display: table;
-  margin-left: auto;
-  margin-right: auto;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: normal;
+  letter-spacing: .04em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: var(--xl-medio);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-muted);
   margin-bottom: 6px;
 }
 
 .indicador-valor {
-  font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
-  /* 18 e nao 26: com o % ao lado, seis caixas por linha precisam caber em
-     ~150px cada numa tela de notebook ("325,1 mi | 68,3% RoL" mede 137px). */
-  font-size: 18px;
+  font-size: 22px;
   white-space: nowrap;
   font-weight: 700;
-  line-height: 1.1;
-  color: #000;
+  line-height: 1.15;
+  color: var(--color-text);
   font-variant-numeric: tabular-nums;
 }
 
+/* O % RoL vira etiqueta na cor da familia: fica do lado do numero sem
+   competir com ele, e a cor diz de que bloco do P&L ele e. */
 .indicador-pct {
-  font-size: 12px;
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--xl-rotulo);
+  color: var(--familia);
+  background: var(--familia-bg);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -2888,7 +2874,7 @@ tfoot td {
 .indicador-delta {
   font-size: 11.5px;
   font-weight: 600;
-  margin-top: 3px;
+  margin-top: 6px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -4161,7 +4147,15 @@ tfoot td {
 
 /* O panel padrão tem margem embaixo; aqui quem dá o respiro é o gap. */
 .painel-consolidacao { margin-bottom: 0; }
-.dashboard-grafico .grafico-linhas { margin-bottom: 0; }
+/* O quadro do ano é um painel com o seletor Mês a mês / Bridge no
+   cabeçalho; o gráfico de linhas dentro dele perde a própria moldura, senão
+   ficavam duas caixas uma dentro da outra. */
+.panel.dashboard-grafico { margin-bottom: 0; }
+.dashboard-grafico .grafico-linhas {
+  margin-bottom: 0;
+  padding: 0;
+  border: none;
+}
 
 .tabela-consolidacao td {
   padding: 7px 10px;
@@ -4220,4 +4214,43 @@ tfoot td {
   white-space: nowrap;
 }
 
-.grafico-vazio { margin-bottom: 0; }
+/* Farol do Andamento: a bolinha menor que a da lista de templates, para
+   caber na linha de 12,5px sem empurrar o nome. */
+.lista-falta .bolinha {
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  vertical-align: 0;
+}
+
+.farol-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.farol-filtro {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.farol-filtro .bolinha { width: 9px; height: 9px; margin-right: 5px; vertical-align: 0; }
+.farol-filtro:hover { border-color: var(--color-primary); }
+.farol-filtro.ativo { border-color: var(--color-primary); background: var(--color-primary-soft); font-weight: 600; }
+
+.farol-aviso {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.farol-aviso .bolinha { width: 9px; height: 9px; vertical-align: 0; }
+

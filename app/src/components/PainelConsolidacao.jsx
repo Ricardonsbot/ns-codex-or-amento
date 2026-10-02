@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 /**
- * Os dois quadros do lado direito do Dashboard: quem já subiu e quem falta.
+ * Os dois quadros do lado direito do Dashboard: quem já subiu e o andamento
+ * de cada empresa.
  *
  * Juntos respondem a pergunta que se faz todo dia no fechamento do budget —
  * "estamos esperando quem?". Separados, o Dashboard respondia só a metade
@@ -67,45 +69,92 @@ function Recentes({ lista, indisponivel }) {
   )
 }
 
-function Falta({ lista, carregando }) {
+/** As três cores do farol, na ordem em que a legenda as mostra. */
+const FAROL = [
+  { cor: 'vermelho', rotulo: 'sem template' },
+  { cor: 'amarelo', rotulo: 'aguardando liberação' },
+  { cor: 'verde', rotulo: 'liberado' },
+]
+
+/**
+ * Toda empresa do recorte com o farol da liberação ao lado. Antes a lista era
+ * só de quem faltava — dizia quem não mandou, mas não quem mandou e ainda
+ * espera alguém aceitar, que é o que segura o consolidado no fechamento.
+ *
+ * A legenda conta cada cor e serve de filtro: clicar em "aguardando" deixa só
+ * quem está esperando liberação.
+ */
+function Andamento({ lista, carregando, liberacaoIndisponivel }) {
+  const [so, setSo] = useState(null)
+  const conta = (cor) => lista.filter((e) => e.farol === cor).length
+  const visiveis = so ? lista.filter((e) => e.farol === so) : lista
+  const faltam = conta('vermelho')
+
   return (
     <div className="panel painel-consolidacao">
       <div className="panel-header">
         <div>
-          <h2>Falta</h2>
+          <h2>Andamento</h2>
           <p>
             {carregando
               ? 'Conferindo quem já lançou…'
-              : lista.length
-              ? `${lista.length} empresa(s) sem nenhum lançamento nesta versão`
-              : 'Todas as empresas do recorte já lançaram'}
+              : !lista.length
+              ? 'Nenhuma empresa no recorte'
+              : faltam
+              ? `${faltam} de ${lista.length} empresa(s) sem template nesta versão`
+              : 'Todas as empresas do recorte já mandaram template'}
           </p>
         </div>
       </div>
       <div className="panel-body">
         {!carregando && !lista.length ? (
-          <div className="empty-hint">Nada pendente.</div>
+          <div className="empty-hint">Nada para mostrar.</div>
         ) : (
-          /* Em ordem alfabética, não por tamanho: aqui ninguém procura a
-             maior, procura a sua. */
-          <ul className="lista-falta">
-            {lista.map((e) => (
-              <li key={e.id ?? e.nome} title={e.nome}>
-                {e.nome}
-              </li>
-            ))}
-          </ul>
+          <>
+            {liberacaoIndisponivel ? (
+              <p className="farol-aviso">
+                <span className="bolinha cinza" aria-hidden="true" />
+                A liberação ainda não está no banco — falta rodar as migrações do histórico de importação. Por
+                enquanto, só o vermelho (sem template) é certo.
+              </p>
+            ) : (
+              <div className="farol-legenda" role="group" aria-label="Filtrar pelo farol">
+                {FAROL.map((f) => (
+                  <button
+                    key={f.cor}
+                    type="button"
+                    className={`farol-filtro${so === f.cor ? ' ativo' : ''}`}
+                    aria-pressed={so === f.cor}
+                    onClick={() => setSo(so === f.cor ? null : f.cor)}
+                  >
+                    <span className={`bolinha ${f.cor}`} aria-hidden="true" />
+                    {conta(f.cor)} {f.rotulo}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Em ordem alfabética, não por tamanho: aqui ninguém procura a
+                maior, procura a sua. */}
+            <ul className="lista-falta">
+              {visiveis.map((e) => (
+                <li key={e.id} title={`${e.nome} — ${FAROL.find((f) => f.cor === e.farol)?.rotulo ?? 'liberação desconhecida'}`}>
+                  <span className={`bolinha ${e.farol}`} aria-hidden="true" />
+                  {e.nome}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </div>
   )
 }
 
-export default function PainelConsolidacao({ recentes, historicoIndisponivel, faltam, carregando }) {
+export default function PainelConsolidacao({ recentes, historicoIndisponivel, andamento, liberacaoIndisponivel, carregando }) {
   return (
     <div className="coluna-consolidacao">
       <Recentes lista={recentes ?? []} indisponivel={historicoIndisponivel} />
-      <Falta lista={faltam ?? []} carregando={carregando} />
+      <Andamento lista={andamento ?? []} carregando={carregando} liberacaoIndisponivel={liberacaoIndisponivel} />
     </div>
   )
 }

@@ -483,6 +483,56 @@ export async function definirLiberacao(id, { status, quem, observacao }) {
 }
 
 /**
+ * O farol de cada empresa na versão: a liberação dos templates que trouxeram
+ * os lançamentos dela. Devolve Map(empresa_id → 'liberado' | 'aguardando' |
+ * 'devolvido'), ou null quando as duas migrações (histórico e amarração) não
+ * rodaram — aí não há como saber de qual arquivo veio cada linha.
+ *
+ * Uma empresa só é "liberado" se TODOS os templates dela foram liberados:
+ * basta um aguardando para o número dela ainda não estar aceito. Devolvido
+ * pesa mais que aguardando, porque pede ação de alguém. Lançamento sem
+ * template amarrado (anterior à migração, ou digitado na grade) conta como
+ * aguardando: ninguém o liberou.
+ */
+export async function liberacaoPorEmpresa(versaoId) {
+  if (!versaoId) return null
+  const [temHistorico, temAmarracao] = await Promise.all([historicoDisponivel(), amarracaoDisponivel()])
+  if (!temHistorico || !temAmarracao) return null
+
+  // Paginado: o PostgREST para em 1000 linhas, e uma versão tem milhares.
+  const linhas = []
+  for (let de = 0; ; de += 1000) {
+    const { data, error } = await supabase
+      .from('lancamento')
+      .select('empresa_id, importacao_id')
+      .eq('versao_id', versaoId)
+      .range(de, de + 999)
+    if (error) throw error
+    linhas.push(...(data ?? []))
+    if (!data || data.length < 1000) break
+  }
+
+  const ids = [...new Set(linhas.map((l) => l.importacao_id).filter(Boolean))]
+  const liberacaoDe = new Map()
+  // Em lotes: centenas de ids num `in` só estouram o tamanho da URL.
+  for (let i = 0; i < ids.length; i += 150) {
+    const { data, error } = await supabase.from('importacao').select('id, liberacao').in('id', ids.slice(i, i + 150))
+    if (error) throw error
+    for (const r of data ?? []) liberacaoDe.set(r.id, r.liberacao ?? 'aguardando')
+  }
+
+  const peso = { liberado: 0, aguardando: 1, devolvido: 2 }
+  const porEmpresa = new Map()
+  for (const l of linhas) {
+    if (!l.empresa_id) continue
+    const status = (l.importacao_id && liberacaoDe.get(l.importacao_id)) || 'aguardando'
+    const atual = porEmpresa.get(l.empresa_id)
+    if (!atual || (peso[status] ?? 1) > (peso[atual] ?? 1)) porEmpresa.set(l.empresa_id, status)
+  }
+  return porEmpresa
+}
+
+/**
  * As importações, da mais nova para a mais antiga, com o nome de quem subiu
  * quando o e-mail está no cadastro de usuários.
  */
