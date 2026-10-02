@@ -1,0 +1,899 @@
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useToast } from './ToastProvider'
+import ImportWizard from './ImportWizard'
+import ProgressoGravacao from './ProgressoGravacao'
+import ChecklistImportacao from './ChecklistImportacao'
+import AlertaStatus from './AlertaStatus'
+import TutorialImportacao from './TutorialImportacao'
+import { agruparParaCadastro, solicitar, tabelaDisponivel } from '../lib/contasPendentesData'
+import TabelaQuadro from './TabelaQuadro'
+import { agruparPorEstrutura } from '../lib/resultadoData'
+import { classificar } from '../lib/demonstrativo'
+import { quadrosDoArquivo } from '../lib/quadrosResultado'
+import { useAuth } from './AuthProvider'
+import { useUnidade } from './UnidadeProvider'
+import { createCiclo } from '../lib/ciclosData'
+import {
+  lerPlanilhaEmWorker,
+  conferir,
+  importar,
+  apagarDoTipo,
+  desfazer,
+  TEMPLATE,
+} from '../lib/importarTemplateOrcamento'
+import { registrarImportacao, marcarDesfeito, resumoDaImportacao, amarrarLancamentos } from '../lib/importacoesData'
+import BotaoRecolher from './BotaoRecolher'
+
+const brl = (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+/**
+ * Como o tipo se chama nas mensagens. O `rotulo` da tela é "Revenue"/"Expenses",
+ * e usá-lo no meio de uma frase em português dava "10 lançamentos de revenue".
+ */
+/**
+ * A linha vai para aprovacao de cadastro so quando a conta nao existe no plano.
+ *
+ * A regra do FP&A e "se nao tiver cadastro mas tem dados, enviar para
+ * aprovacao". Conta que existe com outra classificacao — uma de Capex vindo na
+ * aba de gastos — tem cadastro: o problema e de classificacao, e um pedido de
+ * cadastro para ela so criaria duplicata no plano. Linha sem numero nem nome de
+ * conta tambem fica de fora, porque nao ha o que cadastrar.
+ */
+const semCadastro = (m) =>
+  Boolean((m.contaCodigo || m.contaRotulo || '').trim()) &&
+  !(m.falhas ?? []).some((f) => f.includes('está no plano como'))
+
+const NOME = { receita: 'receita', despesa: 'despesa', capex: 'capex' }
+
+/** Nota de rodapé específica de cada aba: o que entra e o que fica de fora. */
+const NOTA = {
+  receita:
+    'Entra a receita bruta do template. A dedução não é gravada aqui: a ferramenta já tem o mapa de ' +
+    'alíquotas, e o P&L trata dedução como linha própria. Produto e cliente vão para a descrição e as ' +
+    'observações, porque a tabela ainda não tem coluna para eles.',
+  despesa:
+    'Entra o bloco de competência. O bloco de caixa que vem depois não é gravado — a ferramenta orça por ' +
+    'competência. Os valores trocam de sinal: o template escreve gasto como negativo e aqui o gasto é ' +
+    'guardado positivo, porque o P&L faz EBITDA = receita − despesa.',
+  capex:
+    'Entra o bloco de competência. O bloco de caixa que vem depois não é gravado. Quantidade e valor ' +
+    'unitário vão para as observações, e os valores trocam de sinal como na Despesa. No template sem a ' +
+    'aba Capex (2027), o Capex é lido da Base Gastos: entram as linhas com área "Capex", Linha P&L ' +
+    '"CAPEX/Intangible" ou conta de Capex no plano.',
+}
+
+const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+
+/**
+ * Os doze meses como barras. O total do ano nao mostra a forma: um valor que
+ * caiu no mes errado passa batido. Doze colunas de numeros nao cabem na tabela,
+ * entao vai o desenho, com os valores no title para quem precisar do numero.
+ *
+ * As barras sao escaladas pelo maior valor absoluto DA LINHA, nao do conjunto:
+ * o que interessa aqui e a distribuicao dentro do contrato, e uma linha de
+ * 264 mil achataria todas as outras.
+ */
+function Meses({ valores }) {
+  const v = valores.map((x) => x.valor)
+  const max = Math.max(...v.map(Math.abs), 1)
+  const temNegativo = v.some((x) => x < 0)
+  const A = 22
+  const base = temNegativo ? A / 2 : A
+  const titulo = v.map((x, i) => `${MES[i]} ${x.toLocaleString('pt-BR')}`).join('\n')
+
+  return (
+    <svg width={12 * 7} height={A} title={titulo} aria-label={titulo} style={{ display: 'block' }}>
+      <title>{titulo}</title>
+      {temNegativo && <line x1="0" y1={base} x2={12 * 7} y2={base} stroke="currentColor" opacity="0.2" />}
+      {v.map((x, i) => {
+        const h = (Math.abs(x) / max) * (temNegativo ? A / 2 : A)
+        return (
+          <rect
+            key={i}
+            x={i * 7}
+            y={x < 0 ? base : base - h}
+            width={5}
+            height={Math.max(h, x === 0 ? 0 : 1)}
+            fill={x < 0 ? 'var(--color-danger, #c0392b)' : 'var(--color-primary, #ff3d03)'}
+            opacity={x === 0 ? 0.15 : 0.85}
+          />
+        )
+      })}
+      {v.every((x) => x === 0) && <rect x="0" y={base - 1} width={12 * 7} height="1" opacity="0.15" />}
+    </svg>
+  )
+}
+
+/** Um numero do resumo, com o rotulo embaixo. */
+function Resumo({ rotulo, valor, alerta }) {
+  return (
+    <div>
+      <div
+        style={{
+          fontSize: 16,
+          fontWeight: 700,
+          color: alerta ? 'var(--color-danger, #c0392b)' : 'inherit',
+        }}
+      >
+        {valor}
+      </div>
+      <div style={{ fontSize: 10, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.6 }}>
+        {rotulo}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Botão de upload do Template Budget nas telas de lançamento.
+ *
+ * O fluxo é em dois passos de propósito: lê e CONFERE, mostra o que casou e o
+ * que não, e só grava depois de confirmar. Importar direto do arquivo criaria
+ * lançamentos com empresa ou conta erradas sem ninguém ver.
+ */
+export default function ImportarTemplateOrcamento({ tipo, rotulo, anoCiclo, onImportado }) {
+  const showToast = useToast()
+  const { numero: mi, comMoeda, u } = useUnidade()
+  const inputRef = useRef(null)
+  const [lendo, setLendo] = useState(false)
+  const [criandoCiclo, setCriandoCiclo] = useState(false)
+  // O arquivo já lido, para conferir de novo depois de criar o ciclo do ano.
+  const lidoRef = useRef(null)
+  const [gravando, setGravando] = useState(false)
+  const [progresso, setProgresso] = useState(null)
+  const [previa, setPrevia] = useState(null)
+  const [arquivo, setArquivo] = useState('')
+  const [tamanho, setTamanho] = useState(null)
+  const [segundos, setSegundos] = useState(0)
+  const [substituir, setSubstituir] = useState(false)
+  const [ultima, setUltima] = useState(null)   // { ids, quantos } da importacao recem-feita
+  const [desfazendo, setDesfazendo] = useState(false)
+  const [checklistAberto, setChecklistAberto] = useState(false)
+  const [statusPrevia, setStatusPrevia] = useState(false)
+  const [tutorialAberto, setTutorialAberto] = useState(false)
+  const [podeSolicitar, setPodeSolicitar] = useState(false)
+  const [wizardAberto, setWizardAberto] = useState(false)
+  // Resultado de `checarEstrutura`: null até o worker mandar a primeira mensagem.
+  const [estrutura, setEstrutura] = useState(null)
+  const [erroLeitura, setErroLeitura] = useState(null)
+  const { sessao } = useAuth()
+  const email = sessao?.user?.email
+
+  useEffect(() => {
+    tabelaDisponivel().then(setPodeSolicitar)
+  }, [])
+
+  const aba = TEMPLATE[tipo]?.aba
+
+  // Cronometro da leitura. Sao 20 a 45 segundos conforme o tamanho da planilha,
+  // e sem nenhum sinal de progresso a pessoa acha que travou e clica de novo.
+  useEffect(() => {
+    if (!lendo) return undefined
+    setSegundos(0)
+    const t = setInterval(() => setSegundos((n) => n + 1), 1000)
+    return () => clearInterval(t)
+  }, [lendo])
+
+  async function handleArquivo(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    setLendo(true)
+    setPrevia(null)
+    setSubstituir(false)
+    setUltima(null)
+    setArquivo(file.name)
+    setTamanho(file.size)
+    setEstrutura(null)
+    setErroLeitura(null)
+    setWizardAberto(true)
+    try {
+      const lido = await lerPlanilhaEmWorker(await file.arrayBuffer(), tipo, setEstrutura)
+      if (!lido.linhas.length) {
+        showToast(`A aba "${lido.aba}" não tem nenhuma linha preenchida com valor mensal.`, 'warning')
+        setWizardAberto(false)
+        return
+      }
+      lidoRef.current = lido
+      setPrevia({ ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas })
+      setWizardAberto(false)
+    } catch (err) {
+      setErroLeitura(err.message)
+      showToast(`Não consegui ler a planilha: ${err.message}`, 'error')
+    } finally {
+      setLendo(false)
+    }
+  }
+
+  async function handleConfirmar() {
+    // A versão já tinha lançamentos deste tipo e a pessoa não marcou
+    // substituir: entra como pendência no checklist, pode ter dobrado.
+    const somouEmCima = Boolean(previa.jaExistem) && !substituir
+    setGravando(true)
+    setProgresso({ feitos: 0, total: 0, fase: substituir && previa.jaExistem ? 'apagando' : 'cabecalhos' })
+    try {
+      let apagados = 0
+      if (substituir && previa.jaExistem) apagados = await apagarDoTipo(previa.versao.id, tipo)
+      const ids = await importar([...previa.prontas, ...previa.marcadas], previa.versao.id, tipo, (feitos, total, fase) =>
+        setProgresso({ feitos, total, fase })
+      )
+      const oQue = NOME[tipo] ?? tipo
+
+      // Conta sem cadastro que tem dado vai para aprovacao sozinha, sem
+      // perguntar — regra do FP&A. O envio acontece aqui, na confirmacao, e nao
+      // na conferencia: se a pessoa desistir de gravar, nao fica pedido aberto
+      // para um dado que nao entrou. E vai num try proprio: a importacao ja foi
+      // gravada, e uma falha no envio nao pode ser anunciada como falha dela.
+      let enviadas = 0
+      let erroEnvio = null
+      const paraEnviar = previa.marcadas.filter(semCadastro)
+      if (paraEnviar.length && podeSolicitar) {
+        try {
+          enviadas = await solicitar(agruparParaCadastro(paraEnviar, tipo, arquivo), email)
+        } catch (err) {
+          erroEnvio = err.message
+        }
+      }
+
+      showToast(
+        (apagados
+          ? `${apagados} lançamento(s) de ${oQue} apagado(s) e ${ids.length} importado(s).`
+          : `${ids.length} lançamento(s) de ${oQue} importado(s).`) +
+          (enviadas ? ` ${enviadas} conta(s) enviada(s) para aprovação de cadastro.` : ''),
+        erroEnvio ? 'warning' : 'success'
+      )
+      if (erroEnvio) showToast(`As linhas entraram, mas não consegui enviar as contas para aprovação: ${erroEnvio}`, 'error')
+
+      // Historico depois de gravar, num try proprio: falhar aqui nao invalida a
+      // importacao, que ja esta no banco.
+      let registroId = null
+      try {
+        registroId = await registrarImportacao({
+          arquivo,
+          tamanho,
+          origem: tipo,
+          ano: previa.ano,
+          ciclo: previa.ciclo,
+          versao: previa.versao,
+          tipo,
+          linhas: [...previa.prontas, ...previa.marcadas],
+          apagados,
+          fora: previa.fora.length,
+          textoEmNumero: previa.fora.filter((f) => f.naoNumericos?.length).length,
+          marcadas: previa.marcadas.length,
+          somouEmCima,
+          cadastros: previa.cadastros,
+          usuarioEmail: email,
+        })
+        // Qual arquivo trouxe cada linha, para o Deep Dive listar por arquivo.
+        await amarrarLancamentos(registroId, ids)
+      } catch (err) {
+        showToast(`Importado, mas não consegui registrar no histórico: ${err.message}`, 'warning')
+      }
+
+      // A substituicao apagou linhas que o desfazer nao traz de volta; oferecer
+      // "desfazer" ali seria mentira. O aviso das contas enviadas aparece nos dois casos.
+      setUltima({
+        ids: apagados ? null : ids,
+        quantos: ids.length,
+        enviadas,
+        registroId,
+        resumo: resumoDaImportacao({
+          ano: previa.ano,
+          versao: previa.versao,
+          tipo,
+          linhas: [...previa.prontas, ...previa.marcadas],
+          fora: previa.fora.length,
+          textoEmNumero: previa.fora.filter((f) => f.naoNumericos?.length).length,
+          marcadas: previa.marcadas.length,
+          apagados,
+          somouEmCima,
+          cadastros: previa.cadastros,
+          arquivo,
+          usuarioEmail: email,
+        }),
+      })
+      setChecklistAberto(true)
+      setPrevia(null)
+      onImportado?.()
+    } catch (err) {
+      showToast(`Erro ao importar: ${err.message}`, 'error')
+    } finally {
+      setGravando(false)
+      setProgresso(null)
+    }
+  }
+
+  async function handleDesfazer() {
+    setDesfazendo(true)
+    try {
+      const n = await desfazer(ultima.ids)
+      showToast(`${n} lançamento(s) desfeito(s).`, 'success')
+      try {
+        await marcarDesfeito(ultima.registroId, tipo)
+      } catch {
+        // os lançamentos já saíram; o histórico só fica sem a marca
+      }
+      setUltima(null)
+      onImportado?.()
+    } catch (err) {
+      showToast(`Não consegui desfazer: ${err.message}`, 'error')
+    } finally {
+      setDesfazendo(false)
+    }
+  }
+
+  // O status já na conferência, antes de gravar.
+  const resumoPrevia = previa
+    ? resumoDaImportacao({
+        ano: previa.ano,
+        versao: previa.versao,
+        tipo,
+        linhas: [...previa.prontas, ...previa.marcadas],
+        fora: previa.fora.length,
+        marcadas: previa.marcadas.length,
+        apagados: 0,
+        somouEmCima: Boolean(previa.jaExistem) && !substituir,
+        cadastros: previa.cadastros,
+        arquivo,
+        usuarioEmail: email,
+      })
+    : null
+
+  const aImportar = previa ? [...previa.prontas, ...previa.marcadas] : []
+
+  /**
+   * O que o arquivo faz com o P&L e com a estrutura, antes de gravar, nos
+   * mesmos quadros da Master que o Resultado usa (P&L Contábil e Painel).
+   */
+  const quadros = (() => {
+    if (!previa || !aImportar.length) return null
+    const h = previa.hierarquia
+    const itens = aImportar.map((p) => {
+      const it = {
+        tipo,
+        conta: p.conta,
+        area: p.area,
+        area_ajustada: p.area_ajustada,
+        meses: p.valores.map((v) => v.valor),
+        bu: { id: p.empresa.bu_id, nome: h?.bu.get(p.empresa.bu_id) },
+        torre: { id: p.empresa.torre_id, nome: h?.torre.get(p.empresa.torre_id) },
+        sub: { id: p.empresa.sub_torre_id, nome: h?.sub.get(p.empresa.sub_torre_id) },
+        empresa: { id: p.empresa.id, nome: p.empresa.nome },
+      }
+      return { ...it, chave: classificar(it) }
+    })
+    return quadrosDoArquivo({ itens, agrupado: agruparPorEstrutura(itens), receitaDaVersao: previa.receitaDaVersao })
+  })()
+
+  /**
+   * O que cada conta do arquivo representa: a linha do P&L, que vem do plano de
+   * contas, e a área de alocação, que vem da coluna "Alocação PnL (Área)" do
+   * template. São dimensões diferentes — a mesma conta de Pessoal pode ser COGS
+   * numa empresa e G&A em outra — e sem isso ninguém sabe onde o valor cai.
+   */
+  const classificacao = (() => {
+    if (!previa) return []
+    const mapa = new Map()
+    for (const p of aImportar) {
+      const chave = `${p.conta?.codigo ?? '—'}|${p.area || ''}`
+      if (!mapa.has(chave)) {
+        mapa.set(chave, {
+          codigo: p.conta?.codigo ?? null,
+          nome: p.conta?.nome ?? (p.contaRotulo || '(sem conta)'),
+          linhaPl: p.conta?.linha_pl ?? null,
+          area: p.area || null,
+          linhas: 0,
+          valor: 0,
+        })
+      }
+      const c = mapa.get(chave)
+      c.linhas += 1
+      c.valor += p.total
+    }
+    return [...mapa.values()].sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
+  })()
+  // Um pedido por RÓTULO: 81 linhas de "CS dedicado" são um cadastro só.
+  const aCadastrar = previa ? agruparParaCadastro(previa.marcadas, tipo, arquivo) : []
+  // O que de fato vai para a fila. A tabela mostra todas as contas com
+  // problema; a frase abaixo dela diz quantas serao enviadas.
+  const paraAprovacao = previa ? agruparParaCadastro(previa.marcadas.filter(semCadastro), tipo, arquivo) : []
+  const comOutraClassificacao = aCadastrar.length - paraAprovacao.length
+  const total = aImportar.reduce((a, p) => a + p.total, 0)
+  const empresas = new Set(aImportar.map((p) => p.empresa.id)).size
+  const contas = new Set(previa?.prontas.map((p) => p.conta.id) ?? []).size
+  const semVersao = previa && !previa.versao
+  // O template vai para o ciclo do seu próprio ano. Quando ele é outro que não
+  // o aberto na tela, a pessoa precisa saber — e quando ele não existe, pode
+  // criá-lo aqui mesmo, sem sair da importação.
+  const outroAno = previa && anoCiclo && previa.ano !== anoCiclo && !previa.cicloFaltando
+
+  async function handleCriarCiclo() {
+    setCriandoCiclo(true)
+    try {
+      await createCiclo(previa.cicloFaltando)
+      const lido = lidoRef.current
+      setPrevia({ ...(await conferir(lido)), ano: lido.ano, ignoradas: lido.ignoradas })
+      showToast(`Ciclo ${lido.ano} criado com a versão Original.`, 'success')
+    } catch (err) {
+      showToast(`Não consegui criar o ciclo: ${err.message}`, 'error')
+    } finally {
+      setCriandoCiclo(false)
+    }
+  }
+  const temDetalhe = tipo !== 'receita'
+
+  return (
+    <>
+      <button
+        className="btn btn-secondary btn-sm"
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={lendo}
+      >
+        {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Importar Template'}
+      </button>
+      <button
+        className="btn btn-ghost btn-sm"
+        type="button"
+        title="Como submeter um template"
+        onClick={() => setTutorialAberto(true)}
+      >
+        ? Como importar
+      </button>
+      {tutorialAberto && (
+        <TutorialImportacao
+          etapa={ultima ? 5 : previa ? 4 : lendo ? 3 : 1}
+          janela
+          onFechar={() => setTutorialAberto(false)}
+        />
+      )}
+      {lendo && (
+        <span style={{ marginLeft: 10, fontSize: 12, opacity: 0.7 }}>
+          a leitura roda em segundo plano — pode continuar usando a tela
+        </span>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".xlsb,.xlsx,.xlsm"
+        style={{ display: 'none' }}
+        onChange={handleArquivo}
+      />
+
+      {gravando && <ProgressoGravacao progresso={progresso} rotulo={rotulo} />}
+
+      <ImportWizard
+        aberto={wizardAberto}
+        arquivo={arquivo}
+        tipo={tipo}
+        estrutura={estrutura}
+        lendo={lendo}
+        segundos={segundos}
+        erro={erroLeitura}
+        onFechar={() => setWizardAberto(false)}
+      />
+
+      {ultima && !previa && (
+        <div
+          className="flex-row"
+          style={{
+            marginTop: 12,
+            padding: '9px 12px',
+            gap: 12,
+            alignItems: 'center',
+            borderRadius: 6,
+            background: 'var(--color-surface-alt, #f2f4f7)',
+            border: '1px solid var(--color-border, #e2e5ea)',
+          }}
+        >
+          <span style={{ fontSize: 13 }}>
+            {ultima.quantos} lançamento(s) importado(s) agora.
+            {ultima.enviadas > 0 && (
+              <>
+                {' '}{ultima.enviadas} conta(s) enviada(s) para aprovação — acompanhe em{' '}
+                <Link to="/pendencia-cadastros">Pendência de Cadastros</Link>.
+              </>
+            )}
+          </span>
+          {ultima.ids && (
+            <button
+              className="btn btn-secondary btn-sm"
+              type="button"
+              onClick={handleDesfazer}
+              disabled={desfazendo}
+            >
+              {desfazendo ? 'Desfazendo…' : '↶ Desfazer'}
+            </button>
+          )}
+          <button
+            className="btn btn-secondary btn-sm"
+            type="button"
+            onClick={() => setUltima(null)}
+            style={{ marginLeft: 'auto' }}
+          >
+            Dispensar
+          </button>
+        </div>
+      )}
+
+      {ultima?.resumo && !previa && (
+        <AlertaStatus registro={ultima.resumo} escopo="tipo" onAbrir={() => setChecklistAberto(true)} />
+      )}
+
+      {statusPrevia && resumoPrevia && (
+        <ChecklistImportacao registro={resumoPrevia} escopo="tipo" onFechar={() => setStatusPrevia(false)} />
+      )}
+
+      {checklistAberto && ultima?.resumo && (
+        <ChecklistImportacao
+          registro={ultima.resumo}
+          escopo="tipo"
+          onFechar={() => setChecklistAberto(false)}
+        />
+      )}
+
+      {previa && (
+        <div className="panel" style={{ marginTop: 14 }}>
+          <div className="panel-header">
+            <BotaoRecolher chave="importar-template-orcamento-1" />
+            <div>
+              <h2>Conferência da importação</h2>
+              <p>
+                {arquivo} · aba {aba}
+                {previa.ciclo && ` · ciclo ${previa.ciclo.ano}`}
+                {previa.versao && ` / versão ${previa.versao.nome}`}
+              </p>
+            </div>
+            <div className="flex-row" style={{ gap: 6 }}>
+              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setPrevia(null)}>
+                Cancelar
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                type="button"
+                onClick={handleConfirmar}
+                disabled={gravando || !aImportar.length || semVersao}
+              >
+                {gravando
+                  ? 'Importando…'
+                  : substituir && previa.jaExistem
+                  ? `Substituir ${previa.jaExistem} e importar ${aImportar.length}`
+                  : `Importar ${aImportar.length} linha(s)`}
+              </button>
+            </div>
+          </div>
+
+          <div className="panel-body">
+            {/* O risco silencioso: a gravacao so insere. Importar o mesmo
+                arquivo de novo dobra o orcamento sem nenhum aviso. */}
+            {previa.jaExistem > 0 && (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ⚠ Esta versão já tem <strong>{previa.jaExistem}</strong> lançamento(s) de {NOME[tipo]}.
+                Importar vai <strong>somar</strong> aos que já existem, não substituir.
+                <label style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
+                  <input
+                    type="checkbox"
+                    checked={substituir}
+                    onChange={(e) => setSubstituir(e.target.checked)}
+                    style={{ marginRight: 6 }}
+                  />
+                  Apagar os {previa.jaExistem} antes de importar
+                </label>
+                {substituir && (
+                  <div style={{ marginTop: 6, fontSize: 12 }}>
+                    Vão embora <strong>todos</strong> os lançamentos de {NOME[tipo]} desta versão, inclusive os
+                    lançados à mão. Não há como desfazer.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {previa.cicloFaltando ? (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ⓘ Este template é de <strong>{previa.cicloFaltando}</strong> e ainda não existe o ciclo{' '}
+                {previa.cicloFaltando}. Cada ano entra no seu próprio ciclo — é assim que ele aparece como
+                Last Year no ano seguinte.{' '}
+                <button className="btn btn-primary btn-sm" type="button" onClick={handleCriarCiclo} disabled={criandoCiclo}>
+                  {criandoCiclo ? 'Criando…' : `Criar ciclo ${previa.cicloFaltando}`}
+                </button>
+              </div>
+            ) : (
+              semVersao && (
+                <div className="proto-banner" style={{ marginBottom: 12 }}>
+                  ⓘ O ciclo {previa.ano} não tem versão. Crie uma em Budget-Settings antes de importar.
+                </div>
+              )
+            )}
+
+            {outroAno && (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ⓘ O template é de {previa.ano}: as linhas vão para o ciclo {previa.ano} (versão{' '}
+                {previa.versao?.nome}), não para o {anoCiclo} aberto nesta tela. No Resultado, escolha o ano{' '}
+                {previa.ano} para ver — e o {previa.ano} vira o Last Year do {previa.ano + 1}.
+              </div>
+            )}
+
+            {previa.marcadas.length > 0 && (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                <div style={{ marginBottom: 8 }}>
+                  <strong>Contas não cadastradas</strong> — {previa.marcadas.length} linha(s) entram sem conta,
+                  marcadas nas observações. O valor não fica de fora do orçamento, mas a linha só pode ser
+                  salva na grade depois que a conta existir.
+                </div>
+
+                <table className="data-table" style={{ marginBottom: 10 }}>
+                  <thead>
+                    <tr>
+                      <th>CONTA</th>
+                      <th>DESCRIÇÃO</th>
+                      <th>MOTIVO</th>
+                      <th className="text-right">VALOR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {aCadastrar.map((c) => (
+                      <tr key={c.rotulo}>
+                        <td><strong>{c.rotulo}</strong></td>
+                        <td style={{ fontSize: 12 }}>{c.descricao}</td>
+                        <td style={{ fontSize: 12 }}>{c.motivo}</td>
+                        <td className="text-right">{brl(c.valor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {podeSolicitar ? (
+                  <div style={{ fontSize: 13 }}>
+                    {paraAprovacao.length > 0 && (
+                      <>
+                        Ao confirmar a importação,{' '}
+                        {paraAprovacao.length === 1
+                          ? '1 conta sem cadastro será enviada'
+                          : `${paraAprovacao.length} contas sem cadastro serão enviadas`}{' '}
+                        automaticamente para aprovação de cadastro.{' '}
+                      </>
+                    )}
+                    {comOutraClassificacao > 0 && (
+                      <>
+                        {comOutraClassificacao === 1 ? '1 conta já existe' : `${comOutraClassificacao} contas já existem`} no
+                        plano com outra classificação e não {comOutraClassificacao === 1 ? 'vai' : 'vão'} para aprovação —
+                        a correção é na classificação, não no cadastro.
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, opacity: 0.8 }}>
+                    A fila de aprovação ainda não está disponível — falta rodar
+                    supabase/migrations/2026-09-10-schema-completo-do-template.sql.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {previa.outroModulo?.length > 0 && (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ⓘ {previa.outroModulo.length} linha(s) da Base Gastos são de{' '}
+                <strong>{previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'}</strong> e ficam para a
+                importação de {previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'} — o mesmo arquivo
+                entra nos dois módulos, cada um com a sua parte, sem duplicar.
+              </div>
+            )}
+
+            {previa.fora.length > 0 && (
+              <div className="proto-banner" style={{ marginBottom: 12 }}>
+                ⓘ {previa.fora.length} linha(s) <strong>não entram</strong>: sem empresa cadastrada não há como
+                gravar, porque a BU do lançamento vem dela. Cadastre a empresa e importe de novo.
+              </div>
+            )}
+
+            {resumoPrevia && (
+              <AlertaStatus registro={resumoPrevia} escopo="tipo" previa onAbrir={() => setStatusPrevia(true)} />
+            )}
+
+            {/* Resumo antes da tabela: com muitas linhas, o total do rodape
+                fica longe demais para servir de conferencia. */}
+            <div
+              className="flex-row"
+              style={{
+                gap: 20,
+                flexWrap: 'wrap',
+                marginBottom: 12,
+                padding: '10px 12px',
+                borderRadius: 6,
+                background: 'var(--color-surface-alt, #f2f4f7)',
+                border: '1px solid var(--color-border, #e2e5ea)',
+              }}
+            >
+              <Resumo rotulo="linhas" valor={aImportar.length} />
+              <Resumo rotulo="total do ano" valor={comMoeda(total)} />
+              <Resumo rotulo="empresas" valor={empresas} />
+              <Resumo rotulo="contas" valor={contas} />
+              {previa.marcadas.length > 0 && (
+                <Resumo rotulo="sem conta (entram marcadas)" valor={previa.marcadas.length} alerta />
+              )}
+              {previa.fora.length > 0 && (
+                <Resumo rotulo="fora (sem empresa)" valor={previa.fora.length} alerta />
+              )}
+              {previa.ignoradas > 0 && <Resumo rotulo="ignoradas (sem valor)" valor={previa.ignoradas} />}
+              {previa.outroModulo?.length > 0 && (
+                <Resumo
+                  rotulo={`de ${previa.outroModulo[0].destino === 'capex' ? 'Capex' : 'Despesa'} (outro módulo)`}
+                  valor={previa.outroModulo.length}
+                />
+              )}
+            </div>
+
+            {quadros && (
+              <div className="panel" style={{ marginBottom: 16 }}>
+                <div className="panel-header">
+                  <BotaoRecolher chave="importar-template-orcamento-2" />
+                  <div>
+                    <h2>Como entra no P&amp;L</h2>
+                    <p>
+                      Só o que este arquivo traz, nas linhas do P&amp;L Contábil da Master
+                      {quadros.semNR ? ' · o % é sobre a receita já lançada nesta versão, porque o arquivo não traz receita' : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <TabelaQuadro quadro={quadros.pl} />
+                </div>
+              </div>
+            )}
+
+            {classificacao.length > 0 && (
+              <div className="panel" style={{ marginBottom: 16 }}>
+                <div className="panel-header">
+                  <BotaoRecolher chave="importar-template-orcamento-3" />
+                  <div>
+                    <h2>O que cada conta representa</h2>
+                    <p>
+                      A linha do P&amp;L vem do plano de contas; a área vem da coluna “Alocação PnL (Área)” do
+                      template
+                    </p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div className="rolagem-x">
+                    <table className="tabela-xl sem-indice">
+                      <thead>
+                        <tr className="faixa">
+                          <th className="canto fixa-2">{u.faixa}</th>
+                          <th className="vao" />
+                          <th colSpan={2}>Classificação</th>
+                          <th className="vao" />
+                          <th colSpan={2}>Neste arquivo</th>
+                        </tr>
+                        <tr className="rotulos">
+                          <th className="rotulo fixa-2">Conta</th>
+                          <th className="vao" />
+                          <th className="rotulo">Linha do P&amp;L</th>
+                          <th>Área</th>
+                          <th className="vao" />
+                          <th>Linhas</th>
+                          <th className="atual">Valor</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {classificacao.map((c, i) => (
+                          <tr key={i} className={c.linhaPl ? 'detalhe' : 'alerta'}>
+                            <td className="rotulo fixa-2">
+                              <strong>{c.codigo ?? '—'}</strong>
+                              <div className="apagado">{c.nome}</div>
+                            </td>
+                            <td className="vao" />
+                            <td className="rotulo">
+                              {c.linhaPl ?? 'conta não cadastrada — fica fora do P&L'}
+                            </td>
+                            <td>
+                              {c.area ?? (tipo === 'receita' ? 'Net Revenue' : '—')}
+                            </td>
+                            <td className="vao" />
+                            <td>{c.linhas}</td>
+                            <td className="valor">{mi(c.valor)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {quadros && (
+              <div className="panel" style={{ marginBottom: 16 }}>
+                <div className="panel-header">
+                  <BotaoRecolher chave="importar-template-orcamento-4" />
+                  <div>
+                    <h2>Como fica o resultado</h2>
+                    <p>O que estas {aImportar.length} linha(s) somam por estrutura, antes de gravar</p>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <TabelaQuadro quadro={quadros.painel} />
+                </div>
+              </div>
+            )}
+
+            <div style={{ overflowX: 'auto' }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>LINHA</th>
+                    <th>EMPRESA</th>
+                    <th>CONTA</th>
+                    <th>DESCRIÇÃO</th>
+                    {temDetalhe && <th>C. CUSTO · FORNECEDOR</th>}
+                    <th>JAN — DEZ</th>
+                    <th className="text-right">TOTAL ANO</th>
+                    <th>SITUAÇÃO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previa.prontas.map((p) => (
+                    <tr key={`ok-${p.linha}`}>
+                      <td>{p.linha}</td>
+                      <td><strong>{p.empresa.nome}</strong></td>
+                      <td style={{ fontSize: 12 }}>
+                        {p.conta.codigo} {p.conta.nome}
+                        <div style={{ opacity: 0.6 }}>de {p.contaCodigo || p.contaRotulo}</div>
+                      </td>
+                      <td style={{ fontSize: 12 }}>{p.descricao || '—'}</td>
+                      {temDetalhe && (
+                        <td style={{ fontSize: 12 }}>
+                          {[p.centroCusto, p.fornecedor].filter(Boolean).join(' · ') || '—'}
+                        </td>
+                      )}
+                      <td><Meses valores={p.valores} /></td>
+                      <td className="text-right">{brl(p.total)}</td>
+                      {p.avisos?.length ? (
+                        <td style={{ color: 'var(--color-warning, #b26a00)', fontSize: 12 }}>
+                          ⚠ entra como está — {p.avisos.join(' · ')} ({brl(-p.total)})
+                        </td>
+                      ) : (
+                        <td style={{ color: 'var(--color-success, #1a7f47)' }}>✓ resolvida</td>
+                      )}
+                    </tr>
+                  ))}
+                  {[...previa.marcadas, ...previa.fora].map((p) => (
+                    <tr key={`erro-${p.linha}`} style={{ background: 'var(--color-surface-alt, #fff6f4)' }}>
+                      <td>{p.linha}</td>
+                      <td>{(typeof p.empresa === 'object' ? p.empresa?.nome : p.empresa) || '—'}</td>
+                      <td style={{ fontSize: 12 }}>{p.contaCodigo || p.contaRotulo || '—'}</td>
+                      <td style={{ fontSize: 12 }}>{p.descricao || '—'}</td>
+                      {temDetalhe && (
+                        <td style={{ fontSize: 12 }}>
+                          {[p.centroCusto, p.fornecedor].filter(Boolean).join(' · ') || '—'}
+                        </td>
+                      )}
+                      <td><Meses valores={p.valores} /></td>
+                      <td className="text-right">{brl(p.total)}</td>
+                      <td style={{ color: 'var(--color-danger, #c0392b)', fontSize: 12 }}>
+                        {p.empresa && typeof p.empresa === 'object' ? '⚠ entra sem conta — ' : '✕ não entra — '}
+                        {p.falhas.join(' · ')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                {previa.prontas.length > 0 && (
+                  <tfoot>
+                    <tr>
+                      <td colSpan={temDetalhe ? 6 : 5}><strong>Total a importar</strong></td>
+                      <td className="text-right"><strong>{brl(total)}</strong></td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+
+            <p style={{ marginTop: 12, fontSize: 12, opacity: 0.75 }}>{NOTA[tipo]}</p>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}

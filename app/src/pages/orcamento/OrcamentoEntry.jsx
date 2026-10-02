@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Layout from '../../components/Layout'
+import ImportarTemplateOrcamento from '../../components/ImportarTemplateOrcamento'
 import ResumoLancamentos from '../../components/ResumoLancamentos'
 import FiltroBotoes from '../../components/FiltroBotoes'
 import SeletorColunas from '../../components/SeletorColunas'
@@ -9,7 +10,7 @@ import { useToast } from '../../components/ToastProvider'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../../lib/dashboardData'
 import { fetchContas } from '../../lib/contasData'
 import BotaoUnidade from '../../components/BotaoUnidade'
-import SeletorRecorte from '../../components/SeletorRecorte'
+import SeletorEmpresa from '../../components/SeletorEmpresa'
 import MenuExportar from '../../components/MenuExportar'
 import { useUnidade } from '../../components/UnidadeProvider'
 import { contasDoTipo } from '../../lib/linhasPl'
@@ -115,6 +116,13 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
     if (atual && !contasDisponiveis.some((c) => c.id === atual.id)) return [atual, ...contasDisponiveis]
     return contasDisponiveis
   }
+
+  const torresDisponiveis = selectedBuId ? torres.filter((t) => t.bu_id === selectedBuId) : torres
+  const empresasDisponiveis = selectedTorreId
+    ? empresas.filter((e) => e.torre_id === selectedTorreId)
+    : selectedBuId
+    ? empresas.filter((e) => e.bu_id === selectedBuId)
+    : empresas
 
   async function handleAdicionarLinha() {
     if (!selectedBuId) {
@@ -289,6 +297,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
       <header className="topbar">
         <div className="topbar-title">
           <h1>{titulo} <span className={`pill ${corClasse}`}>{sinal} {rotulo}</span></h1>
+          <p>Selecione BU/Torre/Empresa e edite a grade de {rotulo.toLowerCase()} — os valores são salvos por linha.</p>
           {abas && (
             <FiltroBotoes
               label="Ver"
@@ -300,6 +309,12 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
             />
           )}
         </div>
+        <ImportarTemplateOrcamento
+          tipo={tipo}
+          rotulo={rotulo}
+          anoCiclo={versaoAtual.ciclo.ano}
+          onImportado={carregarLinhas}
+        />
       </header>
 
       <div className="content">
@@ -340,16 +355,35 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
           </div>
           <div className="panel-body">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <SeletorRecorte
-                bus={bus}
-                torres={torres}
-                empresas={empresas}
-                valor={{ buId: selectedBuId, torreId: selectedTorreId, empresaId: selectedEmpresaId }}
+              <div className="recorte-bu-torre">
+              <FiltroBotoes
+                label="BU"
+                valor={selectedBuId}
+                rotuloTodas="Todas as BUs"
+                opcoes={bus.map((bu) => ({ valor: bu.id, rotulo: bu.nome }))}
                 onChange={(v) => {
-                  setSelectedBuId(v.buId)
-                  setSelectedTorreId(v.torreId)
-                  setSelectedEmpresaId(v.empresaId)
+                  setSelectedBuId(v)
+                  setSelectedTorreId('')
+                  setSelectedEmpresaId('')
                 }}
+              />
+              <FiltroBotoes
+                label="Torre"
+                valor={selectedTorreId}
+                rotuloTodas="Todas as Torres"
+                opcoes={torresDisponiveis.map((t) => ({ valor: t.id, rotulo: t.nome }))}
+                onChange={(v) => {
+                  setSelectedTorreId(v)
+                  setSelectedEmpresaId('')
+                }}
+              />
+              </div>
+              <SeletorEmpresa
+                empresas={empresasDisponiveis}
+                torres={torres}
+                valor={selectedEmpresaId}
+                onChange={setSelectedEmpresaId}
+                rotuloTodas="Todas as empresas"
               />
               <BotaoUnidade />
             </div>
@@ -359,7 +393,7 @@ export default function OrcamentoEntry({ tipo, titulo, sinal, rotulo, corClasse,
         {/* O resumo por conta é o que estas telas mostram. Revenue e Expenses
             não têm mais a grade linha a linha: o lançamento entra por
             importação de template, e conferir é olhar a conta, não a linha. */}
-        <ResumoLancamentos linhas={linhas} rotulo={rotulo} tipo={tipo} empresas={empresas} />
+        <ResumoLancamentos linhas={linhas} rotulo={rotulo} />
 
         {temGrade && (
         <div className="panel">

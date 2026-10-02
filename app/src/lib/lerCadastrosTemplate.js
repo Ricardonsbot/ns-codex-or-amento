@@ -80,9 +80,6 @@ function cabecalho(aba, ancora, limite = 20) {
  * ele é único dentro da empresa, não no grupo. Vale o primeiro, e os
  * divergentes são contados para a tela poder dizer quantos são.
  */
-/** Mesma empresa escrita de dois jeitos não é ambiguidade, é digitação. */
-const chaveIgual = (a, b) => lim(a) === lim(b)
-
 function lerCentrosDeCusto(wb) {
   const vazio = { centros: [], diretorias: [], conflitos: 0 }
   const aba = wb.Sheets[ABA_CC]
@@ -108,27 +105,15 @@ function lerCentrosDeCusto(wb) {
     // "NA" é como o mapa escreve "não se aplica": não é nome de diretoria.
     const temDir = diretoria && lim(diretoria) !== 'NA'
     if (temDir) dirs.add(diretoria)
-    const empresa = cEmp === undefined ? '' : txt(l, cEmp).trim()
     const ja = centros.get(codigo)
     if (ja) {
       if (nome && ja.nome && nome !== ja.nome) conflitos += 1
-      // O código não é único no grupo: 184 deles aparecem em duas ou mais
-      // empresas (1.2.16.1001 é BRK e Opentech; 33.9.9.99 está em quatro).
-      // Guardar "a" empresa do código seria eleger a primeira linha da
-      // planilha e errar as outras caladamente — então o de-para desses
-      // fica vazio, e visível, em vez de errado e invisível.
-      if (empresa && ja.empresa && chaveIgual(empresa, ja.empresa)) continue
-      if (empresa && ja.empresa) {
-        ja.empresa = ''
-        ja.empresaAmbigua = true
-      }
       continue
     }
     centros.set(codigo, {
       codigo,
       nome: nome || codigo,
-      empresa,
-      empresaAmbigua: false,
+      empresa: cEmp === undefined ? '' : txt(l, cEmp).trim(),
       diretoria: temDir ? diretoria : '',
     })
   }
@@ -137,8 +122,6 @@ function lerCentrosDeCusto(wb) {
     centros: [...centros.values()].sort((a, b) => ordena(a.codigo, b.codigo)),
     diretorias: [...dirs].sort(ordena),
     conflitos,
-    // Quantos códigos ficaram sem empresa por estarem em mais de uma.
-    ambiguos: [...centros.values()].filter((c) => c.empresaAmbigua).length,
   }
 }
 
@@ -202,9 +185,9 @@ export function temMapasDeCadastro(arrayBuffer) {
 
 export function lerCadastrosDoTemplate(arrayBuffer) {
   const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', dense: true, sheets: ABAS })
-  const { centros, diretorias, conflitos, ambiguos } = lerCentrosDeCusto(wb)
+  const { centros, diretorias, conflitos } = lerCentrosDeCusto(wb)
   const empresas = lerEmpresas(wb)
-  const outrosMapas = { centrosDeCusto: centros, diretorias, conflitosDeCentro: conflitos, centrosAmbiguos: ambiguos, empresas }
+  const outrosMapas = { centrosDeCusto: centros, diretorias, conflitosDeCentro: conflitos, empresas }
 
   const aba = wb.Sheets[ABA_MAPA]
   if (!aba) {

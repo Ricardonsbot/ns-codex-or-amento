@@ -4339,3 +4339,96 @@ tfoot td {
 
 .farol-aviso .bolinha { width: 9px; height: 9px; vertical-align: 0; }
 
+
+/* ============================================================================
+   Importação e telas de lançamento: o visual de antes do merge da branch do
+   Ricardo. Dashboard e Resultado ficam com o redesign dele (.indicador*,
+   SeletorRecorte); o que é da importação e das telas de lançamento não acompanha.
+   ============================================================================ */
+
+/* Cards de resumo da tela de importação (IndicadoresImportacao). Mesmas regras
+   de antes, com classe própria para não dividir seletor com o Dashboard. */
+.indicadores-imp {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  /* A largura vem de fora, nunca do conteudo — a grade nao pode crescer pelo
+     tamanho dos titulos. */
+  contain: inline-size;
+  gap: 10px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border-forte);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 1400px) {
+  .indicadores-imp { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1100px) {
+  .indicadores-imp { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .indicadores-imp { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.indicador-imp {
+  min-width: 0;
+  padding: 12px 8px;
+  border: 1.5px solid var(--color-border-forte);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+.indicador-imp-linha {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+  align-items: baseline;
+  column-gap: 6px;
+}
+
+.indicador-imp-rotulo {
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--xl-medio);
+  margin-bottom: 6px;
+}
+
+.indicador-imp-valor {
+  font-family: Calibri, 'Segoe UI', system-ui, sans-serif;
+  font-size: 18px;
+  white-space: nowrap;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #000;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Seletor de empresa das telas de lançamento (SeletorEmpresa), que o
+   SeletorRecorte do Dashboard não substitui nelas. */
+.recorte-dupla {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+}
+
+.recorte-dupla > .filtro-botoes { flex: 1 1 240px; }
+
+.filtro-empresa { min-width: 260px; }
+
+/* Resumo de contas dos lançamentos: altura de antes. */
+.resumo-contas-scroll {
+  max-height: 420px;
+  overflow: auto;
+}

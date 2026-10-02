@@ -90,7 +90,6 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
   const totalNovos = plano
     ? TABELAS.reduce((a, t) => a + (selecao[t.id] ? plano[t.id].novos.length : 0), 0) +
       (selecao.fornecedor ? plano.fornecedor.completar.length : 0) +
-      (selecao.centroCusto ? plano.centroCusto.completar.length : 0) +
       (selecao.empresa ? plano.empresa.completar.length : 0)
     : 0
 
@@ -155,23 +154,6 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
           </div>
         )}
 
-        {plano?.centroCusto?.ambiguos > 0 && (
-          <div className="proto-banner" style={{ marginBottom: 12 }}>
-            ⓘ {plano.centroCusto.ambiguos} centro(s) de custo ficam <strong>sem empresa</strong>: o mesmo código
-            aparece em duas ou mais empresas no mapa (1.2.16.1001 é BRK e Opentech, por exemplo), e o código sozinho
-            não diz de qual. Eleger a primeira linha da planilha preencheria o campo com a resposta errada nas
-            outras — melhor o campo vazio, que é verdade.
-          </div>
-        )}
-
-        {plano?.centroCusto?.semDePara && (
-          <div className="proto-banner" style={{ marginBottom: 12 }}>
-            ⓘ Os centros de custo entram, mas sem o de-para: as colunas de empresa e diretoria ainda não existem na
-            tabela. Falta rodar <code>supabase/migrations/2026-10-01-depara-centro-de-custo.sql</code>. Depois dela,
-            rode a carga de novo e ela preenche quem já estiver cadastrado.
-          </div>
-        )}
-
         {plano?.marcadoresFora?.length > 0 && (
           <div className="proto-banner" style={{ marginBottom: 12 }}>
             ⓘ {plano.marcadoresFora.join(' e ')} {plano.marcadoresFora.length === 1 ? 'ficou' : 'ficaram'} de fora: no
@@ -207,7 +189,7 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
                           <input
                             type="checkbox"
                             checked={Boolean(selecao[t.id] && plano.disponivel[t.id])}
-                            disabled={!plano.disponivel[t.id] || (!p.novos.length && !p.completar?.length)}
+                            disabled={!plano.disponivel[t.id] || !p.novos.length}
                             onChange={(e) => setSelecao({ ...selecao, [t.id]: e.target.checked })}
                           />
                         </td>
@@ -216,11 +198,6 @@ export default function CargaCadastros({ arquivo, nomeArquivo }) {
                           {t.id === 'fornecedor' && p.completar.length > 0 && (
                             <div style={{ fontSize: 12, opacity: 0.8 }}>
                               + {p.completar.length} já cadastrados ganham grupo ou CNPJ que estava vazio
-                            </div>
-                          )}
-                          {t.id === 'centroCusto' && p.completar.length > 0 && (
-                            <div style={{ fontSize: 12, opacity: 0.8 }}>
-                              + {p.completar.length} já cadastrados ganham a empresa e a diretoria que estavam vazias
                             </div>
                           )}
                           {t.id === 'empresa' && p.completar.length > 0 && (

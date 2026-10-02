@@ -63,7 +63,7 @@ async function existentes() {
     supabase.from('subpacote').select('pacote, nome'),
     supabase.from('fornecedor_grupo').select('nome'),
     tudo('fornecedor', 'id, nome, grupo, documento'),
-    tudo('centro_de_custo', 'id, codigo, nome, empresa, diretoria'),
+    tudo('centro_de_custo', 'codigo, nome'),
     supabase.from('diretoria').select('nome'),
     supabase.from('empresa').select('id, nome, bu_id, torre_id, sub_torre_id'),
     supabase.from('bu').select('id, nome'),
@@ -75,12 +75,6 @@ async function existentes() {
   // para cadastrar fornecedor — dá, só não dá para gravar o grupo.
   const semColunaGrupo = Boolean(forn.error)
   const forn2 = semColunaGrupo ? await tudo('fornecedor', 'id, nome, documento') : forn
-  // Mesma história no centro de custo: `empresa` e `diretoria` vêm da
-  // migração 2026-10-01. Sem elas o select inteiro falha, e concluir daí
-  // que não dá para cadastrar centro de custo seria errado — dá, só não dá
-  // para gravar de que empresa e diretoria ele é.
-  const semDePara = Boolean(cc.error)
-  const cc2 = semDePara ? await tudo('centro_de_custo', 'id, codigo, nome') : cc
   return {
     semColunaGrupo: semColunaGrupo && !forn2.error,
     pacote: pac.error ? null : (pac.data ?? []).map((x) => x.nome),
@@ -88,8 +82,7 @@ async function existentes() {
     grupo: gru.error ? null : (gru.data ?? []).map((x) => x.nome),
     // O fornecedor vem inteiro: é por ele que se sabe o que dá para completar.
     fornecedor: forn2.error ? null : forn2.data ?? [],
-    semDeParaDeCentro: semDePara && !cc2.error,
-    centroCusto: cc2.error ? null : cc2.data ?? [],
+    centroCusto: cc.error ? null : cc.data ?? [],
     diretoria: dir.error ? null : (dir.data ?? []).map((x) => x.nome),
     empresa: emp.error ? null : emp.data ?? [],
     bu: bu.error ? null : bu.data ?? [],
@@ -133,30 +126,9 @@ export async function planejarCarga(lido, { incluirMarcadores = false } = {}) {
   }
 
   // ---- centro de custo: casa por código, que é o que a Base Gastos escreve
-  //
-  // Dois movimentos, não um. O código e o nome já subiam, e por isso quase
-  // nada aqui é "novo": os 2 mil centros entraram na primeira carga. O que
-  // falta é o de-para — de que empresa e de que diretoria cada um é —, e
-  // isso só chega nos que JÁ existem, por update. Sem a segunda parte,
-  // rodar a carga de novo não mudaria nada e pareceria que o de-para subiu.
   const centros = lido.centrosDeCusto ?? []
-  const porCodigo = new Map((tem.centroCusto ?? []).map((c) => [chave(c.codigo), c]))
-  const novosCentro = []
-  const completarCentro = []
-  for (const c of centros) {
-    const atual = porCodigo.get(chave(c.codigo))
-    if (!atual) {
-      if (tem.centroCusto !== null) novosCentro.push(c)
-      continue
-    }
-    if (tem.semDeParaDeCentro) continue
-    // Só preenche o que está vazio: quem editou o cadastro à mão mandou
-    // mais do que o mapa, e a carga não está aqui para desfazer isso.
-    const patch = {}
-    if (c.empresa && !limpo(atual.empresa)) patch.empresa = c.empresa
-    if (c.diretoria && !limpo(atual.diretoria)) patch.diretoria = c.diretoria
-    if (Object.keys(patch).length) completarCentro.push({ id: atual.id, codigo: atual.codigo, patch })
-  }
+  const jaCentro = new Set((tem.centroCusto ?? []).map((c) => chave(c.codigo)))
+  const novosCentro = tem.centroCusto === null ? [] : centros.filter((c) => !jaCentro.has(chave(c.codigo)))
 
   // ---- diretoria
   const diretorias = lido.diretorias ?? []
@@ -216,13 +188,7 @@ export async function planejarCarga(lido, { incluirMarcadores = false } = {}) {
       completar,
       semColunaGrupo: Boolean(tem.semColunaGrupo),
     },
-    centroCusto: {
-      novos: novosCentro,
-      jaExistem: centros.length - novosCentro.length,
-      completar: completarCentro,
-      semDePara: Boolean(tem.semDeParaDeCentro),
-      ambiguos: lido.centrosAmbiguos ?? 0,
-    },
+    centroCusto: { novos: novosCentro, jaExistem: centros.length - novosCentro.length },
     diretoria: { novos: novasDiretorias, jaExistem: diretorias.length - novasDiretorias.length },
     empresa: {
       novos: novasEmpresas,
@@ -284,28 +250,12 @@ export async function executarCarga(plano, selecao, aoProgresso) {
       aoProgresso?.(feito.completados, plano.fornecedor.completar.length, 'completando')
     }
   }
-  if (selecao.centroCusto) {
-    if (plano.centroCusto.novos.length) {
-      feito.centroCusto = await inserir(
-        'centro_de_custo',
-        plano.centroCusto.novos.map((c) => ({
-          codigo: c.codigo,
-          nome: c.nome,
-          // Sem as colunas, entra só o que entrava antes — a carga não pode
-          // quebrar porque a migração não rodou ainda.
-          ...(plano.centroCusto.semDePara ? {} : { empresa: c.empresa || null, diretoria: c.diretoria || null }),
-        })),
-        aoProgresso
-      )
-    }
-    // E o de-para dos que já estavam lá, um update por centro, como no
-    // fornecedor. São muitos, mas só os que têm algo a receber.
-    for (const c of plano.centroCusto.completar) {
-      const { error } = await supabase.from('centro_de_custo').update(c.patch).eq('id', c.id)
-      if (error) throw new Error(`centro de custo ${c.codigo}: ${error.message}`)
-      feito.completados += 1
-      aoProgresso?.(feito.completados, plano.centroCusto.completar.length, 'completando')
-    }
+  if (selecao.centroCusto && plano.centroCusto.novos.length) {
+    feito.centroCusto = await inserir(
+      'centro_de_custo',
+      plano.centroCusto.novos.map((c) => ({ codigo: c.codigo, nome: c.nome })),
+      aoProgresso
+    )
   }
   if (selecao.diretoria && plano.diretoria.novos.length) {
     feito.diretoria = await inserir('diretoria', plano.diretoria.novos.map((nome) => ({ nome })), aoProgresso)
