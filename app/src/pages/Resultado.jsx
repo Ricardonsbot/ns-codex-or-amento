@@ -9,12 +9,9 @@ import { fetchVersaoAtual } from '../lib/lancamentosData'
 import { fetchBUs, fetchTorres, fetchEmpresas } from '../lib/dashboardData'
 import { fetchResultado, fetchCiclosResultado, versaoReferencia } from '../lib/resultadoData'
 import { fetchTargetsPacote } from '../lib/targetsData'
-import { MESES, MEDIDAS_MOM, janela } from '../lib/demonstrativo'
-import { ABAS, montarQuadro, quadroParaExportar, bigNumbers } from '../lib/quadrosResultado'
-import Indicadores from '../components/Indicadores'
-import BotaoUnidade from '../components/BotaoUnidade'
-import SeletorEmpresa from '../components/SeletorEmpresa'
-import BridgeOrcamento from '../components/BridgeOrcamento'
+import { MEDIDAS_MOM, janela } from '../lib/demonstrativo'
+import { ABAS, montarQuadro, quadroParaExportar } from '../lib/quadrosResultado'
+import SeletorRecorte from '../components/SeletorRecorte'
 import GraficoBridge from '../components/GraficoBridge'
 import MenuExportar from '../components/MenuExportar'
 import { montarExportacaoEmpilhada } from '../lib/exportarResultado'
@@ -74,11 +71,14 @@ function Performance({ quadro }) {
  * Resultado: o orçamento no formato da Master Resultado, aba por aba e na
  * mesma ordem das abas da Master.
  *
- * Três versões entram em cada quadro: a do ano escolhido (Actual), a versão
- * de "Comparar com" (Budget) e o budget do ano anterior (Last Year), que é
- * achado sozinho pelo ciclo `ano − 1`. O mês de referência faz o bloco do mês
- * (MTD) e destaca a coluna dele; o outro bloco é sempre o ano fechado.
+ * Entram a versão de referência do ciclo atual (Actual) e o budget do ano
+ * anterior (Last Year), achado sozinho pelo ciclo `ano − 1`. O único filtro
+ * da tela é o recorte BU → Torre → Empresa; ano, mês e comparação saíram
+ * para a tela ser só as tabelas. Sem mês para escolher, o bloco MTD é
+ * dezembro — o mesmo padrão de antes.
  */
+const mes = 12
+
 export default function Resultado() {
   const showToast = useToast()
   const [ciclos, setCiclos] = useState([])
@@ -89,13 +89,12 @@ export default function Resultado() {
   const [buId, setBuId] = useState('')
   const [torreId, setTorreId] = useState('')
   const [empresaId, setEmpresaId] = useState('')
+  // Sem filtro de comparação na tela: só a aba Bridge, que precisa dos dois
+  // lados, escolhe uma sozinha (ver o efeito mais abaixo).
   const [compararCom, setCompararCom] = useState('')
-  const [mes, setMes] = useState(12)
   const [dados, setDados] = useState(null)
   const [comp, setComp] = useState(null)
   const [ly, setLy] = useState(null)
-  // Quais empresas têm lançamento no ano: vão primeiro nos botões.
-  const [comDado, setComDado] = useState(null)
   const [aba, setAba] = useState('mom')
   const [medida, setMedida] = useState('nr')
   const [areaPacote, setAreaPacote] = useState('')
@@ -155,9 +154,6 @@ export default function Resultado() {
         setDados(a)
         setComp(b)
         setLy(l)
-        if (!buId && !torreId && !empresaId) {
-          setComDado(new Set(a.empresas.filter((e) => e.temLancamento).map((e) => e.id).filter(Boolean)))
-        }
       } catch (err) {
         showToast(`Erro ao montar o resultado: ${err.message}`, 'error')
       } finally {
@@ -186,7 +182,7 @@ export default function Resultado() {
         rotuloLy: versaoLy ? `LY ${cicloLy.ano}` : null,
       },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dados, comp, ly, mes, medida, areaPacote, dimensaoBridge, targets, modoEmpresa, empresaPl]
+    [dados, comp, ly, medida, areaPacote, dimensaoBridge, targets, modoEmpresa, empresaPl]
   )
   /**
    * Base empilhada: os lançamentos gravados da versão, no mesmo recorte da
@@ -270,14 +266,6 @@ export default function Resultado() {
     )
   }
 
-  const torresDaBu = buId ? torres.filter((t) => t.bu_id === buId) : torres
-  const noRecorte = torreId
-    ? empresas.filter((e) => e.torre_id === torreId)
-    : buId
-    ? empresas.filter((e) => e.bu_id === buId)
-    : empresas
-  const comLancamento = comDado ? noRecorte.filter((e) => comDado.has(e.id)) : []
-  const empresasDisponiveis = comDado ? [...comLancamento, ...noRecorte.filter((e) => !comDado.has(e.id))] : noRecorte
   const recorte = empresaId
     ? empresas.find((e) => e.id === empresaId)?.nome
     : torreId
@@ -295,7 +283,7 @@ export default function Resultado() {
         <div className="topbar-title">
           <h1>Resultado</h1>
           <p>
-            Ciclo {ciclo.ano} · {versao.nome} · <strong>{recorte}</strong> · referência {MESES[mes - 1]}/{ciclo.ano}
+            Ciclo {ciclo.ano} · {versao.nome} · <strong>{recorte}</strong>
             {dados ? ` · ${dados.lancamentos} lançamento(s)` : ''}
           </p>
         </div>
@@ -307,89 +295,21 @@ export default function Resultado() {
             <BotaoRecolher chave="resultado-1" />
             <div>
               <h2>Recorte</h2>
-              <p>Ano, mês de referência, BU, Torre, Empresa e unidade — vale para todas as visões abaixo</p>
+              <p>Vale para todas as visões abaixo</p>
             </div>
           </div>
           <div className="panel-body">
-            <div className="recorte-grupos">
-              <div className="recorte-bu-torre">
-                <FiltroBotoes
-                  label="Ano (ciclo)"
-                  valor={cicloId}
-                  opcoes={ciclos.map((c) => ({ valor: c.id, rotulo: String(c.ano) }))}
-                  onChange={(v) => {
-                    setCicloId(v)
-                    setCompararCom('')
-                  }}
-                  semTodas
-                />
-                <FiltroBotoes
-                  label="Mês de referência (MTD)"
-                  valor={String(mes)}
-                  opcoes={MESES.map((m, i) => ({ valor: String(i + 1), rotulo: m }))}
-                  onChange={(v) => setMes(Number(v))}
-                  semTodas
-                  semCorte
-                />
-              </div>
-              <div className="recorte-bu-torre">
-                <FiltroBotoes
-                  label="BU"
-                  valor={buId}
-                  rotuloTodas="Consolidado"
-                  opcoes={bus.map((b) => ({ valor: b.id, rotulo: b.nome }))}
-                  onChange={(v) => {
-                    setBuId(v)
-                    setTorreId('')
-                    setEmpresaId('')
-                  }}
-                />
-                <FiltroBotoes
-                  label="Torre"
-                  valor={torreId}
-                  rotuloTodas="Todas as Torres"
-                  opcoes={torresDaBu.map((t) => ({ valor: t.id, rotulo: t.nome }))}
-                  onChange={(v) => {
-                    setTorreId(v)
-                    setEmpresaId('')
-                  }}
-                />
-              </div>
-              <SeletorEmpresa
-                empresas={empresasDisponiveis}
-                torres={torres}
-                valor={empresaId}
-                onChange={setEmpresaId}
-                rotuloTodas="Consolidado"
-              />
-              <BotaoUnidade />
-              <div className="recorte-dupla">
-                {outrasVersoes.length > 0 ? (
-                  <FiltroBotoes
-                    label="Comparar com (Budget)"
-                    valor={compararCom}
-                    rotuloTodas="Sem comparação"
-                    opcoes={outrasVersoes.map((v) => ({ valor: v.id, rotulo: `${v.nome} (${v.tipo})` }))}
-                    onChange={setCompararCom}
-                  />
-                ) : (
-                  <div className="filtro-botoes">
-                    <span className="filtro-botoes-label">Comparar com (Budget)</span>
-                    <span style={{ fontSize: 12, opacity: 0.7 }}>
-                      O ciclo {ciclo.ano} só tem a versão “{versao.nome}”. Crie uma revisão em Budget - Settings.
-                    </span>
-                  </div>
-                )}
-                <div className="filtro-botoes">
-                  <span className="filtro-botoes-label">Last Year</span>
-                  <span style={{ fontSize: 12, opacity: 0.8 }}>
-                    {versaoLy
-                      ? `Budget ${cicloLy.ano} · ${versaoLy.nome} — entra sozinho em todos os quadros`
-                      : `Sem budget de ${ciclo.ano - 1}. Crie o ciclo ${ciclo.ano - 1} em Budget - Settings e importe o template daquele ano para aparecer o Last Year.`}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <SeletorRecorte
+              bus={bus}
+              torres={torres}
+              empresas={empresas}
+              valor={{ buId, torreId, empresaId }}
+              onChange={(v) => {
+                setBuId(v.buId)
+                setTorreId(v.torreId)
+                setEmpresaId(v.empresaId)
+              }}
+            />
           </div>
         </div>
 
@@ -397,15 +317,6 @@ export default function Resultado() {
 
         {!carregando && dados && ctx && (
           <>
-            <Indicadores itens={bigNumbers(ctx)} />
-
-            <BridgeOrcamento
-              receita={janela(dados.demo.nr, 'FY', mes)}
-              despesa={janela(dados.demo.nr, 'FY', mes) - janela(dados.demo.adjEbitda, 'FY', mes)}
-              capex={-janela(dados.demo.capex, 'FY', mes)}
-              subtitulo={`${recorte} · ${ciclo.ano} ${versao.nome} · FY ${ciclo.ano}`}
-            />
-
             {semConta !== 0 && (
               <div className="proto-banner" style={{ marginBottom: 18 }}>
                 ⚠ R$ {brl(semConta)} em lançamentos <strong>sem conta</strong> não entram em nenhuma linha do P&amp;L.

@@ -698,7 +698,7 @@ export default function GestaoImportacao() {
   const [chave, setChave] = useState(0) // muda a cada upload, para os CardTipo remontarem do zero
   const [tamanho, setTamanho] = useState(null)
   const [versaoHistorico, setVersaoHistorico] = useState(0)
-  const [tutorialAberto, setTutorialAberto] = useState(false)
+  const [arrastando, setArrastando] = useState(false)
   // Quantos tipos já foram gravados neste upload: leva o passo a passo ao fim.
   const [gravados, setGravados] = useState(0)
   // Qual módulo o "importar tudo" está gravando agora; null quando parado.
@@ -958,22 +958,7 @@ export default function GestaoImportacao() {
       <header className="topbar">
         <div className="topbar-title">
           <h1>{modoPacote ? 'Importar - Pacote' : 'Importar - Template FP&A'}</h1>
-          <p>
-            Suba o template uma vez — a ferramenta reconhece qual dos quatro é e confere o que aquele formato tem de
-            trazer.
-          </p>
         </div>
-        <button className="btn btn-secondary btn-sm" type="button" onClick={() => setTutorialAberto(true)}>
-          ? Como importar
-        </button>
-        <button
-          className="btn btn-primary btn-sm"
-          type="button"
-          onClick={() => setTelaSelecao(true)}
-          disabled={lendo}
-        >
-          {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Selecionar Template'}
-        </button>
         <input
           ref={inputRef}
           type="file"
@@ -984,6 +969,38 @@ export default function GestaoImportacao() {
       </header>
 
       <div className="content">
+        {/* A entrada do arquivo fica no corpo, acima do passo a passo, e não
+            no topo: é a primeira coisa que se faz na tela, e soltar o arquivo
+            aqui já pula a janela vazia de "Escolher arquivo". */}
+        <div
+          className={`faixa-envio${arrastando ? ' arrastando' : ''}`}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setArrastando(true)
+          }}
+          // Passar por cima do ícone ou do texto também dispara dragleave;
+          // sem o contains, o destaque piscaria a cada filho.
+          onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget) && setArrastando(false)}
+          onDrop={(e) => {
+            setArrastando(false)
+            setTelaSelecao(true)
+            handleSoltarArquivo(e)
+          }}
+        >
+          <span className="faixa-envio-icone" aria-hidden="true">⭱</span>
+          <div className="faixa-envio-texto">
+            <strong>{lendo ? `Lendo ${arquivo}…` : modoPacote ? 'Novo template de pacote' : 'Novo template'}</strong>
+            <span>
+              {lendo
+                ? 'A leitura roda em segundo plano — pode continuar usando a tela.'
+                : 'Arraste o Template Budget aqui ou selecione o arquivo (.xlsb, .xlsx ou .xlsm).'}
+            </span>
+          </div>
+          <button className="btn btn-primary" type="button" onClick={() => setTelaSelecao(true)} disabled={lendo}>
+            {lendo ? `Lendo planilha… ${segundos}s` : '⭱ Selecionar Template'}
+          </button>
+        </div>
+
         {!todos && !lendo && <TutorialImportacao etapa={etapaTutorial} />}
 
         {telaSelecao && (
@@ -1234,10 +1251,6 @@ export default function GestaoImportacao() {
         <HistoricoImportacoes versao={versaoHistorico} origens={ORIGENS_DA_TELA[comoTarget ? 'pacote' : 'gestao']} />
 
         <TemplatesRecusados versao={versaoHistorico} origens={ORIGENS_DA_TELA[comoTarget ? 'pacote' : 'gestao']} />
-
-        {tutorialAberto && (
-          <TutorialImportacao etapa={etapaTutorial} janela onFechar={() => setTutorialAberto(false)} />
-        )}
       </div>
     </Layout>
   )

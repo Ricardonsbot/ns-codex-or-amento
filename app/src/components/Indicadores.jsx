@@ -3,10 +3,9 @@ import { useUnidade } from './UnidadeProvider'
 const umaCasa = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 /**
- * Um big number: o nome e, na mesma linha, o valor em destaque e o percentual
- * sobre a receita separados por uma barra. Embaixo, o delta contra o Budget e
- * contra o Last Year — a única parte com cor, porque é a única com sentido de
- * "melhor" ou "pior".
+ * Um big number: o nome, o valor em destaque e, embaixo, o percentual sobre a
+ * receita numa etiqueta. Por último, o delta contra o Budget e contra o Last
+ * Year, verde ou vermelho conforme for melhor ou pior.
  */
 function DeltaIndicador({ d, contra, menorEMelhor }) {
   const { numero } = useUnidade()
@@ -24,22 +23,38 @@ function DeltaIndicador({ d, contra, menorEMelhor }) {
   )
 }
 
-function Indicador({ rotulo, valor, pct, vsBudget, vsLy, menorEMelhor, formato }) {
+/**
+ * A família de cada big number, pela chave: dá a cor do filete e da etiqueta
+ * de % RoL. São as cores dos módulos que o resto da ferramenta já usa —
+ * receita em verde, gasto em vermelho, capex em roxo —, e o EAC em laranja,
+ * porque é a linha de chegada. Contagem (linhas, empresas) fica neutra.
+ */
+const FAMILIA = {
+  nr: 'receita',
+  gm: 'receita',
+  receita: 'receita',
+  expenses: 'despesa',
+  labor: 'despesa',
+  nonLabor: 'despesa',
+  despesa: 'despesa',
+  capex: 'capex',
+  eac: 'resultado',
+}
+
+// Com a receita perto de zero o % RoL explode ("102.973.816,5%"): acima
+// disso o número não diz nada, e some em vez de ocupar a caixa.
+const PCT_COM_SENTIDO = 1000
+
+function Indicador({ chave, rotulo, valor, pct, vsBudget, vsLy, menorEMelhor, formato }) {
   const { numero } = useUnidade()
   // Contagem não é dinheiro: em "milhões", cinco linhas viravam "0,0".
   const texto = formato === 'inteiro' ? Number(valor ?? 0).toLocaleString('pt-BR') : numero(valor)
+  const temPct = pct !== null && pct !== undefined && isFinite(pct) && Math.abs(pct) < PCT_COM_SENTIDO
   return (
-    <div className="indicador">
+    <div className={`indicador ${FAMILIA[chave] ?? 'neutro'}`}>
       <div className="indicador-rotulo">{rotulo}</div>
-      <div className="indicador-linha">
-        <span className="indicador-valor">{texto}</span>
-        {pct !== null && pct !== undefined && isFinite(pct) && (
-          <>
-            <span className="indicador-barra" aria-hidden="true">|</span>
-            <span className="indicador-pct">{umaCasa(pct)}% RoL</span>
-          </>
-        )}
-      </div>
+      <div className="indicador-valor">{texto}</div>
+      {temPct && <span className="indicador-pct">{umaCasa(pct)}% RoL</span>}
       <DeltaIndicador d={vsBudget} contra="budget" menorEMelhor={menorEMelhor} />
       <DeltaIndicador d={vsLy} contra="LY" menorEMelhor={menorEMelhor} />
     </div>

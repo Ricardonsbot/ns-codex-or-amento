@@ -1,22 +1,20 @@
 import { computeBridge } from '../lib/dashboardData'
-import GraficoBridge from './GraficoBridge'
-import BotaoRecolher from './BotaoRecolher'
 
 /**
  * A ponte Revenue → EBITDA after Capex.
  *
- * Desenha com o mesmo GraficoBridge das outras cascatas — as pontas e o
- * EBITDA em barra cinza cheia, os gastos como caixinhas que descem, e o fio
- * pontilhado ligando um ao outro. O EBITDA vai marcado como total: ele não é
- * uma variação, é onde a conta reabre no chão, e o Capex parte dele.
+ * Monta a cascata para o mesmo GraficoBridge das outras pontes — as pontas e
+ * o EBITDA em barra cinza cheia, os gastos como caixinhas que descem. O
+ * EBITDA vai marcado como total: ele não é uma variação, é onde a conta
+ * reabre no chão, e o Capex parte dele. O painel em volta é de quem desenha:
+ * no Dashboard, ela divide o quadro com o mês a mês.
  *
  * Recebe os três números em R$ cheios, com gasto positivo, e deriva o EBITDA
  * e o EBITDA after Capex — é a mesma conta que o Dashboard fazia.
  */
-export default function BridgeOrcamento({ receita, despesa, capex, titulo, subtitulo }) {
+export function cascataOrcamento({ receita, despesa, capex }) {
   const bridge = computeBridge({ receita, despesa, capex })
-
-  const cascata = {
+  return {
     inicio: { rotulo: '(+) Revenue', valor: bridge.receita },
     degraus: [
       { rotulo: '(−) Expenses', valor: -Math.abs(bridge.despesa) },
@@ -25,19 +23,4 @@ export default function BridgeOrcamento({ receita, despesa, capex, titulo, subti
     ],
     fim: { rotulo: 'EBITDA after Capex', valor: bridge.ebitdaAfterCapex },
   }
-
-  return (
-    <div className="panel">
-      <div className="panel-header">
-        <BotaoRecolher chave="bridge-orcamento-1" />
-        <div>
-          <h2>{titulo ?? 'Resumo do Orçamento — Revenue → EBITDA after Capex'}</h2>
-          {subtitulo && <p>{subtitulo}</p>}
-        </div>
-      </div>
-      <div className="panel-body">
-        <GraficoBridge cascata={cascata} moldura={false} />
-      </div>
-    </div>
-  )
 }

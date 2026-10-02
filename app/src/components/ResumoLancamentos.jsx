@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { montarDrill, caminhoDoDrill } from '../lib/drillResumo'
 import { useUnidade } from './UnidadeProvider'
 import BotaoRecolher from './BotaoRecolher'
 
@@ -10,41 +11,121 @@ const mil = (v) =>
     : v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
 
 /**
- * O resumo é por CONTA. Era por empresa, com botões para trocar; virou só
- * conta porque é assim que se confere um orçamento contra o plano — e o
- * recorte de empresa já vem dos filtros da tela.
- */
-
-/**
  * Resumo do que está lançado: os doze meses em gráfico e a mesma coisa aberta
- * em tabela, uma linha por conta.
+ * em tabela, da linha do P&L até o lançamento (ver drillResumo.js). Era uma
+ * linha por conta, chapada: para chegar no centro de custo que pesava numa
+ * conta era preciso exportar e abrir no Excel.
  *
  * Não calcula nada além de somar. O que aparece aqui é exatamente o que está
  * gravado — se veio da importação, é o que a planilha trouxe.
  */
-export default function ResumoLancamentos({ linhas, rotulo }) {
+/**
+ * Uma linha da árvore e, se aberta, as de baixo. A folha é o lançamento: não
+ * abre, e é o número exatamente como foi gravado. Nó com centenas de
+ * lançamentos mostra os maiores primeiro e o resto sob demanda — abrir mil
+ * linhas de uma vez travava a tabela.
+ */
+const FOLHAS_DE_UMA_VEZ = 50
+
+function LinhaDrill({ no, abertos, alternar, numero }) {
+  const [todas, setTodas] = useState(false)
+  const folha = no.dimensao === 'Lançamento'
+  const aberto = !folha && abertos.has(no.chave)
+  const folhas = aberto ? (todas ? no.folhas : no.folhas.slice(0, FOLHAS_DE_UMA_VEZ)) : []
+  const recuo = { paddingLeft: 12 + no.nivel * 18 }
+
+  return (
+    <>
+      <tr
+        className={`drill-linha nivel-${Math.min(no.nivel, 3)}${folha ? ' folha' : ''}${aberto ? ' aberta' : ''}`}
+        onClick={folha ? undefined : () => alternar(no.chave)}
+      >
+        <td style={recuo} title={`${no.dimensao}: ${no.rotulo}`}>
+          {folha ? (
+            <span className="drill-seta" aria-hidden="true" />
+          ) : (
+            <button
+              type="button"
+              className="drill-seta"
+              aria-expanded={aberto}
+              aria-label={`${aberto ? 'Fechar' : 'Abrir'} ${no.rotulo}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                alternar(no.chave)
+              }}
+            >
+              {aberto ? '▾' : '▸'}
+            </button>
+          )}
+          <span className="drill-rotulo">{no.rotulo}</span>
+          {!folha && (
+            <span className="drill-dim">
+              {no.dimensao} · {no.lancamentos}
+            </span>
+          )}
+        </td>
+        {no.valores.map((v, i) => (
+          <td key={i} className="text-right" style={{ opacity: v === 0 ? 0.3 : 1 }}>
+            {v === 0 ? '—' : numero(v)}
+          </td>
+        ))}
+        <td className="text-right drill-total">{numero(no.total)}</td>
+      </tr>
+      {aberto &&
+        no.filhos.map((f) => <LinhaDrill key={f.chave} no={f} abertos={abertos} alternar={alternar} numero={numero} />)}
+      {folhas.map((f) => (
+        <LinhaDrill key={f.chave} no={f} abertos={abertos} alternar={alternar} numero={numero} />
+      ))}
+      {aberto && !todas && no.folhas.length > FOLHAS_DE_UMA_VEZ && (
+        <tr className="drill-mais">
+          <td colSpan={14} style={{ paddingLeft: 12 + (no.nivel + 1) * 18 }}>
+            <button type="button" className="drill-mais-botao" onClick={() => setTodas(true)}>
+              Mostrar os outros {no.folhas.length - FOLHAS_DE_UMA_VEZ} lançamento(s)
+            </button>
+          </td>
+        </tr>
+      )}
+    </>
+  )
+}
+
+export default function ResumoLancamentos({ linhas, rotulo, tipo = 'despesa', empresas }) {
   const { numero, comMoeda } = useUnidade()
 
-  const { grupos, porMes, total } = useMemo(() => {
-    const mapa = new Map()
-    const meses = Array(12).fill(0)
+  const [abertos, setAbertos] = useState(() => new Set())
 
-    for (const l of linhas) {
-      const nome = l.conta ? `${l.conta.codigo} — ${l.conta.nome}` : 'Sem conta'
+  const { arvore, porMes, total, contas } = useMemo(() => {
+    const nomes = new Map((empresas ?? []).map((e) => [e.id, e.nome]))
+    const arvore = montarDrill(linhas, tipo, (id) => nomes.get(id))
+    const porMes = Array(12).fill(0)
+    for (const no of arvore) no.valores.forEach((v, i) => (porMes[i] += v))
+    const contas = new Set(linhas.map((l) => l.conta_id ?? 'sem')).size
+    return { arvore, porMes, total: porMes.reduce((a, b) => a + b, 0), contas }
+  }, [linhas, tipo, empresas])
 
-      if (!mapa.has(nome)) mapa.set(nome, { nome, valores: Array(12).fill(0), linhas: 0 })
-      const g = mapa.get(nome)
-      g.linhas += 1
-      l.valores.forEach((v, i) => {
-        g.valores[i] += v
-        meses[i] += v
-      })
+  // As chaves são o caminho ("(-) G&A›Facilities›…"), não posições: trocar
+  // o recorte ou salvar uma linha da grade mantém aberto o que ainda existe,
+  // e o que sumiu simplesmente não casa com nada.
+  const alternar = (chave) =>
+    setAbertos((atual) => {
+      const novo = new Set(atual)
+      if (novo.has(chave)) novo.delete(chave)
+      else novo.add(chave)
+      return novo
+    })
+
+  /** Abre o nível seguinte ao mais fundo que já está aberto em toda parte. */
+  function abrirUmNivel() {
+    const novo = new Set(abertos)
+    const descer = (nos) => {
+      for (const no of nos) {
+        if (!novo.has(no.chave)) novo.add(no.chave)
+        else descer(no.filhos)
+      }
     }
-
-    const lista = [...mapa.values()].map((g) => ({ ...g, total: g.valores.reduce((a, b) => a + b, 0) }))
-    lista.sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
-    return { grupos: lista, porMes: meses, total: meses.reduce((a, b) => a + b, 0) }
-  }, [linhas])
+    descer(arvore)
+    setAbertos(novo)
+  }
 
   if (!linhas.length) return null
 
@@ -70,7 +151,8 @@ export default function ResumoLancamentos({ linhas, rotulo }) {
         <div>
           <h2>Resumo de {rotulo}</h2>
           <p>
-            {linhas.length} lançamento(s) · {grupos.length} conta(s) · total {comMoeda(total)}
+            {linhas.length} lançamento(s) · {contas} conta(s) · total {comMoeda(total)} · clique numa linha
+            para abrir
           </p>
         </div>
       </div>
@@ -123,14 +205,23 @@ export default function ResumoLancamentos({ linhas, rotulo }) {
           </svg>
         </div>
 
-        {/* A mesma coisa em número. Com muitas contas a tabela empurrava a
-            página inteira para baixo — agora tem altura própria, com
-            rolagem vertical e horizontal dentro do painel. */}
+        {/* A mesma coisa em número, aberta como árvore: da linha do P&L até
+            o lançamento. Cada clique desce um nível; com muitas linhas a
+            tabela tem altura própria e rola dentro do painel. */}
+        <div className="drill-acoes">
+          <span className="drill-caminho">{caminhoDoDrill(tipo).join(' › ')}</span>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={abrirUmNivel}>
+            Abrir um nível
+          </button>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={() => setAbertos(new Set())} disabled={!abertos.size}>
+            Recolher tudo
+          </button>
+        </div>
         <div className="resumo-contas-scroll">
-          <table className="data-table">
+          <table className="data-table tabela-drill">
             <thead>
               <tr>
-                <th>CONTA</th>
+                <th>LINHA DO P&amp;L</th>
                 {MESES.map((m) => (
                   <th key={m} className="text-right">{m.toUpperCase()}</th>
                 ))}
@@ -138,21 +229,8 @@ export default function ResumoLancamentos({ linhas, rotulo }) {
               </tr>
             </thead>
             <tbody>
-              {grupos.map((g) => (
-                <tr key={g.nome}>
-                  <td style={{ minWidth: 190 }}>
-                    <strong>{g.nome}</strong>
-                    {g.linhas > 1 && (
-                      <span style={{ opacity: 0.55, fontSize: 12 }}> · {g.linhas} lançamentos</span>
-                    )}
-                  </td>
-                  {g.valores.map((v, i) => (
-                    <td key={i} className="text-right" style={{ fontSize: 12, opacity: v === 0 ? 0.3 : 1 }}>
-                      {v === 0 ? '—' : numero(v)}
-                    </td>
-                  ))}
-                  <td className="text-right"><strong>{numero(g.total)}</strong></td>
-                </tr>
+              {arvore.map((no) => (
+                <LinhaDrill key={no.chave} no={no} abertos={abertos} alternar={alternar} numero={numero} />
               ))}
             </tbody>
             <tfoot>
